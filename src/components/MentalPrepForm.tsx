@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,8 +61,6 @@ export const MentalPrepForm = () => {
 
   const generatePDF = () => {
     const doc = new jsPDF();
-    doc.addFont("assets/fonts/Arial.ttf", "Arial", "normal");
-    doc.setFont("Arial");
     doc.setR2L(true);
 
     // Add title
