@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,12 +20,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import jsPDF from 'jspdf';
 
 export const MentalPrepForm = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
@@ -102,18 +110,23 @@ export const MentalPrepForm = () => {
       }
     });
 
-    // Save the PDF
-    doc.save(`דוח_הכנה_מנטלית_${formData.fullName}.pdf`);
+    return doc;
   };
 
   const handleSubmit = async () => {
+    setShowPreviewDialog(true);
+  };
+
+  const handleDownload = async () => {
+    setShowPreviewDialog(false);
     setShowSaveDialog(true);
   };
 
   const handleConfirmSave = async () => {
     try {
       // Generate and save PDF
-      generatePDF();
+      const doc = generatePDF();
+      doc.save(`דוח_הכנה_מנטלית_${formData.fullName}.pdf`);
 
       // Send email
       const emailData = {
@@ -160,6 +173,50 @@ export const MentalPrepForm = () => {
     }
   };
 
+  const PreviewContent = () => (
+    <div className="space-y-6 max-h-[80vh] overflow-y-auto p-4 text-right">
+      <h2 className="text-2xl font-bold text-center mb-8">דוח הכנה מנטלית למשחק</h2>
+      
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">פרטים אישיים</h3>
+        <p>שם מלא: {formData.fullName}</p>
+        <p>אימייל: {formData.email}</p>
+        <p>טלפון: {formData.phone}</p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">פרטי המשחק</h3>
+        <p>תאריך משחק: {formData.matchDate}</p>
+        <p>קבוצה יריבה: {formData.opposingTeam}</p>
+        <p>סוג משחק: {formData.gameType}</p>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">מצבים מנטליים נבחרים</h3>
+        {formData.selectedStates.map((state, index) => (
+          <p key={index}>{state}</p>
+        ))}
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">מטרות למשחק</h3>
+        {formData.selectedGoals.map((goal, index) => (
+          <p key={index}>{goal.goal} - {goal.metric || 'איכותי'}</p>
+        ))}
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">תשובות לשאלות</h3>
+        {Object.entries(formData.answers).map(([question, answer], index) => (
+          <div key={index} className="mb-4">
+            <p className="font-medium">{question}</p>
+            <p className="text-gray-600">{answer}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <Card className="w-full max-w-2xl mx-auto p-6">
       <div className="space-y-6">
@@ -182,6 +239,19 @@ export const MentalPrepForm = () => {
         </div>
       </div>
 
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>תצוגה מקדימה של הדוח</DialogTitle>
+          </DialogHeader>
+          <PreviewContent />
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowPreviewDialog(false)}>סגור</Button>
+            <Button onClick={handleDownload}>הורד PDF</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -199,3 +269,4 @@ export const MentalPrepForm = () => {
     </Card>
   );
 };
+
