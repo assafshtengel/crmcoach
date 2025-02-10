@@ -2,7 +2,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { gameGoals } from '@/constants/mentalPrepConstants';
+import { gameGoals, quantifiableGoals } from '@/constants/mentalPrepConstants';
 import { FormData } from '@/types/mentalPrep';
 
 interface GameGoalsStepProps {
@@ -37,7 +37,7 @@ export const GameGoalsStep = ({ formData, updateFormData }: GameGoalsStepProps) 
             />
             <Label htmlFor={`goal-${index}`}>{goal}</Label>
           </div>
-          {formData.selectedGoals.some(g => g.goal === goal) && (
+          {formData.selectedGoals.some(g => g.goal === goal) && quantifiableGoals.includes(goal) && (
             <Input
               placeholder="מספר הפעולות אותן תרצה לבצע במשחק (לדוגמה: 5)"
               value={formData.selectedGoals.find(g => g.goal === goal)?.metric || ''}
