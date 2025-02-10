@@ -238,15 +238,59 @@ export const MentalPrepForm = () => {
           <div className="form-step space-y-4">
             <h2 className="text-2xl font-bold mb-6">שאלות פתוחות</h2>
             {selectedQuestions.map((question, index) => (
-              <div key={index} className="space
+              <div key={index} className="space-y-2">
+                <Label>{question}</Label>
+                <Textarea
+                  value={formData.answers[question] || ''}
+                  onChange={(e) => {
+                    updateFormData('answers', {
+                      ...formData.answers,
+                      [question]: e.target.value,
+                    });
+                  }}
+                  className="input-field"
+                  rows={3}
+                />
+              </div>
+            ))}
+          </div>
+        );
 
-אם יש ידע, הקשר או הוראות מותאמות אישית שברצונך לכלול בכל עריכה בפרויקט זה, הגדר זאת למטה.
+      default:
+        return null;
+    }
+  };
 
-<lov-actions>
-<lov-knowledge>
-</lov-actions>
-
-אם הפרויקט שלך דורש פונקציונליות של צד שרת, תוכל להשתמש בתפריט Supabase בפינה הימנית העליונה כדי לחבר את הפרויקט שלך ל-Supabase.
-<lov-actions>
-<lov-message-prompt message="ספר לי עוד על Supabase">למד עוד על Supabase</lov-message-prompt>
-</lov-actions>
+  return (
+    <Card className="w-full max-w-2xl mx-auto p-6">
+      <div className="space-y-6">
+        {renderStep()}
+        <div className="flex justify-between mt-6">
+          {step > 1 && (
+            <Button
+              onClick={() => setStep(step - 1)}
+              variant="outline"
+            >
+              הקודם
+            </Button>
+          )}
+          {step < 5 ? (
+            <Button
+              onClick={() => setStep(step + 1)}
+              className="mr-auto"
+            >
+              הבא
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSubmit}
+              className="mr-auto"
+            >
+              שלח
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+};
