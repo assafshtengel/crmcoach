@@ -39,7 +39,7 @@ export const GameGoalsStep = ({ formData, updateFormData }: GameGoalsStepProps) 
           </div>
           {formData.selectedGoals.some(g => g.goal === goal) && (
             <Input
-              placeholder="מדד הצלחה (לדוגמה: 5 מסירות מפתח)"
+              placeholder="מספר הפעולות אותן תרצה לבצע במשחק (לדוגמה: 5)"
               value={formData.selectedGoals.find(g => g.goal === goal)?.metric || ''}
               onChange={(e) => {
                 updateFormData(
