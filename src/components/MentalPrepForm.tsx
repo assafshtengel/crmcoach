@@ -2,42 +2,28 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-
-const mentalStates = [
-  'ממוקד', 'בטוח', 'מוכן', 'חיובי', 'מנהיג', 'מחויב', 'רגוע', 'חד', 'אנרגטי',
-  // ... Add more states
-];
-
-const gameGoals = [
-  'שמירת מיקוד', 'שיפור נגיחות', 'שיפור עבודת צוות', 'ניצול הזדמנויות',
-  // ... Add more goals
-];
-
-const questions = [
-  'מה תעשה אם קבוצתך תפגר מוקדם?',
-  'איך אתה מתכונן להתמודד עם לחץ?',
-  'מה המטרה העיקרית שלך במשחק?',
-  // ... Add more questions
-];
+import { questions } from '@/constants/mentalPrepConstants';
+import { FormData } from '@/types/mentalPrep';
+import { PersonalInfoStep } from './mental-prep/PersonalInfoStep';
+import { GameDetailsStep } from './mental-prep/GameDetailsStep';
+import { MentalStatesStep } from './mental-prep/MentalStatesStep';
+import { GameGoalsStep } from './mental-prep/GameGoalsStep';
+import { QuestionsStep } from './mental-prep/QuestionsStep';
 
 export const MentalPrepForm = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
     phone: '',
     matchDate: '',
     opposingTeam: '',
     gameType: '',
-    selectedStates: [] as string[],
-    selectedGoals: [] as Array<{ goal: string; metric: string }>,
-    answers: {} as Record<string, string>,
+    selectedStates: [],
+    selectedGoals: [],
+    answers: {},
   });
 
   const [selectedQuestions] = useState(() => {
@@ -64,21 +50,17 @@ export const MentalPrepForm = () => {
 
   const handleSubmit = async () => {
     try {
-      // Send email logic here
       const emailData = {
         to: 'socr.co.il@gmail.com',
         subject: `דוח הכנה מנטלית - ${formData.fullName}`,
         body: JSON.stringify(formData, null, 2),
       };
 
-      // Generate PDF report logic here
-
       toast({
         title: "הדוח נשלח בהצלחה!",
         description: "הדוח נשלח למייל ונשמר במכשיר שלך.",
       });
 
-      // Redirect to ChatGPT
       window.location.href = 'https://chatgpt.com/g/g-6780940ac570819189306621c59a067f-hhknh-shly-lmshkhq';
     } catch (error) {
       toast({
@@ -92,170 +74,21 @@ export const MentalPrepForm = () => {
   const renderStep = () => {
     switch (step) {
       case 1:
-        return (
-          <div className="form-step space-y-4">
-            <h2 className="text-2xl font-bold mb-6">פרטים אישיים</h2>
-            <div>
-              <Label htmlFor="fullName">שם מלא</Label>
-              <Input
-                id="fullName"
-                value={formData.fullName}
-                onChange={(e) => updateFormData('fullName', e.target.value)}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">אימייל</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => updateFormData('email', e.target.value)}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <Label htmlFor="phone">טלפון</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => updateFormData('phone', e.target.value)}
-                className="input-field"
-              />
-            </div>
-          </div>
-        );
-
+        return <PersonalInfoStep formData={formData} updateFormData={updateFormData} />;
       case 2:
-        return (
-          <div className="form-step space-y-4">
-            <h2 className="text-2xl font-bold mb-6">פרטי המשחק</h2>
-            <div>
-              <Label htmlFor="matchDate">תאריך המשחק</Label>
-              <Input
-                id="matchDate"
-                type="date"
-                value={formData.matchDate}
-                onChange={(e) => updateFormData('matchDate', e.target.value)}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <Label htmlFor="opposingTeam">קבוצה יריבה</Label>
-              <Input
-                id="opposingTeam"
-                value={formData.opposingTeam}
-                onChange={(e) => updateFormData('opposingTeam', e.target.value)}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <Label htmlFor="gameType">סוג משחק</Label>
-              <Select onValueChange={(value) => updateFormData('gameType', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="בחר סוג משחק" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="league">ליגה</SelectItem>
-                  <SelectItem value="cup">גביע</SelectItem>
-                  <SelectItem value="friendly">ידידות</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-
+        return <GameDetailsStep formData={formData} updateFormData={updateFormData} />;
       case 3:
-        return (
-          <div className="form-step space-y-4">
-            <h2 className="text-2xl font-bold mb-6">מצבים מנטליים</h2>
-            <p className="text-gray-600 mb-4">בחר 4 מצבים מנטליים שמתארים את המצב הרצוי שלך במשחק</p>
-            <div className="grid grid-cols-3 gap-2">
-              {mentalStates.map((state) => (
-                <div
-                  key={state}
-                  onClick={() => handleStateSelection(state)}
-                  className={`mental-state-tag ${
-                    formData.selectedStates.includes(state) ? 'selected' : ''
-                  }`}
-                >
-                  {state}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
+        return <MentalStatesStep formData={formData} handleStateSelection={handleStateSelection} />;
       case 4:
-        return (
-          <div className="form-step space-y-4">
-            <h2 className="text-2xl font-bold mb-6">מטרות משחק</h2>
-            {gameGoals.map((goal, index) => (
-              <div key={goal} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`goal-${index}`}
-                    checked={formData.selectedGoals.some(g => g.goal === goal)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        updateFormData('selectedGoals', [
-                          ...formData.selectedGoals,
-                          { goal, metric: '' },
-                        ]);
-                      } else {
-                        updateFormData(
-                          'selectedGoals',
-                          formData.selectedGoals.filter(g => g.goal !== goal)
-                        );
-                      }
-                    }}
-                  />
-                  <Label htmlFor={`goal-${index}`}>{goal}</Label>
-                </div>
-                {formData.selectedGoals.some(g => g.goal === goal) && (
-                  <Input
-                    placeholder="מדד הצלחה (לדוגמה: 5 מסירות מפתח)"
-                    value={formData.selectedGoals.find(g => g.goal === goal)?.metric || ''}
-                    onChange={(e) => {
-                      updateFormData(
-                        'selectedGoals',
-                        formData.selectedGoals.map(g =>
-                          g.goal === goal ? { ...g, metric: e.target.value } : g
-                        )
-                      );
-                    }}
-                    className="input-field"
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        );
-
+        return <GameGoalsStep formData={formData} updateFormData={updateFormData} />;
       case 5:
         return (
-          <div className="form-step space-y-4">
-            <h2 className="text-2xl font-bold mb-6">שאלות פתוחות</h2>
-            {selectedQuestions.map((question, index) => (
-              <div key={index} className="space-y-2">
-                <Label>{question}</Label>
-                <Textarea
-                  value={formData.answers[question] || ''}
-                  onChange={(e) => {
-                    updateFormData('answers', {
-                      ...formData.answers,
-                      [question]: e.target.value,
-                    });
-                  }}
-                  className="input-field"
-                  rows={3}
-                />
-              </div>
-            ))}
-          </div>
+          <QuestionsStep
+            formData={formData}
+            selectedQuestions={selectedQuestions}
+            updateFormData={updateFormData}
+          />
         );
-
       default:
         return null;
     }
@@ -267,25 +100,16 @@ export const MentalPrepForm = () => {
         {renderStep()}
         <div className="flex justify-between mt-6">
           {step > 1 && (
-            <Button
-              onClick={() => setStep(step - 1)}
-              variant="outline"
-            >
+            <Button onClick={() => setStep(step - 1)} variant="outline">
               הקודם
             </Button>
           )}
           {step < 5 ? (
-            <Button
-              onClick={() => setStep(step + 1)}
-              className="mr-auto"
-            >
+            <Button onClick={() => setStep(step + 1)} className="mr-auto">
               הבא
             </Button>
           ) : (
-            <Button
-              onClick={handleSubmit}
-              className="mr-auto"
-            >
+            <Button onClick={handleSubmit} className="mr-auto">
               שלח
             </Button>
           )}
