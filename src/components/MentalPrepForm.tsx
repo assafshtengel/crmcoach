@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,10 +10,22 @@ import { GameDetailsStep } from './mental-prep/GameDetailsStep';
 import { MentalStatesStep } from './mental-prep/MentalStatesStep';
 import { GameGoalsStep } from './mental-prep/GameGoalsStep';
 import { QuestionsStep } from './mental-prep/QuestionsStep';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import jsPDF from 'jspdf';
 
 export const MentalPrepForm = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
@@ -47,8 +60,65 @@ export const MentalPrepForm = () => {
     });
   };
 
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    doc.addFont("assets/fonts/Arial.ttf", "Arial", "normal");
+    doc.setFont("Arial");
+    doc.setR2L(true);
+
+    // Add title
+    doc.setFontSize(20);
+    doc.text("דוח הכנה מנטלית למשחק", 105, 20, { align: 'center' });
+
+    // Add player details
+    doc.setFontSize(12);
+    doc.text(`שם מלא: ${formData.fullName}`, 180, 40, { align: 'right' });
+    doc.text(`אימייל: ${formData.email}`, 180, 50, { align: 'right' });
+    doc.text(`טלפון: ${formData.phone}`, 180, 60, { align: 'right' });
+    doc.text(`תאריך משחק: ${formData.matchDate}`, 180, 70, { align: 'right' });
+    doc.text(`קבוצה יריבה: ${formData.opposingTeam}`, 180, 80, { align: 'right' });
+    doc.text(`סוג משחק: ${formData.gameType}`, 180, 90, { align: 'right' });
+
+    // Add mental states
+    doc.text("מצבים מנטליים נבחרים:", 180, 110, { align: 'right' });
+    formData.selectedStates.forEach((state, index) => {
+      doc.text(`${state}`, 180, 120 + (index * 10), { align: 'right' });
+    });
+
+    // Add goals
+    doc.text("מטרות למשחק:", 180, 160, { align: 'right' });
+    formData.selectedGoals.forEach((goal, index) => {
+      doc.text(`${goal.goal} - ${goal.metric || 'איכותי'}`, 180, 170 + (index * 10), { align: 'right' });
+    });
+
+    // Add answers to questions
+    doc.text("תשובות לשאלות:", 180, 220, { align: 'right' });
+    Object.entries(formData.answers).forEach(([question, answer], index) => {
+      const yPos = 230 + (index * 20);
+      if (yPos > 270) {
+        doc.addPage();
+        doc.text(question, 180, 20, { align: 'right', maxWidth: 170 });
+        doc.text(answer, 180, 30, { align: 'right', maxWidth: 170 });
+      } else {
+        doc.text(question, 180, yPos, { align: 'right', maxWidth: 170 });
+        doc.text(answer, 180, yPos + 10, { align: 'right', maxWidth: 170 });
+      }
+    });
+
+    // Save the PDF
+    doc.save(`דוח_הכנה_מנטלית_${formData.fullName}.pdf`);
+  };
+
   const handleSubmit = async () => {
+    setShowSaveDialog(true);
+  };
+
+  const handleConfirmSave = async () => {
     try {
+      // Generate and save PDF
+      generatePDF();
+
+      // Send email
       const emailData = {
         to: 'socr.co.il@gmail.com',
         subject: `דוח הכנה מנטלית - ${formData.fullName}`,
@@ -56,7 +126,7 @@ export const MentalPrepForm = () => {
       };
 
       toast({
-        title: "הדוח נשלח בהצלחה!",
+        title: "הדוח נשלח ונשמר בהצלחה!",
         description: "הדוח נשלח למייל ונשמר במכשיר שלך.",
       });
 
@@ -114,6 +184,21 @@ export const MentalPrepForm = () => {
           )}
         </div>
       </div>
+
+      <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>האם ברצונך לשמור את דוח טרום המשחק?</AlertDialogTitle>
+            <AlertDialogDescription>
+              הדוח יישמר כקובץ PDF במכשיר שלך.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>לא</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmSave}>כן</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
