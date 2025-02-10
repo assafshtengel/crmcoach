@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +9,7 @@ import { GameDetailsStep } from './mental-prep/GameDetailsStep';
 import { MentalStatesStep } from './mental-prep/MentalStatesStep';
 import { GameGoalsStep } from './mental-prep/GameGoalsStep';
 import { QuestionsStep } from './mental-prep/QuestionsStep';
+import html2canvas from 'html2canvas';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,13 +26,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import jsPDF from 'jspdf';
 
 export const MentalPrepForm = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
@@ -67,67 +67,42 @@ export const MentalPrepForm = () => {
     });
   };
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    doc.setR2L(true);
-
-    // Add title
-    doc.setFontSize(20);
-    doc.text("דוח הכנה מנטלית למשחק", 105, 20, { align: 'center' });
-
-    // Add player details
-    doc.setFontSize(12);
-    doc.text(`שם מלא: ${formData.fullName}`, 180, 40, { align: 'right' });
-    doc.text(`אימייל: ${formData.email}`, 180, 50, { align: 'right' });
-    doc.text(`טלפון: ${formData.phone}`, 180, 60, { align: 'right' });
-    doc.text(`תאריך משחק: ${formData.matchDate}`, 180, 70, { align: 'right' });
-    doc.text(`קבוצה יריבה: ${formData.opposingTeam}`, 180, 80, { align: 'right' });
-    doc.text(`סוג משחק: ${formData.gameType}`, 180, 90, { align: 'right' });
-
-    // Add mental states
-    doc.text("מצבים מנטליים נבחרים:", 180, 110, { align: 'right' });
-    formData.selectedStates.forEach((state, index) => {
-      doc.text(`${state}`, 180, 120 + (index * 10), { align: 'right' });
-    });
-
-    // Add goals
-    doc.text("מטרות למשחק:", 180, 160, { align: 'right' });
-    formData.selectedGoals.forEach((goal, index) => {
-      doc.text(`${goal.goal} - ${goal.metric || 'איכותי'}`, 180, 170 + (index * 10), { align: 'right' });
-    });
-
-    // Add answers to questions
-    doc.text("תשובות לשאלות:", 180, 220, { align: 'right' });
-    Object.entries(formData.answers).forEach(([question, answer], index) => {
-      const yPos = 230 + (index * 20);
-      if (yPos > 270) {
-        doc.addPage();
-        doc.text(question, 180, 20, { align: 'right', maxWidth: 170 });
-        doc.text(answer, 180, 30, { align: 'right', maxWidth: 170 });
-      } else {
-        doc.text(question, 180, yPos, { align: 'right', maxWidth: 170 });
-        doc.text(answer, 180, yPos + 10, { align: 'right', maxWidth: 170 });
-      }
-    });
-
-    return doc;
-  };
-
   const handleSubmit = async () => {
     setShowPreviewDialog(true);
   };
 
   const handleDownload = async () => {
-    setShowPreviewDialog(false);
-    setShowSaveDialog(true);
+    if (previewRef.current) {
+      try {
+        const canvas = await html2canvas(previewRef.current, {
+          scale: 2,
+          logging: false,
+          useCORS: true,
+          scrollY: -window.scrollY,
+          windowWidth: previewRef.current.scrollWidth,
+          windowHeight: previewRef.current.scrollHeight,
+        });
+        
+        const image = canvas.toDataURL("image/png", 1.0);
+        const link = document.createElement('a');
+        link.download = `דוח_הכנה_מנטלית_${formData.fullName}.png`;
+        link.href = image;
+        link.click();
+        
+        setShowPreviewDialog(false);
+        setShowSaveDialog(true);
+      } catch (error) {
+        toast({
+          title: "שגיאה",
+          description: "אירעה שגיאה בשמירת התמונה. אנא נסה שוב.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const handleConfirmSave = async () => {
     try {
-      // Generate and save PDF
-      const doc = generatePDF();
-      doc.save(`דוח_הכנה_מנטלית_${formData.fullName}.pdf`);
-
       // Send email
       const emailData = {
         to: 'socr.co.il@gmail.com',
@@ -174,7 +149,7 @@ export const MentalPrepForm = () => {
   };
 
   const PreviewContent = () => (
-    <div className="space-y-6 max-h-[80vh] overflow-y-auto p-4 text-right">
+    <div ref={previewRef} className="space-y-6 p-8 bg-white text-right">
       <h2 className="text-2xl font-bold text-center mb-8">דוח הכנה מנטלית למשחק</h2>
       
       <div className="space-y-2">
@@ -244,10 +219,12 @@ export const MentalPrepForm = () => {
           <DialogHeader>
             <DialogTitle>תצוגה מקדימה של הדוח</DialogTitle>
           </DialogHeader>
-          <PreviewContent />
+          <div className="max-h-[80vh] overflow-y-auto">
+            <PreviewContent />
+          </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setShowPreviewDialog(false)}>סגור</Button>
-            <Button onClick={handleDownload}>הורד PDF</Button>
+            <Button onClick={handleDownload}>שמור כתמונה</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -257,7 +234,7 @@ export const MentalPrepForm = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>האם ברצונך לשמור את דוח טרום המשחק?</AlertDialogTitle>
             <AlertDialogDescription>
-              הדוח יישמר כקובץ PDF במכשיר שלך.
+              הדוח יישמר כקובץ תמונה במכשיר שלך.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -269,4 +246,3 @@ export const MentalPrepForm = () => {
     </Card>
   );
 };
-
