@@ -14,22 +14,31 @@ import {
 interface SaveDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
 }
 
-export const SaveDialog = ({ open, onOpenChange, onConfirm }: SaveDialogProps) => {
+export const SaveDialog = ({ open, onOpenChange }: SaveDialogProps) => {
+  const handleYes = () => {
+    window.open('https://chatgpt.com/g/g-678dbc160ba48191aa5eff1f083a51b4-tknvn-48-sh-vt-lpny-mshkhq', '_blank');
+    onOpenChange(false);
+  };
+
+  const handleNo = () => {
+    window.location.href = '/';
+    onOpenChange(false);
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>האם ברצונך לשמור את דוח טרום המשחק?</AlertDialogTitle>
+          <AlertDialogTitle>האם תרצה לקבל סדר יום מומלץ לפני המשחק?</AlertDialogTitle>
           <AlertDialogDescription>
-            הדוח יישמר כקובץ תמונה במכשיר שלך.
+            נוכל לספק לך סדר יום מותאם אישית שיעזור לך להתכונן למשחק בצורה מיטבית.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>לא</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>כן</AlertDialogAction>
+          <AlertDialogCancel onClick={handleNo}>לא, תודה</AlertDialogCancel>
+          <AlertDialogAction onClick={handleYes}>כן, אשמח</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

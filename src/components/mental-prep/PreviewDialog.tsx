@@ -3,6 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FormData } from '@/types/mentalPrep';
+import { SaveDialog } from './SaveDialog';
 
 interface PreviewDialogProps {
   open: boolean;
@@ -57,26 +58,35 @@ export const PreviewContent = ({ formData, previewRef }: { formData: FormData; p
 );
 
 export const PreviewDialog = ({ open, onOpenChange, formData, previewRef, onDownload }: PreviewDialogProps) => {
-  const handleDownloadAndRedirect = () => {
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+
+  const handleDownload = () => {
     onDownload();
-    // Open the link in a new tab
-    window.open('https://chatgpt.com/g/g-6780940ac570819189306621c59a067f-hhknh-shly-lmshkhq/c/67aa5aad-49e0-800a-9727-a4a309815192', '_blank');
+    setShowSaveDialog(true);
+    setShowPreviewDialog(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>תצוגה מקדימה של הדוח</DialogTitle>
-        </DialogHeader>
-        <div className="max-h-[80vh] overflow-y-auto">
-          <PreviewContent formData={formData} previewRef={previewRef} />
-        </div>
-        <div className="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>סגור</Button>
-          <Button onClick={handleDownloadAndRedirect}>שמור כתמונה והעברה לקבלת טופס סיכום משחק מסודר</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>תצוגה מקדימה של הדוח</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[80vh] overflow-y-auto">
+            <PreviewContent formData={formData} previewRef={previewRef} />
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>סגור</Button>
+            <Button onClick={handleDownload}>שמור כתמונה</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <SaveDialog 
+        open={showSaveDialog} 
+        onOpenChange={setShowSaveDialog}
+      />
+    </>
   );
 };
