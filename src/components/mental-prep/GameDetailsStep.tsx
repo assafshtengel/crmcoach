@@ -2,7 +2,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FormData } from '@/types/mentalPrep';
 
 interface GameDetailsStepProps {
@@ -33,19 +33,32 @@ export const GameDetailsStep = ({ formData, updateFormData }: GameDetailsStepPro
           className="input-field"
         />
       </div>
-      <div>
-        <Label htmlFor="gameType">סוג משחק</Label>
-        <Select onValueChange={(value) => updateFormData('gameType', value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="בחר סוג משחק" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="league">ליגה</SelectItem>
-            <SelectItem value="cup">גביע</SelectItem>
-            <SelectItem value="friendly">ידידות</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="space-y-2">
+        <Label>סוג משחק</Label>
+        <RadioGroup
+          value={formData.gameType}
+          onValueChange={(value) => updateFormData('gameType', value)}
+          className="flex flex-col space-y-2"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="league" id="league" />
+            <Label htmlFor="league" className="mr-2">ליגה</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="cup" id="cup" />
+            <Label htmlFor="cup" className="mr-2">גביע</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="friendly" id="friendly" />
+            <Label htmlFor="friendly" className="mr-2">ידידות</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="other" id="other" />
+            <Label htmlFor="other" className="mr-2">אחר</Label>
+          </div>
+        </RadioGroup>
       </div>
     </div>
   );
 };
+
