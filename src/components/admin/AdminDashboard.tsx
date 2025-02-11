@@ -14,7 +14,7 @@ const mockData: FormData[] = [];
 
 export const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [gameTypeFilter, setGameTypeFilter] = useState('');
+  const [gameTypeFilter, setGameTypeFilter] = useState('all');
   const { toast } = useToast();
 
   const handleExport = () => {
@@ -30,7 +30,7 @@ export const AdminDashboard = () => {
       item.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.opposingTeam.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesGameType = !gameTypeFilter || item.gameType === gameTypeFilter;
+    const matchesGameType = gameTypeFilter === 'all' || item.gameType === gameTypeFilter;
     
     return matchesSearch && matchesGameType;
   });
@@ -62,7 +62,7 @@ export const AdminDashboard = () => {
             <SelectValue placeholder="סנן לפי סוג משחק" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">הכל</SelectItem>
+            <SelectItem value="all">הכל</SelectItem>
             <SelectItem value="league">ליגה</SelectItem>
             <SelectItem value="cup">גביע</SelectItem>
             <SelectItem value="friendly">ידידות</SelectItem>
@@ -74,3 +74,4 @@ export const AdminDashboard = () => {
     </div>
   );
 };
+
