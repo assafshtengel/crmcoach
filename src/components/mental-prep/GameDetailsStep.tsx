@@ -2,8 +2,8 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FormData } from '@/types/mentalPrep';
+import { cn } from '@/lib/utils';
 
 interface GameDetailsStepProps {
   formData: FormData;
@@ -11,6 +11,13 @@ interface GameDetailsStepProps {
 }
 
 export const GameDetailsStep = ({ formData, updateFormData }: GameDetailsStepProps) => {
+  const gameTypes = [
+    { value: 'league', label: 'ליגה' },
+    { value: 'cup', label: 'גביע' },
+    { value: 'friendly', label: 'ידידות' },
+    { value: 'other', label: 'אחר' }
+  ];
+
   return (
     <div className="form-step space-y-4">
       <h2 className="text-2xl font-bold mb-6">פרטי המשחק</h2>
@@ -35,30 +42,24 @@ export const GameDetailsStep = ({ formData, updateFormData }: GameDetailsStepPro
       </div>
       <div className="space-y-2">
         <Label>סוג משחק</Label>
-        <RadioGroup
-          value={formData.gameType}
-          onValueChange={(value) => updateFormData('gameType', value)}
-          className="flex flex-col space-y-2"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="league" id="league" />
-            <Label htmlFor="league" className="mr-2">ליגה</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="cup" id="cup" />
-            <Label htmlFor="cup" className="mr-2">גביע</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="friendly" id="friendly" />
-            <Label htmlFor="friendly" className="mr-2">ידידות</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="other" id="other" />
-            <Label htmlFor="other" className="mr-2">אחר</Label>
-          </div>
-        </RadioGroup>
+        <div className="grid grid-cols-2 gap-4 mt-2">
+          {gameTypes.map((type) => (
+            <div
+              key={type.value}
+              onClick={() => updateFormData('gameType', type.value)}
+              className={cn(
+                'cursor-pointer rounded-lg p-4 text-center transition-all duration-200',
+                'hover:shadow-md border-2',
+                formData.gameType === type.value
+                  ? 'border-primary bg-primary/10 shadow-sm'
+                  : 'border-gray-200 bg-white hover:border-primary/50'
+              )}
+            >
+              <span className="text-lg font-medium">{type.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 };
-
