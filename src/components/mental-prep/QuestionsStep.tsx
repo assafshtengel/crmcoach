@@ -24,7 +24,7 @@ export const QuestionsStep = ({ formData, selectedQuestions, updateFormData }: Q
       <h2 className="text-2xl font-bold mb-6">שאלות פתוחות</h2>
 
       <div className="space-y-4 mb-6">
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <Label>רמת הלחץ שאתה מרגיש כעת לפני המשחק</Label>
           <Select
             value={formData.currentPressure || ''}
@@ -33,7 +33,7 @@ export const QuestionsStep = ({ formData, selectedQuestions, updateFormData }: Q
             <SelectTrigger>
               <SelectValue placeholder="בחר רמת לחץ" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="item-aligned" className="z-50 bg-white">
               {pressureLevels.map((level) => (
                 <SelectItem key={level.value} value={level.value}>
                   {level.label}
@@ -43,7 +43,7 @@ export const QuestionsStep = ({ formData, selectedQuestions, updateFormData }: Q
           </Select>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
           <Label>רמת הלחץ האופטימלית עבורך לפני משחק</Label>
           <p className="text-sm text-gray-500 mb-2">
             (כל שחקן צריך שיהיה לו את הלחץ המתאים עבורו על מנת להגיע בצורה אופטימלית למשחק וכל שחקן חייב לדעת על פי משחקי העבר מה הלחץ המתאים עבורו)
@@ -55,7 +55,7 @@ export const QuestionsStep = ({ formData, selectedQuestions, updateFormData }: Q
             <SelectTrigger>
               <SelectValue placeholder="בחר רמת לחץ אופטימלית" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="item-aligned" className="z-50 bg-white">
               {pressureLevels.map((level) => (
                 <SelectItem key={level.value} value={level.value}>
                   {level.label}
@@ -85,3 +85,4 @@ export const QuestionsStep = ({ formData, selectedQuestions, updateFormData }: Q
     </div>
   );
 };
+
