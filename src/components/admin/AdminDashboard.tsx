@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DataTable } from './DataTable';
 import { columns } from './columns';
 import { Input } from '@/components/ui/input';
@@ -8,24 +8,67 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Download, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { FormData } from '@/types/mentalPrep';
-
-// Mock data for now - will be replaced with Supabase data
-const mockData: FormData[] = [];
+import { supabase } from '@/lib/supabase';
+import * as XLSX from 'xlsx';
 
 export const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [gameTypeFilter, setGameTypeFilter] = useState('all');
+  const [data, setData] = useState<FormData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const { data: forms, error } = await supabase
+        .from('mental_prep_forms')
+        .select('*');
+
+      if (error) throw error;
+
+      const formattedData = forms.map(form => ({
+        fullName: form.full_name,
+        email: form.email,
+        phone: form.phone,
+        matchDate: form.match_date,
+        opposingTeam: form.opposing_team,
+        gameType: form.game_type,
+        selectedStates: form.selected_states,
+        selectedGoals: form.selected_goals,
+        answers: form.answers,
+        currentPressure: form.current_pressure,
+        optimalPressure: form.optimal_pressure,
+      }));
+
+      setData(formattedData);
+    } catch (error) {
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה בטעינת הנתונים",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleExport = () => {
-    // TODO: Implement export functionality
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Mental Prep Forms");
+    XLSX.writeFile(wb, "mental_prep_forms.xlsx");
+    
     toast({
       title: "יצוא נתונים",
       description: "הנתונים יורדים כקובץ Excel",
     });
   };
 
-  const filteredData = mockData.filter(item => {
+  const filteredData = data.filter(item => {
     const matchesSearch = 
       item.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.opposingTeam.toLowerCase().includes(searchTerm.toLowerCase());
@@ -34,6 +77,10 @@ export const AdminDashboard = () => {
     
     return matchesSearch && matchesGameType;
   });
+
+  if (isLoading) {
+    return <div className="p-8 text-center">טוען נתונים...</div>;
+  }
 
   return (
     <div className="p-8">
@@ -74,4 +121,3 @@ export const AdminDashboard = () => {
     </div>
   );
 };
-

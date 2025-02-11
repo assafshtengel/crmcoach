@@ -13,6 +13,7 @@ import { QuestionsStep } from './mental-prep/QuestionsStep';
 import { PreviewDialog } from './mental-prep/PreviewDialog';
 import { SaveDialog } from './mental-prep/SaveDialog';
 import html2canvas from 'html2canvas';
+import { supabase } from '@/lib/supabase';
 
 export const MentalPrepForm = () => {
   const { toast } = useToast();
@@ -90,18 +91,33 @@ export const MentalPrepForm = () => {
 
   const handleConfirmSave = async () => {
     try {
-      const emailData = {
-        to: 'socr.co.il@gmail.com',
-        subject: `דוח הכנה מנטלית - ${formData.fullName}`,
-        body: JSON.stringify(formData, null, 2),
-      };
+      // שמירת הנתונים בסופבייס
+      const { error } = await supabase
+        .from('mental_prep_forms')
+        .insert([
+          {
+            full_name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            match_date: formData.matchDate,
+            opposing_team: formData.opposingTeam,
+            game_type: formData.gameType,
+            selected_states: formData.selectedStates,
+            selected_goals: formData.selectedGoals,
+            answers: formData.answers,
+            current_pressure: formData.currentPressure,
+            optimal_pressure: formData.optimalPressure,
+          }
+        ]);
+
+      if (error) throw error;
 
       toast({
         title: "הדוח נשלח ונשמר בהצלחה!",
-        description: "הדוח נשלח למייל ונשמר במכשיר שלך.",
+        description: "הדוח נשמר במערכת.",
       });
 
-      window.location.href = 'https://chatgpt.com/g/g-6780940ac570819189306621c59a067f-hhknh-shly-lmshkhq';
+      window.location.href = '/';
     } catch (error) {
       toast({
         title: "שגיאה",
