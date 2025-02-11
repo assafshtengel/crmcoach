@@ -14,12 +14,14 @@ import {
 interface SaveDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onConfirm?: () => Promise<void>;
 }
 
-export const SaveDialog = ({ open, onOpenChange }: SaveDialogProps) => {
+export const SaveDialog = ({ open, onOpenChange, onConfirm }: SaveDialogProps) => {
   const handleYes = () => {
     window.open('https://chatgpt.com/g/g-678dbc160ba48191aa5eff1f083a51b4-tknvn-48-sh-vt-lpny-mshkhq', '_blank');
     onOpenChange(false);
+    onConfirm?.();
   };
 
   const handleNo = () => {
