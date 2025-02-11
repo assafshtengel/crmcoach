@@ -62,6 +62,7 @@ export const PreviewDialog = ({ open, onOpenChange, formData, previewRef, onDown
 
   const handleDownload = () => {
     onDownload();
+    window.open('https://chatgpt.com/g/g-6780940ac570819189306621c59a067f-hhknh-shly-lmshkhq', '_blank');
     setShowSaveDialog(true);
     onOpenChange(false);
   };
@@ -78,7 +79,9 @@ export const PreviewDialog = ({ open, onOpenChange, formData, previewRef, onDown
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => onOpenChange(false)}>סגור</Button>
-            <Button onClick={handleDownload}>שמור כתמונה</Button>
+            <Button onClick={handleDownload}>
+              שמור כתמונה והעברה לקבלת טופס סיכום משחק מסודר
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
