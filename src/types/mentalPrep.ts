@@ -9,4 +9,6 @@ export interface FormData {
   selectedStates: string[];
   selectedGoals: Array<{ goal: string; metric: string }>;
   answers: Record<string, string>;
+  currentPressure?: string;
+  optimalPressure?: string;
 }
