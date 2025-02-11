@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FormData } from '@/types/mentalPrep';
@@ -63,7 +63,7 @@ export const PreviewDialog = ({ open, onOpenChange, formData, previewRef, onDown
   const handleDownload = () => {
     onDownload();
     setShowSaveDialog(true);
-    setShowPreviewDialog(false);
+    onOpenChange(false);
   };
 
   return (
