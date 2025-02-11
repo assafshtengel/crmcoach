@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,23 +10,9 @@ import { GameDetailsStep } from './mental-prep/GameDetailsStep';
 import { MentalStatesStep } from './mental-prep/MentalStatesStep';
 import { GameGoalsStep } from './mental-prep/GameGoalsStep';
 import { QuestionsStep } from './mental-prep/QuestionsStep';
+import { PreviewDialog } from './mental-prep/PreviewDialog';
+import { SaveDialog } from './mental-prep/SaveDialog';
 import html2canvas from 'html2canvas';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 export const MentalPrepForm = () => {
   const { toast } = useToast();
@@ -103,7 +90,6 @@ export const MentalPrepForm = () => {
 
   const handleConfirmSave = async () => {
     try {
-      // Send email
       const emailData = {
         to: 'socr.co.il@gmail.com',
         subject: `דוח הכנה מנטלית - ${formData.fullName}`,
@@ -148,50 +134,6 @@ export const MentalPrepForm = () => {
     }
   };
 
-  const PreviewContent = () => (
-    <div ref={previewRef} className="space-y-6 p-8 bg-white text-right">
-      <h2 className="text-2xl font-bold text-center mb-8">דוח הכנה מנטלית למשחק</h2>
-      
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">פרטים אישיים</h3>
-        <p>שם מלא: {formData.fullName}</p>
-        <p>אימייל: {formData.email}</p>
-        <p>טלפון: {formData.phone}</p>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">פרטי המשחק</h3>
-        <p>תאריך משחק: {formData.matchDate}</p>
-        <p>קבוצה יריבה: {formData.opposingTeam}</p>
-        <p>סוג משחק: {formData.gameType}</p>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">מצבים מנטליים נבחרים</h3>
-        {formData.selectedStates.map((state, index) => (
-          <p key={index}>{state}</p>
-        ))}
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">מטרות למשחק</h3>
-        {formData.selectedGoals.map((goal, index) => (
-          <p key={index}>{goal.goal} - {goal.metric || 'איכותי'}</p>
-        ))}
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">תשובות לשאלות</h3>
-        {Object.entries(formData.answers).map(([question, answer], index) => (
-          <div key={index} className="mb-4">
-            <p className="font-medium">{question}</p>
-            <p className="text-gray-600">{answer}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
     <Card className="w-full max-w-2xl mx-auto p-6">
       <div className="space-y-6">
@@ -214,35 +156,19 @@ export const MentalPrepForm = () => {
         </div>
       </div>
 
-      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>תצוגה מקדימה של הדוח</DialogTitle>
-          </DialogHeader>
-          <div className="max-h-[80vh] overflow-y-auto">
-            <PreviewContent />
-          </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setShowPreviewDialog(false)}>סגור</Button>
-            <Button onClick={handleDownload}>שמור כתמונה</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PreviewDialog
+        open={showPreviewDialog}
+        onOpenChange={setShowPreviewDialog}
+        formData={formData}
+        previewRef={previewRef}
+        onDownload={handleDownload}
+      />
 
-      <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>האם ברצונך לשמור את דוח טרום המשחק?</AlertDialogTitle>
-            <AlertDialogDescription>
-              הדוח יישמר כקובץ תמונה במכשיר שלך.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>לא</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmSave}>כן</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <SaveDialog
+        open={showSaveDialog}
+        onOpenChange={setShowSaveDialog}
+        onConfirm={handleConfirmSave}
+      />
     </Card>
   );
 };
