@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import { ArrowRight, LayoutDashboard } from 'lucide-react';
 
 const ADMIN_PASSWORD = 'admin123'; // This should be moved to environment variables in production
 
@@ -36,6 +37,22 @@ const Admin = () => {
     return (
       <div className="min-h-screen bg-sage-50 py-8 px-4">
         <div className="max-w-md mx-auto">
+          <div className="flex gap-4 mb-6">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate("/dashboard")}
+            >
+              <LayoutDashboard className="h-4 w-4" />
+            </Button>
+          </div>
           <Card className="p-6">
             <h1 className="text-2xl font-bold text-center mb-6">כניסת מנהל</h1>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -58,7 +75,27 @@ const Admin = () => {
     );
   }
 
-  return <AdminDashboard />;
+  return (
+    <div className="min-h-screen bg-sage-50 py-8 px-4">
+      <div className="flex gap-4 mb-6">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => navigate("/dashboard")}
+        >
+          <LayoutDashboard className="h-4 w-4" />
+        </Button>
+      </div>
+      <AdminDashboard />
+    </div>
+  );
 };
 
 export default Admin;
