@@ -33,6 +33,17 @@ export const CategorySection = ({
     return isSelected ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50';
   };
 
+  // בדיקת תקינות - אם אין שאלות או השאלה הנוכחית לא קיימת
+  if (!category.questions || !category.questions.length || !category.questions[0]) {
+    return (
+      <Card className="p-6">
+        <div className="text-center text-gray-500">לא נמצאו שאלות</div>
+      </Card>
+    );
+  }
+
+  const currentQuestion = category.questions[0];
+
   return (
     <Card className="overflow-hidden bg-gradient-to-br from-white to-gray-50">
       <div className="p-6 space-y-6">
@@ -46,7 +57,7 @@ export const CategorySection = ({
         </div>
 
         <motion.div
-          key={category.questions[currentQuestionIndex].id}
+          key={currentQuestion.id}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
@@ -54,15 +65,15 @@ export const CategorySection = ({
         >
           <div className="space-y-4">
             <Label className="text-lg font-medium leading-tight block">
-              {category.questions[currentQuestionIndex].text}
+              {currentQuestion.text}
             </Label>
 
             <RadioGroup
-              value={scores[category.questions[currentQuestionIndex].id]?.toString()}
-              onValueChange={(value) => updateScore(category.questions[currentQuestionIndex].id, parseInt(value))}
+              value={scores[currentQuestion.id]?.toString()}
+              onValueChange={(value) => updateScore(currentQuestion.id, parseInt(value))}
               className="grid gap-3 pt-2"
             >
-              {category.questions[currentQuestionIndex].options.map((option, index) => (
+              {currentQuestion.options.map((option, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 10 }}
@@ -70,13 +81,13 @@ export const CategorySection = ({
                   transition={{ duration: 0.2, delay: index * 0.05 }}
                 >
                   <Label
-                    htmlFor={`${category.questions[currentQuestionIndex].id}-${index}`}
+                    htmlFor={`${currentQuestion.id}-${index}`}
                     className={`flex items-center p-4 rounded-lg border-2 transition-all cursor-pointer
-                      ${getOptionColor(scores[category.questions[currentQuestionIndex].id]?.toString() === option.score.toString())}`}
+                      ${getOptionColor(scores[currentQuestion.id]?.toString() === option.score.toString())}`}
                   >
                     <RadioGroupItem
                       value={option.score.toString()}
-                      id={`${category.questions[currentQuestionIndex].id}-${index}`}
+                      id={`${currentQuestion.id}-${index}`}
                       className="sr-only"
                     />
                     <div className="flex items-center justify-between w-full">
