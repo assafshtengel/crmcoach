@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import type { EvaluationFormData } from '@/types/playerEvaluation';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { CategorySection } from './CategorySection';
+import { ScoreSummary } from './ScoreSummary';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
@@ -40,7 +40,22 @@ export const PlayerEvaluationForm = () => {
     return formData.playerName && formData.age && formData.team && formData.date;
   };
 
+  const hasMinimumScores = () => {
+    const totalQuestions = categories.reduce((acc, cat) => acc + cat.questions.length, 0);
+    const answeredQuestions = Object.keys(formData.scores).length;
+    return answeredQuestions >= totalQuestions * 0.8; // 80% של השאלות חייבות להיות מענות
+  };
+
   const handleSubmit = async () => {
+    if (!hasMinimumScores()) {
+      toast({
+        title: "לא ניתן לשמור",
+        description: "יש לענות על לפחות 80% מהשאלות",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -128,60 +143,66 @@ export const PlayerEvaluationForm = () => {
         );
       case 2:
         return (
-          <ScrollArea className="h-[60vh] pr-4">
-            <div className="space-y-8">
-              <section className="space-y-6">
-                <div className="flex items-center gap-2">
-                  <Brain className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-semibold">יכולות מנטליות</h3>
-                </div>
-                {categories
-                  .filter(cat => cat.type === 'mental')
-                  .map(category => (
-                    <CategorySection
-                      key={category.id}
-                      category={category}
-                      scores={formData.scores}
-                      updateScore={updateScore}
-                    />
-                  ))}
-              </section>
+          <div className="space-y-6">
+            <ScrollArea className="h-[60vh] pr-4">
+              <div className="space-y-8">
+                <section className="space-y-6">
+                  <div className="flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-semibold">יכולות מנטליות</h3>
+                  </div>
+                  {categories
+                    .filter(cat => cat.type === 'mental')
+                    .map(category => (
+                      <CategorySection
+                        key={category.id}
+                        category={category}
+                        scores={formData.scores}
+                        updateScore={updateScore}
+                      />
+                    ))}
+                </section>
 
-              <section className="space-y-6">
-                <div className="flex items-center gap-2">
-                  <Dumbbell className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-semibold">יכולות גופניות</h3>
-                </div>
-                {categories
-                  .filter(cat => cat.type === 'physical')
-                  .map(category => (
-                    <CategorySection
-                      key={category.id}
-                      category={category}
-                      scores={formData.scores}
-                      updateScore={updateScore}
-                    />
-                  ))}
-              </section>
+                <section className="space-y-6">
+                  <div className="flex items-center gap-2">
+                    <Dumbbell className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-semibold">יכולות גופניות</h3>
+                  </div>
+                  {categories
+                    .filter(cat => cat.type === 'physical')
+                    .map(category => (
+                      <CategorySection
+                        key={category.id}
+                        category={category}
+                        scores={formData.scores}
+                        updateScore={updateScore}
+                      />
+                    ))}
+                </section>
 
-              <section className="space-y-6">
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-semibold">יכולות מקצועיות</h3>
-                </div>
-                {categories
-                  .filter(cat => cat.type === 'professional')
-                  .map(category => (
-                    <CategorySection
-                      key={category.id}
-                      category={category}
-                      scores={formData.scores}
-                      updateScore={updateScore}
-                    />
-                  ))}
-              </section>
+                <section className="space-y-6">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-semibold">יכולות מקצועיות</h3>
+                  </div>
+                  {categories
+                    .filter(cat => cat.type === 'professional')
+                    .map(category => (
+                      <CategorySection
+                        key={category.id}
+                        category={category}
+                        scores={formData.scores}
+                        updateScore={updateScore}
+                      />
+                    ))}
+                </section>
+              </div>
+            </ScrollArea>
+            
+            <div className="pt-6 border-t">
+              <ScoreSummary scores={formData.scores} />
             </div>
-          </ScrollArea>
+          </div>
         );
       default:
         return null;
