@@ -1,8 +1,9 @@
+
 import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { questions } from '@/constants/mentalPrepConstants';
+import { allQuestions } from '@/constants/mentalPrepConstants';
 import { FormData } from '@/types/mentalPrep';
 import { PersonalInfoStep } from './mental-prep/PersonalInfoStep';
 import { GameDetailsStep } from './mental-prep/GameDetailsStep';
@@ -34,7 +35,7 @@ export const MentalPrepForm = () => {
   });
 
   const [selectedQuestions] = useState(() => {
-    const shuffled = [...questions].sort(() => 0.5 - Math.random());
+    const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 6);
   });
 
