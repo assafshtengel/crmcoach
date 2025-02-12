@@ -29,6 +29,7 @@ import { Progress } from "@/components/ui/progress";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface EvaluationSummary {
+  id: string;
   total_score: number | null;
   player_name: string;
   evaluation_date: string;
