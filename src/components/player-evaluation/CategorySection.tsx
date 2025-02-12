@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Category } from '@/types/playerEvaluation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
@@ -14,44 +15,41 @@ interface CategorySectionProps {
 
 export const CategorySection = ({ category, scores, updateScore }: CategorySectionProps) => {
   const isMobile = useIsMobile();
-  
-  const getScoreColor = (score: number) => {
-    if (score >= 8) return 'bg-green-500';
-    if (score >= 6) return 'bg-yellow-500';
-    if (score >= 4) return 'bg-orange-500';
-    return 'bg-red-500';
-  };
 
   return (
-    <Card className="p-4">
-      <h4 className="text-lg font-medium mb-4">{category.name}</h4>
-      <div className="space-y-6">
+    <Card className="p-6">
+      <h4 className="text-xl font-semibold mb-6">{category.name}</h4>
+      <div className="space-y-8">
         {category.questions.map((question) => (
           <motion.div
             key={question.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="space-y-2"
+            className="space-y-4"
           >
-            <Label className="text-sm">{question.text}</Label>
-            <div className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center' : ''}`}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                <motion.button
-                  key={score}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => updateScore(question.id, score)}
-                  className={`w-8 h-8 rounded-full text-sm font-medium transition-all duration-200 
-                    ${scores[question.id] === score 
-                      ? `${getScoreColor(score)} text-white scale-110` 
-                      : 'bg-gray-100 hover:bg-gray-200'
-                    }`}
-                >
-                  {score}
-                </motion.button>
+            <Label className="text-base font-medium">{question.text}</Label>
+            <RadioGroup
+              value={scores[question.id]?.toString()}
+              onValueChange={(value) => updateScore(question.id, parseInt(value))}
+              className="grid gap-3"
+            >
+              {question.options.map((option, index) => (
+                <div key={index} className="flex items-center space-x-4 space-x-reverse">
+                  <RadioGroupItem
+                    value={option.score.toString()}
+                    id={`${question.id}-${option.score}`}
+                    className="border-2"
+                  />
+                  <Label
+                    htmlFor={`${question.id}-${option.score}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {option.text}
+                  </Label>
+                </div>
               ))}
-            </div>
+            </RadioGroup>
           </motion.div>
         ))}
       </div>
