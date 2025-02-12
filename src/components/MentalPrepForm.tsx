@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import { PreviewDialog } from './mental-prep/PreviewDialog';
 import { SaveDialog } from './mental-prep/SaveDialog';
 import html2canvas from 'html2canvas';
 import { supabase } from '@/lib/supabase';
+import { motion } from 'framer-motion';
 
 export const MentalPrepForm = () => {
   const { toast } = useToast();
@@ -149,27 +149,65 @@ export const MentalPrepForm = () => {
     }
   };
 
+  const steps = [
+    { title: 'פרטים אישיים', icon: '👤' },
+    { title: 'פרטי משחק', icon: '⚽' },
+    { title: 'מצב מנטלי', icon: '🧠' },
+    { title: 'מטרות', icon: '🎯' },
+    { title: 'שאלות', icon: '❓' },
+  ];
+
   return (
-    <Card className="w-full max-w-2xl mx-auto p-8 bg-white/80 backdrop-blur-sm border border-gray-100 shadow-lg rounded-xl">
+    <Card className="w-full max-w-2xl mx-auto p-8 bg-white/90 backdrop-blur-sm border border-gray-100 shadow-xl rounded-xl">
       <div className="space-y-8">
-        {/* Progress Bar */}
+        <div className="flex justify-between mb-8">
+          {steps.map((s, i) => (
+            <div
+              key={i}
+              className={`flex flex-col items-center ${
+                i + 1 === step ? 'text-primary' : 'text-gray-400'
+              }`}
+            >
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-lg mb-2 transition-all duration-300 ${
+                  i + 1 === step
+                    ? 'bg-primary text-white scale-110'
+                    : i + 1 < step
+                    ? 'bg-primary/20 text-primary'
+                    : 'bg-gray-100'
+                }`}
+              >
+                {s.icon}
+              </div>
+              <span className="text-xs hidden md:block">{s.title}</span>
+            </div>
+          ))}
+        </div>
+
         <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-primary transition-all duration-300 ease-out"
-            style={{ width: `${(step / 5) * 100}%` }}
+          <motion.div 
+            className="h-full bg-primary"
+            initial={{ width: 0 }}
+            animate={{ width: `${(step / 5) * 100}%` }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
           />
         </div>
 
-        <div className="bg-white/50 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-50">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white rounded-lg p-6 shadow-sm border border-gray-50"
+        >
           {renderStep()}
-        </div>
+        </motion.div>
 
-        <div className="flex justify-between mt-8 pt-4 border-t border-gray-100">
+        <div className="flex justify-between pt-4 border-t border-gray-100">
           {step > 1 && (
             <Button 
               onClick={() => setStep(step - 1)} 
               variant="outline"
-              className="hover:bg-gray-50 transition-colors"
+              className="hover:bg-gray-50 transition-all duration-300 hover:scale-105"
             >
               הקודם
             </Button>
@@ -177,14 +215,14 @@ export const MentalPrepForm = () => {
           {step < 5 ? (
             <Button 
               onClick={() => setStep(step + 1)} 
-              className="mr-auto bg-primary hover:bg-primary/90 text-white transition-colors"
+              className="mr-auto bg-primary hover:bg-primary/90 text-white transition-all duration-300 hover:scale-105"
             >
               הבא
             </Button>
           ) : (
             <Button 
               onClick={handleSubmit} 
-              className="mr-auto bg-primary hover:bg-primary/90 text-white transition-colors"
+              className="mr-auto bg-primary hover:bg-primary/90 text-white transition-all duration-300 hover:scale-105"
             >
               שלח
             </Button>
