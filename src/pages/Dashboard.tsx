@@ -1,7 +1,6 @@
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Gamepad, Search, LogOut, ArrowRight, FileText, ChartLine, FileBarChart } from "lucide-react";
+import { Target, Gamepad, Search, LogOut, ArrowRight, FileText, ChartLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -24,7 +23,7 @@ import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 
 interface EvaluationSummary {
-  total_score: number;
+  total_score: number | null;
   player_name: string;
   evaluation_date: string;
 }
@@ -55,16 +54,28 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
-  const getScoreColor = (score: number): string => {
+  const getScoreColor = (score: number | null): string => {
+    if (!score) return 'text-gray-400';
     if (score >= 8) return 'text-purple-600';
     if (score >= 6) return 'text-orange-500';
     return 'text-red-500';
   };
 
-  const getProgressColor = (score: number): string => {
+  const getProgressColor = (score: number | null): string => {
+    if (!score) return 'bg-gray-200';
     if (score >= 8) return 'bg-purple-600';
     if (score >= 6) return 'bg-orange-500';
     return 'bg-red-500';
+  };
+
+  const formatScore = (score: number | null): string => {
+    if (score === null) return 'אין ציון';
+    return score.toFixed(1);
+  };
+
+  const getProgressValue = (score: number | null): number => {
+    if (score === null) return 0;
+    return score * 10;
   };
 
   const cards = [
@@ -157,11 +168,11 @@ const Dashboard = () => {
                         </p>
                       </div>
                       <span className={`font-bold text-xl ${getScoreColor(evaluation.total_score)}`}>
-                        {evaluation.total_score.toFixed(1)}
+                        {formatScore(evaluation.total_score)}
                       </span>
                     </div>
                     <Progress
-                      value={evaluation.total_score * 10}
+                      value={getProgressValue(evaluation.total_score)}
                       className={`h-2 rounded-full ${getProgressColor(evaluation.total_score)}`}
                     />
                   </div>
