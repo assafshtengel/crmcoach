@@ -73,10 +73,13 @@ export const PlayerEvaluationForm = () => {
   };
 
   const handleSubmit = async () => {
-    if (!hasMinimumScores()) {
+    const totalQuestions = shuffledQuestions.length;
+    const answeredQuestions = Object.keys(formData.scores).length;
+    
+    if (answeredQuestions < totalQuestions) {
       toast({
         title: "לא ניתן לשמור",
-        description: "יש לענות על לפחות 80% מהשאלות",
+        description: "יש לענות על כל השאלות",
         variant: "destructive",
       });
       return;
@@ -95,12 +98,34 @@ export const PlayerEvaluationForm = () => {
         return;
       }
 
+      // חישוב ממוצעים לפי קטגוריות
+      const categoryAverages: Record<string, number> = {};
+      let totalScore = 0;
+      let categoriesCount = 0;
+
+      categories.forEach(category => {
+        const categoryScores = category.questions
+          .map(q => formData.scores[q.id])
+          .filter(score => score !== undefined);
+
+        if (categoryScores.length > 0) {
+          const average = categoryScores.reduce((a, b) => a + b, 0) / categoryScores.length;
+          categoryAverages[category.id] = parseFloat(average.toFixed(2));
+          totalScore += average;
+          categoriesCount++;
+        }
+      });
+
+      const finalTotalScore = parseFloat((totalScore / categoriesCount).toFixed(2));
+
       const { error } = await supabase.from('player_evaluations').insert({
         player_name: formData.playerName,
         age: parseInt(formData.age),
         team: formData.team,
         evaluation_date: formData.date,
         scores: formData.scores,
+        category_averages: categoryAverages,
+        total_score: finalTotalScore,
         user_id: session.user.id
       });
 

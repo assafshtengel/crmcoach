@@ -4,7 +4,6 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Category } from '@/types/playerEvaluation';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 
@@ -23,8 +22,6 @@ export const CategorySection = ({
   currentQuestionIndex,
   totalQuestions
 }: CategorySectionProps) => {
-  const isMobile = useIsMobile();
-
   const calculateProgress = () => {
     return (Object.keys(scores).length / totalQuestions) * 100;
   };
@@ -33,7 +30,7 @@ export const CategorySection = ({
     return isSelected ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50';
   };
 
-  // בדיקת תקינות - אם אין שאלות או השאלה הנוכחית לא קיימת
+  // בדיקת תקינות - אם אין שאלות
   if (!category.questions || !category.questions.length || !category.questions[0]) {
     return (
       <Card className="p-6">
@@ -43,6 +40,16 @@ export const CategorySection = ({
   }
 
   const currentQuestion = category.questions[0];
+  
+  // ערבוב התשובות
+  const shuffledOptions = React.useMemo(() => {
+    const options = [...currentQuestion.options];
+    for (let i = options.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [options[i], options[j]] = [options[j], options[i]];
+    }
+    return options;
+  }, [currentQuestion.id]);
 
   return (
     <Card className="overflow-hidden bg-gradient-to-br from-white to-gray-50">
@@ -73,7 +80,7 @@ export const CategorySection = ({
               onValueChange={(value) => updateScore(currentQuestion.id, parseInt(value))}
               className="grid gap-3 pt-2"
             >
-              {currentQuestion.options.map((option, index) => (
+              {shuffledOptions.map((option, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 10 }}
