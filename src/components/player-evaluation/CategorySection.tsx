@@ -3,6 +3,8 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import type { Category } from '@/types/playerEvaluation';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { motion } from 'framer-motion';
 
 interface CategorySectionProps {
   category: Category;
@@ -11,6 +13,8 @@ interface CategorySectionProps {
 }
 
 export const CategorySection = ({ category, scores, updateScore }: CategorySectionProps) => {
+  const isMobile = useIsMobile();
+  
   const getScoreColor = (score: number) => {
     if (score >= 8) return 'bg-green-500';
     if (score >= 6) return 'bg-yellow-500';
@@ -23,12 +27,20 @@ export const CategorySection = ({ category, scores, updateScore }: CategorySecti
       <h4 className="text-lg font-medium mb-4">{category.name}</h4>
       <div className="space-y-6">
         {category.questions.map((question) => (
-          <div key={question.id} className="space-y-2">
+          <motion.div
+            key={question.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-2"
+          >
             <Label className="text-sm">{question.text}</Label>
-            <div className="flex gap-2">
+            <div className={`flex gap-2 ${isMobile ? 'flex-wrap justify-center' : ''}`}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                <button
+                <motion.button
                   key={score}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => updateScore(question.id, score)}
                   className={`w-8 h-8 rounded-full text-sm font-medium transition-all duration-200 
                     ${scores[question.id] === score 
@@ -37,10 +49,10 @@ export const CategorySection = ({ category, scores, updateScore }: CategorySecti
                     }`}
                 >
                   {score}
-                </button>
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </Card>
