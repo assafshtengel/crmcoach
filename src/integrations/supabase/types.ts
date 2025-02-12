@@ -57,6 +57,39 @@ export type Database = {
         }
         Relationships: []
       }
+      player_evaluations: {
+        Row: {
+          age: number
+          created_at: string
+          evaluation_date: string
+          id: string
+          player_name: string
+          scores: Json
+          team: string
+          user_id: string
+        }
+        Insert: {
+          age: number
+          created_at?: string
+          evaluation_date: string
+          id?: string
+          player_name: string
+          scores: Json
+          team: string
+          user_id: string
+        }
+        Update: {
+          age?: number
+          created_at?: string
+          evaluation_date?: string
+          id?: string
+          player_name?: string
+          scores?: Json
+          team?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
