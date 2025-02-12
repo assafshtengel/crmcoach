@@ -29,7 +29,8 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
 
       toast({
         title: "הרשמה בוצעה בהצלחה",
-        description: "נשלח אליך מייל לאימות החשבון",
+        description: "נשלח אליך מייל לאימות החשבון. אנא בדוק את תיבת הדואר שלך ולחץ על הקישור לאימות המייל לפני שתנסה להתחבר.",
+        duration: 6000,
       });
       
       onLoginClick(); // Return to login after successful signup

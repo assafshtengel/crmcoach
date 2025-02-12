@@ -28,9 +28,20 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check for email confirmation error
+        if (error.message.includes("Email not confirmed")) {
+          toast({
+            variant: "destructive",
+            title: "המייל לא אומת",
+            description: "אנא בדוק את תיבת הדואר שלך ולחץ על קישור האימות שנשלח אליך",
+          });
+          return;
+        }
+        throw error;
+      }
 
-      navigate("/dashboard");
+      navigate("/");
     } catch (error: any) {
       toast({
         variant: "destructive",
