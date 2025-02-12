@@ -48,7 +48,7 @@ const Dashboard = () => {
       title: "חקירת אלמנטים",
       icon: Search,
       description: "חקירה וניתוח של אלמנטים במשחק",
-      path: "/elements"
+      path: "/player-evaluation"  // שינינו את הנתיב לדף הערכת השחקן
     },
     {
       title: "דוחות טרום משחק",
