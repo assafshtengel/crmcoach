@@ -91,7 +91,6 @@ export const MentalPrepForm = () => {
 
   const handleConfirmSave = async () => {
     try {
-      // שמירת הנתונים בסופבייס
       const { error } = await supabase
         .from('mental_prep_forms')
         .insert([
@@ -151,21 +150,42 @@ export const MentalPrepForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto p-6">
-      <div className="space-y-6">
-        {renderStep()}
-        <div className="flex justify-between mt-6">
+    <Card className="w-full max-w-2xl mx-auto p-8 bg-white/80 backdrop-blur-sm border border-gray-100 shadow-lg rounded-xl">
+      <div className="space-y-8">
+        {/* Progress Bar */}
+        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-primary transition-all duration-300 ease-out"
+            style={{ width: `${(step / 5) * 100}%` }}
+          />
+        </div>
+
+        <div className="bg-white/50 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-50">
+          {renderStep()}
+        </div>
+
+        <div className="flex justify-between mt-8 pt-4 border-t border-gray-100">
           {step > 1 && (
-            <Button onClick={() => setStep(step - 1)} variant="outline">
+            <Button 
+              onClick={() => setStep(step - 1)} 
+              variant="outline"
+              className="hover:bg-gray-50 transition-colors"
+            >
               הקודם
             </Button>
           )}
           {step < 5 ? (
-            <Button onClick={() => setStep(step + 1)} className="mr-auto">
+            <Button 
+              onClick={() => setStep(step + 1)} 
+              className="mr-auto bg-primary hover:bg-primary/90 text-white transition-colors"
+            >
               הבא
             </Button>
           ) : (
-            <Button onClick={handleSubmit} className="mr-auto">
+            <Button 
+              onClick={handleSubmit} 
+              className="mr-auto bg-primary hover:bg-primary/90 text-white transition-colors"
+            >
               שלח
             </Button>
           )}
