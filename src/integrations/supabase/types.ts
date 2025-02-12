@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      mental_prep_forms: {
+        Row: {
+          answers: Json
+          created_at: string
+          current_pressure: string | null
+          email: string
+          full_name: string
+          game_type: string
+          id: string
+          match_date: string
+          opposing_team: string
+          optimal_pressure: string | null
+          phone: string
+          selected_goals: Json
+          selected_states: Json
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          current_pressure?: string | null
+          email: string
+          full_name: string
+          game_type: string
+          id?: string
+          match_date: string
+          opposing_team: string
+          optimal_pressure?: string | null
+          phone: string
+          selected_goals: Json
+          selected_states: Json
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          current_pressure?: string | null
+          email?: string
+          full_name?: string
+          game_type?: string
+          id?: string
+          match_date?: string
+          opposing_team?: string
+          optimal_pressure?: string | null
+          phone?: string
+          selected_goals?: Json
+          selected_states?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

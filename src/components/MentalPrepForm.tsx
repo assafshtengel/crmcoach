@@ -13,11 +13,13 @@ import { QuestionsStep } from './mental-prep/QuestionsStep';
 import { PreviewDialog } from './mental-prep/PreviewDialog';
 import { SaveDialog } from './mental-prep/SaveDialog';
 import html2canvas from 'html2canvas';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 export const MentalPrepForm = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
@@ -92,32 +94,45 @@ export const MentalPrepForm = () => {
 
   const handleConfirmSave = async () => {
     try {
+      const { data: session } = await supabase.auth.getSession();
+      
+      if (!session?.session) {
+        toast({
+          title: "שגיאה",
+          description: "יש להתחבר למערכת כדי לשמור את הדוח.",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
+
       const { error } = await supabase
         .from('mental_prep_forms')
-        .insert([
-          {
-            full_name: formData.fullName,
-            email: formData.email,
-            phone: formData.phone,
-            match_date: formData.matchDate,
-            opposing_team: formData.opposingTeam,
-            game_type: formData.gameType,
-            selected_states: formData.selectedStates,
-            selected_goals: formData.selectedGoals,
-            answers: formData.answers,
-            current_pressure: formData.currentPressure,
-            optimal_pressure: formData.optimalPressure,
-          }
-        ]);
+        .insert({
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          match_date: formData.matchDate,
+          opposing_team: formData.opposingTeam,
+          game_type: formData.gameType,
+          selected_states: formData.selectedStates,
+          selected_goals: formData.selectedGoals,
+          answers: formData.answers,
+          current_pressure: formData.currentPressure,
+          optimal_pressure: formData.optimalPressure,
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving form:', error);
+        throw error;
+      }
 
       toast({
         title: "הדוח נשלח ונשמר בהצלחה!",
         description: "הדוח נשמר במערכת.",
       });
 
-      window.location.href = '/';
+      navigate('/dashboard');
     } catch (error) {
       toast({
         title: "שגיאה",
