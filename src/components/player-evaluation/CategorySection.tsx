@@ -12,95 +12,82 @@ interface CategorySectionProps {
   category: Category;
   scores: Record<string, number>;
   updateScore: (questionId: string, score: number) => void;
+  currentQuestionIndex: number;
+  totalQuestions: number;
 }
 
-export const CategorySection = ({ category, scores, updateScore }: CategorySectionProps) => {
+export const CategorySection = ({ 
+  category, 
+  scores, 
+  updateScore,
+  currentQuestionIndex,
+  totalQuestions
+}: CategorySectionProps) => {
   const isMobile = useIsMobile();
 
   const calculateProgress = () => {
-    const totalQuestions = category.questions.length;
-    const answeredQuestions = category.questions.filter(q => scores[q.id]).length;
-    return (answeredQuestions / totalQuestions) * 100;
+    return (Object.keys(scores).length / totalQuestions) * 100;
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 8) return 'bg-green-500';
-    if (score >= 5) return 'bg-yellow-500';
-    return 'bg-red-500';
+  const getOptionColor = (isSelected: boolean) => {
+    return isSelected ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50';
   };
 
   return (
     <Card className="overflow-hidden bg-gradient-to-br from-white to-gray-50">
       <div className="p-6 space-y-6">
         <div className="space-y-2">
-          <h4 className="text-xl font-semibold">{category.name}</h4>
-          <div className="flex items-center gap-2">
-            <Progress value={calculateProgress()} className="h-2" />
-            <span className="text-sm text-gray-500">
-              {Math.round(calculateProgress())}%
-            </span>
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+              שאלה {currentQuestionIndex + 1} מתוך {totalQuestions}
+            </div>
           </div>
+          <Progress value={calculateProgress()} className="h-2" />
         </div>
 
-        <div className="space-y-8">
-          {category.questions.map((question, qIndex) => (
-            <motion.div
-              key={question.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: qIndex * 0.1 }}
-              className="space-y-4"
+        <motion.div
+          key={category.questions[currentQuestionIndex].id}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          className="space-y-6"
+        >
+          <div className="space-y-4">
+            <Label className="text-lg font-medium leading-tight block">
+              {category.questions[currentQuestionIndex].text}
+            </Label>
+
+            <RadioGroup
+              value={scores[category.questions[currentQuestionIndex].id]?.toString()}
+              onValueChange={(value) => updateScore(category.questions[currentQuestionIndex].id, parseInt(value))}
+              className="grid gap-3 pt-2"
             >
-              <div className="flex items-start gap-4">
-                <div className="bg-primary/10 rounded-full w-8 h-8 flex items-center justify-center shrink-0">
-                  <span className="text-primary font-medium">{qIndex + 1}</span>
-                </div>
-                <Label className="text-base font-medium leading-tight">
-                  {question.text}
-                </Label>
-              </div>
-
-              <RadioGroup
-                value={scores[question.id]?.toString()}
-                onValueChange={(value) => updateScore(question.id, parseInt(value))}
-                className="grid gap-3 pt-2"
-              >
-                {question.options.map((option, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2, delay: index * 0.05 }}
+              {category.questions[currentQuestionIndex].options.map((option, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                >
+                  <Label
+                    htmlFor={`${category.questions[currentQuestionIndex].id}-${index}`}
+                    className={`flex items-center p-4 rounded-lg border-2 transition-all cursor-pointer
+                      ${getOptionColor(scores[category.questions[currentQuestionIndex].id]?.toString() === option.score.toString())}`}
                   >
-                    <Label
-                      htmlFor={`${question.id}-${option.score}`}
-                      className={`flex items-center p-4 rounded-lg border-2 transition-all cursor-pointer
-                        ${scores[question.id]?.toString() === option.score.toString() 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
-                    >
-                      <RadioGroupItem
-                        value={option.score.toString()}
-                        id={`${question.id}-${option.score}`}
-                        className="sr-only"
-                      />
-                      <div className="flex items-center justify-between w-full">
-                        <span className="font-medium">{option.text}</span>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm
-                          ${scores[question.id]?.toString() === option.score.toString()
-                            ? getScoreColor(option.score)
-                            : 'bg-gray-200'}`}
-                        >
-                          {option.score}
-                        </div>
-                      </div>
-                    </Label>
-                  </motion.div>
-                ))}
-              </RadioGroup>
-            </motion.div>
-          ))}
-        </div>
+                    <RadioGroupItem
+                      value={option.score.toString()}
+                      id={`${category.questions[currentQuestionIndex].id}-${index}`}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-medium">{option.text}</span>
+                    </div>
+                  </Label>
+                </motion.div>
+              ))}
+            </RadioGroup>
+          </div>
+        </motion.div>
       </div>
     </Card>
   );

@@ -1,22 +1,23 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Brain, Dumbbell, Trophy } from 'lucide-react';
 import { categories } from '@/types/playerEvaluation';
 import type { EvaluationFormData } from '@/types/playerEvaluation';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { CategorySection } from './CategorySection';
 import { ScoreSummary } from './ScoreSummary';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const PlayerEvaluationForm = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [formData, setFormData] = useState<EvaluationFormData>({
     playerName: '',
     age: '',
@@ -24,6 +25,24 @@ export const PlayerEvaluationForm = () => {
     date: new Date().toISOString().split('T')[0],
     scores: {}
   });
+
+  // ערבוב כל השאלות מכל הקטגוריות
+  const shuffledQuestions = useMemo(() => {
+    const allQuestions = categories.flatMap(category => 
+      category.questions.map(question => ({
+        ...question,
+        categoryId: category.id
+      }))
+    );
+    
+    // פישר-ייטס ערבוב
+    for (let i = allQuestions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+    }
+    
+    return allQuestions;
+  }, []);
 
   const updateFormData = (field: keyof EvaluationFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -34,6 +53,13 @@ export const PlayerEvaluationForm = () => {
       ...prev,
       scores: { ...prev.scores, [questionId]: score }
     }));
+    
+    // מעבר אוטומטי לשאלה הבאה אחרי בחירת תשובה
+    if (currentQuestionIndex < shuffledQuestions.length - 1) {
+      setTimeout(() => {
+        setCurrentQuestionIndex(prev => prev + 1);
+      }, 300);
+    }
   };
 
   const isPersonalInfoComplete = () => {
@@ -41,9 +67,9 @@ export const PlayerEvaluationForm = () => {
   };
 
   const hasMinimumScores = () => {
-    const totalQuestions = categories.reduce((acc, cat) => acc + cat.questions.length, 0);
+    const totalQuestions = shuffledQuestions.length;
     const answeredQuestions = Object.keys(formData.scores).length;
-    return answeredQuestions >= totalQuestions * 0.8; // 80% של השאלות חייבות להיות מענות
+    return answeredQuestions >= totalQuestions * 0.8;
   };
 
   const handleSubmit = async () => {
@@ -142,65 +168,40 @@ export const PlayerEvaluationForm = () => {
           </div>
         );
       case 2:
+        const currentQuestion = shuffledQuestions[currentQuestionIndex];
+        const currentCategory = categories.find(cat => cat.id === currentQuestion.categoryId);
+        
+        if (!currentCategory) return null;
+
         return (
           <div className="space-y-6">
-            <ScrollArea className="h-[60vh] pr-4">
-              <div className="space-y-8">
-                <section className="space-y-6">
-                  <div className="flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-primary" />
-                    <h3 className="text-lg font-semibold">יכולות מנטליות</h3>
-                  </div>
-                  {categories
-                    .filter(cat => cat.type === 'mental')
-                    .map(category => (
-                      <CategorySection
-                        key={category.id}
-                        category={category}
-                        scores={formData.scores}
-                        updateScore={updateScore}
-                      />
-                    ))}
-                </section>
-
-                <section className="space-y-6">
-                  <div className="flex items-center gap-2">
-                    <Dumbbell className="w-5 h-5 text-primary" />
-                    <h3 className="text-lg font-semibold">יכולות גופניות</h3>
-                  </div>
-                  {categories
-                    .filter(cat => cat.type === 'physical')
-                    .map(category => (
-                      <CategorySection
-                        key={category.id}
-                        category={category}
-                        scores={formData.scores}
-                        updateScore={updateScore}
-                      />
-                    ))}
-                </section>
-
-                <section className="space-y-6">
-                  <div className="flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-primary" />
-                    <h3 className="text-lg font-semibold">יכולות מקצועיות</h3>
-                  </div>
-                  {categories
-                    .filter(cat => cat.type === 'professional')
-                    .map(category => (
-                      <CategorySection
-                        key={category.id}
-                        category={category}
-                        scores={formData.scores}
-                        updateScore={updateScore}
-                      />
-                    ))}
-                </section>
-              </div>
-            </ScrollArea>
+            <CategorySection
+              category={{
+                ...currentCategory,
+                questions: [currentQuestion]
+              }}
+              scores={formData.scores}
+              updateScore={updateScore}
+              currentQuestionIndex={currentQuestionIndex}
+              totalQuestions={shuffledQuestions.length}
+            />
             
-            <div className="pt-6 border-t">
-              <ScoreSummary scores={formData.scores} />
+            <div className="flex justify-between pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                disabled={currentQuestionIndex === 0}
+              >
+                <ChevronRight className="ml-2 h-4 w-4" />
+                שאלה קודמת
+              </Button>
+              <Button
+                onClick={() => setCurrentQuestionIndex(prev => Math.min(shuffledQuestions.length - 1, prev + 1))}
+                disabled={currentQuestionIndex === shuffledQuestions.length - 1}
+              >
+                שאלה הבאה
+                <ChevronLeft className="mr-2 h-4 w-4" />
+              </Button>
             </div>
           </div>
         );
@@ -242,6 +243,7 @@ export const PlayerEvaluationForm = () => {
             <Button
               onClick={handleSubmit}
               className="mr-auto"
+              disabled={!hasMinimumScores()}
             >
               שלח הערכה
             </Button>
