@@ -65,7 +65,22 @@ const Reports = () => {
 
       if (error) throw error;
 
-      setReports(data || []);
+      // המרה מפורשת של הנתונים לפורמט הנכון
+      const formattedData: Report[] = (data || []).map(item => ({
+        id: item.id,
+        created_at: item.created_at,
+        full_name: item.full_name,
+        match_date: item.match_date,
+        opposing_team: item.opposing_team,
+        game_type: item.game_type,
+        selected_states: item.selected_states as string[],
+        selected_goals: item.selected_goals as Array<{ goal: string; metric: string }>,
+        answers: item.answers as Record<string, string>,
+        current_pressure: item.current_pressure || undefined,
+        optimal_pressure: item.optimal_pressure || undefined
+      }));
+
+      setReports(formattedData);
     } catch (error) {
       toast({
         title: "שגיאה",
