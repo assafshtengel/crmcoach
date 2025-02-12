@@ -24,7 +24,7 @@ const PlayerEvaluationPage = () => {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/')}
           title="חזור לדשבורד"
         >
           <Home className="h-4 w-4" />
