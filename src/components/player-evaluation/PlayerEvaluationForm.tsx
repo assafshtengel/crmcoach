@@ -25,7 +25,6 @@ export const PlayerEvaluationForm = () => {
     scores: {}
   });
 
-  // ערבוב כל השאלות מכל הקטגוריות
   const shuffledQuestions = useMemo(() => {
     const allQuestions = categories.flatMap(category => 
       category.questions.map(question => ({
@@ -95,25 +94,8 @@ export const PlayerEvaluationForm = () => {
         return;
       }
 
-      // חישוב ממוצעים לפי קטגוריות
-      const categoryAverages: Record<string, number> = {};
-      let totalScore = 0;
-      let categoriesCount = 0;
-
-      categories.forEach(category => {
-        const categoryScores = category.questions
-          .map(q => formData.scores[q.id])
-          .filter(score => score !== undefined);
-
-        if (categoryScores.length > 0) {
-          const average = categoryScores.reduce((a, b) => a + b, 0) / categoryScores.length;
-          categoryAverages[category.id] = parseFloat(average.toFixed(2));
-          totalScore += average;
-          categoriesCount++;
-        }
-      });
-
-      const finalTotalScore = parseFloat((totalScore / categoriesCount).toFixed(2));
+      const categoryAverages = calculateCategoryAverages();
+      const totalScore = calculateTotalScore();
 
       const { error } = await supabase.from('player_evaluations').insert({
         player_name: formData.playerName,
@@ -122,18 +104,18 @@ export const PlayerEvaluationForm = () => {
         evaluation_date: formData.date,
         scores: formData.scores,
         category_averages: categoryAverages,
-        total_score: finalTotalScore,
+        total_score: totalScore,
         user_id: session.user.id
       });
 
       if (error) throw error;
 
+      setStep(4); // מעבר לעמוד הסיכום
+      
       toast({
         title: "ההערכה נשמרה בהצלחה!",
         description: "הנתונים נשמרו במערכת",
       });
-
-      navigate('/dashboard');
     } catch (error) {
       toast({
         title: "שגיאה",
@@ -201,7 +183,7 @@ export const PlayerEvaluationForm = () => {
               <h3 className="text-xl font-semibold mb-4">🔍 איך זה עובד?</h3>
               <ul className="list-disc list-inside mb-6">
                 <li>יש 11 אלמנטים חשובים שכל שחקן כדורגל צריך להיות חזק בהם.</li>
-                <li>לכל אלמנט יש 4 שאלות – תענה עליהן בכנות.</li>
+                <li>לכל אלמנט יש 4 שאלות – תענה עליהן בכנ��ת.</li>
                 <li>בתום השאלון תקבל דוח אישי עם הציונים שלך והמלצות איך להשתפר.</li>
               </ul>
 
@@ -258,9 +240,39 @@ export const PlayerEvaluationForm = () => {
             </div>
           </div>
         );
+      case 4:
+        return (
+          <ScoreSummary
+            scores={formData.scores}
+            playerName={formData.playerName}
+            team={formData.team}
+            date={formData.date}
+            categoryAverages={calculateCategoryAverages()}
+            totalScore={calculateTotalScore()}
+          />
+        );
       default:
         return null;
     }
+  };
+
+  const calculateCategoryAverages = () => {
+    const averages: Record<string, number> = {};
+    categories.forEach(category => {
+      const scores = category.questions
+        .map(q => formData.scores[q.id])
+        .filter(score => score !== undefined);
+      if (scores.length > 0) {
+        averages[category.id] = parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2));
+      }
+    });
+    return averages;
+  };
+
+  const calculateTotalScore = () => {
+    const averages = calculateCategoryAverages();
+    const total = Object.values(averages).reduce((a, b) => a + b, 0);
+    return parseFloat((total / Object.keys(averages).length).toFixed(2));
   };
 
   return (

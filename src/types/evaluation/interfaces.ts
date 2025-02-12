@@ -24,3 +24,18 @@ export interface EvaluationFormData {
   date: string;
   scores: Record<string, number>;
 }
+
+export interface CategoryAverage {
+  score: number;
+  feedback: {
+    strengths: string[];
+    improvements: string[];
+    recommendations: string[];
+  };
+}
+
+export interface EvaluationSummary {
+  totalScore: number;
+  categoryAverages: Record<string, CategoryAverage>;
+  overallFeedback: string;
+}
