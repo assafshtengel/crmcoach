@@ -1,3 +1,4 @@
+
 export interface Category {
   id: string;
   name: string;
@@ -21,7 +22,7 @@ export interface EvaluationFormData {
   age: string;
   team: string;
   date: string;
-  scores: Record<string, number>; // questionId -> score
+  scores: Record<string, number>;
 }
 
 export const categories: Category[] = [
@@ -124,10 +125,46 @@ export const categories: Category[] = [
     name: 'אגרסיביות',
     type: 'mental',
     questions: [
-      { id: 'ag-1', text: 'נלחם על כל כדור בנחישות', options: [] },
-      { id: 'ag-2', text: 'מפגין רוח לחימה חיובית', options: [] },
-      { id: 'ag-3', text: 'לא מוותר גם במצבים קשים', options: [] },
-      { id: 'ag-4', text: 'משתמש בכוח באופן מבוקר וחוקי', options: [] }
+      {
+        id: 'ag-1',
+        text: 'נלחם על כל כדור בנחישות',
+        options: [
+          { text: 'תמיד', score: 10 },
+          { text: 'לרוב', score: 7 },
+          { text: 'לפעמים', score: 4 },
+          { text: 'נמנע ממאבקים', score: 1 }
+        ]
+      },
+      {
+        id: 'ag-2',
+        text: 'מפגין רוח לחימה חיובית',
+        options: [
+          { text: 'באופן קבוע', score: 10 },
+          { text: 'ברוב המשחקים', score: 7 },
+          { text: 'תלוי במצב הרוח', score: 4 },
+          { text: 'לעיתים רחוקות', score: 1 }
+        ]
+      },
+      {
+        id: 'ag-3',
+        text: 'לא מוותר גם במצבים קשים',
+        options: [
+          { text: 'נלחם עד הסוף', score: 10 },
+          { text: 'משתדל להמשיך', score: 7 },
+          { text: 'מתייאש לפעמים', score: 4 },
+          { text: 'מוותר בקלות', score: 1 }
+        ]
+      },
+      {
+        id: 'ag-4',
+        text: 'משתמש בכוח באופן מבוקר וחוקי',
+        options: [
+          { text: 'תמיד בשליטה', score: 10 },
+          { text: 'בדרך כלל', score: 7 },
+          { text: 'לפעמים מאבד שליטה', score: 4 },
+          { text: 'מתקשה לשלוט', score: 1 }
+        ]
+      }
     ]
   },
   {
@@ -135,10 +172,46 @@ export const categories: Category[] = [
     name: 'כושר גופני',
     type: 'physical',
     questions: [
-      { id: 'fi-1', text: 'מסוגל לשמור על קצב גבוה לאורך כל המשחק', options: [] },
-      { id: 'fi-2', text: 'מתאושש במהירות לאחר מאמץ', options: [] },
-      { id: 'fi-3', text: 'שומר על יציבות בריצה ובמגע', options: [] },
-      { id: 'fi-4', text: 'מפגין סיבולת טובה באימונים ומשחקים', options: [] }
+      {
+        id: 'fi-1',
+        text: 'מסוגל לשמור על קצב גבוה לאורך כל המשחק',
+        options: [
+          { text: 'לאורך כל המשחק', score: 10 },
+          { text: 'רוב המשחק', score: 7 },
+          { text: 'עד החצי השני', score: 4 },
+          { text: 'מתעייף מהר', score: 1 }
+        ]
+      },
+      {
+        id: 'fi-2',
+        text: 'מתאושש במהירות לאחר מאמץ',
+        options: [
+          { text: 'התאוששות מהירה', score: 10 },
+          { text: 'התאוששות סבירה', score: 7 },
+          { text: 'לוקח זמן להתאושש', score: 4 },
+          { text: 'התאוששות איטית מאוד', score: 1 }
+        ]
+      },
+      {
+        id: 'fi-3',
+        text: 'שומר על יציבות בריצה ובמגע',
+        options: [
+          { text: 'יציב מאוד', score: 10 },
+          { text: 'יציב ברוב המקרים', score: 7 },
+          { text: 'לא תמיד יציב', score: 4 },
+          { text: 'חסר יציבות', score: 1 }
+        ]
+      },
+      {
+        id: 'fi-4',
+        text: 'מפגין סיבולת טובה באימונים ומשחקים',
+        options: [
+          { text: 'סיבולת מעולה', score: 10 },
+          { text: 'סיבולת טובה', score: 7 },
+          { text: 'סיבולת בינונית', score: 4 },
+          { text: 'סיבולת נמוכה', score: 1 }
+        ]
+      }
     ]
   },
   {
@@ -146,10 +219,46 @@ export const categories: Category[] = [
     name: 'מהירות',
     type: 'physical',
     questions: [
-      { id: 'sp-1', text: 'מפגין מהירות טובה בריצה עם ובלי כדור', options: [] },
-      { id: 'sp-2', text: 'מבצע שינויי כיוון במהירות', options: [] },
-      { id: 'sp-3', text: 'מגיב מהר למצבים משתנים', options: [] },
-      { id: 'sp-4', text: 'שומר על מהירות גבוהה גם בסוף המשחק', options: [] }
+      {
+        id: 'sp-1',
+        text: 'מפגין מהירות טובה בריצה עם ובלי כדור',
+        options: [
+          { text: 'מהיר מאוד', score: 10 },
+          { text: 'מהיר', score: 7 },
+          { text: 'מהירות ממוצעת', score: 4 },
+          { text: 'איטי', score: 1 }
+        ]
+      },
+      {
+        id: 'sp-2',
+        text: 'מבצע שינויי כיוון במהירות',
+        options: [
+          { text: 'זריז מאוד', score: 10 },
+          { text: 'זריז', score: 7 },
+          { text: 'זריזות בינונית', score: 4 },
+          { text: 'לא זריז', score: 1 }
+        ]
+      },
+      {
+        id: 'sp-3',
+        text: 'מגיב מהר למצבים משתנים',
+        options: [
+          { text: 'תגובה מהירה מאוד', score: 10 },
+          { text: 'תגובה טובה', score: 7 },
+          { text: 'תגובה בינונית', score: 4 },
+          { text: 'תגובה איטית', score: 1 }
+        ]
+      },
+      {
+        id: 'sp-4',
+        text: 'שומר על מהירות גבוהה גם בסוף המשחק',
+        options: [
+          { text: 'שומר על מהירות', score: 10 },
+          { text: 'יורד קצת במהירות', score: 7 },
+          { text: 'מאט משמעותית', score: 4 },
+          { text: 'מאוד איטי בסוף', score: 1 }
+        ]
+      }
     ]
   },
   {
@@ -157,10 +266,46 @@ export const categories: Category[] = [
     name: 'כוח מתפרץ',
     type: 'physical',
     questions: [
-      { id: 'po-1', text: 'מפגין זינוק מהיר ופורץ בעוצמה', options: [] },
-      { id: 'po-2', text: 'חזק בהתמודדות אחד על אחד', options: [] },
-      { id: 'po-3', text: 'מנצח בדו-קרבות אוויריים', options: [] },
-      { id: 'po-4', text: 'בועט בעוצמה ובדיוק', options: [] }
+      {
+        id: 'po-1',
+        text: 'מפגין זינוק מהיר ופורץ בעוצמה',
+        options: [
+          { text: 'פריצה מהירה וחזקה', score: 10 },
+          { text: 'פריצה טובה', score: 7 },
+          { text: 'פריצה בינונית', score: 4 },
+          { text: 'פריצה חלשה', score: 1 }
+        ]
+      },
+      {
+        id: 'po-2',
+        text: 'חזק בהתמודדות אחד על אחד',
+        options: [
+          { text: 'חזק מאוד', score: 10 },
+          { text: 'חזק', score: 7 },
+          { text: 'כוח בינוני', score: 4 },
+          { text: 'חלש', score: 1 }
+        ]
+      },
+      {
+        id: 'po-3',
+        text: 'מנצח בדו-קרבות אוויריים',
+        options: [
+          { text: 'כמעט תמיד מנצח', score: 10 },
+          { text: 'לרוב מנצח', score: 7 },
+          { text: 'לפעמים מנצח', score: 4 },
+          { text: 'נדיר שמנצח', score: 1 }
+        ]
+      },
+      {
+        id: 'po-4',
+        text: 'בועט בעוצמה ובדיוק',
+        options: [
+          { text: 'בעיטות חזקות ומדויקות', score: 10 },
+          { text: 'בעיטות טובות', score: 7 },
+          { text: 'בעיטות בינוניות', score: 4 },
+          { text: 'בעיטות חלשות', score: 1 }
+        ]
+      }
     ]
   },
   {
@@ -168,10 +313,46 @@ export const categories: Category[] = [
     name: 'נגיעה ראשונה',
     type: 'professional',
     questions: [
-      { id: 'ft-1', text: 'שולט היטב בכדור בקבלה ראשונה', options: [] },
-      { id: 'ft-2', text: 'מוריד כדורים גבוהים בקלות', options: [] },
-      { id: 'ft-3', text: 'מתמרן היטב במצבים צפופים', options: [] },
-      { id: 'ft-4', text: 'מבצע מסירות מדויקות מנגיעה ראשונה', options: [] }
+      {
+        id: 'ft-1',
+        text: 'שולט היטב בכדור בקבלה ראשונה',
+        options: [
+          { text: 'שליטה מצוינת', score: 10 },
+          { text: 'שליטה טובה', score: 7 },
+          { text: 'שליטה בינונית', score: 4 },
+          { text: 'שליטה חלשה', score: 1 }
+        ]
+      },
+      {
+        id: 'ft-2',
+        text: 'מוריד כדורים גבוהים בקלות',
+        options: [
+          { text: 'הורדה מושלמת', score: 10 },
+          { text: 'הורדה טובה', score: 7 },
+          { text: 'הורדה בינונית', score: 4 },
+          { text: 'מתקשה בהורדה', score: 1 }
+        ]
+      },
+      {
+        id: 'ft-3',
+        text: 'מתמרן היטב במצבים צפופים',
+        options: [
+          { text: 'תמרון מעולה', score: 10 },
+          { text: 'תמרון טוב', score: 7 },
+          { text: 'תמרון בינוני', score: 4 },
+          { text: 'תמרון חלש', score: 1 }
+        ]
+      },
+      {
+        id: 'ft-4',
+        text: 'מבצע מסירות מדויקות מנגיעה ראשונה',
+        options: [
+          { text: 'מסירות מדויקות תמיד', score: 10 },
+          { text: 'מסירות טובות', score: 7 },
+          { text: 'מסירות לא תמיד מדויקות', score: 4 },
+          { text: 'מסירות לא מדויקות', score: 1 }
+        ]
+      }
     ]
   },
   {
@@ -179,10 +360,46 @@ export const categories: Category[] = [
     name: 'חוכמת משחק',
     type: 'professional',
     questions: [
-      { id: 'gi-1', text: 'מבין מצבים טקטיים ומגיב בהתאם', options: [] },
-      { id: 'gi-2', text: 'מזהה ומנצל חולשות של היריב', options: [] },
-      { id: 'gi-3', text: 'מקבל החלטות נכונות תחת לחץ', options: [] },
-      { id: 'gi-4', text: 'קורא נכון את המשחק ומתמקם היטב', options: [] }
+      {
+        id: 'gi-1',
+        text: 'מבין מצבים טקטיים ומגיב בהתאם',
+        options: [
+          { text: 'הבנה טקטית מעולה', score: 10 },
+          { text: 'הבנה טקטית טובה', score: 7 },
+          { text: 'הבנה טקטית בינונית', score: 4 },
+          { text: 'הבנה טקטית חלשה', score: 1 }
+        ]
+      },
+      {
+        id: 'gi-2',
+        text: 'מזהה ומנצל חולשות של היריב',
+        options: [
+          { text: 'מזהה ומנצל תמיד', score: 10 },
+          { text: 'מזהה ומנצל לרוב', score: 7 },
+          { text: 'מזהה לפעמים', score: 4 },
+          { text: 'נדיר שמזהה', score: 1 }
+        ]
+      },
+      {
+        id: 'gi-3',
+        text: 'מקבל החלטות נכונות תחת לחץ',
+        options: [
+          { text: 'החלטות מצוינות', score: 10 },
+          { text: 'החלטות טובות', score: 7 },
+          { text: 'החלטות בינוניות', score: 4 },
+          { text: 'החלטות חלשות', score: 1 }
+        ]
+      },
+      {
+        id: 'gi-4',
+        text: 'קורא נכון את המשחק ומתמקם היטב',
+        options: [
+          { text: 'קריאת משחק מעולה', score: 10 },
+          { text: 'קריאת משחק טובה', score: 7 },
+          { text: 'קריאת משחק בינונית', score: 4 },
+          { text: 'קריאת משחק חלשה', score: 1 }
+        ]
+      }
     ]
   },
   {
@@ -190,10 +407,46 @@ export const categories: Category[] = [
     name: 'עבודת צוות',
     type: 'professional',
     questions: [
-      { id: 'tw-1', text: 'משתף פעולה היטב עם חברי הקבוצה', options: [] },
-      { id: 'tw-2', text: 'מתקשר באופן ברור במהלך המשחק', options: [] },
-      { id: 'tw-3', text: 'תומך בחברי הקבוצה ומעודד אותם', options: [] },
-      { id: 'tw-4', text: 'מבין את תפקידו במערך הקבוצתי', options: [] }
+      {
+        id: 'tw-1',
+        text: 'משתף פעולה היטב עם חברי הקבוצה',
+        options: [
+          { text: 'שיתוף פעולה מעולה', score: 10 },
+          { text: 'שיתוף פעולה טוב', score: 7 },
+          { text: 'שיתוף פעולה בינוני', score: 4 },
+          { text: 'שיתוף פעולה חלש', score: 1 }
+        ]
+      },
+      {
+        id: 'tw-2',
+        text: 'מתקשר באופן ברור במהלך המשחק',
+        options: [
+          { text: 'תקשורת מצוינת', score: 10 },
+          { text: 'תקשורת טובה', score: 7 },
+          { text: 'תקשורת בינונית', score: 4 },
+          { text: 'תקשורת חלשה', score: 1 }
+        ]
+      },
+      {
+        id: 'tw-3',
+        text: 'תומך בחברי הקבוצה ומעודד אותם',
+        options: [
+          { text: 'תמיכה מלאה תמיד', score: 10 },
+          { text: 'תמיכה טובה', score: 7 },
+          { text: 'תמיכה לפעמים', score: 4 },
+          { text: 'נדיר שתומך', score: 1 }
+        ]
+      },
+      {
+        id: 'tw-4',
+        text: 'מבין את תפקידו במערך הקבוצתי',
+        options: [
+          { text: 'הבנה מלאה של התפקיד', score: 10 },
+          { text: 'הבנה טובה', score: 7 },
+          { text: 'הבנה חלקית', score: 4 },
+          { text: 'הבנה מוגבלת', score: 1 }
+        ]
+      }
     ]
   }
 ];
