@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/auth/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import { AuthGuard } from "./components/auth/AuthGuard";
+import PlayerEvaluationPage from "./pages/PlayerEvaluation";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <Admin />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/player-evaluation" 
+            element={
+              <AuthGuard>
+                <PlayerEvaluationPage />
               </AuthGuard>
             } 
           />
