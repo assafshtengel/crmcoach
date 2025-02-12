@@ -1,7 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Gamepad, Search, LogOut, ArrowRight, FileText } from "lucide-react";
+import { Target, Gamepad, Search, LogOut, ArrowRight, FileText, ChartLineUp, FileBarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -20,15 +20,51 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Progress } from "@/components/ui/progress";
+
+interface EvaluationSummary {
+  total_score: number;
+  player_name: string;
+  evaluation_date: string;
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [recentEvaluations, setRecentEvaluations] = useState<EvaluationSummary[]>([]);
+
+  useEffect(() => {
+    const fetchRecentEvaluations = async () => {
+      const { data, error } = await supabase
+        .from('player_evaluations')
+        .select('total_score, player_name, evaluation_date')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (!error && data) {
+        setRecentEvaluations(data);
+      }
+    };
+
+    fetchRecentEvaluations();
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
+  };
+
+  const getScoreColor = (score: number): string => {
+    if (score >= 8) return 'text-purple-600';
+    if (score >= 6) return 'text-orange-500';
+    return 'text-red-500';
+  };
+
+  const getProgressColor = (score: number): string => {
+    if (score >= 8) return 'bg-purple-600';
+    if (score >= 6) return 'bg-orange-500';
+    return 'bg-red-500';
   };
 
   const cards = [
@@ -90,6 +126,51 @@ const Dashboard = () => {
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
+
+        {recentEvaluations.length > 0 && (
+          <Card className="mb-8 bg-gradient-to-br from-white to-purple-50">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <FileBarChart className="h-6 w-6 text-primary" />
+                  הערכות אלמנטים אחרונות
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary hover:text-primary/80"
+                  onClick={() => navigate('/player-evaluation')}
+                >
+                  הערכה חדשה
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentEvaluations.map((evaluation, index) => (
+                  <div key={index} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-medium">{evaluation.player_name}</h3>
+                        <p className="text-sm text-gray-500">
+                          {new Date(evaluation.evaluation_date).toLocaleDateString('he-IL')}
+                        </p>
+                      </div>
+                      <span className={`font-bold text-xl ${getScoreColor(evaluation.total_score)}`}>
+                        {evaluation.total_score.toFixed(1)}
+                      </span>
+                    </div>
+                    <Progress
+                      value={evaluation.total_score * 10}
+                      className={`h-2 rounded-full ${getProgressColor(evaluation.total_score)}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cards.map((card) => (
             <Card 
