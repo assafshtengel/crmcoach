@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { categories } from '@/types/playerEvaluation';
-import { Brain, Dumbbell, Trophy, ChevronDown, ChevronUp, Printer, Award } from 'lucide-react';
+import { Brain, Dumbbell, Trophy, ChevronDown, ChevronUp, Printer, Award, Clock, User, Users } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
   Collapsible,
@@ -144,103 +144,150 @@ export const ScoreSummary = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">סיכום הערכת שחקן</h2>
-        <Button onClick={handlePrint} className="gap-2">
+    <div className="max-w-4xl mx-auto space-y-8">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex justify-between items-center"
+      >
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          סיכום הערכת שחקן
+        </h2>
+        <Button 
+          onClick={handlePrint} 
+          className="gap-2 bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 transition-all duration-300"
+        >
           <Printer className="w-4 h-4" />
           שמור כתמונה
         </Button>
-      </div>
+      </motion.div>
 
-      <div ref={summaryRef} className="space-y-6 bg-white p-8 rounded-lg">
-        <Card className="p-6 border-2 border-primary/20">
-          <div className="flex items-center gap-4 mb-4">
-            <Award className="w-8 h-8 text-primary" />
-            <div>
-              <h3 className="text-xl font-bold">הערכה כללית</h3>
-              <p className={`text-3xl font-bold ${getScoreColor(totalScore)}`}>
-                {totalScore.toFixed(1)}
-              </p>
+      <div ref={summaryRef} className="space-y-8 bg-gradient-to-b from-white to-gray-50 p-8 rounded-xl shadow-xl">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="p-8 border-2 border-primary/20 bg-gradient-to-br from-white to-primary/5">
+            <div className="flex items-center gap-6 mb-6">
+              <div className="p-4 rounded-full bg-primary/10">
+                <Award className="w-12 h-12 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold mb-2">הערכה כללית</h3>
+                <p className={`text-4xl font-bold ${getScoreColor(totalScore)}`}>
+                  {totalScore.toFixed(1)}
+                </p>
+              </div>
             </div>
-          </div>
-          <p className="text-gray-600">{getOverallFeedback(totalScore)}</p>
-        </Card>
+            <p className="text-gray-600 text-lg leading-relaxed">
+              {getOverallFeedback(totalScore)}
+            </p>
+          </Card>
+        </motion.div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <p className="text-gray-600">שם השחקן</p>
-            <p className="font-medium">{playerName}</p>
-          </div>
-          <div className="space-y-2">
-            <p className="text-gray-600">קבוצה</p>
-            <p className="font-medium">{team}</p>
-          </div>
-          <div className="space-y-2">
-            <p className="text-gray-600">תאריך הערכה</p>
-            <p className="font-medium">{new Date(date).toLocaleDateString('he-IL')}</p>
-          </div>
+        <div className="grid gap-6 md:grid-cols-3 bg-white/50 p-6 rounded-xl border border-gray-100">
+          <motion.div 
+            className="space-y-2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex items-center gap-2 text-gray-600">
+              <User className="w-5 h-5" />
+              <p>שם השחקן</p>
+            </div>
+            <p className="font-medium text-lg">{playerName}</p>
+          </motion.div>
+          <motion.div 
+            className="space-y-2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="flex items-center gap-2 text-gray-600">
+              <Users className="w-5 h-5" />
+              <p>קבוצה</p>
+            </div>
+            <p className="font-medium text-lg">{team}</p>
+          </motion.div>
+          <motion.div 
+            className="space-y-2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="flex items-center gap-2 text-gray-600">
+              <Clock className="w-5 h-5" />
+              <p>תאריך הערכה</p>
+            </div>
+            <p className="font-medium text-lg">{new Date(date).toLocaleDateString('he-IL')}</p>
+          </motion.div>
         </div>
 
-        <div className="grid gap-6">
-          {['mental', 'physical', 'professional'].map((type) => (
+        <div className="grid gap-8">
+          {['mental', 'physical', 'professional'].map((type, typeIndex) => (
             <motion.div 
               key={type}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="space-y-4"
+              transition={{ duration: 0.5, delay: typeIndex * 0.2 }}
+              className="space-y-6 bg-white p-6 rounded-xl shadow-sm"
             >
-              <div className="flex items-center gap-2">
-                {getCategoryIcon(type as 'mental' | 'physical' | 'professional')}
-                <h4 className="font-semibold">
+              <div className="flex items-center gap-3 border-b pb-4">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  {getCategoryIcon(type as 'mental' | 'physical' | 'professional')}
+                </div>
+                <h4 className="text-xl font-bold">
                   {type === 'mental' && 'יכולות מנטליות'}
                   {type === 'physical' && 'יכולות גופניות'}
                   {type === 'professional' && 'יכולות מקצועיות'}
                 </h4>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {categories
                   .filter(cat => cat.type === type)
                   .map(cat => (
                     <Collapsible key={cat.id}>
-                      <div className="space-y-2">
+                      <div className="space-y-4 bg-gray-50 p-4 rounded-lg hover:bg-gray-50/80 transition-colors duration-200">
                         <div className="flex justify-between items-center">
-                          <span className="font-medium">{cat.name}</span>
-                          <span className={`font-bold ${getScoreColor(categoryAverages[cat.id] || 0)}`}>
+                          <span className="font-semibold text-lg">{cat.name}</span>
+                          <span className={`font-bold text-xl ${getScoreColor(categoryAverages[cat.id] || 0)}`}>
                             {(categoryAverages[cat.id] || 0).toFixed(1)}
                           </span>
                         </div>
                         <Progress 
                           value={(categoryAverages[cat.id] || 0) * 10} 
-                          className="h-2"
+                          className="h-3 rounded-full"
                           style={{ 
                             backgroundColor: '#f3f4f6',
                             '--progress-background': getScoreColor(categoryAverages[cat.id] || 0)
                           } as React.CSSProperties}
                         />
                         {getFeedbackSection(getFeedbackForCategory(cat.id, categoryAverages[cat.id] || 0))}
-                        <CollapsibleTrigger className="w-full flex items-center justify-between pt-2 text-sm text-gray-600 hover:text-gray-900">
-                          <span>הצג פירוט שאלות ותשובות</span>
+                        <CollapsibleTrigger className="w-full flex items-center justify-between pt-2 text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200">
+                          <span className="font-medium">הצג פירוט שאלות ותשובות</span>
                           <ChevronDown className="w-4 h-4" />
                         </CollapsibleTrigger>
                       </div>
                       
-                      <CollapsibleContent className="pt-2">
-                        <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                      <CollapsibleContent className="pt-4">
+                        <div className="bg-white p-6 rounded-lg space-y-6 shadow-inner">
                           {cat.questions.map((question, idx) => {
                             const score = scores[question.id] || 0;
                             const selectedOption = question.options.find(opt => opt.score === score);
                             return (
-                              <div key={idx} className="space-y-1">
-                                <p className="font-medium">{question.text}</p>
-                                <p className="text-sm text-gray-600">
-                                  תשובה: {selectedOption?.text || 'לא נענה'}
-                                  <span className={`mr-2 font-medium ${getScoreColor(score)}`}>
-                                    ({score}/10)
+                              <div key={idx} className="space-y-2 pb-4 border-b last:border-0">
+                                <p className="font-medium text-gray-800">{question.text}</p>
+                                <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                                  <p className="text-sm text-gray-600">
+                                    תשובה: {selectedOption?.text || 'לא נענה'}
+                                  </p>
+                                  <span className={`font-medium ${getScoreColor(score)} px-3 py-1 rounded-full bg-gray-100`}>
+                                    {score}/10
                                   </span>
-                                </p>
+                                </div>
                               </div>
                             );
                           })}
