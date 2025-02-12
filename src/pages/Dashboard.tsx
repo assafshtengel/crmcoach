@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, Gamepad, Search, LogOut, ArrowRight, FileText, ChartLine } from "lucide-react";
@@ -32,7 +33,7 @@ interface EvaluationSummary {
   total_score: number | null;
   player_name: string;
   evaluation_date: string;
-  category_averages?: Record<string, number>;
+  category_averages?: Record<string, number> | null;
 }
 
 interface CategoryName {
@@ -46,7 +47,7 @@ const categoryNames: CategoryName[] = [
   { id: 'aggressiveness', name: 'אגרסיביות' },
   { id: 'energy', name: 'אנרגיה' },
   { id: 'one-on-one-defense', name: 'הגנה אישית' },
-  { id: 'scoring', name: 'קליעה' },
+  { id: 'scoring', name: 'בעיטה לשער' },
   { id: 'decision-making', name: 'קבלת החלטות' },
   { id: 'self-confidence', name: 'ביטחון עצמי' },
   { id: 'initiative', name: 'יוזמה' },
@@ -69,7 +70,7 @@ const Dashboard = () => {
         .limit(3);
 
       if (!error && data) {
-        setRecentEvaluations(data);
+        setRecentEvaluations(data as EvaluationSummary[]);
       }
     };
 
