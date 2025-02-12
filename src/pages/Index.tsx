@@ -50,7 +50,7 @@ const Index = () => {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/")}
               className="transition-transform hover:scale-105"
             >
               <LayoutDashboard className="h-4 w-4" />

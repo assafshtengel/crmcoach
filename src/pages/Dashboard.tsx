@@ -36,7 +36,7 @@ const Dashboard = () => {
       title: "טרום משחק",
       icon: Gamepad,
       description: "הכנה מנטלית לקראת המשחק",
-      path: "/"
+      path: "/form"
     },
     {
       title: "יעדים",
@@ -48,7 +48,7 @@ const Dashboard = () => {
       title: "חקירת אלמנטים",
       icon: Search,
       description: "חקירה וניתוח של אלמנטים במשחק",
-      path: "/player-evaluation"  // שינינו את הנתיב לדף הערכת השחקן
+      path: "/player-evaluation"
     },
     {
       title: "דוחות טרום משחק",
