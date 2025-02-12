@@ -1,7 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Gamepad, Search, LogOut, ArrowRight, FileText, ChartLineUp, FileBarChart } from "lucide-react";
+import { Target, Gamepad, Search, LogOut, ArrowRight, FileText, ChartLine, FileBarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -132,7 +132,7 @@ const Dashboard = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl flex items-center gap-2">
-                  <FileBarChart className="h-6 w-6 text-primary" />
+                  <ChartLine className="h-6 w-6 text-primary" />
                   הערכות אלמנטים אחרונות
                 </CardTitle>
                 <Button
