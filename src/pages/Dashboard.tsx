@@ -1,7 +1,6 @@
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Gamepad, Search, LogOut, ArrowRight, FileText, ChartLine } from "lucide-react";
+import { Target, Gamepad, Search, LogOut, ArrowRight, FileText, ChartLine, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -58,24 +57,37 @@ const categoryNames: CategoryName[] = [
 const Dashboard = () => {
   const navigate = useNavigate();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null);
   const [recentEvaluations, setRecentEvaluations] = useState<EvaluationSummary[]>([]);
   const [openEvaluation, setOpenEvaluation] = useState<number | null>(null);
 
   useEffect(() => {
-    const fetchRecentEvaluations = async () => {
-      const { data, error } = await supabase
-        .from('player_evaluations')
-        .select('total_score, player_name, evaluation_date, category_averages')
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      if (!error && data) {
-        setRecentEvaluations(data as EvaluationSummary[]);
-      }
-    };
-
     fetchRecentEvaluations();
   }, []);
+
+  const fetchRecentEvaluations = async () => {
+    const { data, error } = await supabase
+      .from('player_evaluations')
+      .select('id, total_score, player_name, evaluation_date, category_averages')
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (!error && data) {
+      setRecentEvaluations(data as EvaluationSummary[]);
+    }
+  };
+
+  const handleDeleteEvaluation = async (id: string) => {
+    const { error } = await supabase
+      .from('player_evaluations')
+      .delete()
+      .eq('id', id);
+
+    if (!error) {
+      setRecentEvaluations(prev => prev.filter(evaluation => evaluation.id !== id));
+      setShowDeleteDialog(null);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -188,7 +200,7 @@ const Dashboard = () => {
               <div className="space-y-4">
                 {recentEvaluations.map((evaluation, index) => (
                   <Collapsible
-                    key={index}
+                    key={evaluation.id}
                     open={openEvaluation === index}
                     onOpenChange={() => setOpenEvaluation(openEvaluation === index ? null : index)}
                   >
@@ -204,6 +216,17 @@ const Dashboard = () => {
                           <span className={`font-bold text-xl ${getScoreColor(evaluation.total_score)}`}>
                             {formatScore(evaluation.total_score)}
                           </span>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="text-destructive hover:bg-destructive/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowDeleteDialog(evaluation.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                           <CollapsibleTrigger asChild>
                             <Button variant="ghost" size="sm">
                               {openEvaluation === index ? (
@@ -279,6 +302,26 @@ const Dashboard = () => {
             <AlertDialogFooter>
               <AlertDialogCancel>לא</AlertDialogCancel>
               <AlertDialogAction onClick={handleLogout}>כן, התנתק</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={!!showDeleteDialog} onOpenChange={() => setShowDeleteDialog(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>האם אתה בטוח שברצונך למחוק הערכה זו?</AlertDialogTitle>
+              <AlertDialogDescription>
+                פעולה זו תמחק לצמיתות את כל הנתונים של הערכה זו ולא ניתן יהיה לשחזר אותם
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive hover:bg-destructive/90"
+                onClick={() => showDeleteDialog && handleDeleteEvaluation(showDeleteDialog)}
+              >
+                מחק הערכה
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
