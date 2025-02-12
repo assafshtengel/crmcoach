@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -287,11 +288,12 @@ export const PlayerEvaluationForm = () => {
 
         {renderStep()}
 
-        <div className="flex justify-between pt-4 border-t">
+        <div className={`flex ${step === 3 && currentQuestionIndex === shuffledQuestions.length - 1 ? 'justify-center' : 'justify-between'} pt-4 border-t`}>
           {step > 1 && (
             <Button
               onClick={() => setStep(step - 1)}
               variant="outline"
+              className={step === 3 && currentQuestionIndex === shuffledQuestions.length - 1 ? 'hidden' : ''}
             >
               חזור
             </Button>
@@ -307,7 +309,7 @@ export const PlayerEvaluationForm = () => {
           ) : (
             <Button
               onClick={handleSubmit}
-              className="mr-auto"
+              className={`${currentQuestionIndex === shuffledQuestions.length - 1 ? 'text-xl px-8 py-6' : 'mr-auto'}`}
               disabled={!hasMinimumScores()}
             >
               שלח הערכה
