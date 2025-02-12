@@ -19,25 +19,52 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface EvaluationSummary {
   total_score: number | null;
   player_name: string;
   evaluation_date: string;
+  category_averages?: Record<string, number>;
 }
+
+interface CategoryName {
+  id: string;
+  name: string;
+}
+
+const categoryNames: CategoryName[] = [
+  { id: 'pressure', name: 'לחץ' },
+  { id: 'motivation', name: 'מוטיבציה' },
+  { id: 'aggressiveness', name: 'אגרסיביות' },
+  { id: 'energy', name: 'אנרגיה' },
+  { id: 'one-on-one-defense', name: 'הגנה אישית' },
+  { id: 'scoring', name: 'קליעה' },
+  { id: 'decision-making', name: 'קבלת החלטות' },
+  { id: 'self-confidence', name: 'ביטחון עצמי' },
+  { id: 'initiative', name: 'יוזמה' },
+  { id: 'self-control', name: 'שליטה עצמית' },
+  { id: 'clear-goals', name: 'מטרות ברורות' }
+];
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [recentEvaluations, setRecentEvaluations] = useState<EvaluationSummary[]>([]);
+  const [openEvaluation, setOpenEvaluation] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchRecentEvaluations = async () => {
       const { data, error } = await supabase
         .from('player_evaluations')
-        .select('total_score, player_name, evaluation_date')
+        .select('total_score, player_name, evaluation_date, category_averages')
         .order('created_at', { ascending: false })
         .limit(3);
 
@@ -159,23 +186,61 @@ const Dashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 {recentEvaluations.map((evaluation, index) => (
-                  <div key={index} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="font-medium">{evaluation.player_name}</h3>
-                        <p className="text-sm text-gray-500">
-                          {new Date(evaluation.evaluation_date).toLocaleDateString('he-IL')}
-                        </p>
+                  <Collapsible
+                    key={index}
+                    open={openEvaluation === index}
+                    onOpenChange={() => setOpenEvaluation(openEvaluation === index ? null : index)}
+                  >
+                    <div className="bg-white p-4 rounded-lg shadow-sm space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h3 className="font-medium">{evaluation.player_name}</h3>
+                          <p className="text-sm text-gray-500">
+                            {new Date(evaluation.evaluation_date).toLocaleDateString('he-IL')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className={`font-bold text-xl ${getScoreColor(evaluation.total_score)}`}>
+                            {formatScore(evaluation.total_score)}
+                          </span>
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              {openEvaluation === index ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </CollapsibleTrigger>
+                        </div>
                       </div>
-                      <span className={`font-bold text-xl ${getScoreColor(evaluation.total_score)}`}>
-                        {formatScore(evaluation.total_score)}
-                      </span>
+                      <Progress
+                        value={getProgressValue(evaluation.total_score)}
+                        className={`h-2 rounded-full ${getProgressColor(evaluation.total_score)}`}
+                      />
+                      <CollapsibleContent>
+                        <div className="mt-4 space-y-3 pt-3 border-t">
+                          {categoryNames.map((category) => {
+                            const score = evaluation.category_averages?.[category.id] ?? null;
+                            return (
+                              <div key={category.id} className="flex items-center justify-between">
+                                <span className="text-sm font-medium">{category.name}</span>
+                                <div className="flex items-center gap-3 flex-1 max-w-[200px]">
+                                  <Progress
+                                    value={getProgressValue(score)}
+                                    className={`h-2 rounded-full ${getProgressColor(score)}`}
+                                  />
+                                  <span className={`text-sm font-medium w-12 text-left ${getScoreColor(score)}`}>
+                                    {formatScore(score)}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </CollapsibleContent>
                     </div>
-                    <Progress
-                      value={getProgressValue(evaluation.total_score)}
-                      className={`h-2 rounded-full ${getProgressColor(evaluation.total_score)}`}
-                    />
-                  </div>
+                  </Collapsible>
                 ))}
               </div>
             </CardContent>
