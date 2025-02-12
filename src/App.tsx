@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -23,10 +23,10 @@ const App = () => (
         <Routes>
           <Route path="/auth" element={<AuthPage />} />
           <Route 
-            path="/dashboard" 
+            path="/form" 
             element={
               <AuthGuard>
-                <Dashboard />
+                <Index />
               </AuthGuard>
             } 
           />
@@ -34,7 +34,7 @@ const App = () => (
             path="/" 
             element={
               <AuthGuard>
-                <Index />
+                <Dashboard />
               </AuthGuard>
             } 
           />
