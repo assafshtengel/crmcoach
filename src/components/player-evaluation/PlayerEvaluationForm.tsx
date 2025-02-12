@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -203,7 +202,6 @@ export const PlayerEvaluationForm = () => {
               <ul className="list-disc list-inside mb-6">
                 <li>יש 11 אלמנטים חשובים שכל שחקן כדורגל צריך להיות חזק בהם.</li>
                 <li>לכל אלמנט יש 4 שאלות – תענה עליהן בכנות.</li>
-                <li>לכל תשובה יש ניקוד מ-1 עד 10.</li>
                 <li>בתום השאלון תקבל דוח אישי עם הציונים שלך והמלצות איך להשתפר.</li>
               </ul>
 
