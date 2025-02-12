@@ -60,32 +60,38 @@ export type Database = {
       player_evaluations: {
         Row: {
           age: number
+          category_averages: Json | null
           created_at: string
           evaluation_date: string
           id: string
           player_name: string
           scores: Json
           team: string
+          total_score: number | null
           user_id: string
         }
         Insert: {
           age: number
+          category_averages?: Json | null
           created_at?: string
           evaluation_date: string
           id?: string
           player_name: string
           scores: Json
           team: string
+          total_score?: number | null
           user_id: string
         }
         Update: {
           age?: number
+          category_averages?: Json | null
           created_at?: string
           evaluation_date?: string
           id?: string
           player_name?: string
           scores?: Json
           team?: string
+          total_score?: number | null
           user_id?: string
         }
         Relationships: []
