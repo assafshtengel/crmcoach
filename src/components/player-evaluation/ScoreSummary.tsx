@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
@@ -321,11 +320,7 @@ export const ScoreSummary = ({
                         </div>
                         <Progress 
                           value={(categoryAverages[cat.id] || 0) * 10} 
-                          className="h-3 rounded-full"
-                          style={{
-                            backgroundColor: '#f3f4f6'
-                          }}
-                          indicatorClassName={getProgressColor(categoryAverages[cat.id] || 0)}
+                          className={`h-3 rounded-full bg-gray-100 ${getProgressColor(categoryAverages[cat.id] || 0)}`}
                         />
                         {getFeedbackSection(getFeedbackForCategory(cat.id, categoryAverages[cat.id] || 0))}
                         <CollapsibleTrigger className="w-full flex items-center justify-between pt-2 text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200">
@@ -365,4 +360,3 @@ export const ScoreSummary = ({
     </div>
   );
 };
-
