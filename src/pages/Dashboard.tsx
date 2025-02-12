@@ -1,7 +1,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Gamepad, Search, LogOut, ArrowRight } from "lucide-react";
+import { Target, Gamepad, Search, LogOut, ArrowRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -49,6 +49,12 @@ const Dashboard = () => {
       icon: Search,
       description: "חקירה וניתוח של אלמנטים במשחק",
       path: "/elements"
+    },
+    {
+      title: "דוחות טרום משחק",
+      icon: FileText,
+      description: "צפייה בכל הדוחות שהוזנו למערכת",
+      path: "/reports"
     }
   ];
 
