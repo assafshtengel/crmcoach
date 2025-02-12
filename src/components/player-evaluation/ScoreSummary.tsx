@@ -4,7 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { categories } from '@/types/playerEvaluation';
-import { Brain, Dumbbell, Trophy, ChevronDown, ChevronUp, Printer, Award, Clock, User, Users } from 'lucide-react';
+import { Brain, Dumbbell, Trophy, ChevronDown, ChevronUp, Printer, Award, Clock, User, Users, LineChart } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import {
   Collapsible,
@@ -36,7 +36,51 @@ const getFeedbackForCategory = (categoryId: string, score: number): CategoryAver
       improvements: score >= 6 && score < 8 ? ['חיזוק היכולת להתמודד עם אתגרים', 'שיפור העקביות במוטיבציה'] : [],
       recommendations: score < 6 ? ['הצבת יעדים קצרי טווח', 'עבודה על חשיבה חיובית'] : []
     },
-    // ... המשך ההגדרות לכל הקטגוריות
+    'aggressiveness': {
+      strengths: score >= 8 ? ['אגרסיביות מבוקרת ויעילה', 'יכולת טובה במאבקים פיזיים'] : [],
+      improvements: score >= 6 && score < 8 ? ['שיפור היכולת להשתמש בגוף', 'חיזוק הביטחון במאבקים'] : [],
+      recommendations: score < 6 ? ['אימוני כוח וחיזוק הגוף', 'תרגול מאבקים מבוקרים באימונים'] : []
+    },
+    'energy': {
+      strengths: score >= 8 ? ['סיבולת גבוהה לאורך המשחק', 'יכולת שמירה על אנרגיה'] : [],
+      improvements: score >= 6 && score < 8 ? ['שיפור היכולת להתאושש', 'עבודה על חלוקת מאמצים'] : [],
+      recommendations: score < 6 ? ['אימוני סיבולת וכושר', 'שיפור התזונה והמנוחה'] : []
+    },
+    'one-on-one-defense': {
+      strengths: score >= 8 ? ['יכולת הגנה אישית מעולה', 'קריאת משחק טובה בהגנה'] : [],
+      improvements: score >= 6 && score < 8 ? ['שיפור מיקום וטיימינג', 'עבודה על תנועות רגליים'] : [],
+      recommendations: score < 6 ? ['תרגול הגנה אישית באימונים', 'למידה מסרטוני וידאו של מגנים מובילים'] : []
+    },
+    'scoring': {
+      strengths: score >= 8 ? ['יכולת סיום מצוינת', 'בחירת החלטות טובה במצבי הבקעה'] : [],
+      improvements: score >= 6 && score < 8 ? ['שיפור דיוק בבעיטות', 'עבודה על קור רוח בסיום'] : [],
+      recommendations: score < 6 ? ['אימוני בעיטות אישיים', 'תרגול סיטואציות סיום'] : []
+    },
+    'decision-making': {
+      strengths: score >= 8 ? ['קבלת החלטות מהירה ונכונה', 'ראיית משחק טובה'] : [],
+      improvements: score >= 6 && score < 8 ? ['שיפור מהירות החשיבה', 'עבודה על קריאת משחק'] : [],
+      recommendations: score < 6 ? ['ניתוח משחקים בוידאו', 'תרגול סיטואציות משחק'] : []
+    },
+    'self-confidence': {
+      strengths: score >= 8 ? ['ביטחון עצמי גבוה', 'יכולת מנהיגות טובה'] : [],
+      improvements: score >= 6 && score < 8 ? ['חיזוק הביטחון במצבי לחץ', 'עבודה על יציבות מנטלית'] : [],
+      recommendations: score < 6 ? ['עבודה עם פסיכולוג ספורט', 'הצבת יעדים ריאליים'] : []
+    },
+    'initiative': {
+      strengths: score >= 8 ? ['יוזמה גבוהה במשחק', 'השפעה חיובית על הקבוצה'] : [],
+      improvements: score >= 6 && score < 8 ? ['שיפור היכולת להוביל מהלכים', 'עבודה על קריאת משחק'] : [],
+      recommendations: score < 6 ? ['תרגול מצבי משחק יזומים', 'פיתוח מנהיגות באימונים'] : []
+    },
+    'self-control': {
+      strengths: score >= 8 ? ['שליטה עצמית מצוינת', 'התמודדות טובה עם לחץ'] : [],
+      improvements: score >= 6 && score < 8 ? ['שיפור היכולת לשלוט ברגשות', 'עבודה על ריכוז'] : [],
+      recommendations: score < 6 ? ['תרגילי נשימה ומדיטציה', 'עבודה על טכניקות הרגעה'] : []
+    },
+    'clear-goals': {
+      strengths: score >= 8 ? ['הצבת מטרות ברורה', 'מיקוד גבוה בהשגת יעדים'] : [],
+      improvements: score >= 6 && score < 8 ? ['שיפור תכנון המטרות', 'עבודה על מעקב אחר התקדמות'] : [],
+      recommendations: score < 6 ? ['בניית תוכנית יעדים מסודרת', 'עבודה עם מאמן אישי'] : []
+    }
   };
   
   return feedbacks[categoryId] || {
@@ -50,8 +94,12 @@ const getFeedbackSection = (feedback: CategoryAverage['feedback']) => {
   if (feedback.strengths.length > 0) {
     return (
       <div className="mt-2 space-y-1">
+        <p className="text-sm text-gray-600 font-medium mb-1">חוזקות:</p>
         {feedback.strengths.map((strength, idx) => (
-          <p key={idx} className="text-green-600 text-sm">✓ {strength}</p>
+          <p key={idx} className="text-green-600 text-sm flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
+            {strength}
+          </p>
         ))}
       </div>
     );
@@ -59,8 +107,12 @@ const getFeedbackSection = (feedback: CategoryAverage['feedback']) => {
   if (feedback.improvements.length > 0) {
     return (
       <div className="mt-2 space-y-1">
+        <p className="text-sm text-gray-600 font-medium mb-1">נקודות לשיפור:</p>
         {feedback.improvements.map((improvement, idx) => (
-          <p key={idx} className="text-orange-600 text-sm">⚡ {improvement}</p>
+          <p key={idx} className="text-orange-600 text-sm flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-600" />
+            {improvement}
+          </p>
         ))}
       </div>
     );
@@ -68,8 +120,12 @@ const getFeedbackSection = (feedback: CategoryAverage['feedback']) => {
   if (feedback.recommendations.length > 0) {
     return (
       <div className="mt-2 space-y-1">
+        <p className="text-sm text-gray-600 font-medium mb-1">המלצות:</p>
         {feedback.recommendations.map((recommendation, idx) => (
-          <p key={idx} className="text-red-600 text-sm">↗ {recommendation}</p>
+          <p key={idx} className="text-red-600 text-sm flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
+            {recommendation}
+          </p>
         ))}
       </div>
     );
@@ -132,6 +188,12 @@ export const ScoreSummary = ({
     if (score >= 8) return 'text-purple-600';
     if (score >= 6) return 'text-orange-500';
     return 'text-red-500';
+  };
+
+  const getProgressColor = (score: number): string => {
+    if (score >= 8) return 'bg-purple-600';
+    if (score >= 6) return 'bg-orange-500';
+    return 'bg-red-500';
   };
 
   const getOverallFeedback = (score: number): string => {
@@ -260,10 +322,10 @@ export const ScoreSummary = ({
                         <Progress 
                           value={(categoryAverages[cat.id] || 0) * 10} 
                           className="h-3 rounded-full"
-                          style={{ 
-                            backgroundColor: '#f3f4f6',
-                            '--progress-background': getScoreColor(categoryAverages[cat.id] || 0)
-                          } as React.CSSProperties}
+                          style={{
+                            backgroundColor: '#f3f4f6'
+                          }}
+                          indicatorClassName={getProgressColor(categoryAverages[cat.id] || 0)}
                         />
                         {getFeedbackSection(getFeedbackForCategory(cat.id, categoryAverages[cat.id] || 0))}
                         <CollapsibleTrigger className="w-full flex items-center justify-between pt-2 text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200">
@@ -303,3 +365,4 @@ export const ScoreSummary = ({
     </div>
   );
 };
+
