@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Gamepad, Search, LogOut, ArrowRight, FileText, ChartLine, Trash2 } from "lucide-react";
+import { Target, Gamepad, Search, LogOut, ArrowRight, FileText, ChartLine, Trash2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -127,10 +127,16 @@ const Dashboard = () => {
       path: "/form"
     },
     {
-      title: "יעדים",
+      title: "יצירת החוזה העתידי שלי",
       icon: Target,
-      description: "הגדרת יעדים קצרים וארוכי טווח",
+      description: "הגדרת היעדים העתידיים שלך",
       path: "/huze"
+    },
+    {
+      title: "יצירת יעד ל-30-90 ימים",
+      icon: Calendar,
+      description: "הגדרת יעדים לטווח הקצר והבינוני",
+      path: "/short-term-goals"
     },
     {
       title: "חקירת אלמנטים",
