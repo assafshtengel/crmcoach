@@ -29,16 +29,18 @@ interface Task {
   description?: string;
 }
 
-interface DailyChallengeState {
+interface DailyChallengeData {
   id?: string;
-  currentDay: number;
-  totalDays: number;
-  dailyTasks: Task[];
-  weeklyTasks: Task[];
-  streakCount: number;
+  user_id: string;
+  goal_category: string;
+  custom_goal?: string;
+  daily_tasks: Task[];
+  weekly_tasks: Task[];
+  current_day: number;
+  streak_count: number;
   notes?: string;
-  goalCategory: string;
-  customGoal?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const generateTasksForGoal = (category: string, customGoal?: string): { daily: Task[], weekly: Task[] } => {
@@ -99,7 +101,6 @@ const DailyChallenge = () => {
   const { categoryId, customGoal } = location.state || {};
   const [notes, setNotes] = useState("");
 
-  // שליפת האתגר הקיים או יצירת אתגר חדש
   const { data: challenge, isLoading } = useQuery({
     queryKey: ['dailyChallenge'],
     queryFn: async () => {
@@ -110,14 +111,14 @@ const DailyChallenge = () => {
         .from('daily_challenges')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (existingChallenge) {
-        return existingChallenge;
+        return existingChallenge as DailyChallengeData;
       }
 
       const tasks = generateTasksForGoal(categoryId, customGoal);
-      const newChallenge = {
+      const newChallenge: Omit<DailyChallengeData, 'id' | 'created_at' | 'updated_at'> = {
         user_id: user.id,
         goal_category: categoryId,
         custom_goal: customGoal,
@@ -130,16 +131,16 @@ const DailyChallenge = () => {
 
       const { data } = await supabase
         .from('daily_challenges')
-        .insert([newChallenge])
+        .insert(newChallenge)
         .select()
         .single();
 
-      return data;
+      return data as DailyChallengeData;
     }
   });
 
   const updateChallenge = useMutation({
-    mutationFn: async (updatedData: Partial<DailyChallengeState>) => {
+    mutationFn: async (updatedData: Partial<DailyChallengeData>) => {
       if (!challenge?.id) return;
       
       const { data, error } = await supabase
@@ -150,7 +151,7 @@ const DailyChallenge = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as DailyChallengeData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyChallenge'] });
@@ -170,7 +171,7 @@ const DailyChallenge = () => {
   const toggleDailyTask = (taskId: string) => {
     if (!challenge?.daily_tasks) return;
     
-    const updatedTasks = challenge.daily_tasks.map(task =>
+    const updatedTasks = (challenge.daily_tasks as Task[]).map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
     );
 
@@ -180,7 +181,7 @@ const DailyChallenge = () => {
   const toggleWeeklyTask = (taskId: string) => {
     if (!challenge?.weekly_tasks) return;
 
-    const updatedTasks = challenge.weekly_tasks.map(task =>
+    const updatedTasks = (challenge.weekly_tasks as Task[]).map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
     );
 
@@ -196,9 +197,9 @@ const DailyChallenge = () => {
   }
 
   const dailyProgress = challenge?.daily_tasks ? 
-    (challenge.daily_tasks.filter(t => t.completed).length / challenge.daily_tasks.length) * 100 : 0;
+    ((challenge.daily_tasks as Task[]).filter(t => t.completed).length / (challenge.daily_tasks as Task[]).length) * 100 : 0;
   const weeklyProgress = challenge?.weekly_tasks ?
-    (challenge.weekly_tasks.filter(t => t.completed).length / challenge.weekly_tasks.length) * 100 : 0;
+    ((challenge.weekly_tasks as Task[]).filter(t => t.completed).length / (challenge.weekly_tasks as Task[]).length) * 100 : 0;
   const totalProgress = ((challenge?.current_day || 1) - 1) / 30 * 100;
 
   return (
@@ -249,12 +250,13 @@ const DailyChallenge = () => {
                     משימות יומיות
                   </h2>
                   <div className="text-sm text-gray-600">
-                    {challenge?.daily_tasks?.filter(t => t.completed).length || 0}/{challenge?.daily_tasks?.length || 0}
+                    {(challenge?.daily_tasks as Task[])?.filter(t => t.completed).length || 0}/
+                    {(challenge?.daily_tasks as Task[])?.length || 0}
                   </div>
                 </div>
                 <Progress value={dailyProgress} className="h-2" />
                 <div className="space-y-3">
-                  {challenge?.daily_tasks?.map((task) => (
+                  {(challenge?.daily_tasks as Task[])?.map((task) => (
                     <div key={task.id} className="flex items-start gap-3 p-3 rounded-lg bg-white shadow-sm">
                       <Checkbox
                         checked={task.completed}
@@ -278,12 +280,13 @@ const DailyChallenge = () => {
                     משימות שבועיות
                   </h2>
                   <div className="text-sm text-gray-600">
-                    {challenge?.weekly_tasks?.filter(t => t.completed).length || 0}/{challenge?.weekly_tasks?.length || 0}
+                    {(challenge?.weekly_tasks as Task[])?.filter(t => t.completed).length || 0}/
+                    {(challenge?.weekly_tasks as Task[])?.length || 0}
                   </div>
                 </div>
                 <Progress value={weeklyProgress} className="h-2" />
                 <div className="space-y-3">
-                  {challenge?.weekly_tasks?.map((task) => (
+                  {(challenge?.weekly_tasks as Task[])?.map((task) => (
                     <div key={task.id} className="flex items-start gap-3 p-3 rounded-lg bg-white shadow-sm">
                       <Checkbox
                         checked={task.completed}
