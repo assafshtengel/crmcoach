@@ -304,6 +304,32 @@ const Contract = () => {
                 </div>
               </div>
             </div>
+
+            <div className="mt-8 bg-gradient-to-r from-white to-gray-50 p-6 rounded-lg border border-gray-200 relative overflow-hidden">
+              <h3 className="text-xl font-semibold mb-4" 
+                style={{ color: teamColors.primary }}>
+                חזון עתידי
+              </h3>
+              
+              <div className="space-y-4 relative z-10">
+                <p>
+                  מטרת {contract.full_name} היא להפוך לשחקן המוביל של {contract.team}.
+                </p>
+                <p>
+                  בשנת 2035 הוא צפוי להיבחר לחמישיית השנה של פיפ"א ולהוביל את נבחרת ישראל להישג השיא במונדיאל בעלייה לשלב רבע הגמר.
+                </p>
+                <p>
+                  {contract.full_name} מכוון להגיע לרמות הגבוהות ביותר בכדורגל העולמי ולהיות מוכר בכל בית. בהצלחה.
+                </p>
+              </div>
+
+              <div 
+                className="absolute top-0 right-0 w-24 h-24 opacity-5 transform rotate-45"
+                style={{
+                  background: `linear-gradient(45deg, ${teamColors.primary}, ${teamColors.secondary})`
+                }}
+              />
+            </div>
           </div>
 
           <div className="mt-16 pt-8 border-t border-gray-200">
