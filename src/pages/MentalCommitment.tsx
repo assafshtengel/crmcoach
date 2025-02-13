@@ -47,25 +47,29 @@ const MentalCommitment = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('mental_commitments')
           .select('improvement_area, unique_trait, motivational_quote')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .maybeSingle();
+          .limit(1)
+          .single();
 
-        if (data) {
-          setFormData({
-            improvementArea: data.improvement_area,
-            uniqueTrait: data.unique_trait,
-            motivationalQuote: motivationalQuotes.includes(data.motivational_quote) 
-              ? data.motivational_quote 
-              : 'custom',
-            customQuote: !motivationalQuotes.includes(data.motivational_quote) 
-              ? data.motivational_quote 
-              : '',
-          });
+        if (error) {
+          console.error('Error loading commitment:', error);
+          return;
         }
+
+        setFormData({
+          improvementArea: data.improvement_area,
+          uniqueTrait: data.unique_trait,
+          motivationalQuote: motivationalQuotes.includes(data.motivational_quote) 
+            ? data.motivational_quote 
+            : 'custom',
+          customQuote: !motivationalQuotes.includes(data.motivational_quote) 
+            ? data.motivational_quote 
+            : '',
+        });
       } catch (error) {
         console.error('Error in loadExistingCommitment:', error);
       }
@@ -93,12 +97,23 @@ const MentalCommitment = () => {
         ? formData.customQuote 
         : formData.motivationalQuote;
 
-      const { data: existingData } = await supabase
+      const { data: existingData, error: queryError } = await supabase
         .from('mental_commitments')
         .select('id')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .maybeSingle();
+        .limit(1)
+        .single();
+
+      if (queryError && queryError.code !== 'PGRST116') {
+        console.error('Error querying commitment:', queryError);
+        toast({
+          title: "שגיאה",
+          description: "אירעה שגיאה בשמירת הפרטים",
+          variant: "destructive",
+        });
+        return;
+      }
 
       let error;
       
