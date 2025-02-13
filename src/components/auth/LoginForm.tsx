@@ -41,7 +41,7 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
         throw error;
       }
 
-      navigate("/index");
+      navigate("/"); // Changed from "/index" to "/"
     } catch (error: any) {
       toast({
         variant: "destructive",
