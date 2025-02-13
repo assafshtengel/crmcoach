@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      contracts: {
+        Row: {
+          contract_value: number
+          created_at: string | null
+          followers: number
+          id: string
+          jersey_number: number
+          league: string
+          mental_commitment: string | null
+          player_name: string
+          position: string
+          signature_date: string | null
+          team: string
+          user_id: string
+        }
+        Insert: {
+          contract_value: number
+          created_at?: string | null
+          followers: number
+          id?: string
+          jersey_number: number
+          league: string
+          mental_commitment?: string | null
+          player_name: string
+          position: string
+          signature_date?: string | null
+          team: string
+          user_id: string
+        }
+        Update: {
+          contract_value?: number
+          created_at?: string | null
+          followers?: number
+          id?: string
+          jersey_number?: number
+          league?: string
+          mental_commitment?: string | null
+          player_name?: string
+          position?: string
+          signature_date?: string | null
+          team?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       mental_commitments: {
         Row: {
           created_at: string
