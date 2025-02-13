@@ -59,25 +59,37 @@ export type Database = {
       }
       player_details: {
         Row: {
+          contract_value: number | null
           created_at: string
+          followers: number | null
           full_name: string
           id: string
           jersey_number: number
+          league: string | null
           position: string
+          team: string | null
         }
         Insert: {
+          contract_value?: number | null
           created_at?: string
+          followers?: number | null
           full_name: string
           id: string
           jersey_number: number
+          league?: string | null
           position: string
+          team?: string | null
         }
         Update: {
+          contract_value?: number | null
           created_at?: string
+          followers?: number | null
           full_name?: string
           id?: string
           jersey_number?: number
+          league?: string | null
           position?: string
+          team?: string | null
         }
         Relationships: []
       }
