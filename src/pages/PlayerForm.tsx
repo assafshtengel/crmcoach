@@ -31,6 +31,15 @@ const positions = [
   { value: "striker", label: "חלוץ" },
 ];
 
+const leagues = [
+  { value: "champions", label: "ליגת האלופות" },
+  { value: "premier", label: "פרמייר ליג" },
+  { value: "laliga", label: "לה ליגה" },
+  { value: "israel", label: "ליגת העל" },
+  { value: "bundesliga", label: "בונדסליגה" },
+  { value: "seriea", label: "סריה א" },
+];
+
 const PlayerForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -38,10 +47,19 @@ const PlayerForm = () => {
     fullName: "",
     position: "",
     jerseyNumber: "",
+    // חדש
+    team: "",
+    league: "",
+    followers: "",
+    contractValue: "",
   });
 
   const getPositionLabel = (value: string) => {
     return positions.find(pos => pos.value === value)?.label || "";
+  };
+
+  const getLeagueLabel = (value: string) => {
+    return leagues.find(league => league.value === value)?.label || "";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,6 +83,10 @@ const PlayerForm = () => {
         full_name: formData.fullName,
         position: formData.position,
         jersey_number: parseInt(formData.jerseyNumber),
+        team: formData.team,
+        league: formData.league,
+        followers: parseInt(formData.followers),
+        contract_value: parseInt(formData.contractValue),
       });
 
     if (error) {
@@ -100,10 +122,10 @@ const PlayerForm = () => {
             <Card className="border-none shadow-lg">
               <CardHeader>
                 <CardTitle className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent">
-                  בוא נתחיל! מי אתה בתור שחקן מקצועני בגיל 24?
+                  הגיע הזמן לקבוע – איפה תעשה היסטוריה?
                 </CardTitle>
                 <CardDescription className="text-center text-gray-600">
-                  מלא את הפרטים שלך כפי שהיית רוצה לראות אותם בחוזה המקצועני הראשון שלך
+                  האם אתה שחקן ליגת האלופות? כוכב בפרמייר ליג? או החלוץ המוביל של נבחרת ישראל? בחר את המקום שבו תפרוץ בגדול!
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -159,6 +181,72 @@ const PlayerForm = () => {
                     />
                   </div>
 
+                  {/* שדות חדשים */}
+                  <div className="space-y-2">
+                    <Label htmlFor="team">באיזו קבוצה אתה משחק בגיל 24?</Label>
+                    <Input
+                      id="team"
+                      placeholder="שם הקבוצה"
+                      value={formData.team}
+                      onChange={(e) =>
+                        setFormData({ ...formData, team: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="league">באיזו ליגה אתה משחק?</Label>
+                    <Select
+                      value={formData.league}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, league: value })
+                      }
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר את הליגה" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                        {leagues.map((league) => (
+                          <SelectItem key={league.value} value={league.value}>
+                            {league.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="followers">כמה אוהדים יש לך באינסטגרם?</Label>
+                    <Input
+                      id="followers"
+                      type="number"
+                      min="0"
+                      placeholder="מספר העוקבים"
+                      value={formData.followers}
+                      onChange={(e) =>
+                        setFormData({ ...formData, followers: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contractValue">מה החוזה הראשון שלך שווה? (ביורו)</Label>
+                    <Input
+                      id="contractValue"
+                      type="number"
+                      min="0"
+                      placeholder="שווי החוזה ביורו"
+                      value={formData.contractValue}
+                      onChange={(e) =>
+                        setFormData({ ...formData, contractValue: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
                   <Button
                     type="submit"
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white"
@@ -192,9 +280,9 @@ const PlayerForm = () => {
               {/* Contract Body */}
               <div className="space-y-6 text-gray-700 leading-relaxed">
                 <p>
-                  {formData.fullName ? 
-                    `אנו שמחים להודיע כי ${formData.fullName} קיבל חוזה מקצועני בקבוצה.` :
-                    "אנו שמחים להודיע כי _________ קיבל חוזה מקצועני בקבוצה."
+                  {formData.fullName && formData.team && formData.league ? 
+                    `${formData.fullName} חתם על חוזה מקצועני בקבוצת ${formData.team}, המשחקת ב${getLeagueLabel(formData.league)}.` :
+                    "_________ חתם על חוזה מקצועני בקבוצת _________, המשחקת ב_________."
                   }
                 </p>
                 <p>
@@ -203,7 +291,13 @@ const PlayerForm = () => {
                     "השחקן ישחק בעמדת ______, עם מספר __, ויציג יכולות יוצאות דופן על המגרש."
                   }
                 </p>
-                <p>חזונו להפוך לשחקן בכיר נמצא כעת בתהליך רשמי!</p>
+                <p>
+                  {formData.contractValue && formData.followers ? 
+                    `השחקן חתם על חוזה בשווי ${formData.contractValue} יורו לעונה, וצבר קהל של ${formData.followers} אוהדים באינסטגרם.` :
+                    "השחקן חתם על חוזה בשווי ______ יורו לעונה, וצבר קהל של ______ אוהדים באינסטגרם."
+                  }
+                </p>
+                <p>עם יכולותיו המרשימות וכוחו המנטלי, הוא בדרכו להפוך לאחד הכוכבים הגדולים בעולם!</p>
               </div>
 
               {/* Signature Section */}
