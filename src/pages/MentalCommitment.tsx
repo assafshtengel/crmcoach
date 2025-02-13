@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -48,28 +47,22 @@ const MentalCommitment = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('mental_commitments')
-          .select('id, improvement_area, unique_trait, motivational_quote')
+          .select('improvement_area, unique_trait, motivational_quote')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(1);
+          .maybeSingle();
 
-        if (error) {
-          console.error('Error loading commitment:', error);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          const commitment = data[0];
+        if (data) {
           setFormData({
-            improvementArea: commitment.improvement_area,
-            uniqueTrait: commitment.unique_trait,
-            motivationalQuote: motivationalQuotes.includes(commitment.motivational_quote) 
-              ? commitment.motivational_quote 
+            improvementArea: data.improvement_area,
+            uniqueTrait: data.unique_trait,
+            motivationalQuote: motivationalQuotes.includes(data.motivational_quote) 
+              ? data.motivational_quote 
               : 'custom',
-            customQuote: !motivationalQuotes.includes(commitment.motivational_quote) 
-              ? commitment.motivational_quote 
+            customQuote: !motivationalQuotes.includes(data.motivational_quote) 
+              ? data.motivational_quote 
               : '',
           });
         }
@@ -84,72 +77,78 @@ const MentalCommitment = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast({
-        title: "שגיאה",
-        description: "יש להתחבר מחדש",
-        variant: "destructive",
-      });
-      navigate("/auth");
-      return;
-    }
-
-    const finalQuote = formData.motivationalQuote === 'custom' 
-      ? formData.customQuote 
-      : formData.motivationalQuote;
-
-    // בדיקה אם כבר יש רשומה למשתמש
-    const { data: existingCommitments } = await supabase
-      .from('mental_commitments')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    let error;
-    
-    if (existingCommitments && existingCommitments.length > 0) {
-      // עדכון הרשומה הקיימת האחרונה
-      const { error: updateError } = await supabase
-        .from('mental_commitments')
-        .update({
-          improvement_area: formData.improvementArea,
-          unique_trait: formData.uniqueTrait,
-          motivational_quote: finalQuote,
-        })
-        .eq('id', existingCommitments[0].id);
-      
-      error = updateError;
-    } else {
-      // יצירת רשומה חדשה
-      const { error: insertError } = await supabase
-        .from('mental_commitments')
-        .insert({
-          user_id: user.id,
-          improvement_area: formData.improvementArea,
-          unique_trait: formData.uniqueTrait,
-          motivational_quote: finalQuote,
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "שגיאה",
+          description: "יש להתחבר מחדש",
+          variant: "destructive",
         });
-      
-      error = insertError;
-    }
+        navigate("/auth");
+        return;
+      }
 
-    if (error) {
-      console.error('Error:', error);
+      const finalQuote = formData.motivationalQuote === 'custom' 
+        ? formData.customQuote 
+        : formData.motivationalQuote;
+
+      const { data: existingData } = await supabase
+        .from('mental_commitments')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .maybeSingle();
+
+      let error;
+      
+      if (existingData?.id) {
+        const { error: updateError } = await supabase
+          .from('mental_commitments')
+          .update({
+            improvement_area: formData.improvementArea,
+            unique_trait: formData.uniqueTrait,
+            motivational_quote: finalQuote,
+          })
+          .eq('id', existingData.id);
+        
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('mental_commitments')
+          .insert({
+            user_id: user.id,
+            improvement_area: formData.improvementArea,
+            unique_trait: formData.uniqueTrait,
+            motivational_quote: finalQuote,
+          });
+        
+        error = insertError;
+      }
+
+      if (error) {
+        console.error('Error:', error);
+        toast({
+          title: "שגיאה",
+          description: "אירעה שגיאה בשמירת הפרטים",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "ההתחייבות נשמרה בהצלחה",
+        description: "בוא נמשיך לשלב הבא",
+      });
+      navigate("/contract");
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
       toast({
         title: "שגיאה",
         description: "אירעה שגיאה בשמירת הפרטים",
         variant: "destructive",
       });
-      return;
     }
-
-    toast({
-      title: "ההתחייבות נשמרה בהצלחה",
-      description: "בוא נמשיך לשלב הבא",
-    });
-    navigate("/contract");
   };
 
   return (
