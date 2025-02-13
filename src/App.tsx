@@ -13,6 +13,7 @@ import { AuthGuard } from "./components/auth/AuthGuard";
 import PlayerEvaluationPage from "./pages/PlayerEvaluation";
 import Huze from "./pages/Huze";
 import PlayerForm from "./pages/PlayerForm";
+import MentalCommitment from "./pages/MentalCommitment";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <PlayerForm />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/mental-commitment" 
+            element={
+              <AuthGuard>
+                <MentalCommitment />
               </AuthGuard>
             } 
           />
