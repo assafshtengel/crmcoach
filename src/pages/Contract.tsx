@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Download, Printer, Edit2, Save, Undo } from "lucide-react";
+import { ArrowRight, Download, Printer, Pencil, Save, Undo } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import html2canvas from "html2canvas";
@@ -64,11 +64,44 @@ const Contract = () => {
     }
   };
 
-  const saveSignature = () => {
+  const saveSignature = async () => {
     if (signatureRef.current) {
       const signatureData = signatureRef.current.toDataURL();
       setPlayerSignature(signatureData);
       setIsDrawing(false);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !contract) return;
+
+      const { error } = await supabase
+        .from("contracts")
+        .upsert({
+          user_id: user.id,
+          player_name: contract.full_name,
+          team: contract.team,
+          league: contract.league,
+          position: contract.position,
+          jersey_number: contract.jersey_number,
+          contract_value: contract.contract_value,
+          followers: contract.followers,
+          mental_commitment: contract.mental_commitment,
+          signature: signatureData,
+        });
+
+      if (error) {
+        toast({
+          title: "שגיאה בשמירת החוזה",
+          description: "אנא נסה שנית",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "החוזה נשמר בהצלחה",
+        description: "כל הכבוד! עכשיו הגיע הזמן להתחיל לעבוד קשה כדי להגשים את החלום",
+      });
+      setIsEditing(false);
     }
   };
 
@@ -140,7 +173,7 @@ const Contract = () => {
     }
 
     toast({
-      title: "החוזה נשמר בהצלחה",
+      title: "החוזה נשמר בהצל��ה",
       description: "כל הכבוד! עכשיו הגיע הזמן להתחיל לעבוד קשה כדי להגשים את החלום",
     });
     setIsEditing(false);
@@ -163,13 +196,21 @@ const Contract = () => {
     <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6 print:hidden">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/")}
+            >
+              חזרה לדשבורד
+            </Button>
+          </div>
           <div className="flex gap-2">
             {isEditing && isDrawing && (
               <>
@@ -190,8 +231,8 @@ const Contract = () => {
                 if (!isEditing) setIsDrawing(false);
               }}
             >
-              <Edit2 className="h-4 w-4 mr-2" />
-              {isEditing ? "סיום עריכה" : "עריכה"}
+              <Pencil className="h-4 w-4 mr-2" />
+              {isEditing ? "סיום חתימה" : "חתימה על החוזה"}
             </Button>
             <Button
               variant="outline"
@@ -207,14 +248,6 @@ const Contract = () => {
               <Download className="h-4 w-4 mr-2" />
               הורדה
             </Button>
-            {isEditing && (
-              <Button
-                onClick={handleSave}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                שמירה
-              </Button>
-            )}
           </div>
         </div>
 
