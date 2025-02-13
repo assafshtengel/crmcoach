@@ -168,7 +168,7 @@ const Dashboard = () => {
               </Tooltip>
             </TooltipProvider>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent animate-fade-in">
+          <h1 className="text-xl md:text-2xl font-bold text-center bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent animate-fade-in">
             💡 אלוף לא נולד – הוא נבנה. הנתונים שלך, ההתקדמות שלך, ההצלחה שלך! 💡
           </h1>
           <Button 
