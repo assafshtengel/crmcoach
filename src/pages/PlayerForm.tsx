@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -48,7 +49,7 @@ const PlayerForm = () => {
     jerseyNumber: "",
     team: "",
     league: "",
-    customLeague: "", // שדה חדש לליגה מותאמת אישית
+    customLeague: "",
     followers: "",
     contractValue: "",
   });
@@ -300,43 +301,44 @@ const PlayerForm = () => {
               <div className="space-y-6 text-gray-700 leading-relaxed">
                 <p>
                   {formData.fullName && formData.team && formData.league ? 
-                  `${formData.fullName} חתם על חוזה מקצועני בקבוצת ${formData.team}, המשחקת ב${
-                    formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league)
-                  }.` :
-                  "_________ חתם על חוזה מקצועני בקבוצת _________, המשחקת ב_________."
-                }
-              </p>
-              <p>
-                {formData.position && formData.jerseyNumber ? 
-                  `השחקן ישחק בעמדת ${getPositionLabel(formData.position)}, עם מספר ${formData.jerseyNumber}, ויציג יכולות יוצאות דופן על המגרש.` :
-                  "השחקן ישחק בעמדת ______, עם מספר __, ויציג יכולות יוצאות דופן על המגרש."
-                }
-              </p>
-              <p>
-                {formData.contractValue && formData.followers ? 
-                  `השחקן חתם על חוזה בשווי ${formData.contractValue} יורו לעונה, וצבר קהל של ${formData.followers} אוהדים באינסטגרם.` :
-                  "השחקן חתם על חוזה בשווי ______ יורו לעונה, וצבר קהל של ______ אוהדים באינסטגרם."
-                }
-              </p>
-              <p>עם יכולותיו המרשימות וכוחו המנטלי, הוא בדרכו להפוך לאחד הכוכבים הגדולים בעולם!</p>
-            </div>
-
-            {/* Signature Section */}
-            <div className="absolute bottom-8 right-8 left-8">
-              <div className="border-t-2 border-gray-200 pt-6">
-                <p className="font-semibold mb-2">
-                  חתימת השחקן
+                    `${formData.fullName} חתם על חוזה מקצועני בקבוצת ${formData.team}, המשחקת ב${
+                      formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league)
+                    }.` :
+                    "_________ חתם על חוזה מקצועני בקבוצת _________, המשחקת ב_________."
+                  }
                 </p>
-                <p className="text-sm text-gray-600">
-                  "אני חותם על החוזה הזה ומתחייב להפוך אותו למציאות!"
+                <p>
+                  {formData.position && formData.jerseyNumber ? 
+                    `השחקן ישחק בעמדת ${getPositionLabel(formData.position)}, עם מספר ${formData.jerseyNumber}, ויציג יכולות יוצאות דופן על המגרש.` :
+                    "השחקן ישחק בעמדת ______, עם מספר __, ויציג יכולות יוצאות דופן על המגרש."
+                  }
                 </p>
+                <p>
+                  {formData.contractValue && formData.followers ? 
+                    `השחקן חתם על חוזה בשווי ${formData.contractValue} יורו לעונה, וצבר קהל של ${formData.followers} אוהדים באינסטגרם.` :
+                    "השחקן חתם על חוזה בשווי ______ יורו לעונה, וצבר קהל של ______ אוהדים באינסטגרם."
+                  }
+                </p>
+                <p>עם יכולותיו המרשימות וכוחו המנטלי, הוא בדרכו להפוך לאחד הכוכבים הגדולים בעולם!</p>
               </div>
-            </div>
 
-            {/* Watermark */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
-              <div className="transform rotate-45 text-6xl font-bold text-gray-300">
-                OFFICIAL
+              {/* Signature Section */}
+              <div className="absolute bottom-8 right-8 left-8">
+                <div className="border-t-2 border-gray-200 pt-6">
+                  <p className="font-semibold mb-2">
+                    חתימת השחקן
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    "אני חותם על החוזה הזה ומתחייב להפוך אותו למציאות!"
+                  </p>
+                </div>
+              </div>
+
+              {/* Watermark */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+                <div className="transform rotate-45 text-6xl font-bold text-gray-300">
+                  OFFICIAL
+                </div>
               </div>
             </div>
           </div>
