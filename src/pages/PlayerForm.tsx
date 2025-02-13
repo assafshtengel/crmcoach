@@ -169,11 +169,17 @@ const PlayerForm = () => {
 
           {/* Image Section */}
           <div className="hidden md:block">
-            <img
-              src="/placeholder.svg"
-              alt="שחקן כדורגל מקצועי"
-              className="w-full h-full object-cover rounded-xl shadow-xl"
-            />
+            <div className="relative h-full">
+              <img
+                src="/photo-1581092795360-fd1ca04f0952"
+                alt="דמות של שחקן מקצועי מצליח"
+                className="w-full h-full object-cover rounded-xl shadow-xl opacity-90"
+              />
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent text-white rounded-b-xl">
+                <p className="text-lg font-semibold">החוזה שלך לעוד 10 שנים</p>
+                <p className="text-sm opacity-90">תראה את עצמך בתור שחקן מקצועי מצליח</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
