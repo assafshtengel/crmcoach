@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -116,6 +117,38 @@ const ActionPlan = () => {
 
   const progress = (tasks.filter(task => task.completed).length / tasks.length) * 100;
 
+  // העברנו את הגדרת metricProgress לתוך הקומפוננטה
+  const metricsData = [
+    { 
+      progress: 40, 
+      color: "bg-blue-500", 
+      textColor: "text-blue-700", 
+      icon: TrendingUp,
+      indicatorColor: "bg-blue-500" 
+    },
+    { 
+      progress: 65, 
+      color: "bg-green-500", 
+      textColor: "text-green-700", 
+      icon: Timer,
+      indicatorColor: "bg-green-500"
+    },
+    { 
+      progress: 30, 
+      color: "bg-yellow-500", 
+      textColor: "text-yellow-700", 
+      icon: Brain,
+      indicatorColor: "bg-yellow-500"
+    },
+    { 
+      progress: 85, 
+      color: "bg-purple-500", 
+      textColor: "text-purple-700", 
+      icon: TargetIcon,
+      indicatorColor: "bg-purple-500"
+    }
+  ];
+
   const toggleTask = (taskId: string) => {
     setTasks(prevTasks =>
       prevTasks.map(task =>
@@ -210,7 +243,7 @@ const ActionPlan = () => {
               </h2>
               <div className="grid gap-4 md:grid-cols-2">
                 {actionPlan.successMetrics.map((metric, index) => {
-                  const { progress: metricProgressValue, color, textColor, icon: Icon } = metricProgress[index];
+                  const { progress: metricProgressValue, color, textColor, icon: Icon, indicatorColor } = metricsData[index];
                   return (
                     <Card key={index} className="p-4 transition-all hover:shadow-lg">
                       <div className="space-y-3">
@@ -228,8 +261,7 @@ const ActionPlan = () => {
                         </div>
                         <Progress 
                           value={metricProgressValue} 
-                          className="h-2"
-                          indicatorClassName={color}
+                          className={`h-2 [&>[role=progressbar]]:${indicatorColor}`}
                         />
                       </div>
                     </Card>
