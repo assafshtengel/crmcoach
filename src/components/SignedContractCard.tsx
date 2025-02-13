@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { FileText, PenLine } from "lucide-react";
+import { FileText } from "lucide-react";
 
 interface Contract {
   player_name: string;
@@ -60,7 +60,7 @@ export const SignedContractCard = () => {
             onClick={() => navigate("/contract")}
             className="hover:bg-primary hover:text-white transition-colors"
           >
-            <PenLine className="h-4 w-4 ml-2" />
+            <FileText className="h-4 w-4 ml-2" />
             חתום על חוזה
           </Button>
         </CardHeader>
