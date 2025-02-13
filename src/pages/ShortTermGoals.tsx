@@ -120,7 +120,7 @@ const ShortTermGoals = () => {
       if (selectedCategoryData?.isCustom && !customGoal) {
         return; // אל תמשיך אם נבחרה קטגוריית "אחר" ולא הוזן טקסט
       }
-      // נווט לעמוד הבא עם הקטגוריה שנבחרה
+      // נווט לעמוד השאלות עם הקטגוריה שנבחרה
       navigate(`/goal-details/${selectedCategory}${customGoal ? `?customGoal=${encodeURIComponent(customGoal)}` : ''}`);
     }
   };

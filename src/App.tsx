@@ -16,6 +16,7 @@ import PlayerForm from "./pages/PlayerForm";
 import MentalCommitment from "./pages/MentalCommitment";
 import Contract from "./pages/Contract";
 import ShortTermGoals from "./pages/ShortTermGoals";
+import GoalDetailsQuestions from "./pages/GoalDetailsQuestions";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <ShortTermGoals />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/goal-details/:categoryId" 
+            element={
+              <AuthGuard>
+                <GoalDetailsQuestions />
               </AuthGuard>
             } 
           />
