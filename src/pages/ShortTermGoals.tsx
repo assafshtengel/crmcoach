@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import {
   Target,
-  Running,
+  Dumbbell,
   Footprints,
   Gamepad,
   Brain,
@@ -28,7 +28,7 @@ const categories: Category[] = [
     id: 'fitness',
     title: 'כושר גופני',
     type: 'professional',
-    icon: Running,
+    icon: Dumbbell,
     description: 'מהירות, כוח מתפרץ, סיבולת'
   },
   {
