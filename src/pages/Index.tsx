@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { SignedContractCard } from "@/components/SignedContractCard";
 import { LogOut, ArrowRight, LayoutDashboard } from "lucide-react";
 import {
   AlertDialog,
@@ -74,13 +73,6 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl transform -rotate-1"></div>
           <div className="relative">
             <MentalPrepForm />
-          </div>
-        </div>
-
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-primary/5 rounded-2xl transform rotate-1"></div>
-          <div className="relative">
-            <SignedContractCard />
           </div>
         </div>
       </div>
