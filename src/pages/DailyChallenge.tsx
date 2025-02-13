@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { motion } from 'framer-motion';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Star, 
   Calendar,
@@ -13,9 +14,13 @@ import {
   Flame,
   Trophy,
   TrendingUp,
-  CheckCircle2
+  CheckCircle2,
+  Pencil
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
+import { useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Task {
   id: string;
@@ -25,20 +30,21 @@ interface Task {
 }
 
 interface DailyChallengeState {
+  id?: string;
   currentDay: number;
   totalDays: number;
   dailyTasks: Task[];
   weeklyTasks: Task[];
   streakCount: number;
+  notes?: string;
+  goalCategory: string;
+  customGoal?: string;
 }
 
-const DailyChallenge = () => {
-  const { toast } = useToast();
-  const [state, setState] = useState<DailyChallengeState>({
-    currentDay: 1,
-    totalDays: 30,
-    streakCount: 0,
-    dailyTasks: [
+const generateTasksForGoal = (category: string, customGoal?: string): { daily: Task[], weekly: Task[] } => {
+  // כאן נוכל להתאים את המשימות לפי הקטגוריה והמטרה המותאמת אישית
+  const defaultTasks = {
+    daily: [
       {
         id: 'd1',
         title: "תרגול 15 דקות של בעיטות מדויקות",
@@ -60,7 +66,7 @@ const DailyChallenge = () => {
         completed: false,
       }
     ],
-    weeklyTasks: [
+    weekly: [
       {
         id: 'w1',
         title: "משחק עם שחקן מנוסה",
@@ -80,29 +86,120 @@ const DailyChallenge = () => {
         completed: false,
       }
     ]
+  };
+
+  // בעתיד נוכל להתאים את המשימות לפי הקטגוריה
+  return defaultTasks;
+};
+
+const DailyChallenge = () => {
+  const { toast } = useToast();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const { categoryId, customGoal } = location.state || {};
+  const [notes, setNotes] = useState("");
+
+  // שליפת האתגר הקיים או יצירת אתגר חדש
+  const { data: challenge, isLoading } = useQuery({
+    queryKey: ['dailyChallenge'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
+      const { data: existingChallenge } = await supabase
+        .from('daily_challenges')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingChallenge) {
+        return existingChallenge;
+      }
+
+      const tasks = generateTasksForGoal(categoryId, customGoal);
+      const newChallenge = {
+        user_id: user.id,
+        goal_category: categoryId,
+        custom_goal: customGoal,
+        daily_tasks: tasks.daily,
+        weekly_tasks: tasks.weekly,
+        current_day: 1,
+        streak_count: 0,
+        notes: ""
+      };
+
+      const { data } = await supabase
+        .from('daily_challenges')
+        .insert([newChallenge])
+        .select()
+        .single();
+
+      return data;
+    }
   });
 
+  const updateChallenge = useMutation({
+    mutationFn: async (updatedData: Partial<DailyChallengeState>) => {
+      if (!challenge?.id) return;
+      
+      const { data, error } = await supabase
+        .from('daily_challenges')
+        .update(updatedData)
+        .eq('id', challenge.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dailyChallenge'] });
+      toast({
+        title: "ההתקדמות נשמרה",
+        description: "המשך כך!",
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (challenge?.notes) {
+      setNotes(challenge.notes);
+    }
+  }, [challenge?.notes]);
+
   const toggleDailyTask = (taskId: string) => {
-    setState(prev => ({
-      ...prev,
-      dailyTasks: prev.dailyTasks.map(task =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    }));
+    if (!challenge?.daily_tasks) return;
+    
+    const updatedTasks = challenge.daily_tasks.map(task =>
+      task.id === taskId ? { ...task, completed: !task.completed } : task
+    );
+
+    updateChallenge.mutate({ daily_tasks: updatedTasks });
   };
 
   const toggleWeeklyTask = (taskId: string) => {
-    setState(prev => ({
-      ...prev,
-      weeklyTasks: prev.weeklyTasks.map(task =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    }));
+    if (!challenge?.weekly_tasks) return;
+
+    const updatedTasks = challenge.weekly_tasks.map(task =>
+      task.id === taskId ? { ...task, completed: !task.completed } : task
+    );
+
+    updateChallenge.mutate({ weekly_tasks: updatedTasks });
   };
 
-  const dailyProgress = (state.dailyTasks.filter(t => t.completed).length / state.dailyTasks.length) * 100;
-  const weeklyProgress = (state.weeklyTasks.filter(t => t.completed).length / state.weeklyTasks.length) * 100;
-  const totalProgress = ((state.currentDay - 1) / state.totalDays) * 100;
+  const saveNotes = () => {
+    updateChallenge.mutate({ notes });
+  };
+
+  if (isLoading) {
+    return <div>טוען...</div>;
+  }
+
+  const dailyProgress = challenge?.daily_tasks ? 
+    (challenge.daily_tasks.filter(t => t.completed).length / challenge.daily_tasks.length) * 100 : 0;
+  const weeklyProgress = challenge?.weekly_tasks ?
+    (challenge.weekly_tasks.filter(t => t.completed).length / challenge.weekly_tasks.length) * 100 : 0;
+  const totalProgress = ((challenge?.current_day || 1) - 1) / 30 * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 p-6">
@@ -116,9 +213,14 @@ const DailyChallenge = () => {
             <h1 className="text-3xl font-bold text-gray-900">
               שיפור קטן בכל יום – השינוי הגדול מתחיל כאן!
             </h1>
+            {challenge?.custom_goal && (
+              <div className="text-xl text-primary font-medium">
+                המטרה שלך: {challenge.custom_goal}
+              </div>
+            )}
             <div className="flex items-center justify-center gap-2 text-primary">
               <Flame className="w-5 h-5" />
-              <span className="font-medium">רצף של {state.streakCount} ימים!</span>
+              <span className="font-medium">רצף של {challenge?.streak_count || 0} ימים!</span>
             </div>
           </div>
 
@@ -130,7 +232,7 @@ const DailyChallenge = () => {
                   התקדמות כללית
                 </h2>
                 <div className="text-sm text-gray-600">
-                  {state.currentDay}/{state.totalDays} ימים הושלמו
+                  {challenge?.current_day || 1}/30 ימים הושלמו
                 </div>
               </div>
               <Progress value={totalProgress} className="h-2" />
@@ -147,12 +249,12 @@ const DailyChallenge = () => {
                     משימות יומיות
                   </h2>
                   <div className="text-sm text-gray-600">
-                    {state.dailyTasks.filter(t => t.completed).length}/{state.dailyTasks.length}
+                    {challenge?.daily_tasks?.filter(t => t.completed).length || 0}/{challenge?.daily_tasks?.length || 0}
                   </div>
                 </div>
                 <Progress value={dailyProgress} className="h-2" />
                 <div className="space-y-3">
-                  {state.dailyTasks.map((task) => (
+                  {challenge?.daily_tasks?.map((task) => (
                     <div key={task.id} className="flex items-start gap-3 p-3 rounded-lg bg-white shadow-sm">
                       <Checkbox
                         checked={task.completed}
@@ -176,12 +278,12 @@ const DailyChallenge = () => {
                     משימות שבועיות
                   </h2>
                   <div className="text-sm text-gray-600">
-                    {state.weeklyTasks.filter(t => t.completed).length}/{state.weeklyTasks.length}
+                    {challenge?.weekly_tasks?.filter(t => t.completed).length || 0}/{challenge?.weekly_tasks?.length || 0}
                   </div>
                 </div>
                 <Progress value={weeklyProgress} className="h-2" />
                 <div className="space-y-3">
-                  {state.weeklyTasks.map((task) => (
+                  {challenge?.weekly_tasks?.map((task) => (
                     <div key={task.id} className="flex items-start gap-3 p-3 rounded-lg bg-white shadow-sm">
                       <Checkbox
                         checked={task.completed}
@@ -200,6 +302,25 @@ const DailyChallenge = () => {
             </Card>
           </div>
 
+          {/* הערות */}
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Pencil className="w-5 h-5 text-primary" />
+                  הערות אישיות
+                </h2>
+                <Button onClick={saveNotes} size="sm">שמור הערות</Button>
+              </div>
+              <Textarea
+                placeholder="רשום כאן את המחשבות והתובנות שלך..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </Card>
+
           {/* תגי הישגים */}
           <Card className="p-6">
             <div className="space-y-4">
@@ -208,17 +329,35 @@ const DailyChallenge = () => {
                 תגי הישגים
               </h2>
               <div className="flex gap-4 flex-wrap">
-                <div className="flex items-center gap-2 p-2 rounded-full bg-primary/10">
-                  <Star className="w-5 h-5 text-primary" />
-                  <span className="text-sm font-medium">7 ימים ראשונים</span>
+                <div className={`flex items-center gap-2 p-2 rounded-full ${
+                  (challenge?.streak_count || 0) >= 7 ? 'bg-primary/10' : 'bg-gray-100'
+                }`}>
+                  <Star className={`w-5 h-5 ${
+                    (challenge?.streak_count || 0) >= 7 ? 'text-primary' : 'text-gray-400'
+                  }`} />
+                  <span className={`text-sm font-medium ${
+                    (challenge?.streak_count || 0) >= 7 ? '' : 'text-gray-500'
+                  }`}>7 ימים ראשונים</span>
                 </div>
-                <div className="flex items-center gap-2 p-2 rounded-full bg-gray-100">
-                  <CheckCircle2 className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-500">14 ימים רצופים</span>
+                <div className={`flex items-center gap-2 p-2 rounded-full ${
+                  (challenge?.streak_count || 0) >= 14 ? 'bg-primary/10' : 'bg-gray-100'
+                }`}>
+                  <CheckCircle2 className={`w-5 h-5 ${
+                    (challenge?.streak_count || 0) >= 14 ? 'text-primary' : 'text-gray-400'
+                  }`} />
+                  <span className={`text-sm font-medium ${
+                    (challenge?.streak_count || 0) >= 14 ? '' : 'text-gray-500'
+                  }`}>14 ימים רצופים</span>
                 </div>
-                <div className="flex items-center gap-2 p-2 rounded-full bg-gray-100">
-                  <Clock className="w-5 h-5 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-500">30 ימים של מחויבות</span>
+                <div className={`flex items-center gap-2 p-2 rounded-full ${
+                  (challenge?.streak_count || 0) >= 30 ? 'bg-primary/10' : 'bg-gray-100'
+                }`}>
+                  <Clock className={`w-5 h-5 ${
+                    (challenge?.streak_count || 0) >= 30 ? 'text-primary' : 'text-gray-400'
+                  }`} />
+                  <span className={`text-sm font-medium ${
+                    (challenge?.streak_count || 0) >= 30 ? '' : 'text-gray-500'
+                  }`}>30 ימים של מחויבות</span>
                 </div>
               </div>
             </div>

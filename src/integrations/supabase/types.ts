@@ -54,6 +54,48 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_challenges: {
+        Row: {
+          created_at: string
+          current_day: number | null
+          custom_goal: string | null
+          daily_tasks: Json
+          goal_category: string
+          id: string
+          notes: string | null
+          streak_count: number | null
+          updated_at: string
+          user_id: string
+          weekly_tasks: Json
+        }
+        Insert: {
+          created_at?: string
+          current_day?: number | null
+          custom_goal?: string | null
+          daily_tasks?: Json
+          goal_category: string
+          id?: string
+          notes?: string | null
+          streak_count?: number | null
+          updated_at?: string
+          user_id: string
+          weekly_tasks?: Json
+        }
+        Update: {
+          created_at?: string
+          current_day?: number | null
+          custom_goal?: string | null
+          daily_tasks?: Json
+          goal_category?: string
+          id?: string
+          notes?: string | null
+          streak_count?: number | null
+          updated_at?: string
+          user_id?: string
+          weekly_tasks?: Json
+        }
+        Relationships: []
+      }
       mental_commitments: {
         Row: {
           created_at: string
