@@ -5,7 +5,18 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { motion } from 'framer-motion';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CalendarDays, Target, Clock, Download, Printer } from 'lucide-react';
+import { 
+  CalendarDays, 
+  Target, 
+  Clock, 
+  Download, 
+  Printer,
+  TrendingUp,
+  Brain,
+  Target as TargetIcon,
+  Timer,
+  BarChart
+} from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -193,15 +204,38 @@ const ActionPlan = () => {
             </div>
 
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">מדדי הצלחה</h2>
-              <ul className="space-y-2">
-                {actionPlan.successMetrics.map((metric, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary" />
-                    <span>{metric}</span>
-                  </li>
-                ))}
-              </ul>
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <BarChart className="w-6 h-6 text-primary" />
+                מדדי הצלחה
+              </h2>
+              <div className="grid gap-4 md:grid-cols-2">
+                {actionPlan.successMetrics.map((metric, index) => {
+                  const { progress: metricProgressValue, color, textColor, icon: Icon } = metricProgress[index];
+                  return (
+                    <Card key={index} className="p-4 transition-all hover:shadow-lg">
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg ${color} bg-opacity-20`}>
+                            <Icon className={`w-5 h-5 ${textColor}`} />
+                          </div>
+                          <div className="flex-1">
+                            <p className={`font-medium ${textColor}`}>{metric}</p>
+                            <div className="flex items-center justify-between mt-2 text-sm text-gray-600">
+                              <span>{metricProgressValue}% הושלם</span>
+                              <span>{Math.round(actionPlan.duration * metricProgressValue / 100)}/{actionPlan.duration} ימים</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Progress 
+                          value={metricProgressValue} 
+                          className="h-2"
+                          indicatorClassName={color}
+                        />
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="space-y-4">
