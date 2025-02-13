@@ -32,12 +32,12 @@ const positions = [
 ];
 
 const leagues = [
-  { value: "champions", label: "ליגת האלופות" },
   { value: "premier", label: "פרמייר ליג" },
   { value: "laliga", label: "לה ליגה" },
   { value: "israel", label: "ליגת העל" },
   { value: "bundesliga", label: "בונדסליגה" },
   { value: "seriea", label: "סריה א" },
+  { value: "other", label: "אחר" },
 ];
 
 const PlayerForm = () => {
@@ -47,9 +47,9 @@ const PlayerForm = () => {
     fullName: "",
     position: "",
     jerseyNumber: "",
-    // חדש
     team: "",
     league: "",
+    customLeague: "", // שדה חדש לליגה מותאמת אישית
     followers: "",
     contractValue: "",
   });
@@ -59,7 +59,11 @@ const PlayerForm = () => {
   };
 
   const getLeagueLabel = (value: string) => {
-    return leagues.find(league => league.value === value)?.label || "";
+    const league = leagues.find(league => league.value === value);
+    if (league?.value === 'other') {
+      return formData.customLeague;
+    }
+    return league?.label || "";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,7 +88,7 @@ const PlayerForm = () => {
         position: formData.position,
         jersey_number: parseInt(formData.jerseyNumber),
         team: formData.team,
-        league: formData.league,
+        league: formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league),
         followers: parseInt(formData.followers),
         contract_value: parseInt(formData.contractValue),
       });
@@ -217,6 +221,22 @@ const PlayerForm = () => {
                     </Select>
                   </div>
 
+                  {/* שדה ליגה מותאמת אישית */}
+                  {formData.league === 'other' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="customLeague">שם הליגה</Label>
+                      <Input
+                        id="customLeague"
+                        placeholder="הזן את שם הליגה"
+                        value={formData.customLeague}
+                        onChange={(e) =>
+                          setFormData({ ...formData, customLeague: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="followers">כמה אוהדים יש לך באינסטגרם?</Label>
                     <Input
@@ -281,7 +301,9 @@ const PlayerForm = () => {
               <div className="space-y-6 text-gray-700 leading-relaxed">
                 <p>
                   {formData.fullName && formData.team && formData.league ? 
-                    `${formData.fullName} חתם על חוזה מקצועני בקבוצת ${formData.team}, המשחקת ב${getLeagueLabel(formData.league)}.` :
+                    `${formData.fullName} חתם על חוזה מקצועני בקבוצת ${formData.team}, המשחקת ב${
+                      formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league)
+                    }.` :
                     "_________ חתם על חוזה מקצועני בקבוצת _________, המשחקת ב_________."
                   }
                 </p>
