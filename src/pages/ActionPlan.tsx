@@ -25,8 +25,12 @@ interface ActionPlanData {
   dailyRoutine: string[];
 }
 
-const generateActionPlan = (categoryId: string, answers: any): ActionPlanData => {
-  const { specificGoal, successMetric, timeframe, mainChallenge } = answers;
+const generateActionPlan = (categoryId: string = '', answers: any = {}): ActionPlanData => {
+  const specificGoal = answers?.specificGoal || 'שיפור יכולות כדורגל';
+  const successMetric = answers?.successMetric || 'שיפור ביצועים ב-20%';
+  const timeframe = answers?.timeframe || '30';
+  const mainChallenge = answers?.mainChallenge || 'קושי טכני';
+
   const duration = parseInt(timeframe);
   const weeks = duration / 7;
   const weekPairs = Math.ceil(weeks / 2);
@@ -88,7 +92,7 @@ const generateActionPlan = (categoryId: string, answers: any): ActionPlanData =>
   return {
     title: specificGoal,
     duration: duration,
-    category: categoryId,
+    category: categoryId || 'כללי',
     successMetrics: generateSuccessMetrics(),
     weeklyTasks: generateProgressiveTasks(),
     dailyRoutine: generateDailyRoutine()
