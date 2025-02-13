@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -104,9 +103,13 @@ const PlayerForm = () => {
 
     toast({
       title: "הפרטים נשמרו בהצלחה",
-      description: "בוא נמשיך לשלב הבא",
+      description: "בוא נמשיך להתחייבות המנטלית שלך",
     });
-    navigate("/contract");
+    navigate("/mental-commitment", { 
+      state: { 
+        playerName: formData.fullName 
+      } 
+    });
   };
 
   return (
@@ -272,7 +275,7 @@ const PlayerForm = () => {
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                     size="lg"
                   >
-                    המשך לחוזה העתיד
+                    המשך להתחייבות המנטלית
                   </Button>
                 </form>
               </CardContent>
