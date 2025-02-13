@@ -17,6 +17,7 @@ import MentalCommitment from "./pages/MentalCommitment";
 import Contract from "./pages/Contract";
 import ShortTermGoals from "./pages/ShortTermGoals";
 import GoalDetailsQuestions from "./pages/GoalDetailsQuestions";
+import ActionPlan from "./pages/ActionPlan";
 
 const queryClient = new QueryClient();
 
@@ -105,6 +106,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <GoalDetailsQuestions />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/action-plan" 
+            element={
+              <AuthGuard>
+                <ActionPlan />
               </AuthGuard>
             } 
           />
