@@ -44,33 +44,37 @@ const MentalCommitment = () => {
 
   useEffect(() => {
     const loadExistingCommitment = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      const { data, error } = await supabase
-        .from('mental_commitments')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
+        const { data, error } = await supabase
+          .from('mental_commitments')
+          .select('id, improvement_area, unique_trait, motivational_quote')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-      if (error) {
-        console.error('Error loading commitment:', error);
-        return;
-      }
+        if (error) {
+          console.error('Error loading commitment:', error);
+          return;
+        }
 
-      if (data && data.length > 0) {
-        const commitment = data[0];
-        setFormData({
-          improvementArea: commitment.improvement_area,
-          uniqueTrait: commitment.unique_trait,
-          motivationalQuote: motivationalQuotes.includes(commitment.motivational_quote) 
-            ? commitment.motivational_quote 
-            : 'custom',
-          customQuote: !motivationalQuotes.includes(commitment.motivational_quote) 
-            ? commitment.motivational_quote 
-            : '',
-        });
+        if (data && data.length > 0) {
+          const commitment = data[0];
+          setFormData({
+            improvementArea: commitment.improvement_area,
+            uniqueTrait: commitment.unique_trait,
+            motivationalQuote: motivationalQuotes.includes(commitment.motivational_quote) 
+              ? commitment.motivational_quote 
+              : 'custom',
+            customQuote: !motivationalQuotes.includes(commitment.motivational_quote) 
+              ? commitment.motivational_quote 
+              : '',
+          });
+        }
+      } catch (error) {
+        console.error('Error in loadExistingCommitment:', error);
       }
     };
 
