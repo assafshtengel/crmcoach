@@ -18,7 +18,7 @@ import {
   Pencil
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -97,8 +97,22 @@ const generateTasksForGoal = (category: string, customGoal?: string): { daily: T
 const DailyChallenge = () => {
   const { toast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { categoryId, customGoal } = location.state || {};
+
+  // אם אין קטגוריה, נחזיר לדף הקודם
+  useEffect(() => {
+    if (!categoryId) {
+      toast({
+        title: "שגיאה",
+        description: "לא נבחרה קטגוריה",
+        variant: "destructive"
+      });
+      navigate(-1);
+    }
+  }, [categoryId, navigate, toast]);
+
   const [notes, setNotes] = useState("");
 
   const { data: challenge, isLoading } = useQuery({
@@ -107,18 +121,27 @@ const DailyChallenge = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
-      const { data: existingChallenge } = await supabase
+      const { data: existingChallenge, error: fetchError } = await supabase
         .from('daily_challenges')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
+      if (fetchError) {
+        console.error('Error fetching challenge:', fetchError);
+        throw fetchError;
+      }
+
       if (existingChallenge) {
-        return existingChallenge as DailyChallengeData;
+        return {
+          ...existingChallenge,
+          daily_tasks: existingChallenge.daily_tasks as Task[],
+          weekly_tasks: existingChallenge.weekly_tasks as Task[]
+        } as DailyChallengeData;
       }
 
       const tasks = generateTasksForGoal(categoryId, customGoal);
-      const newChallenge: Omit<DailyChallengeData, 'id' | 'created_at' | 'updated_at'> = {
+      const newChallenge = {
         user_id: user.id,
         goal_category: categoryId,
         custom_goal: customGoal,
@@ -129,29 +152,50 @@ const DailyChallenge = () => {
         notes: ""
       };
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('daily_challenges')
-        .insert(newChallenge)
+        .insert([newChallenge])
         .select()
         .single();
 
-      return data as DailyChallengeData;
-    }
+      if (error) {
+        console.error('Error creating challenge:', error);
+        throw error;
+      }
+
+      return {
+        ...data,
+        daily_tasks: data.daily_tasks as Task[],
+        weekly_tasks: data.weekly_tasks as Task[]
+      } as DailyChallengeData;
+    },
+    enabled: !!categoryId // רק אם יש קטגוריה נריץ את השאילתה
   });
 
   const updateChallenge = useMutation({
     mutationFn: async (updatedData: Partial<DailyChallengeData>) => {
       if (!challenge?.id) return;
       
+      const dataToUpdate = {
+        ...updatedData,
+        daily_tasks: updatedData.daily_tasks ? JSON.parse(JSON.stringify(updatedData.daily_tasks)) : undefined,
+        weekly_tasks: updatedData.weekly_tasks ? JSON.parse(JSON.stringify(updatedData.weekly_tasks)) : undefined
+      };
+
       const { data, error } = await supabase
         .from('daily_challenges')
-        .update(updatedData)
+        .update(dataToUpdate)
         .eq('id', challenge.id)
         .select()
         .single();
 
       if (error) throw error;
-      return data as DailyChallengeData;
+
+      return {
+        ...data,
+        daily_tasks: data.daily_tasks as Task[],
+        weekly_tasks: data.weekly_tasks as Task[]
+      } as DailyChallengeData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyChallenge'] });
