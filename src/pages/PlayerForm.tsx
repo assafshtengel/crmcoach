@@ -326,7 +326,7 @@ const PlayerForm = () => {
               <div className="absolute bottom-8 right-8 left-8">
                 <div className="border-t-2 border-gray-200 pt-6">
                   <p className="font-semibold mb-2">
-                    {formData.fullName || "_________"} - השחקן המקצועני
+                    {formData.fullName || "_________"}
                   </p>
                   <p className="text-sm text-gray-600">
                     "אני חותם על החוזה הזה ומתחייב להפוך אותו למציאות!"
