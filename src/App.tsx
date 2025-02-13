@@ -14,6 +14,7 @@ import PlayerEvaluationPage from "./pages/PlayerEvaluation";
 import Huze from "./pages/Huze";
 import PlayerForm from "./pages/PlayerForm";
 import MentalCommitment from "./pages/MentalCommitment";
+import Contract from "./pages/Contract";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <MentalCommitment />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/contract" 
+            element={
+              <AuthGuard>
+                <Contract />
               </AuthGuard>
             } 
           />
