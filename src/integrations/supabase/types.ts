@@ -57,6 +57,30 @@ export type Database = {
         }
         Relationships: []
       }
+      player_details: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          jersey_number: number
+          position: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id: string
+          jersey_number: number
+          position: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          jersey_number?: number
+          position?: string
+        }
+        Relationships: []
+      }
       player_evaluations: {
         Row: {
           age: number

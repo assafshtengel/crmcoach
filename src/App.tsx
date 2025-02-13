@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import PlayerEvaluationPage from "./pages/PlayerEvaluation";
 import Huze from "./pages/Huze";
+import PlayerForm from "./pages/PlayerForm";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <Huze />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/player-form" 
+            element={
+              <AuthGuard>
+                <PlayerForm />
               </AuthGuard>
             } 
           />

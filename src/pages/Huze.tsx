@@ -59,6 +59,7 @@ const Huze = () => {
             <Button 
               size="lg"
               className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-6 text-lg rounded-xl shadow-lg transform transition-all hover:scale-105"
+              onClick={() => navigate("/player-form")}
             >
               בוא נתחיל לבנות את החזון
             </Button>
