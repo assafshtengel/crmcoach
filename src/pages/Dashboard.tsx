@@ -130,7 +130,7 @@ const Dashboard = () => {
       title: "יעדים",
       icon: Target,
       description: "הגדרת יעדים קצרים וארוכי טווח",
-      path: "/goals"
+      path: "/huze"
     },
     {
       title: "חקירת אלמנטים",
