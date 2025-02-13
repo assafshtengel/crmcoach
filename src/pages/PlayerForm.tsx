@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -27,7 +26,7 @@ const positions = [
   { value: "defender", label: "בלם" },
   { value: "fullback", label: "מגן" },
   { value: "midfielder", label: "קשר" },
-  { value: "winger", label: "מקשר אגף" },
+  { value: "winger", label: "כנף" },
   { value: "striker", label: "חלוץ" },
 ];
 
