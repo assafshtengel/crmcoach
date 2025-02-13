@@ -25,60 +25,83 @@ interface ActionPlanData {
   dailyRoutine: string[];
 }
 
-const getActionPlan = (categoryId: string, answers: Record<string, string>): ActionPlanData => {
-  // כאן נוסיף לוגיקה שמייצרת תוכנית מותאמת אישית לפי הקטגוריה והתשובות
-  const plans: Record<string, ActionPlanData> = {
-    'dribbling': {
-      title: "שיפור יכולת הדריבל והשליטה בכדור",
-      duration: 60,
-      category: "דריבל ושליטה בכדור",
-      successMetrics: [
-        "ביצוע מוצלח של 8/10 ניסיונות דריבל במסלול מכשולים",
-        "שמירה על שליטה בכדור במהירות גבוהה לאורך 30 מטר",
-        "ביצוע 3 תרגילי כדרור מתקדמים ברצף ללא איבוד שליטה"
-      ],
-      weeklyTasks: [
-        {
-          id: "w1",
-          title: "תרגול בסיסי",
-          description: "3 אימוני דריבל של 30 דקות עם דגש על שליטה במהירות נמוכה",
-          weeks: "1-2",
-          completed: false
-        },
-        {
-          id: "w2",
-          title: "שליטה במהירות",
-          description: "2 אימוני ספרינט עם כדור ואימון אחד של תרגילי כדרור",
-          weeks: "3-4",
-          completed: false
-        },
-        {
-          id: "w3",
-          title: "דריבל תחת לחץ",
-          description: "אימוני 1 על 1 ותרגול במצבי לחץ מול שחקן מגן",
-          weeks: "5-6",
-          completed: false
-        }
-      ],
-      dailyRoutine: [
-        "10 דקות תרגול כדרור במקום",
-        "5 דקות תרגול שינויי כיוון",
-        "15 דקות משחק עם הכדור ברגל חלשה"
-      ]
-    }
-    // ניתן להוסיף תוכניות נוספות לקטגוריות אחרות
+const generateActionPlan = (categoryId: string, answers: any): ActionPlanData => {
+  const { specificGoal, successMetric, timeframe, mainChallenge } = answers;
+  const duration = parseInt(timeframe);
+  const weeks = duration / 7;
+  const weekPairs = Math.ceil(weeks / 2);
+
+  // מחלק את הזמן לשלבים
+  const generateProgressiveTasks = (): Task[] => {
+    const tasks: Task[] = [];
+    const basicWeeks = Math.floor(weekPairs / 3);
+    
+    // שלב 1: תרגול בסיסי והתמודדות עם האתגר העיקרי
+    tasks.push({
+      id: "w1",
+      title: "שלב ראשון - בניית בסיס",
+      description: `תרגול ממוקד להתמודדות עם ${mainChallenge} - 3 אימונים בשבוע של 30 דקות`,
+      weeks: `1-${basicWeeks * 2}`,
+      completed: false
+    });
+
+    // שלב 2: הגברת אינטנסיביות
+    tasks.push({
+      id: "w2",
+      title: "שלב שני - העלאת רמה",
+      description: `תרגול מתקדם של ${specificGoal} עם דגש על ${successMetric}`,
+      weeks: `${basicWeeks * 2 + 1}-${basicWeeks * 4}`,
+      completed: false
+    });
+
+    // שלב 3: אינטגרציה ומצבי משחק
+    tasks.push({
+      id: "w3",
+      title: "שלב שלישי - יישום במשחק",
+      description: "תרגול במצבי משחק אמיתיים ותחת לחץ",
+      weeks: `${basicWeeks * 4 + 1}-${weeks}`,
+      completed: false
+    });
+
+    return tasks;
   };
 
-  return plans[categoryId] || plans.dribbling;
+  // יוצר שגרה יומית מותאמת אישית
+  const generateDailyRoutine = (): string[] => {
+    const routines = [
+      `10 דקות תרגול ${specificGoal}`,
+      `15 דקות עבודה על ${mainChallenge}`,
+      "5 דקות מתיחות וחימום ממוקד"
+    ];
+    return routines;
+  };
+
+  // יוצר מדדי הצלחה מפורטים
+  const generateSuccessMetrics = (): string[] => {
+    return [
+      successMetric, // המדד העיקרי שהשחקן הגדיר
+      `שיפור ב-20% בהתמודדות עם ${mainChallenge}`,
+      "הצלחה ביישום במשחקים רשמיים"
+    ];
+  };
+
+  return {
+    title: specificGoal,
+    duration: duration,
+    category: categoryId,
+    successMetrics: generateSuccessMetrics(),
+    weeklyTasks: generateProgressiveTasks(),
+    dailyRoutine: generateDailyRoutine()
+  };
 };
 
 const ActionPlan = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { categoryId, answers } = location.state || {};
-  const [tasks, setTasks] = useState<Task[]>(getActionPlan(categoryId, answers).weeklyTasks);
+  const [actionPlan] = useState<ActionPlanData>(() => generateActionPlan(categoryId, answers));
+  const [tasks, setTasks] = useState<Task[]>(actionPlan.weeklyTasks);
 
-  const actionPlan = getActionPlan(categoryId, answers);
   const progress = (tasks.filter(task => task.completed).length / tasks.length) * 100;
 
   const toggleTask = (taskId: string) => {
