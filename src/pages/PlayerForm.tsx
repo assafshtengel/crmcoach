@@ -130,7 +130,7 @@ const PlayerForm = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="בחר את העמדה שלך" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white border border-gray-200 shadow-lg">
                         {positions.map((position) => (
                           <SelectItem key={position.value} value={position.value}>
                             {position.label}
