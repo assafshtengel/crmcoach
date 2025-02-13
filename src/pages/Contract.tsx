@@ -219,16 +219,10 @@ const Contract = () => {
         </div>
 
         <div 
-          className="relative bg-white p-4 rounded-xl shadow-xl print:shadow-none print:p-0 border-4 print:h-[297mm]"
+          className="relative bg-white p-4 rounded-xl shadow-xl print:shadow-none print:p-[15mm] border-4 print:min-h-[297mm] print:w-[210mm] print:m-0"
           style={{
             borderImage: `linear-gradient(45deg, ${teamColors.primary}, ${teamColors.secondary}) 1`,
             backgroundImage: `linear-gradient(to right, ${teamColors.primary}05, ${teamColors.secondary}05)`,
-            '@media print': {
-              minHeight: '297mm',
-              width: '210mm',
-              padding: '15mm',
-              margin: '0',
-            }
           }}
           id="contract-content"
         >
