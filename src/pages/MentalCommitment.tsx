@@ -60,14 +60,41 @@ const MentalCommitment = () => {
       ? formData.customQuote 
       : formData.motivationalQuote;
 
-    const { error } = await supabase
+    // בדיקה אם כבר יש רשומה למשתמש
+    const { data: existingCommitments } = await supabase
       .from('mental_commitments')
-      .insert({
-        user_id: user.id,
-        improvement_area: formData.improvementArea,
-        unique_trait: formData.uniqueTrait,
-        motivational_quote: finalQuote,
-      });
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    let error;
+    
+    if (existingCommitments && existingCommitments.length > 0) {
+      // עדכון הרשומה הקיימת האחרונה
+      const { error: updateError } = await supabase
+        .from('mental_commitments')
+        .update({
+          improvement_area: formData.improvementArea,
+          unique_trait: formData.uniqueTrait,
+          motivational_quote: finalQuote,
+        })
+        .eq('id', existingCommitments[0].id);
+      
+      error = updateError;
+    } else {
+      // יצירת רשומה חדשה
+      const { error: insertError } = await supabase
+        .from('mental_commitments')
+        .insert({
+          user_id: user.id,
+          improvement_area: formData.improvementArea,
+          unique_trait: formData.uniqueTrait,
+          motivational_quote: finalQuote,
+        });
+      
+      error = insertError;
+    }
 
     if (error) {
       console.error('Error:', error);
