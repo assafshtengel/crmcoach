@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,10 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { motion } from 'framer-motion';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CalendarDays, Target, Clock } from 'lucide-react';
+import { CalendarDays, Target, Clock, Download, Printer } from 'lucide-react';
+import { useToast } from "@/components/ui/use-toast";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface Task {
   id: string;
@@ -35,12 +37,10 @@ const generateActionPlan = (categoryId: string = '', answers: any = {}): ActionP
   const weeks = duration / 7;
   const weekPairs = Math.ceil(weeks / 2);
 
-  // מחלק את הזמן לשלבים
   const generateProgressiveTasks = (): Task[] => {
     const tasks: Task[] = [];
     const basicWeeks = Math.floor(weekPairs / 3);
     
-    // שלב 1: תרגול בסיסי והתמודדות עם האתגר העיקרי
     tasks.push({
       id: "w1",
       title: "שלב ראשון - בניית בסיס",
@@ -49,7 +49,6 @@ const generateActionPlan = (categoryId: string = '', answers: any = {}): ActionP
       completed: false
     });
 
-    // שלב 2: הגברת אינטנסיביות
     tasks.push({
       id: "w2",
       title: "שלב שני - העלאת רמה",
@@ -58,7 +57,6 @@ const generateActionPlan = (categoryId: string = '', answers: any = {}): ActionP
       completed: false
     });
 
-    // שלב 3: אינטגרציה ומצבי משחק
     tasks.push({
       id: "w3",
       title: "שלב שלישי - יישום במשחק",
@@ -70,7 +68,6 @@ const generateActionPlan = (categoryId: string = '', answers: any = {}): ActionP
     return tasks;
   };
 
-  // יוצר שגרה יומית מותאמת אישית
   const generateDailyRoutine = (): string[] => {
     const routines = [
       `10 דקות תרגול ${specificGoal}`,
@@ -80,7 +77,6 @@ const generateActionPlan = (categoryId: string = '', answers: any = {}): ActionP
     return routines;
   };
 
-  // יוצר מדדי הצלחה מפורטים
   const generateSuccessMetrics = (): string[] => {
     return [
       successMetric, // המדד העיקרי שהשחקן הגדיר
@@ -102,6 +98,7 @@ const generateActionPlan = (categoryId: string = '', answers: any = {}): ActionP
 const ActionPlan = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { categoryId, answers } = location.state || {};
   const [actionPlan] = useState<ActionPlanData>(() => generateActionPlan(categoryId, answers));
   const [tasks, setTasks] = useState<Task[]>(actionPlan.weeklyTasks);
@@ -116,15 +113,68 @@ const ActionPlan = () => {
     );
   };
 
+  const handleDownload = async () => {
+    const element = document.getElementById("action-plan-content");
+    if (!element) return;
+
+    try {
+      const canvas = await html2canvas(element);
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF();
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save("תוכנית-פעולה.pdf");
+
+      toast({
+        title: "התוכנית הורדה בהצלחה",
+        description: "תוכל למצוא את הקובץ בתיקיית ההורדות שלך",
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "שגיאה בהורדת התוכנית",
+        description: "אנא נסה שנית",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 p-6">
       <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex justify-end gap-2 print:hidden">
+          <Button
+            variant="outline"
+            onClick={handlePrint}
+            className="flex items-center gap-2"
+          >
+            <Printer className="w-4 h-4" />
+            הדפסה
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleDownload}
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            הורדה
+          </Button>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          <Card className="p-6 space-y-6">
+          <Card id="action-plan-content" className="p-6 space-y-6">
             <div className="space-y-4">
               <h1 className="text-3xl font-bold text-center text-gray-900">
                 תוכנית הפעולה האישית שלך
