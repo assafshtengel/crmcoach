@@ -356,18 +356,6 @@ const PlayerForm = () => {
                 <p>עם יכולותיו המרשימות וכוחו המנטלי, הוא בדרכו להפוך לאחד הכוכבים הגדולים בעולם!</p>
               </div>
 
-              {/* Signature Section */}
-              <div className="absolute bottom-8 right-8 left-8">
-                <div className="border-t-2 border-gray-200 pt-6">
-                  <p className="font-semibold mb-2">
-                    חתימת השחקן
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    "אני חותם על החוזה הזה ומתחייב להפוך אותו למציאות!"
-                  </p>
-                </div>
-              </div>
-
               {/* Watermark */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
                 <div className="transform rotate-45 text-6xl font-bold text-gray-300">
