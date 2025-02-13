@@ -12,7 +12,9 @@ import {
   Focus,
   Award,
   Crown,
+  Plus,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface Category {
   id: string;
@@ -20,81 +22,106 @@ interface Category {
   type: 'professional' | 'mental';
   icon: React.ElementType;
   description: string;
+  isCustom?: boolean;
 }
-
-const categories: Category[] = [
-  // מקצועי (פיזי-טכני)
-  {
-    id: 'fitness',
-    title: 'כושר גופני',
-    type: 'professional',
-    icon: Dumbbell,
-    description: 'מהירות, כוח מתפרץ, סיבולת'
-  },
-  {
-    id: 'accuracy',
-    title: 'דיוק בבעיטות',
-    type: 'professional',
-    icon: Target,
-    description: 'חופשיות, פנדלים, מסירות'
-  },
-  {
-    id: 'dribbling',
-    title: 'דריבל ושליטה בכדור',
-    type: 'professional',
-    icon: Footprints,
-    description: 'טכניקה ושליטה'
-  },
-  {
-    id: 'decision-making',
-    title: 'קבלת החלטות מהירה',
-    type: 'professional',
-    icon: Gamepad,
-    description: 'חשיבה מהירה במגרש'
-  },
-  // מנטאלי (חוסן ותודעה)
-  {
-    id: 'pressure',
-    title: 'התמודדות עם לחץ',
-    type: 'mental',
-    icon: Brain,
-    description: 'ניהול לחץ במשחקים'
-  },
-  {
-    id: 'focus',
-    title: 'ריכוז במשחק ובאימונים',
-    type: 'mental',
-    icon: Focus,
-    description: 'שמירה על מיקוד'
-  },
-  {
-    id: 'confidence',
-    title: 'חיזוק הביטחון העצמי',
-    type: 'mental',
-    icon: Award,
-    description: 'ביטחון על המגרש'
-  },
-  {
-    id: 'leadership',
-    title: 'מנהיגות ושפת גוף',
-    type: 'mental',
-    icon: Crown,
-    description: 'התנהלות חיובית במגרש'
-  }
-];
 
 const ShortTermGoals = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [customGoal, setCustomGoal] = useState('');
+  const [categories, setCategories] = useState<Category[]>([
+    // מקצועי (פיזי-טכני)
+    {
+      id: 'fitness',
+      title: 'כושר גופני',
+      type: 'professional',
+      icon: Dumbbell,
+      description: 'מהירות, כוח מתפרץ, סיבולת'
+    },
+    {
+      id: 'accuracy',
+      title: 'דיוק בבעיטות',
+      type: 'professional',
+      icon: Target,
+      description: 'חופשיות, פנדלים, מסירות'
+    },
+    {
+      id: 'dribbling',
+      title: 'דריבל ושליטה בכדור',
+      type: 'professional',
+      icon: Footprints,
+      description: 'טכניקה ושליטה'
+    },
+    {
+      id: 'decision-making',
+      title: 'קבלת החלטות מהירה',
+      type: 'professional',
+      icon: Gamepad,
+      description: 'חשיבה מהירה במגרש'
+    },
+    {
+      id: 'professional-other',
+      title: 'אחר',
+      type: 'professional',
+      icon: Plus,
+      description: 'הגדר מטרה מותאמת אישית',
+      isCustom: true
+    },
+    // מנטאלי (חוסן ותודעה)
+    {
+      id: 'pressure',
+      title: 'התמודדות עם לחץ',
+      type: 'mental',
+      icon: Brain,
+      description: 'ניהול לחץ במשחקים'
+    },
+    {
+      id: 'focus',
+      title: 'ריכוז במשחק ובאימונים',
+      type: 'mental',
+      icon: Focus,
+      description: 'שמירה על מיקוד'
+    },
+    {
+      id: 'confidence',
+      title: 'חיזוק הביטחון העצמי',
+      type: 'mental',
+      icon: Award,
+      description: 'ביטחון על המגרש'
+    },
+    {
+      id: 'leadership',
+      title: 'מנהיגות ושפת גוף',
+      type: 'mental',
+      icon: Crown,
+      description: 'התנהלות חיובית במגרש'
+    },
+    {
+      id: 'mental-other',
+      title: 'אחר',
+      type: 'mental',
+      icon: Plus,
+      description: 'הגדר מטרה מותאמת אישית',
+      isCustom: true
+    }
+  ]);
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
   };
 
+  const handleCustomGoalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomGoal(e.target.value);
+  };
+
   const handleContinue = () => {
     if (selectedCategory) {
+      const selectedCategoryData = categories.find(cat => cat.id === selectedCategory);
+      if (selectedCategoryData?.isCustom && !customGoal) {
+        return; // אל תמשיך אם נבחרה קטגוריית "אחר" ולא הוזן טקסט
+      }
       // נווט לעמוד הבא עם הקטגוריה שנבחרה
-      navigate(`/goal-details/${selectedCategory}`);
+      navigate(`/goal-details/${selectedCategory}${customGoal ? `?customGoal=${encodeURIComponent(customGoal)}` : ''}`);
     }
   };
 
@@ -143,6 +170,15 @@ const ShortTermGoals = () => {
                         <div className="text-sm text-gray-500">{category.description}</div>
                       </div>
                     </Button>
+                    {category.isCustom && selectedCategory === category.id && (
+                      <Input
+                        type="text"
+                        placeholder="הקלד את המטרה שלך כאן..."
+                        className="mt-2"
+                        value={customGoal}
+                        onChange={handleCustomGoalChange}
+                      />
+                    )}
                   </motion.div>
                 ))}
             </div>
@@ -180,6 +216,15 @@ const ShortTermGoals = () => {
                         <div className="text-sm text-gray-500">{category.description}</div>
                       </div>
                     </Button>
+                    {category.isCustom && selectedCategory === category.id && (
+                      <Input
+                        type="text"
+                        placeholder="הקלד את המטרה שלך כאן..."
+                        className="mt-2"
+                        value={customGoal}
+                        onChange={handleCustomGoalChange}
+                      />
+                    )}
                   </motion.div>
                 ))}
             </div>
@@ -191,7 +236,7 @@ const ShortTermGoals = () => {
             size="lg"
             className="mt-8"
             onClick={handleContinue}
-            disabled={!selectedCategory}
+            disabled={!selectedCategory || (categories.find(cat => cat.id === selectedCategory)?.isCustom && !customGoal)}
           >
             המשך לדיוק המטרה שלי
           </Button>
