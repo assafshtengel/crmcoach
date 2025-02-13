@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -39,6 +40,10 @@ const PlayerForm = () => {
     jerseyNumber: "",
   });
 
+  const getPositionLabel = (value: string) => {
+    return positions.find(pos => pos.value === value)?.label || "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -75,7 +80,6 @@ const PlayerForm = () => {
       title: "הפרטים נשמרו בהצלחה",
       description: "בוא נמשיך לשלב הבא",
     });
-    // TODO: Navigate to next step once implemented
     navigate("/contract");
   };
 
@@ -167,17 +171,58 @@ const PlayerForm = () => {
             </Card>
           </div>
 
-          {/* Image Section */}
+          {/* Contract Preview Section */}
           <div className="hidden md:block">
-            <div className="relative h-full">
-              <img
-                src="/photo-1581092795360-fd1ca04f0952"
-                alt="דמות של שחקן מקצועי מצליח"
-                className="w-full h-full object-cover rounded-xl shadow-xl opacity-90"
-              />
-              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent text-white rounded-b-xl">
-                <p className="text-lg font-semibold">החוזה שלך לעוד 10 שנים</p>
-                <p className="text-sm opacity-90">תראה את עצמך בתור שחקן מקצועי מצליח</p>
+            <div className="bg-white p-8 rounded-xl shadow-xl border-2 border-gray-100 min-h-[600px] relative">
+              {/* Logo and Header */}
+              <div className="flex justify-center mb-8">
+                <div className="w-24 h-24 bg-gradient-to-r from-purple-600 to-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-2xl font-bold">FC</span>
+                </div>
+              </div>
+
+              {/* Contract Title */}
+              <h1 className="text-2xl font-bold text-center mb-8 text-gray-800">
+                {formData.fullName ? 
+                  `החוזה המקצועני הראשון של ${formData.fullName}` :
+                  "החוזה המקצועני הראשון"
+                }
+              </h1>
+
+              {/* Contract Body */}
+              <div className="space-y-6 text-gray-700 leading-relaxed">
+                <p>
+                  {formData.fullName ? 
+                    `אנו שמחים להודיע כי ${formData.fullName} קיבל חוזה מקצועני בקבוצה.` :
+                    "אנו שמחים להודיע כי _________ קיבל חוזה מקצועני בקבוצה."
+                  }
+                </p>
+                <p>
+                  {formData.position && formData.jerseyNumber ? 
+                    `השחקן ישחק בעמדת ${getPositionLabel(formData.position)}, עם מספר ${formData.jerseyNumber}, ויציג יכולות יוצאות דופן על המגרש.` :
+                    "השחקן ישחק בעמדת ______, עם מספר __, ויציג יכולות יוצאות דופן על המגרש."
+                  }
+                </p>
+                <p>חזונו להפוך לשחקן בכיר נמצא כעת בתהליך רשמי!</p>
+              </div>
+
+              {/* Signature Section */}
+              <div className="absolute bottom-8 right-8 left-8">
+                <div className="border-t-2 border-gray-200 pt-6">
+                  <p className="font-semibold mb-2">
+                    {formData.fullName || "_________"} - השחקן המקצועני
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    "אני חותם על החוזה הזה ומתחייב להפוך אותו למציאות!"
+                  </p>
+                </div>
+              </div>
+
+              {/* Watermark */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+                <div className="transform rotate-45 text-6xl font-bold text-gray-300">
+                  OFFICIAL
+                </div>
               </div>
             </div>
           </div>
