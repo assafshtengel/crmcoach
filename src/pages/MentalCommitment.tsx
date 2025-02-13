@@ -61,7 +61,7 @@ const MentalCommitment = () => {
       : formData.motivationalQuote;
 
     const { error } = await supabase
-      .from("mental_commitments")
+      .from('mental_commitments')
       .insert({
         user_id: user.id,
         improvement_area: formData.improvementArea,
@@ -70,6 +70,7 @@ const MentalCommitment = () => {
       });
 
     if (error) {
+      console.error('Error:', error);
       toast({
         title: "שגיאה",
         description: "אירעה שגיאה בשמירת הפרטים",
