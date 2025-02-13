@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,41 @@ const MentalCommitment = () => {
     motivationalQuote: "",
     customQuote: "",
   });
+
+  useEffect(() => {
+    const loadExistingCommitment = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('mental_commitments')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Error loading commitment:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const commitment = data[0];
+        setFormData({
+          improvementArea: commitment.improvement_area,
+          uniqueTrait: commitment.unique_trait,
+          motivationalQuote: motivationalQuotes.includes(commitment.motivational_quote) 
+            ? commitment.motivational_quote 
+            : 'custom',
+          customQuote: !motivationalQuotes.includes(commitment.motivational_quote) 
+            ? commitment.motivational_quote 
+            : '',
+        });
+      }
+    };
+
+    loadExistingCommitment();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
