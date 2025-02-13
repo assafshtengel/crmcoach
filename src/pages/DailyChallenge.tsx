@@ -135,8 +135,8 @@ const DailyChallenge = () => {
       if (existingChallenge) {
         return {
           ...existingChallenge,
-          daily_tasks: existingChallenge.daily_tasks as Task[],
-          weekly_tasks: existingChallenge.weekly_tasks as Task[]
+          daily_tasks: (existingChallenge.daily_tasks as unknown as Task[]) || [],
+          weekly_tasks: (existingChallenge.weekly_tasks as unknown as Task[]) || []
         } as DailyChallengeData;
       }
 
@@ -145,8 +145,8 @@ const DailyChallenge = () => {
         user_id: user.id,
         goal_category: categoryId,
         custom_goal: customGoal,
-        daily_tasks: tasks.daily,
-        weekly_tasks: tasks.weekly,
+        daily_tasks: JSON.parse(JSON.stringify(tasks.daily)),
+        weekly_tasks: JSON.parse(JSON.stringify(tasks.weekly)),
         current_day: 1,
         streak_count: 0,
         notes: ""
@@ -154,7 +154,7 @@ const DailyChallenge = () => {
 
       const { data, error } = await supabase
         .from('daily_challenges')
-        .insert([newChallenge])
+        .insert(newChallenge)
         .select()
         .single();
 
@@ -165,8 +165,8 @@ const DailyChallenge = () => {
 
       return {
         ...data,
-        daily_tasks: data.daily_tasks as Task[],
-        weekly_tasks: data.weekly_tasks as Task[]
+        daily_tasks: (data.daily_tasks as unknown as Task[]) || [],
+        weekly_tasks: (data.weekly_tasks as unknown as Task[]) || []
       } as DailyChallengeData;
     },
     enabled: !!categoryId // רק אם יש קטגוריה נריץ את השאילתה
@@ -193,8 +193,8 @@ const DailyChallenge = () => {
 
       return {
         ...data,
-        daily_tasks: data.daily_tasks as Task[],
-        weekly_tasks: data.weekly_tasks as Task[]
+        daily_tasks: (data.daily_tasks as unknown as Task[]) || [],
+        weekly_tasks: (data.weekly_tasks as unknown as Task[]) || []
       } as DailyChallengeData;
     },
     onSuccess: () => {
