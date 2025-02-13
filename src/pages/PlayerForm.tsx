@@ -79,20 +79,51 @@ const PlayerForm = () => {
       return;
     }
 
-    const { error } = await supabase
+    // First, check if a record already exists for this user
+    const { data: existingRecord } = await supabase
       .from("player_details")
-      .insert({
-        id: user.id,
-        full_name: formData.fullName,
-        position: formData.position,
-        jersey_number: parseInt(formData.jerseyNumber),
-        team: formData.team,
-        league: formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league),
-        followers: parseInt(formData.followers),
-        contract_value: parseInt(formData.contractValue),
-      });
+      .select()
+      .eq('id', user.id)
+      .single();
+
+    let error;
+    
+    if (existingRecord) {
+      // If record exists, update it
+      const { error: updateError } = await supabase
+        .from("player_details")
+        .update({
+          full_name: formData.fullName,
+          position: formData.position,
+          jersey_number: parseInt(formData.jerseyNumber),
+          team: formData.team,
+          league: formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league),
+          followers: parseInt(formData.followers),
+          contract_value: parseInt(formData.contractValue),
+        })
+        .eq('id', user.id);
+      
+      error = updateError;
+    } else {
+      // If no record exists, insert new one
+      const { error: insertError } = await supabase
+        .from("player_details")
+        .insert({
+          id: user.id,
+          full_name: formData.fullName,
+          position: formData.position,
+          jersey_number: parseInt(formData.jerseyNumber),
+          team: formData.team,
+          league: formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league),
+          followers: parseInt(formData.followers),
+          contract_value: parseInt(formData.contractValue),
+        });
+      
+      error = insertError;
+    }
 
     if (error) {
+      console.error('Error:', error);
       toast({
         title: "שגיאה",
         description: "אירעה שגיאה בשמירת הפרטים",
