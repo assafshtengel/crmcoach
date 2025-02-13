@@ -161,7 +161,7 @@ const Contract = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-[210mm] mx-auto print:m-0">
         <div className="flex justify-between items-center mb-6 print:hidden">
           <Button
             variant="outline"
@@ -219,51 +219,57 @@ const Contract = () => {
         </div>
 
         <div 
-          className="relative bg-white p-8 rounded-xl shadow-xl print:shadow-none print:p-0 border-4"
+          className="relative bg-white p-4 rounded-xl shadow-xl print:shadow-none print:p-0 border-4 print:h-[297mm]"
           style={{
             borderImage: `linear-gradient(45deg, ${teamColors.primary}, ${teamColors.secondary}) 1`,
-            backgroundImage: `linear-gradient(to right, ${teamColors.primary}05, ${teamColors.secondary}05)`
+            backgroundImage: `linear-gradient(to right, ${teamColors.primary}05, ${teamColors.secondary}05)`,
+            '@media print': {
+              minHeight: '297mm',
+              width: '210mm',
+              padding: '15mm',
+              margin: '0',
+            }
           }}
           id="contract-content"
         >
-          <div className="flex justify-between items-center mb-8">
-            <div className="w-24 h-24">
+          <div className="flex justify-between items-center mb-4">
+            <div className="w-16 h-16 print:w-12 print:h-12">
               <div 
                 className="w-full h-full rounded-full bg-gradient-to-r flex items-center justify-center"
                 style={{ 
                   backgroundImage: `linear-gradient(45deg, ${teamColors.primary}, ${teamColors.secondary})` 
                 }}
               >
-                <span className="text-white text-2xl font-bold">
+                <span className="text-white text-xl print:text-lg font-bold">
                   {contract.team?.substring(0, 2).toUpperCase() || "FC"}
                 </span>
               </div>
             </div>
             <div className="flex-1 text-center">
-              <h1 className="text-3xl font-bold mb-2 bg-clip-text text-transparent" 
+              <h1 className="text-2xl print:text-xl font-bold mb-1 bg-clip-text text-transparent" 
                 style={{ 
                   backgroundImage: `linear-gradient(45deg, ${teamColors.primary}, ${teamColors.secondary})` 
                 }}>
                 חוזה שחקן מקצועני
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm">
                 שנחתם ביום {new Date().toLocaleDateString('he-IL')}
               </p>
             </div>
-            <div className="w-24"></div> {/* Spacer for symmetry */}
+            <div className="w-16"></div>
           </div>
 
-          <div className="space-y-6 text-lg leading-relaxed">
-            <div className="bg-gray-50/80 p-6 rounded-lg backdrop-blur-sm border border-gray-200">
-              <p className="mb-4 font-semibold text-xl text-center">
+          <div className="space-y-4 text-base leading-relaxed print:text-sm">
+            <div className="bg-gray-50/80 p-4 rounded-lg backdrop-blur-sm border border-gray-200">
+              <p className="mb-3 font-semibold text-lg print:text-base text-center">
                 הסכם התקשרות מקצועי
               </p>
               
-              <p className="mb-6">
+              <p className="mb-4">
                 שנערך ונחתם בין:
               </p>
 
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <p>
                   <span className="font-semibold">קבוצת {contract.team}</span> (להלן: "המועדון")
                   <br />
@@ -277,11 +283,11 @@ const Contract = () => {
                 </p>
               </div>
 
-              <div className="mt-8 space-y-4">
+              <div className="mt-4 space-y-2">
                 <p>הואיל והצדדים מעוניינים להסדיר את תנאי העסקתו של השחקן במועדון,</p>
                 <p>לפיכך הוסכם, הוצהר והותנה בין הצדדים כדלקמן:</p>
 
-                <div className="space-y-4 mt-6">
+                <div className="space-y-2 mt-4">
                   <p>
                     1. השחקן {contract.full_name} מתקבל למועדון {contract.team} המשחק ב{contract.league} כשחקן מקצועני.
                   </p>
@@ -305,13 +311,13 @@ const Contract = () => {
               </div>
             </div>
 
-            <div className="mt-8 bg-gradient-to-r from-white to-gray-50 p-6 rounded-lg border border-gray-200 relative overflow-hidden">
-              <h3 className="text-xl font-semibold mb-4" 
+            <div className="bg-gradient-to-r from-white to-gray-50 p-4 rounded-lg border border-gray-200 relative overflow-hidden">
+              <h3 className="text-lg print:text-base font-semibold mb-2" 
                 style={{ color: teamColors.primary }}>
                 חזון עתידי
               </h3>
               
-              <div className="space-y-4 relative z-10">
+              <div className="space-y-2 relative z-10 print:text-sm">
                 <p>
                   מטרת {contract.full_name} היא להפוך לשחקן המוביל של {contract.team}.
                 </p>
@@ -324,7 +330,7 @@ const Contract = () => {
               </div>
 
               <div 
-                className="absolute top-0 right-0 w-24 h-24 opacity-5 transform rotate-45"
+                className="absolute top-0 right-0 w-16 h-16 opacity-5 transform rotate-45"
                 style={{
                   background: `linear-gradient(45deg, ${teamColors.primary}, ${teamColors.secondary})`
                 }}
@@ -332,17 +338,17 @@ const Contract = () => {
             </div>
           </div>
 
-          <div className="mt-16 pt-8 border-t border-gray-200">
-            <div className="grid grid-cols-2 gap-8">
+          <div className="mt-8 pt-4 border-t border-gray-200">
+            <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <p className="font-semibold mb-4">חתימת השחקן:</p>
+                <p className="font-semibold mb-2 print:text-sm">חתימת השחקן:</p>
                 {isEditing ? (
                   isDrawing ? (
                     <div className="border rounded-lg bg-white">
                       <SignatureCanvas
                         ref={signatureRef}
                         canvasProps={{
-                          className: 'signature-canvas w-full h-32'
+                          className: 'signature-canvas w-full h-24'
                         }}
                       />
                     </div>
@@ -355,34 +361,34 @@ const Contract = () => {
                     </Button>
                   )
                 ) : (
-                  <div className="border-b border-gray-300 h-20 flex items-center justify-center">
+                  <div className="border-b border-gray-300 h-16 flex items-center justify-center">
                     {playerSignature ? (
-                      <img src={playerSignature} alt="חתימת השחקן" className="h-16" />
+                      <img src={playerSignature} alt="חתימת השחקן" className="h-12" />
                     ) : (
                       <span className="text-gray-400">טרם נחתם</span>
                     )}
                   </div>
                 )}
-                <p className="mt-2 text-sm text-gray-600">{contract.full_name}</p>
+                <p className="mt-1 text-sm text-gray-600">{contract.full_name}</p>
               </div>
               <div className="text-center">
-                <p className="font-semibold mb-4">חתימת נציג המועדון:</p>
-                <div className="h-20 flex items-center justify-center">
+                <p className="font-semibold mb-2 print:text-sm">חתימת נציג המועדון:</p>
+                <div className="h-16 flex items-center justify-center">
                   <span 
-                    className="font-signature text-xl"
+                    className="font-signature text-lg"
                     style={{ color: teamColors.primary }}
                   >
                     Marco Rossi
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-gray-600">מנהל ספורטיבי</p>
+                <p className="mt-1 text-sm text-gray-600">מנהל ספורטיבי</p>
               </div>
             </div>
           </div>
 
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
             <div 
-              className="transform rotate-45 text-6xl font-bold"
+              className="transform rotate-45 text-4xl font-bold"
               style={{ color: teamColors.primary }}
             >
               OFFICIAL
