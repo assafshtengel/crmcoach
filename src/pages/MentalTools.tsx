@@ -1,6 +1,5 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Plus, Edit } from "lucide-react";
+import { ArrowRight, Plus, Edit, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -17,6 +16,7 @@ interface Tool {
   learned: string;
   key_points: string[];
   implementation: string;
+  videoUrl?: string;
 }
 
 const MentalTools = () => {
@@ -45,12 +45,12 @@ const MentalTools = () => {
     description: "",
     learned: "",
     key_points: [],
-    implementation: ""
+    implementation: "",
+    videoUrl: ""
   });
 
   const handleSave = () => {
     if (editingTool) {
-      // עדכון כלי קיים
       setTools(tools.map(tool => 
         tool.id === editingTool.id ? { ...editingTool } : tool
       ));
@@ -59,7 +59,6 @@ const MentalTools = () => {
         description: `הכלי ${editingTool.name} עודכן`,
       });
     } else {
-      // הוספת כלי חדש
       const newId = Math.max(...tools.map(t => t.id), 0) + 1;
       const toolToAdd = {
         ...newTool,
@@ -81,7 +80,8 @@ const MentalTools = () => {
       description: "",
       learned: "",
       key_points: [],
-      implementation: ""
+      implementation: "",
+      videoUrl: ""
     });
   };
 
@@ -100,7 +100,8 @@ const MentalTools = () => {
       description: "",
       learned: "",
       key_points: [],
-      implementation: ""
+      implementation: "",
+      videoUrl: ""
     });
     setIsDialogOpen(true);
   };
@@ -147,6 +148,19 @@ const MentalTools = () => {
                     <h4 className="font-medium mb-2">יישום:</h4>
                     <p className="text-gray-600">{tool.implementation}</p>
                   </div>
+                  {tool.videoUrl && (
+                    <div>
+                      <h4 className="font-medium mb-2">סרטון הדרכה:</h4>
+                      <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2"
+                        onClick={() => window.open(tool.videoUrl, '_blank')}
+                      >
+                        <Video className="h-4 w-4" />
+                        צפה בסרטון
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -216,6 +230,19 @@ const MentalTools = () => {
                   onChange={(e) => editingTool
                     ? setEditingTool({ ...editingTool, implementation: e.target.value })
                     : setNewTool({ ...newTool, implementation: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="videoUrl">קישור לסרטון</Label>
+                <Input
+                  id="videoUrl"
+                  type="url"
+                  placeholder="הכנס קישור לסרטון YouTube או Vimeo"
+                  value={editingTool ? editingTool.videoUrl : newTool.videoUrl}
+                  onChange={(e) => editingTool
+                    ? setEditingTool({ ...editingTool, videoUrl: e.target.value })
+                    : setNewTool({ ...newTool, videoUrl: e.target.value })
                   }
                 />
               </div>
