@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2 } from "lucide-react";
@@ -50,57 +49,35 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
-  const deleteAllEvaluations = async () => {
+  const fetchEvaluationResults = async () => {
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('player_evaluations')
-        .delete()
-        .eq('user_id', session.session.user.id);
+        .select('*')
+        .eq('user_id', session.session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
 
       if (error) {
-        console.error('Error deleting evaluations:', error);
+        console.error('Error fetching evaluation:', error);
         return;
       }
 
-      // מאפס את התוצאות במצב המקומי
-      setEvaluationResults(null);
-    } catch (error) {
-      console.error('Error in deleteAllEvaluations:', error);
-    }
-  };
-
-  // מחיקת כל התוצאות בטעינת הדף
-  useEffect(() => {
-    deleteAllEvaluations();
-  }, []);
-
-  // פונקציה לטעינת תוצאות חדשות אם קיימות
-  const fetchEvaluationResults = async () => {
-    const { data: session } = await supabase.auth.getSession();
-    if (!session.session) return;
-
-    const { data, error } = await supabase
-      .from('player_evaluations')
-      .select('*')
-      .eq('user_id', session.session.user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error) {
-      if (error.code !== 'PGRST116') {
-        console.error('Error fetching evaluation:', error);
+      // בדיקה אם יש תוצאות
+      if (data && data.length > 0) {
+        setEvaluationResults(data[0]);
+      } else {
+        setEvaluationResults(null);
       }
-      return;
+    } catch (error) {
+      console.error('Error in fetchEvaluationResults:', error);
+      setEvaluationResults(null);
     }
-
-    setEvaluationResults(data);
   };
 
-  // בדיקה לתוצאות חדשות בכל רענון
   useEffect(() => {
     fetchEvaluationResults();
   }, []);
@@ -134,11 +111,10 @@ const Dashboard = () => {
         return;
       }
 
-      // רענן את הנתונים לאחר המחיקה
-      await fetchEvaluationResults();
-      
+      setEvaluationResults(null);
       setShowDeleteDialog(false);
       setDeleteCode("");
+      
       toast({
         title: "ההערכה נמחקה בהצלחה",
         description: "תוכל למלא הערכה חדשה בכל עת",
@@ -151,6 +127,18 @@ const Dashboard = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const getScoreColor = (score: number): string => {
+    if (score >= 8) return 'text-green-600';
+    if (score >= 6) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const getProgressColor = (score: number): string => {
+    if (score >= 8) return 'bg-green-600';
+    if (score >= 6) return 'bg-yellow-600';
+    return 'bg-red-600';
   };
 
   const nextMeeting = "מפגש אישי עם אסף (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
@@ -187,18 +175,6 @@ const Dashboard = () => {
     "הטמעת הבטחו�� בהתנסות של 1 על 1",
     "דיבור עצמי חיובי"
   ];
-
-  const getScoreColor = (score: number): string => {
-    if (score >= 8) return 'text-green-600';
-    if (score >= 6) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getProgressColor = (score: number): string => {
-    if (score >= 8) return 'bg-green-600';
-    if (score >= 6) return 'bg-yellow-600';
-    return 'bg-red-600';
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
