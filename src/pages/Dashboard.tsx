@@ -136,7 +136,11 @@ const Dashboard = () => {
   const handleWatchedToggle = (videoId: string) => {
     setWatchedVideos(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
   };
-  const goals = ["רגוע יותר כאשר נמצא על הספסל", "הטמעת הבטחות בהתנסות של 1 על 1", "דיבור עצמי חיובי"];
+  const goals = [
+    "יישום הנקסט - הטמעת החשיבה כל הזמן של להיות מוכן לנקודה הבאה כל הזמן",
+    "יישום הנקסט על ידי מחיאת כף ומיד חשיבה על ביצוע הפעולה הבאה",
+    "רגוע יותר כאשר נמצא על הספסל"
+  ];
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
@@ -317,10 +321,12 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {goals.map((goal, index) => <li key={index} className="flex items-start gap-2">
+                {goals.map((goal, index) => (
+                  <li key={index} className="flex items-start gap-2">
                     <div className="h-2 w-2 rounded-full bg-primary mt-2" />
                     <span>{goal}</span>
-                  </li>)}
+                  </li>
+                ))}
               </ul>
             </CardContent>
           </Card>
