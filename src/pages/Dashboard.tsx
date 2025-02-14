@@ -123,19 +123,7 @@ const Dashboard = () => {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="bg-white/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">המפגש הבא</CardTitle>
-                <Calendar className="h-6 w-6 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">{nextMeeting}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[#FFDEE2] backdrop-blur-sm">
+          <Card className="bg-[#F2FCE2] backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">המפגש האחרון</CardTitle>
@@ -147,6 +135,18 @@ const Dashboard = () => {
                 <p className="font-medium">מפגש ראשון עם אסף וליאור לצורך הכרות והגדרת יעדים</p>
                 <p className="text-gray-600">תאריך מפגש: 13.2.25</p>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/50 backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">המפגש הבא</CardTitle>
+                <Calendar className="h-6 w-6 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">{nextMeeting}</p>
             </CardContent>
           </Card>
 
