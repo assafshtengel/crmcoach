@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play } from "lucide-react";
@@ -40,9 +39,9 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
-  const nextMeeting = "יום שלישי, 16 באפריל 2024, 18:00";
+  const nextMeeting = "מפגש אישי עם אסף (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
   const playerName = "אורי";
-  const weeklyProgress = 75; // Example progress percentage
+  const weeklyProgress = 75;
 
   const videos = [
     {
@@ -98,7 +97,6 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {/* Progress Section */}
         <Card className="mb-6 bg-white/50 backdrop-blur-sm">
           <CardContent className="pt-6">
             <h3 className="text-lg font-semibold mb-2">התקדמות שבועית</h3>
@@ -108,7 +106,6 @@ const Dashboard = () => {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Next Meeting Card */}
           <Card className="bg-white/50 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -121,7 +118,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Videos Card */}
           <Card className="bg-white/50 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -165,7 +161,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Goals Card */}
           <Card className="bg-white/50 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -185,7 +180,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Elements Investigation Card */}
           <Card 
             className="hover:shadow-lg transition-shadow cursor-pointer bg-white/50 backdrop-blur-sm"
             onClick={() => navigate("/player-evaluation")}
@@ -201,7 +195,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Training Materials Card */}
           <Card className="bg-white/50 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
