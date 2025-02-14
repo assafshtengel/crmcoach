@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const {
@@ -107,7 +108,7 @@ const Dashboard = () => {
     if (score >= 6) return 'bg-yellow-600';
     return 'bg-red-600';
   };
-  const nextMeeting = "מפגש אישי עם אסף (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
+  const nextMeeting = "מפגש אישי עם אס�� (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
   const playerName = "אורי";
   const weeklyProgress = 75;
   const videos = [{
@@ -145,7 +146,7 @@ const Dashboard = () => {
             </TooltipProvider>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent animate-fade-in">
-            ברוך הבא, נהוראי! 🏆
+            ברוך הבא, הראל אלקריף! 🏆
           </h1>
           <Button variant="outline" size="icon" className="text-destructive hover:bg-destructive hover:text-white" onClick={() => setShowLogoutDialog(true)}>
             <LogOut className="h-4 w-4" />
