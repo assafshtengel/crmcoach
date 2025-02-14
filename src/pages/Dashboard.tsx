@@ -172,7 +172,7 @@ const Dashboard = () => {
 
   const goals = [
     "רגוע יותר כאשר נמצא על הספסל",
-    "הטמעת הבטחו�� בהתנסות של 1 על 1",
+    "הטמעת הבטחות בהתנסות של 1 על 1",
     "דיבור עצמי חיובי"
   ];
 
@@ -260,10 +260,17 @@ const Dashboard = () => {
 
         <Card className="mb-6 bg-white/50 backdrop-blur-sm">
           <CardContent className="pt-6">
-            <h3 className="text-lg font-semibold mb-2">התקדמות שבועית</h3>
-            <Progress value={weeklyProgress} className="h-2" />
-            <p className="w-4/5 mx-auto text-xl font-medium text-center mt-4" style={{ background: "linear-gradient(to right, #8B5CF6, #3B82F6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            <p className="text-xl font-medium text-center mb-4" 
+               style={{ background: "linear-gradient(to right, #8B5CF6, #3B82F6)", 
+                        WebkitBackgroundClip: "text", 
+                        WebkitTextFillColor: "transparent" }}>
               התקדמות של 1% בכל יום מובילה אותך להיות פי 37 טוב יותר בסוף השנה
+            </p>
+            <p className="text-lg text-gray-600 text-center px-4 leading-relaxed">
+              ברוך הבא למסע המנטאלי שלך! האתר שלנו מלווה אותך בתהליך ההתפתחות המנטאלית 
+              שהתחלת, דרך סיכום מפגשים אישיים, מתן משימות ממוקדות, הכנה מנטאלית למשחקים, 
+              ניתוח וסיכום משחקים, ועוד כלים שיתווספו בהמשך הדרך. אנחנו כאן ללוות אותך צעד אחר צעד 
+              בדרך להצלחה שלך.
             </p>
           </CardContent>
         </Card>
