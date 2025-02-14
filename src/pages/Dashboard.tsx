@@ -1,7 +1,6 @@
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check } from "lucide-react";
+import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -21,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Tooltip,
@@ -28,18 +28,85 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [watchedVideos, setWatchedVideos] = useState<string[]>([]);
+  const [evaluationResults, setEvaluationResults] = useState<any>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteCode, setDeleteCode] = useState("");
+  const SECURITY_CODE = "1976";
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
+  };
+
+  useEffect(() => {
+    const fetchEvaluationResults = async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      const { data, error } = await supabase
+        .from('player_evaluations')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        if (error.code !== 'PGRST116') { // No rows returned
+          console.error('Error fetching evaluation:', error);
+        }
+        return;
+      }
+
+      setEvaluationResults(data);
+    };
+
+    fetchEvaluationResults();
+  }, []);
+
+  const handleDeleteEvaluation = async () => {
+    if (deleteCode !== SECURITY_CODE) {
+      toast({
+        title: "קוד שגוי",
+        description: "הקוד שהוזן אינו נכון",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!evaluationResults?.id) return;
+
+    const { error } = await supabase
+      .from('player_evaluations')
+      .delete()
+      .eq('id', evaluationResults.id);
+
+    if (error) {
+      toast({
+        title: "שגיאה במחיקת ההערכה",
+        description: "אנא נסה שוב מאוחר יותר",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setEvaluationResults(null);
+    setShowDeleteDialog(false);
+    setDeleteCode("");
+    toast({
+      title: "ההערכה נמחקה בהצלחה",
+      description: "תוכל למלא הערכה חדשה בכל עת",
+    });
   };
 
   const nextMeeting = "מפגש אישי עם אסף (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
@@ -77,6 +144,18 @@ const Dashboard = () => {
     "דיבור עצמי חיובי"
   ];
 
+  const getScoreColor = (score: number): string => {
+    if (score >= 8) return 'text-green-600';
+    if (score >= 6) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const getProgressColor = (score: number): string => {
+    if (score >= 8) return 'bg-green-600';
+    if (score >= 6) return 'bg-yellow-600';
+    return 'bg-red-600';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -111,6 +190,61 @@ const Dashboard = () => {
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
+
+        {evaluationResults && (
+          <Card className="mb-6 bg-white/50 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-xl">תוצאות חקירת האלמנטים האחרונה</CardTitle>
+                <p className="text-sm text-gray-500">
+                  תאריך: {new Date(evaluationResults.evaluation_date).toLocaleDateString('he-IL')}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-red-500 hover:text-red-700 hover:bg-red-100"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">ציון כולל:</span>
+                  <span className={`text-xl font-bold ${getScoreColor(evaluationResults.total_score)}`}>
+                    {evaluationResults.total_score.toFixed(1)}
+                  </span>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {Object.entries(evaluationResults.category_averages || {}).map(([category, score]: [string, any]) => (
+                    <div key={category} className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">{score.name || category}</span>
+                        <span className={`font-bold ${getScoreColor(score)}`}>
+                          {typeof score === 'number' ? score.toFixed(1) : score}
+                        </span>
+                      </div>
+                      <Progress
+                        value={typeof score === 'number' ? score * 10 : 0}
+                        className={`h-2 ${getProgressColor(score)}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/player-evaluation')}
+                  >
+                    צפה בפירוט המלא
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="mb-6 bg-white/50 backdrop-blur-sm">
           <CardContent className="pt-6">
@@ -298,6 +432,42 @@ const Dashboard = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>מחיקת הערכת אלמנטים</DialogTitle>
+              <DialogDescription>
+                להמשך המחיקה, אנא הזן את קוד האבטחה
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Input
+                type="password"
+                placeholder="הזן קוד אבטחה"
+                value={deleteCode}
+                onChange={(e) => setDeleteCode(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setDeleteCode("");
+                }}
+              >
+                ביטול
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteEvaluation}
+              >
+                מחק הערכה
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
