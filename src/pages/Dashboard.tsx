@@ -11,7 +11,6 @@ import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-
 const Dashboard = () => {
   const navigate = useNavigate();
   const {
@@ -302,7 +301,7 @@ const Dashboard = () => {
           </Card>
 
           <Card className="bg-white/50 backdrop-blur-sm">
-            <CardHeader>
+            <CardHeader className="bg-[#377013]/[0.44] py-[11px] px-[51px] my-[9px] mx-0 rounded-sm">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">מטרות</CardTitle>
                 <Target className="h-6 w-6 text-primary" />
@@ -387,5 +386,4 @@ const Dashboard = () => {
       </div>
     </div>;
 };
-
 export default Dashboard;
