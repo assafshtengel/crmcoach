@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check } from "lucide-react";
@@ -71,9 +72,9 @@ const Dashboard = () => {
   };
 
   const goals = [
-    "שיפור ביטחון עצמי במשחק",
-    "פיתוח יכולת ריכוז למשך 90 דקות",
-    "שליטה בלחץ במצבי משחק קריטיים"
+    "רגוע יותר כאשר נמצא על הספסל",
+    "הטמעת הבטחון בהתנסות של 1 על 1",
+    "דיבור עצמי חיובי"
   ];
 
   return (
