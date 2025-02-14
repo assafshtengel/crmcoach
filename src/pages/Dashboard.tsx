@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook, Edit, Save, X } from "lucide-react";
@@ -23,6 +24,10 @@ const Dashboard = () => {
   const [deleteCode, setDeleteCode] = useState("");
   const [isEditingGoals, setIsEditingGoals] = useState(false);
   const [editedGoals, setEditedGoals] = useState<string[]>([]);
+  const [goals, setGoals] = useState<string[]>([
+    "יישום הנקסט - הטמעת החשיבה כל הזמן של להיות מוכן לנקודה הבאה כל הזמן",
+    "יישום הנקסט על ידי מחיאת כף ומיד חשיבה על ביצוע הפעולה הבאה"
+  ]);
 
   const SECURITY_CODE = "1976";
 
@@ -117,29 +122,6 @@ const Dashboard = () => {
     return 'bg-red-600';
   };
 
-  const nextMeeting = "מפגש אישי עם אס�� (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
-  const playerName = "אורי";
-  const weeklyProgress = 75;
-  const videos = [{
-    id: "video1",
-    title: "הפסיכולוגיה של הביצוע – פרק 42: חוק ה-1%",
-    url: "https://www.youtube.com/watch?v=3vt10U_ssc8&t=150s",
-    date: "זמין לצפייה",
-    isLocked: false
-  }, {
-    id: "video2",
-    title: "חוק ה-1% - חלק ב'",
-    url: "https://www.youtube.com/watch?v=example2",
-    date: "ייפתח לצפייה ביום שלישי 18.2.25",
-    isLocked: true
-  }];
-
-  const handleWatchedToggle = (videoId: string) => {
-    setWatchedVideos(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
-  };
-
-  const goals = ["יישום הנקסט - הטמעת החשיבה כל הזמן של להיות מוכן לנקודה הבאה כל הזמן", "יישום הנקסט על ידי מחיאת כף ומיד חשיבה על ביצוע הפעולה הבאה"];
-
   const handleEditGoals = () => {
     setIsEditingGoals(true);
     setEditedGoals([...goals]);
@@ -178,6 +160,27 @@ const Dashboard = () => {
     const newGoals = [...editedGoals];
     newGoals[index] = value;
     setEditedGoals(newGoals);
+  };
+
+  const nextMeeting = "מפגש אישי עם אסף (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
+  const playerName = "אורי";
+  const weeklyProgress = 75;
+  const videos = [{
+    id: "video1",
+    title: "הפסיכולוגיה של הביצוע – פרק 42: חוק ה-1%",
+    url: "https://www.youtube.com/watch?v=3vt10U_ssc8&t=150s",
+    date: "זמין לצפייה",
+    isLocked: false
+  }, {
+    id: "video2",
+    title: "חוק ה-1% - חלק ב'",
+    url: "https://www.youtube.com/watch?v=example2",
+    date: "ייפתח לצפייה ביום שלישי 18.2.25",
+    isLocked: true
+  }];
+
+  const handleWatchedToggle = (videoId: string) => {
+    setWatchedVideos(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
   };
 
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
@@ -468,9 +471,9 @@ const Dashboard = () => {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => {
-              setShowDeleteDialog(false);
-              setDeleteCode("");
-            }}>
+                setShowDeleteDialog(false);
+                setDeleteCode("");
+              }}>
                 ביטול
               </Button>
               <Button variant="destructive" onClick={handleDeleteEvaluation}>
