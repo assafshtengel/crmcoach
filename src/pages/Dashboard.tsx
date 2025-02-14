@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook } from "lucide-react";
+import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook, Edit, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -11,22 +11,26 @@ import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [watchedVideos, setWatchedVideos] = useState<string[]>([]);
   const [evaluationResults, setEvaluationResults] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteCode, setDeleteCode] = useState("");
+  const [isEditingGoals, setIsEditingGoals] = useState(false);
+  const [editedGoals, setEditedGoals] = useState<string[]>([]);
+
   const SECURITY_CODE = "1976";
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
+
   const fetchEvaluationResults = async () => {
     try {
       const {
@@ -53,9 +57,11 @@ const Dashboard = () => {
       setEvaluationResults(null);
     }
   };
+
   useEffect(() => {
     fetchEvaluationResults();
   }, []);
+
   const handleDeleteEvaluation = async () => {
     try {
       if (deleteCode !== SECURITY_CODE) {
@@ -98,16 +104,19 @@ const Dashboard = () => {
       });
     }
   };
+
   const getScoreColor = (score: number): string => {
     if (score >= 8) return 'text-green-600';
     if (score >= 6) return 'text-yellow-600';
     return 'text-red-600';
   };
+
   const getProgressColor = (score: number): string => {
     if (score >= 8) return 'bg-green-600';
     if (score >= 6) return 'bg-yellow-600';
     return 'bg-red-600';
   };
+
   const nextMeeting = "מפגש אישי עם אס�� (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
   const playerName = "אורי";
   const weeklyProgress = 75;
@@ -124,10 +133,53 @@ const Dashboard = () => {
     date: "ייפתח לצפייה ביום שלישי 18.2.25",
     isLocked: true
   }];
+
   const handleWatchedToggle = (videoId: string) => {
     setWatchedVideos(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
   };
+
   const goals = ["יישום הנקסט - הטמעת החשיבה כל הזמן של להיות מוכן לנקודה הבאה כל הזמן", "יישום הנקסט על ידי מחיאת כף ומיד חשיבה על ביצוע הפעולה הבאה"];
+
+  const handleEditGoals = () => {
+    setIsEditingGoals(true);
+    setEditedGoals([...goals]);
+  };
+
+  const handleSaveGoals = async () => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      // Update goals in state
+      setGoals([...editedGoals]);
+      setIsEditingGoals(false);
+
+      // Show success message
+      toast({
+        title: "המטרות נשמרו בהצלחה",
+        description: "המטרות עודכנו ונשמרו",
+      });
+    } catch (error) {
+      console.error('Error saving goals:', error);
+      toast({
+        title: "שגיאה בשמירת המטרות",
+        description: "אנא נסה שוב מאוחר יותר",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelEditGoals = () => {
+    setIsEditingGoals(false);
+    setEditedGoals([]);
+  };
+
+  const handleGoalChange = (index: number, value: string) => {
+    const newGoals = [...editedGoals];
+    newGoals[index] = value;
+    setEditedGoals(newGoals);
+  };
+
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
@@ -290,15 +342,56 @@ const Dashboard = () => {
             <CardHeader className="bg-[#377013]/[0.44] py-[11px] px-[51px] my-[9px] mx-0 rounded-sm">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">מטרות לטווח הקצר</CardTitle>
-                <Target className="h-6 w-6 text-primary" />
+                <div className="flex items-center gap-2">
+                  {isEditingGoals ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleSaveGoals}
+                        className="h-8 w-8"
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleCancelEditGoals}
+                        className="h-8 w-8"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleEditGoals}
+                      className="h-8 w-8"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Target className="h-6 w-6 text-primary" />
+                </div>
               </div>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {goals.map((goal, index) => <li key={index} className="flex items-start gap-2">
+                {(isEditingGoals ? editedGoals : goals).map((goal, index) => (
+                  <li key={index} className="flex items-start gap-2">
                     <div className="h-2 w-2 rounded-full bg-primary mt-2" />
-                    <span>{goal}</span>
-                  </li>)}
+                    {isEditingGoals ? (
+                      <Input
+                        value={goal}
+                        onChange={(e) => handleGoalChange(index, e.target.value)}
+                        className="flex-1"
+                      />
+                    ) : (
+                      <span>{goal}</span>
+                    )}
+                  </li>
+                ))}
               </ul>
             </CardContent>
           </Card>
@@ -389,4 +482,5 @@ const Dashboard = () => {
       </div>
     </div>;
 };
+
 export default Dashboard;
