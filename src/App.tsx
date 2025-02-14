@@ -19,6 +19,7 @@ import ShortTermGoals from "./pages/ShortTermGoals";
 import GoalDetailsQuestions from "./pages/GoalDetailsQuestions";
 import ActionPlan from "./pages/ActionPlan";
 import DailyChallenge from "./pages/DailyChallenge";
+import NewIndex from "./pages/NewIndex";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <Index />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/new-form" 
+            element={
+              <AuthGuard>
+                <NewIndex />
               </AuthGuard>
             } 
           />
