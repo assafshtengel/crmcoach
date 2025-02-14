@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook, Edit, Save, X } from "lucide-react";
+import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -11,84 +11,22 @@ import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Textarea } from "@/components/ui/textarea";
-
-interface DashboardCard {
-  id: string;
-  card_title: string;
-  card_content: string;
-  card_type: string;
-  card_order: number;
-}
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [watchedVideos, setWatchedVideos] = useState<string[]>([]);
   const [evaluationResults, setEvaluationResults] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteCode, setDeleteCode] = useState("");
-  const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [editedContent, setEditedContent] = useState<{ title: string; content: string }>({
-    title: "",
-    content: "",
-  });
-
   const SECURITY_CODE = "1976";
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
-
-  const handleEditStart = (card: DashboardCard) => {
-    setEditingCard(card.id);
-    setEditedContent({
-      title: card.card_title,
-      content: card.card_content || "",
-    });
-  };
-
-  const handleEditSave = async (cardId: string) => {
-    try {
-      const { error } = await supabase
-        .from('dashboard_cards')
-        .update({
-          card_title: editedContent.title,
-          card_content: editedContent.content,
-        })
-        .eq('id', cardId);
-
-      if (error) throw error;
-
-      toast({
-        title: "השינויים נשמרו בהצלחה",
-        description: "הכרטיסייה עודכנה",
-      });
-
-      // Update local state
-      setCards(cards.map(card => 
-        card.id === cardId 
-          ? { ...card, card_title: editedContent.title, card_content: editedContent.content }
-          : card
-      ));
-    } catch (error) {
-      console.error('Error saving card:', error);
-      toast({
-        title: "שגיאה בשמירת השינויים",
-        description: "אנא נסה שוב מאוחר יותר",
-        variant: "destructive",
-      });
-    }
-    setEditingCard(null);
-  };
-
-  const handleEditCancel = () => {
-    setEditingCard(null);
-    setEditedContent({ title: "", content: "" });
-  };
-
   const fetchEvaluationResults = async () => {
     try {
       const {
@@ -170,36 +108,7 @@ const Dashboard = () => {
     if (score >= 6) return 'bg-yellow-600';
     return 'bg-red-600';
   };
-
-  const [cards, setCards] = useState<DashboardCard[]>([]);
-
-  useEffect(() => {
-    const fetchUserCards = async () => {
-      try {
-        const { data: session } = await supabase.auth.getSession();
-        if (!session.session) return;
-        
-        const { data, error } = await supabase
-          .from('dashboard_cards')
-          .select('*')
-          .eq('user_id', session.session.user.id);
-
-        if (error) throw error;
-        if (data) setCards(data);
-      } catch (error) {
-        console.error('Error fetching cards:', error);
-        toast({
-          title: "שגיאה בטעינת הכרטיסיות",
-          description: "אנא נסה שוב מאוחר יותר",
-          variant: "destructive"
-        });
-      }
-    };
-
-    fetchUserCards();
-  }, [toast]);
-
-  const nextMeeting = "מפגש אישי עם אסף (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
+  const nextMeeting = "מפגש אישי עם אס�� (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
   const playerName = "אורי";
   const weeklyProgress = 75;
   const videos = [{
@@ -215,13 +124,10 @@ const Dashboard = () => {
     date: "ייפתח לצפייה ביום שלישי 18.2.25",
     isLocked: true
   }];
-
   const handleWatchedToggle = (videoId: string) => {
     setWatchedVideos(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
   };
-
   const goals = ["יישום הנקסט - הטמעת החשיבה כל הזמן של להיות מוכן לנקודה הבאה כל הזמן", "יישום הנקסט על ידי מחיאת כף ומיד חשיבה על ביצוע הפעולה הבאה"];
-
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
@@ -248,63 +154,6 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          {cards.map((card) => (
-            <Card key={card.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                {editingCard === card.id ? (
-                  <Input
-                    value={editedContent.title}
-                    onChange={(e) => setEditedContent({ ...editedContent, title: e.target.value })}
-                    className="font-bold"
-                  />
-                ) : (
-                  <CardTitle className="text-xl">{card.card_title}</CardTitle>
-                )}
-                <div className="flex gap-2">
-                  {editingCard === card.id ? (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEditSave(card.id)}
-                      >
-                        <Save className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleEditCancel}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditStart(card)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {editingCard === card.id ? (
-                  <Textarea
-                    value={editedContent.content}
-                    onChange={(e) => setEditedContent({ ...editedContent, content: e.target.value })}
-                    className="min-h-[100px]"
-                  />
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-gray-600">{card.card_content}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-
           <Card className={`bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow cursor-pointer`} onClick={() => navigate("/player-evaluation")}>
             <CardHeader className="bg-[#377013]/[0.44] py-[11px] px-[51px] my-[9px] mx-0 rounded-sm">
               <div className="flex items-center justify-between">
@@ -526,9 +375,9 @@ const Dashboard = () => {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => {
-                setShowDeleteDialog(false);
-                setDeleteCode("");
-              }}>
+              setShowDeleteDialog(false);
+              setDeleteCode("");
+            }}>
                 ביטול
               </Button>
               <Button variant="destructive" onClick={handleDeleteEvaluation}>
@@ -540,5 +389,4 @@ const Dashboard = () => {
       </div>
     </div>;
 };
-
 export default Dashboard;
