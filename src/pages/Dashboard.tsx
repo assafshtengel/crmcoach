@@ -11,39 +11,37 @@ import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [watchedVideos, setWatchedVideos] = useState<string[]>([]);
   const [evaluationResults, setEvaluationResults] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteCode, setDeleteCode] = useState("");
   const SECURITY_CODE = "1976";
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
-
   const fetchEvaluationResults = async () => {
     try {
-      const { data: session } = await supabase.auth.getSession();
+      const {
+        data: session
+      } = await supabase.auth.getSession();
       if (!session.session) return;
-      
-      const { data, error } = await supabase
-        .from('player_evaluations')
-        .select('*')
-        .eq('user_id', session.session.user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
+      const {
+        data,
+        error
+      } = await supabase.from('player_evaluations').select('*').eq('user_id', session.session.user.id).order('created_at', {
+        ascending: false
+      }).limit(1);
       if (error) {
         console.error('Error fetching evaluation:', error);
         return;
       }
-
       if (data && data.length > 0) {
         setEvaluationResults(data[0]);
       } else {
@@ -54,11 +52,9 @@ const Dashboard = () => {
       setEvaluationResults(null);
     }
   };
-
   useEffect(() => {
     fetchEvaluationResults();
   }, []);
-
   const handleDeleteEvaluation = async () => {
     try {
       if (deleteCode !== SECURITY_CODE) {
@@ -69,9 +65,13 @@ const Dashboard = () => {
         });
         return;
       }
-      const { data: session } = await supabase.auth.getSession();
+      const {
+        data: session
+      } = await supabase.auth.getSession();
       if (!session.session) return;
-      const { error } = await supabase.from('player_evaluations').delete().eq('user_id', session.session.user.id);
+      const {
+        error
+      } = await supabase.from('player_evaluations').delete().eq('user_id', session.session.user.id);
       if (error) {
         console.error('Error deleting evaluation:', error);
         toast({
@@ -97,19 +97,16 @@ const Dashboard = () => {
       });
     }
   };
-
   const getScoreColor = (score: number): string => {
     if (score >= 8) return 'text-green-600';
     if (score >= 6) return 'text-yellow-600';
     return 'text-red-600';
   };
-
   const getProgressColor = (score: number): string => {
     if (score >= 8) return 'bg-green-600';
     if (score >= 6) return 'bg-yellow-600';
     return 'bg-red-600';
   };
-
   const nextMeeting = "מפגש אישי עם אסף (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
   const playerName = "אורי";
   const weeklyProgress = 75;
@@ -129,12 +126,8 @@ const Dashboard = () => {
   const handleWatchedToggle = (videoId: string) => {
     setWatchedVideos(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
   };
-  const goals = [
-    "יישום הנקסט - הטמעת החשיבה כל הזמן של להיות מוכן לנקודה הבאה כל הזמן",
-    "יישום הנקסט על ידי מחיאת כף ומיד חשיבה על ביצוע הפעולה הבאה"
-  ];
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
+  const goals = ["יישום הנקסט - הטמעת החשיבה כל הזמן של להיות מוכן לנקודה הבאה כל הזמן", "יישום הנקסט על ידי מחיאת כף ומיד חשיבה על ביצוע הפעולה הבאה"];
+  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div className="flex gap-2">
@@ -160,10 +153,7 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          <Card 
-            className={`bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow cursor-pointer`}
-            onClick={() => navigate("/player-evaluation")}
-          >
+          <Card className={`bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow cursor-pointer`} onClick={() => navigate("/player-evaluation")}>
             <CardHeader className="bg-[#377013]/[0.44] py-[11px] px-[51px] my-[9px] mx-0 rounded-sm">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl">שאלון אבחון ראשוני</h3>
@@ -171,8 +161,7 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {evaluationResults ? (
-                <div className="space-y-4">
+              {evaluationResults ? <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">הציון הכולל:</span>
                     <span className={`text-xl font-bold ${getScoreColor(evaluationResults.total_score)}`}>
@@ -180,33 +169,25 @@ const Dashboard = () => {
                     </span>
                   </div>
                   <div className="grid gap-4">
-                    {Object.entries(evaluationResults.category_averages || {}).map(([category, score]: [string, any]) => (
-                      <div key={category} className="bg-gray-50 p-4 rounded-lg">
+                    {Object.entries(evaluationResults.category_averages || {}).map(([category, score]: [string, any]) => <div key={category} className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex justify-between items-center mb-2">
                           <span className="font-medium">{score.name || category}</span>
                           <span className={`font-bold ${getScoreColor(score)}`}>
                             {typeof score === 'number' ? score.toFixed(1) : score}
                           </span>
                         </div>
-                        <Progress 
-                          value={typeof score === 'number' ? score * 10 : 0} 
-                          className={`h-2 ${getProgressColor(score)}`} 
-                        />
-                      </div>
-                    ))}
+                        <Progress value={typeof score === 'number' ? score * 10 : 0} className={`h-2 ${getProgressColor(score)}`} />
+                      </div>)}
                   </div>
-                </div>
-              ) : (
-                <div className="text-center py-4">
+                </div> : <div className="text-center py-4">
                   <p className="text-gray-600 mb-2">טרם מילאת את שאלון האבחון הראשוני</p>
                   <p className="text-sm text-gray-500">לחץ כאן למילוי השאלון</p>
-                </div>
-              )}
+                </div>}
             </CardContent>
           </Card>
 
           <Card className="backdrop-blur-sm bg-amber-500/20 hover:bg-amber-500/30 transition-colors">
-            <CardHeader>
+            <CardHeader className="bg-orange-400 hover:bg-orange-300 rounded-lg px-[11px]">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">המפגש האחרון</CardTitle>
                 <Calendar className="h-6 w-6 text-primary" />
@@ -238,23 +219,11 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card 
-            className="hover:shadow-lg transition-shadow cursor-pointer bg-orange-50/30 hover:bg-orange-50/50 backdrop-blur-sm" 
-            onClick={() => window.open("https://www.shtengel.co.il/%D7%94%D7%A4%D7%95%D7%93%D7%A7%D7%90%D7%A1%D7%98", "_blank")}
-          >
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-orange-50/30 hover:bg-orange-50/50 backdrop-blur-sm" onClick={() => window.open("https://www.shtengel.co.il/%D7%94%D7%A4%D7%95%D7%93%D7%A7%D7%90%D7%A1%D7%98", "_blank")}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">פודקאסט כדורגלן העל</CardTitle>
-                <svg 
-                  className="h-6 w-6 text-primary" 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
+                <svg className="h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M8 5.14v14"></path>
                   <path d="M19 5.14v14"></path>
                   <path d="M8 5.14a5 5 0 0 1 4 0"></path>
@@ -325,29 +294,24 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {goals.map((goal, index) => (
-                  <li key={index} className="flex items-start gap-2">
+                {goals.map((goal, index) => <li key={index} className="flex items-start gap-2">
                     <div className="h-2 w-2 rounded-full bg-primary mt-2" />
                     <span>{goal}</span>
-                  </li>
-                ))}
+                  </li>)}
               </ul>
             </CardContent>
           </Card>
 
-          <Card 
-            className="hover:shadow-lg transition-shadow cursor-pointer bg-teal-50/30 hover:bg-teal-50/50 backdrop-blur-sm"
-            onClick={() => navigate("/mental-tools")}
-          >
-            <CardHeader>
-              <div className="flex items-center justify-between">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-teal-50/30 hover:bg-teal-50/50 backdrop-blur-sm" onClick={() => navigate("/mental-tools")}>
+            <CardHeader className="bg-lime-800 hover:bg-lime-700">
+              <div className="flex items-center justify-between px-[32px] py-[5px]">
                 <CardTitle className="text-xl">כלים מנטליים</CardTitle>
                 <BookOpen className="h-6 w-6 text-primary" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <p className="text-gray-600">צפה ברשימת הכלים המנטליים שלמדת במהלך המפגשים</p>
+                <p className="text-secondary-foreground font-extrabold px-[29px] py-[7px] my-[12px] mx-0">צפה ברשימת הכלים המנטליים שלמדת במהלך המפגשים</p>
               </div>
             </CardContent>
           </Card>
@@ -422,8 +386,6 @@ const Dashboard = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Dashboard;
