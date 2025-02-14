@@ -238,15 +238,34 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-blue-50/30 hover:bg-blue-50/50 backdrop-blur-sm" onClick={() => window.open("https://drive.google.com/file/d/1-1I9uamFPUncyeuSTZWNQS3rwakYCsgd/view?usp=drive_link", "_blank")}>
+          <Card 
+            className="hover:shadow-lg transition-shadow cursor-pointer bg-orange-50/30 hover:bg-orange-50/50 backdrop-blur-sm" 
+            onClick={() => window.open("https://www.shtengel.co.il/%D7%94%D7%A4%D7%95%D7%93%D7%A7%D7%90%D7%A1%D7%98", "_blank")}
+          >
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">תוכנית הליווי</CardTitle>
-                <BookOpen className="h-6 w-6 text-primary" />
+                <CardTitle className="text-xl">פודקאסט כדורגלן העל</CardTitle>
+                <svg 
+                  className="h-6 w-6 text-primary" 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <path d="M8 5.14v14"></path>
+                  <path d="M19 5.14v14"></path>
+                  <path d="M8 5.14a5 5 0 0 1 4 0"></path>
+                  <path d="M19 5.14a5 5 0 0 0-4 0"></path>
+                  <path d="M8 19.14a5 5 0 0 0 4 0"></path>
+                  <path d="M19 19.14a5 5 0 0 1-4 0"></path>
+                </svg>
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">לחץ כאן לצפייה בתוכנית הליווי המלאה</p>
+              <p className="text-gray-600">האזן לפרקי הפודקאסט המלאים על פיתוח מנטלי בספורט</p>
             </CardContent>
           </Card>
 
