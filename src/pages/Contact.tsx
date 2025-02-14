@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Instagram, Facebook, Mail, Phone, Globe, BrandTiktok } from "lucide-react";
+import { ArrowRight, Instagram, Facebook, Mail, Phone, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
