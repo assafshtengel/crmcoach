@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2 } from "lucide-react";
@@ -141,7 +140,7 @@ const Dashboard = () => {
 
   const goals = [
     "רגוע יותר כאשר נמצא על הספסל",
-    "הטמעת הבטחון בהתנסות של 1 על 1",
+    "הטמעת הבטחו�� בהתנסות של 1 על 1",
     "דיבור עצמי חיובי"
   ];
 
@@ -233,14 +232,6 @@ const Dashboard = () => {
                       />
                     </div>
                   ))}
-                </div>
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate('/player-evaluation')}
-                  >
-                    צפה בפירוט המלא
-                  </Button>
                 </div>
               </div>
             </CardContent>
