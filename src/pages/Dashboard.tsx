@@ -285,8 +285,18 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <p className="font-medium">מפגש ראשון עם אסף וליאור לצורך הכרות והגדרת יעדים</p>
-                <p className="text-gray-600">תאריך מפגש: 13.2.25</p>
+                <div className="flex items-start gap-2">
+                  <p className="font-medium flex-1">מפגש ראשון עם אסף בו למדנו את כלי ה-
+                    <Button 
+                      variant="link" 
+                      className="px-1 font-semibold"
+                      onClick={() => navigate("/next")}
+                    >
+                      NEXT
+                    </Button>
+                  </p>
+                </div>
+                <p className="text-gray-600">תאריך מפגש: 14.2.25</p>
               </div>
             </CardContent>
           </Card>
@@ -442,7 +452,7 @@ const Dashboard = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>אתה בטוח שברצונך להתנתק?</AlertDialogTitle>
               <AlertDialogDescription>
-                לאחר ההתנתקות תצטרך להתחבר מחדש כדי לגשת למערכת
+                לאחר ההתנתקות תצטרך להתחבר מ��דש כדי לגשת למערכת
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
