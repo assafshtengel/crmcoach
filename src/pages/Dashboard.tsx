@@ -116,7 +116,7 @@ const Dashboard = () => {
           <CardContent className="pt-6">
             <h3 className="text-lg font-semibold mb-2">התקדמות שבועית</h3>
             <Progress value={weeklyProgress} className="h-2" />
-            <p className="text-sm text-gray-600 mt-2">{weeklyProgress}% מהיעדים הושugo השבוע</p>
+            <p className="text-sm text-gray-600 mt-2">{weeklyProgress}% מהיעדים הושגו השבוע</p>
           </CardContent>
         </Card>
 
