@@ -135,6 +135,36 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
+          <Card className="bg-[#FFDEE2] backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">המפגש האחרון</CardTitle>
+                <Calendar className="h-6 w-6 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="font-medium">מפגש ראשון עם אסף וליאור לצורך הכרות והגדרת יעדים</p>
+                <p className="text-gray-600">תאריך מפגש: 13.2.25</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="hover:shadow-lg transition-shadow cursor-pointer bg-white/50 backdrop-blur-sm"
+            onClick={() => window.open("https://drive.google.com/file/d/1-1I9uamFPUncyeuSTZWNQS3rwakYCsgd/view?usp=drive_link", "_blank")}
+          >
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">תוכנית הליווי</CardTitle>
+                <BookOpen className="h-6 w-6 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">לחץ כאן לצפייה בתוכנית הליווי המלאה</p>
+            </CardContent>
+          </Card>
+
           <Card className="bg-white/50 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
