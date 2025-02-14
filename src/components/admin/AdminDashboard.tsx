@@ -30,26 +30,36 @@ export const AdminDashboard = () => {
 
       if (error) throw error;
 
-      const formattedData: FormData[] = forms.map(form => ({
-        fullName: form.full_name,
-        email: form.email,
-        phone: form.phone,
-        matchDate: form.match_date,
-        opposingTeam: form.opposing_team,
-        gameType: form.game_type,
-        selectedStates: Array.isArray(form.selected_states) 
-          ? form.selected_states.map(state => String(state))
-          : [],
-        selectedGoals: Array.isArray(form.selected_goals) 
-          ? form.selected_goals.map((goal: any) => ({
-              goal: String(goal.goal || ''),
-              metric: String(goal.metric || '')
-            }))
-          : [],
-        answers: typeof form.answers === 'object' ? form.answers : {},
-        currentPressure: form.current_pressure || undefined,
-        optimalPressure: form.optimal_pressure || undefined,
-      }));
+      const formattedData: FormData[] = forms.map(form => {
+        // המרת answers לאובייקט של מחרוזות
+        const formattedAnswers: Record<string, string> = {};
+        if (typeof form.answers === 'object' && form.answers !== null) {
+          Object.entries(form.answers).forEach(([key, value]) => {
+            formattedAnswers[key] = String(value);
+          });
+        }
+
+        return {
+          fullName: form.full_name,
+          email: form.email,
+          phone: form.phone,
+          matchDate: form.match_date,
+          opposingTeam: form.opposing_team,
+          gameType: form.game_type,
+          selectedStates: Array.isArray(form.selected_states) 
+            ? form.selected_states.map(state => String(state))
+            : [],
+          selectedGoals: Array.isArray(form.selected_goals) 
+            ? form.selected_goals.map((goal: any) => ({
+                goal: String(goal.goal || ''),
+                metric: String(goal.metric || '')
+              }))
+            : [],
+          answers: formattedAnswers,
+          currentPressure: form.current_pressure || undefined,
+          optimalPressure: form.optimal_pressure || undefined,
+        };
+      });
 
       setData(formattedData);
     } catch (error) {
