@@ -14,9 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [watchedVideos, setWatchedVideos] = useState<string[]>([]);
   const [evaluationResults, setEvaluationResults] = useState<any>(null);
@@ -31,22 +29,21 @@ const Dashboard = () => {
 
   const fetchEvaluationResults = async () => {
     try {
-      const {
-        data: session
-      } = await supabase.auth.getSession();
+      const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
-      const {
-        data,
-        error
-      } = await supabase.from('player_evaluations').select('*').eq('user_id', session.session.user.id).order('created_at', {
-        ascending: false
-      }).limit(1);
+      
+      const { data, error } = await supabase
+        .from('player_evaluations')
+        .select('*')
+        .eq('user_id', session.session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
       if (error) {
         console.error('Error fetching evaluation:', error);
         return;
       }
 
-      // בדיקה אם יש תוצאות
       if (data && data.length > 0) {
         setEvaluationResults(data[0]);
       } else {
@@ -72,13 +69,9 @@ const Dashboard = () => {
         });
         return;
       }
-      const {
-        data: session
-      } = await supabase.auth.getSession();
+      const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
-      const {
-        error
-      } = await supabase.from('player_evaluations').delete().eq('user_id', session.session.user.id);
+      const { error } = await supabase.from('player_evaluations').delete().eq('user_id', session.session.user.id);
       if (error) {
         console.error('Error deleting evaluation:', error);
         toast({
@@ -140,7 +133,8 @@ const Dashboard = () => {
     "יישום הנקסט - הטמעת החשיבה כל הזמן של להיות מוכן לנקודה הבאה כל הזמן",
     "יישום הנקסט על ידי מחיאת כף ומיד חשיבה על ביצוע הפעולה הבאה"
   ];
-  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div className="flex gap-2">
@@ -165,61 +159,11 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {evaluationResults && <Card className="mb-6 bg-white/50 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">תוצאות חקירת האלמנטים האחרונה</CardTitle>
-                <p className="text-sm text-gray-500">
-                  תאריך: {new Date(evaluationResults.evaluation_date).toLocaleDateString('he-IL')}
-                </p>
-              </div>
-              <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-100" onClick={() => setShowDeleteDialog(true)}>
-                <Trash2 className="h-5 w-5" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">הציון הכולל:</span>
-                  <span className={`text-xl font-bold ${getScoreColor(evaluationResults.total_score)}`}>
-                    {evaluationResults.total_score.toFixed(1)}
-                  </span>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {Object.entries(evaluationResults.category_averages || {}).map(([category, score]: [string, any]) => <div key={category} className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium">{score.name || category}</span>
-                        <span className={`font-bold ${getScoreColor(score)}`}>
-                          {typeof score === 'number' ? score.toFixed(1) : score}
-                        </span>
-                      </div>
-                      <Progress value={typeof score === 'number' ? score * 10 : 0} className={`h-2 ${getProgressColor(score)}`} />
-                    </div>)}
-                </div>
-              </div>
-            </CardContent>
-          </Card>}
-
-        <Card className="mb-6 bg-white/50 backdrop-blur-sm">
-          <CardContent className="pt-6">
-            <p className="text-xl font-medium text-center mb-4" style={{
-            background: "linear-gradient(to right, #8B5CF6, #3B82F6)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent"
-          }}>
-              התקדמות של 1% בכל יום מובילה אותך להיות פי 37 טוב יותר בסוף השנה
-            </p>
-            <p className="text-lg text-gray-600 text-center px-4 leading-relaxed">
-              ברוך הבא למסע המנטאלי שלך! האתר שלנו מלווה אותך בתהליך ההתפתחות המנטאלית 
-              שהתחלת, דרך סיכום מפגשים אישיים, מתן משימות ממוקדות, הכנה מנטאלית למשחקים, 
-              ניתוח וסיכום משחקים, ועוד כלים שיתווספו בהמשך הדרך. אנחנו כאן ללוות אותך צעד אחר צעד 
-              בדרך להצלחה שלך.
-            </p>
-          </CardContent>
-        </Card>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          <Card className="bg-white/50 backdrop-blur-sm">
+          <Card 
+            className={`bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow cursor-pointer`}
+            onClick={() => navigate("/player-evaluation")}
+          >
             <CardHeader className="bg-[#377013]/[0.44] py-[11px] px-[51px] my-[9px] mx-0 rounded-sm">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl">שאלון אבחון ראשוני</h3>
@@ -227,25 +171,37 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">הציון הכולל:</span>
-                  <span className={`text-xl font-bold ${getScoreColor(8)}`}>
-                    8.0
-                  </span>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {Object.entries({}).map(([category, score]: [string, any]) => <div key={category} className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium">{score.name || category}</span>
-                        <span className={`font-bold ${getScoreColor(score)}`}>
-                          {typeof score === 'number' ? score.toFixed(1) : score}
-                        </span>
+              {evaluationResults ? (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">הציון הכולל:</span>
+                    <span className={`text-xl font-bold ${getScoreColor(evaluationResults.total_score)}`}>
+                      {evaluationResults.total_score.toFixed(1)}
+                    </span>
+                  </div>
+                  <div className="grid gap-4">
+                    {Object.entries(evaluationResults.category_averages || {}).map(([category, score]: [string, any]) => (
+                      <div key={category} className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium">{score.name || category}</span>
+                          <span className={`font-bold ${getScoreColor(score)}`}>
+                            {typeof score === 'number' ? score.toFixed(1) : score}
+                          </span>
+                        </div>
+                        <Progress 
+                          value={typeof score === 'number' ? score * 10 : 0} 
+                          className={`h-2 ${getProgressColor(score)}`} 
+                        />
                       </div>
-                      <Progress value={typeof score === 'number' ? score * 10 : 0} className={`h-2 ${getProgressColor(score)}`} />
-                    </div>)}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-gray-600 mb-2">טרם מילאת את שאלון האבחון הראשוני</p>
+                  <p className="text-sm text-gray-500">לחץ כאן למילוי השאלון</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -427,7 +383,8 @@ const Dashboard = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default Dashboard;
