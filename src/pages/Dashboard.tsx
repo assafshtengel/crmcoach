@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2 } from "lucide-react";
@@ -212,7 +213,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">ציון כולל:</span>
+                  <span className="font-medium">הציון הכולל:</span>
                   <span className={`text-xl font-bold ${getScoreColor(evaluationResults.total_score)}`}>
                     {evaluationResults.total_score.toFixed(1)}
                   </span>
