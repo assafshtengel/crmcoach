@@ -205,7 +205,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="backdrop-blur-sm bg-amber-500 hover:bg-amber-400">
+          <Card className="backdrop-blur-sm bg-amber-500/20 hover:bg-amber-500/30 transition-colors">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">המפגש האחרון</CardTitle>
@@ -226,7 +226,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="backdrop-blur-sm bg-emerald-100">
+          <Card className="backdrop-blur-sm bg-emerald-100/50 hover:bg-emerald-100/70 transition-colors">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">המפגש הבא</CardTitle>
@@ -238,7 +238,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white/50 backdrop-blur-sm" onClick={() => window.open("https://drive.google.com/file/d/1-1I9uamFPUncyeuSTZWNQS3rwakYCsgd/view?usp=drive_link", "_blank")}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-blue-50/30 hover:bg-blue-50/50 backdrop-blur-sm" onClick={() => window.open("https://drive.google.com/file/d/1-1I9uamFPUncyeuSTZWNQS3rwakYCsgd/view?usp=drive_link", "_blank")}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">תוכנית הליווי</CardTitle>
@@ -250,7 +250,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/50 backdrop-blur-sm">
+          <Card className="bg-purple-50/30 hover:bg-purple-50/50 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">סרטוני הדרכה</CardTitle>
@@ -317,7 +317,7 @@ const Dashboard = () => {
           </Card>
 
           <Card 
-            className="hover:shadow-lg transition-shadow cursor-pointer bg-white/50 backdrop-blur-sm"
+            className="hover:shadow-lg transition-shadow cursor-pointer bg-teal-50/30 hover:bg-teal-50/50 backdrop-blur-sm"
             onClick={() => navigate("/mental-tools")}
           >
             <CardHeader>
@@ -333,7 +333,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/50 backdrop-blur-sm">
+          <Card className="bg-indigo-50/30 hover:bg-indigo-50/50 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">פרטי קשר ורשתות חברתיות</CardTitle>
@@ -348,7 +348,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/50 backdrop-blur-sm">
+          <Card className="bg-rose-50/30 hover:bg-rose-50/50 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">חומרי לימוד</CardTitle>
