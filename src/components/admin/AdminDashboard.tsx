@@ -37,11 +37,13 @@ export const AdminDashboard = () => {
         matchDate: form.match_date,
         opposingTeam: form.opposing_team,
         gameType: form.game_type,
-        selectedStates: Array.isArray(form.selected_states) ? form.selected_states : [],
+        selectedStates: Array.isArray(form.selected_states) 
+          ? form.selected_states.map(state => String(state))
+          : [],
         selectedGoals: Array.isArray(form.selected_goals) 
           ? form.selected_goals.map((goal: any) => ({
-              goal: goal.goal || '',
-              metric: goal.metric || ''
+              goal: String(goal.goal || ''),
+              metric: String(goal.metric || '')
             }))
           : [],
         answers: typeof form.answers === 'object' ? form.answers : {},
