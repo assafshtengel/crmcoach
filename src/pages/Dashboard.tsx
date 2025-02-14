@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook } from "lucide-react";
+import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook, Edit, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -11,17 +11,102 @@ import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+
+interface DashboardCard {
+  id: string;
+  card_title: string;
+  card_content: string;
+  card_type: string;
+  card_order: number;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [watchedVideos, setWatchedVideos] = useState<string[]>([]);
   const [evaluationResults, setEvaluationResults] = useState<any>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteCode, setDeleteCode] = useState("");
+  const [cards, setCards] = useState<DashboardCard[]>([]);
+  const [editingCard, setEditingCard] = useState<string | null>(null);
+  const [editedContent, setEditedContent] = useState<{ title: string; content: string }>({
+    title: "",
+    content: "",
+  });
+
   const SECURITY_CODE = "1976";
+
+  useEffect(() => {
+    fetchCards();
+  }, []);
+
+  const fetchCards = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('dashboard_cards')
+        .select('*')
+        .order('card_order', { ascending: true });
+
+      if (error) throw error;
+      setCards(data || []);
+    } catch (error) {
+      console.error('Error fetching cards:', error);
+      toast({
+        title: "שגיאה בטעינת הכרטיסיות",
+        description: "אנא נסה שוב מאוחר יותר",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEditStart = (card: DashboardCard) => {
+    setEditingCard(card.id);
+    setEditedContent({
+      title: card.card_title,
+      content: card.card_content,
+    });
+  };
+
+  const handleEditSave = async (cardId: string) => {
+    try {
+      const { error } = await supabase
+        .from('dashboard_cards')
+        .update({
+          card_title: editedContent.title,
+          card_content: editedContent.content,
+        })
+        .eq('id', cardId);
+
+      if (error) throw error;
+
+      setCards(cards.map(card => 
+        card.id === cardId 
+          ? { ...card, card_title: editedContent.title, card_content: editedContent.content }
+          : card
+      ));
+      
+      setEditingCard(null);
+      toast({
+        title: "שינויים נשמרו",
+        description: "הכרטיסייה עודכנה בהצלחה"
+      });
+    } catch (error) {
+      console.error('Error saving card:', error);
+      toast({
+        title: "שגיאה בשמירת השינויים",
+        description: "אנא נסה שוב",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingCard(null);
+    setEditedContent({ title: "", content: "" });
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
@@ -127,7 +212,8 @@ const Dashboard = () => {
     setWatchedVideos(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
   };
   const goals = ["יישום הנקסט - הטמעת החשיבה כל הזמן של להיות מוכן לנקודה הבאה כל הזמן", "יישום הנקסט על ידי מחיאת כף ומיד חשיבה על ביצוע הפעולה הבאה"];
-  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div className="flex gap-2">
@@ -153,197 +239,62 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          <Card className={`bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow cursor-pointer`} onClick={() => navigate("/player-evaluation")}>
-            <CardHeader className="bg-[#377013]/[0.44] py-[11px] px-[51px] my-[9px] mx-0 rounded-sm">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl">שאלון אבחון ראשוני</h3>
-                <BookOpen className="h-6 w-6 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {evaluationResults ? <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">הציון הכולל:</span>
-                    <span className={`text-xl font-bold ${getScoreColor(evaluationResults.total_score)}`}>
-                      {evaluationResults.total_score.toFixed(1)}
-                    </span>
-                  </div>
-                  <div className="grid gap-4">
-                    {Object.entries(evaluationResults.category_averages || {}).map(([category, score]: [string, any]) => <div key={category} className="bg-gray-50 p-4 rounded-lg">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium">{score.name || category}</span>
-                          <span className={`font-bold ${getScoreColor(score)}`}>
-                            {typeof score === 'number' ? score.toFixed(1) : score}
-                          </span>
-                        </div>
-                        <Progress value={typeof score === 'number' ? score * 10 : 0} className={`h-2 ${getProgressColor(score)}`} />
-                      </div>)}
-                  </div>
-                </div> : <div className="text-center py-4">
-                  <p className="text-gray-600 mb-2">טרם מילאת את שאלון האבחון הראשוני</p>
-                  <p className="text-sm text-gray-500">לחץ כאן למילוי השאלון</p>
-                </div>}
-            </CardContent>
-          </Card>
-
-          <Card className="backdrop-blur-sm bg-amber-500/20 hover:bg-amber-500/30 transition-colors">
-            <CardHeader className="bg-orange-400 hover:bg-orange-300 rounded-lg px-[11px]">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">המפגש האחרון</CardTitle>
-                <Calendar className="h-6 w-6 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-start gap-2">
-                  <p className="font-medium flex-1">מפגש ראשון עם אסף בו למדנו את כלי ה-
-                    <Button variant="link" className="px-1 font-semibold" onClick={() => navigate("/next")}>
-                      NEXT
-                    </Button>
-                  </p>
-                </div>
-                <p className="text-gray-600">תאריך מפגש: 14.2.25</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="backdrop-blur-sm bg-emerald-100/50 hover:bg-emerald-100/70 transition-colors">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">המפגש הבא</CardTitle>
-                <Calendar className="h-6 w-6 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent className="">
-              <p className="text-gray-600">{nextMeeting}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-orange-50/30 hover:bg-orange-50/50 backdrop-blur-sm" onClick={() => window.open("https://www.shtengel.co.il/%D7%94%D7%A4%D7%95%D7%93%D7%A7%D7%90%D7%A1%D7%98", "_blank")}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">פודקאסט כדורגלן העל</CardTitle>
-                <svg className="h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M8 5.14v14"></path>
-                  <path d="M19 5.14v14"></path>
-                  <path d="M8 5.14a5 5 0 0 1 4 0"></path>
-                  <path d="M19 5.14a5 5 0 0 0-4 0"></path>
-                  <path d="M8 19.14a5 5 0 0 0 4 0"></path>
-                  <path d="M19 19.14a5 5 0 0 1-4 0"></path>
-                </svg>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">האזן לפרקי הפודקאסט המלאים על פיתוח מנטלי בספורט</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-purple-50/30 hover:bg-purple-50/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">סרטוני הדרכה</CardTitle>
-                <Video className="h-6 w-6 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {videos.map(video => <div key={video.id} className="space-y-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer group">
-                          <Play className="h-4 w-4 text-primary group-hover:text-primary/70" />
-                          <div className="flex-1">
-                            <p className="font-medium">{video.title}</p>
-                            <p className="text-sm text-gray-500">{video.date}</p>
-                          </div>
-                          {!video.isLocked && <div className="flex items-center gap-2">
-                              <Checkbox id={`watched-${video.id}`} checked={watchedVideos.includes(video.id)} onCheckedChange={() => handleWatchedToggle(video.id)} className="ml-2" />
-                              <label htmlFor={`watched-${video.id}`} className="text-sm text-gray-500">
-                                צפיתי
-                              </label>
-                            </div>}
-                          {video.isLocked && <span className="text-sm text-gray-400">🔒</span>}
-                        </div>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>{video.title}</DialogTitle>
-                          <DialogDescription>
-                            {!video.isLocked ? <div className="mt-4">
-                                <a href={video.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                                  פתח בחלון חדש
-                                </a>
-                              </div> : <div className="mt-4 text-gray-500">
-                                סרטון זה יהיה זמין לצפייה בתאריך המצוין
-                              </div>}
-                          </DialogDescription>
-                        </DialogHeader>
-                      </DialogContent>
-                    </Dialog>
-                  </div>)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/50 backdrop-blur-sm">
-            <CardHeader className="bg-[#377013]/[0.44] py-[11px] px-[51px] my-[9px] mx-0 rounded-sm">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">מטרות לטווח הקצר</CardTitle>
-                <Target className="h-6 w-6 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {goals.map((goal, index) => <li key={index} className="flex items-start gap-2">
-                    <div className="h-2 w-2 rounded-full bg-primary mt-2" />
-                    <span>{goal}</span>
-                  </li>)}
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-teal-50/30 hover:bg-teal-50/50 backdrop-blur-sm" onClick={() => navigate("/mental-tools")}>
-            <CardHeader className="bg-lime-800 hover:bg-lime-700">
-              <div className="flex items-center justify-between px-[32px] py-[5px]">
-                <CardTitle className="text-xl">כלים מנטליים</CardTitle>
-                <BookOpen className="h-6 w-6 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-secondary-foreground font-extrabold px-[29px] py-[7px] my-[12px] mx-0">צפה ברשימת הכלים המנטליים שלמדת במהלך המפגשים</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-indigo-50/30 hover:bg-indigo-50/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">פרטי קשר ורשתות חברתיות</CardTitle>
+          {cards.map((card) => (
+            <Card key={card.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                {editingCard === card.id ? (
+                  <Input
+                    value={editedContent.title}
+                    onChange={(e) => setEditedContent({ ...editedContent, title: e.target.value })}
+                    className="font-bold"
+                  />
+                ) : (
+                  <CardTitle className="text-xl">{card.card_title}</CardTitle>
+                )}
                 <div className="flex gap-2">
-                  <Instagram className="h-5 w-5 text-primary" />
-                  <Facebook className="h-5 w-5 text-primary" />
+                  {editingCard === card.id ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditSave(card.id)}
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleEditCancel}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditStart(card)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">עקבו אחרי אסף ברשתות החברתיות</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-rose-50/30 hover:bg-rose-50/50 backdrop-blur-sm">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">חומרי לימוד</CardTitle>
-                <BookOpen className="h-6 w-6 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-gray-600">חומרי קריאה והקלטות נוספות יהיו זמינים כאן</p>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                {editingCard === card.id ? (
+                  <Textarea
+                    value={editedContent.content}
+                    onChange={(e) => setEditedContent({ ...editedContent, content: e.target.value })}
+                    className="min-h-[100px]"
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-gray-600">{card.card_content}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
@@ -386,6 +337,8 @@ const Dashboard = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Dashboard;
