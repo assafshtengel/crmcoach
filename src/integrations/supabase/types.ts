@@ -96,39 +96,6 @@ export type Database = {
         }
         Relationships: []
       }
-      dashboard_cards: {
-        Row: {
-          card_content: string | null
-          card_order: number
-          card_title: string
-          card_type: string
-          created_at: string
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          card_content?: string | null
-          card_order: number
-          card_title: string
-          card_type: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          card_content?: string | null
-          card_order?: number
-          card_title?: string
-          card_type?: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       mental_commitments: {
         Row: {
           created_at: string
