@@ -223,7 +223,7 @@ const Dashboard = () => {
             </TooltipProvider>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent animate-fade-in">
-            ברוך הבא, אורי! 🏆
+            ברוך הבא, נהוראי! 🏆
           </h1>
           <Button 
             variant="outline" 
