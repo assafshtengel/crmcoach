@@ -218,7 +218,37 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+          <Card className="bg-white/50 backdrop-blur-sm">
+            <CardHeader className="bg-[#377013]/[0.44] py-[11px] px-[51px] my-[9px] mx-0 rounded-sm">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl">שאלון אבחון ראשוני</h3>
+                <BookOpen className="h-6 w-6 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">הציון הכולל:</span>
+                  <span className={`text-xl font-bold ${getScoreColor(8)}`}>
+                    8.0
+                  </span>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {Object.entries({}).map(([category, score]: [string, any]) => <div key={category} className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">{score.name || category}</span>
+                        <span className={`font-bold ${getScoreColor(score)}`}>
+                          {typeof score === 'number' ? score.toFixed(1) : score}
+                        </span>
+                      </div>
+                      <Progress value={typeof score === 'number' ? score * 10 : 0} className={`h-2 ${getProgressColor(score)}`} />
+                    </div>)}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="backdrop-blur-sm bg-amber-500 hover:bg-amber-400">
             <CardHeader>
               <div className="flex items-center justify-between">
