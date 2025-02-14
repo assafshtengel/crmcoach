@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2 } from "lucide-react";
+import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -316,15 +316,21 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer bg-white/50 backdrop-blur-sm" onClick={() => navigate("/player-evaluation")}>
+          <Card 
+            className="hover:shadow-lg transition-shadow cursor-pointer bg-white/50 backdrop-blur-sm"
+            onClick={() => navigate("/contact")}
+          >
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">חקירת אלמנטים</CardTitle>
-                <Search className="h-6 w-6 text-primary" />
+                <CardTitle className="text-xl">פרטי קשר ורשתות חברתיות</CardTitle>
+                <div className="flex gap-2">
+                  <Instagram className="h-5 w-5 text-primary" />
+                  <Facebook className="h-5 w-5 text-primary" />
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">חקירה וניתוח של אלמנטים במשחק</p>
+              <p className="text-gray-600">עקבו אחרי אסף ברשתות החברתיות</p>
             </CardContent>
           </Card>
 
@@ -348,7 +354,7 @@ const Dashboard = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>אתה בטוח שברצונך להתנתק?</AlertDialogTitle>
               <AlertDialogDescription>
-                לאחר ההתנתקות תצטרך להתחבר מ��דש כדי לגשת למערכת
+                לאחר ההתנתקות תצטרך להתחבר מחדש כדי לגשת למערכת
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
