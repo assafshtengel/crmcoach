@@ -116,7 +116,9 @@ const Dashboard = () => {
           <CardContent className="pt-6">
             <h3 className="text-lg font-semibold mb-2">התקדמות שבועית</h3>
             <Progress value={weeklyProgress} className="h-2" />
-            <p className="text-sm text-gray-600 mt-2">{weeklyProgress}% מהיעדים הושגו השבוע</p>
+            <p className="w-4/5 mx-auto text-xl font-medium text-center mt-4" style={{ background: "linear-gradient(to right, #8B5CF6, #3B82F6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              התקדמות של 1% בכל יום מובילה אותך להיות פי 37 טוב יותר בסוף השנה
+            </p>
           </CardContent>
         </Card>
 
