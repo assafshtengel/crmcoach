@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2 } from "lucide-react";
@@ -50,68 +49,78 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
-  useEffect(() => {
-    const fetchEvaluationResults = async () => {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) return;
+  const fetchEvaluationResults = async () => {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) return;
 
-      const { data, error } = await supabase
-        .from('player_evaluations')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+    const { data, error } = await supabase
+      .from('player_evaluations')
+      .select('*')
+      .eq('user_id', session.session.user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
-      if (error) {
-        if (error.code !== 'PGRST116') { // No rows returned
-          console.error('Error fetching evaluation:', error);
-        }
-        return;
+    if (error) {
+      if (error.code !== 'PGRST116') { // No rows returned
+        console.error('Error fetching evaluation:', error);
       }
+      return;
+    }
 
-      setEvaluationResults(data);
-    };
+    setEvaluationResults(data);
+  };
 
+  useEffect(() => {
     fetchEvaluationResults();
   }, []);
 
   const handleDeleteEvaluation = async () => {
-    if (deleteCode !== SECURITY_CODE) {
+    try {
+      if (deleteCode !== SECURITY_CODE) {
+        toast({
+          title: "קוד שגוי",
+          description: "הקוד שהוזן אינו נכון",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      const { error } = await supabase
+        .from('player_evaluations')
+        .delete()
+        .eq('user_id', session.session.user.id);
+
+      if (error) {
+        console.error('Error deleting evaluation:', error);
+        toast({
+          title: "שגיאה במחיקת ההערכה",
+          description: "אנא נסה שוב מאוחר יותר",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // רענן את הנתונים לאחר המחיקה
+      await fetchEvaluationResults();
+      
+      setShowDeleteDialog(false);
+      setDeleteCode("");
       toast({
-        title: "קוד שגוי",
-        description: "הקוד שהוזן אינו נכון",
-        variant: "destructive",
+        title: "ההערכה נמחקה בהצלחה",
+        description: "תוכל למלא הערכה חדשה בכל עת",
       });
-      return;
-    }
-
-    if (!evaluationResults?.id) return;
-
-    // מחיקה של כל התוצאות מהשחקן הנוכחי
-    const { data: session } = await supabase.auth.getSession();
-    if (!session.session) return;
-
-    const { error } = await supabase
-      .from('player_evaluations')
-      .delete()
-      .eq('user_id', session.session.user.id);
-
-    if (error) {
+    } catch (error) {
+      console.error('Error in handleDeleteEvaluation:', error);
       toast({
         title: "שגיאה במחיקת ההערכה",
         description: "אנא נסה שוב מאוחר יותר",
         variant: "destructive",
       });
-      return;
     }
-
-    setEvaluationResults(null);
-    setShowDeleteDialog(false);
-    setDeleteCode("");
-    toast({
-      title: "ההערכה נמחקה בהצלחה",
-      description: "תוכל למלא הערכה חדשה בכל עת",
-    });
   };
 
   const nextMeeting = "מפגש אישי עם אסף (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
@@ -184,7 +193,7 @@ const Dashboard = () => {
             </TooltipProvider>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent animate-fade-in">
-            ברוך הבא, {playerName}! 🏆
+            ברוך הבא, אורי! 🏆
           </h1>
           <Button 
             variant="outline" 
