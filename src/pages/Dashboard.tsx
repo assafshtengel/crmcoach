@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2 } from "lucide-react";
@@ -49,6 +50,34 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
+  const deleteAllEvaluations = async () => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      const { error } = await supabase
+        .from('player_evaluations')
+        .delete()
+        .eq('user_id', session.session.user.id);
+
+      if (error) {
+        console.error('Error deleting evaluations:', error);
+        return;
+      }
+
+      // מאפס את התוצאות במצב המקומי
+      setEvaluationResults(null);
+    } catch (error) {
+      console.error('Error in deleteAllEvaluations:', error);
+    }
+  };
+
+  // מחיקת כל התוצאות בטעינת הדף
+  useEffect(() => {
+    deleteAllEvaluations();
+  }, []);
+
+  // פונקציה לטעינת תוצאות חדשות אם קיימות
   const fetchEvaluationResults = async () => {
     const { data: session } = await supabase.auth.getSession();
     if (!session.session) return;
@@ -62,7 +91,7 @@ const Dashboard = () => {
       .single();
 
     if (error) {
-      if (error.code !== 'PGRST116') { // No rows returned
+      if (error.code !== 'PGRST116') {
         console.error('Error fetching evaluation:', error);
       }
       return;
@@ -71,6 +100,7 @@ const Dashboard = () => {
     setEvaluationResults(data);
   };
 
+  // בדיקה לתוצאות חדשות בכל רענון
   useEffect(() => {
     fetchEvaluationResults();
   }, []);
