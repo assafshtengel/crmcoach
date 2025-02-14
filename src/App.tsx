@@ -22,6 +22,7 @@ import DailyChallenge from "./pages/DailyChallenge";
 import NewIndex from "./pages/NewIndex";
 import Next from "./pages/Next";
 import Contact from "./pages/Contact";
+import MentalTools from "./pages/MentalTools";
 
 const queryClient = new QueryClient();
 
@@ -142,6 +143,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <Next />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/mental-tools" 
+            element={
+              <AuthGuard>
+                <MentalTools />
               </AuthGuard>
             } 
           />

@@ -318,8 +318,22 @@ const Dashboard = () => {
 
           <Card 
             className="hover:shadow-lg transition-shadow cursor-pointer bg-white/50 backdrop-blur-sm"
-            onClick={() => navigate("/contact")}
+            onClick={() => navigate("/mental-tools")}
           >
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">כלים מנטליים</CardTitle>
+                <BookOpen className="h-6 w-6 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-gray-600">צפה ברשימת הכלים המנטליים שלמדת במהלך המפגשים</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/50 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">פרטי קשר ורשתות חברתיות</CardTitle>
