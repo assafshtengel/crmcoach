@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2 } from "lucide-react";
@@ -86,10 +87,14 @@ const Dashboard = () => {
 
     if (!evaluationResults?.id) return;
 
+    // מחיקה של כל התוצאות מהשחקן הנוכחי
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) return;
+
     const { error } = await supabase
       .from('player_evaluations')
       .delete()
-      .eq('id', evaluationResults.id);
+      .eq('user_id', session.session.user.id);
 
     if (error) {
       toast({
