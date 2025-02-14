@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +21,7 @@ import ActionPlan from "./pages/ActionPlan";
 import DailyChallenge from "./pages/DailyChallenge";
 import NewIndex from "./pages/NewIndex";
 import Next from "./pages/Next";
+import Contact from "./pages/Contact";
 
 const queryClient = new QueryClient();
 
@@ -143,6 +145,7 @@ const App = () => (
               </AuthGuard>
             } 
           />
+          <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
