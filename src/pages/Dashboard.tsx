@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const {
@@ -386,4 +387,5 @@ const Dashboard = () => {
       </div>
     </div>;
 };
+
 export default Dashboard;
