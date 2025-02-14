@@ -25,10 +25,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [watchedVideos, setWatchedVideos] = useState<string[]>([]);
-  const [evaluationResults, setEvaluationResults] = useState<any>(null);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteCode, setDeleteCode] = useState("");
   const [cards, setCards] = useState<DashboardCard[]>([]);
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState<{ title: string; content: string }>({
@@ -36,30 +32,72 @@ const Dashboard = () => {
     content: "",
   });
 
-  const SECURITY_CODE = "1976";
-
   useEffect(() => {
-    fetchCards();
-  }, []);
+    const initializeCards = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          navigate("/auth");
+          return;
+        }
 
-  const fetchCards = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('dashboard_cards')
-        .select('*')
-        .order('card_order', { ascending: true });
+        const { data: existingCards } = await supabase
+          .from('dashboard_cards')
+          .select('*')
+          .eq('user_id', session.user.id);
 
-      if (error) throw error;
-      setCards(data || []);
-    } catch (error) {
-      console.error('Error fetching cards:', error);
-      toast({
-        title: "שגיאה בטעינת הכרטיסיות",
-        description: "אנא נסה שוב מאוחר יותר",
-        variant: "destructive"
-      });
-    }
-  };
+        if (!existingCards || existingCards.length === 0) {
+          const initialCards = [
+            {
+              card_title: 'ברוך הבא',
+              card_content: 'ברוך הבא למערכת הניהול שלך. כאן תוכל לעקוב אחר ההתקדמות שלך ולנהל את המשימות שלך.',
+              card_type: 'welcome',
+              card_order: 1,
+              user_id: session.user.id
+            },
+            {
+              card_title: 'המשימות הבאות שלך',
+              card_content: 'צפה בכל המשימות המתוכננות שלך וסמן אותן כמושלמות כשאתה מסיים.',
+              card_type: 'tasks',
+              card_order: 2,
+              user_id: session.user.id
+            },
+            {
+              card_title: 'סטטיסטיקות',
+              card_content: 'עקוב אחר ההתקדמות שלך וצפה בנתונים סטטיסטיים על הביצועים שלך.',
+              card_type: 'stats',
+              card_order: 3,
+              user_id: session.user.id
+            }
+          ];
+
+          const { data: newCards, error } = await supabase
+            .from('dashboard_cards')
+            .insert(initialCards)
+            .select();
+
+          if (error) throw error;
+          setCards(newCards);
+          
+          toast({
+            title: "ברוך הבא!",
+            description: "הכרטיסיות הראשוניות נוצרו בהצלחה"
+          });
+        } else {
+          setCards(existingCards);
+        }
+      } catch (error) {
+        console.error('Error initializing cards:', error);
+        toast({
+          title: "שגיאה בטעינת הכרטיסיות",
+          description: "אנא נסה שוב מאוחר יותר",
+          variant: "destructive"
+        });
+      }
+    };
+
+    initializeCards();
+  }, [navigate, toast]);
 
   const handleEditStart = (card: DashboardCard) => {
     setEditingCard(card.id);
@@ -111,107 +149,7 @@ const Dashboard = () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
-  const fetchEvaluationResults = async () => {
-    try {
-      const {
-        data: session
-      } = await supabase.auth.getSession();
-      if (!session.session) return;
-      const {
-        data,
-        error
-      } = await supabase.from('player_evaluations').select('*').eq('user_id', session.session.user.id).order('created_at', {
-        ascending: false
-      }).limit(1);
-      if (error) {
-        console.error('Error fetching evaluation:', error);
-        return;
-      }
-      if (data && data.length > 0) {
-        setEvaluationResults(data[0]);
-      } else {
-        setEvaluationResults(null);
-      }
-    } catch (error) {
-      console.error('Error in fetchEvaluationResults:', error);
-      setEvaluationResults(null);
-    }
-  };
-  useEffect(() => {
-    fetchEvaluationResults();
-  }, []);
-  const handleDeleteEvaluation = async () => {
-    try {
-      if (deleteCode !== SECURITY_CODE) {
-        toast({
-          title: "קוד שגוי",
-          description: "הקוד שהוזן אינו נכון",
-          variant: "destructive"
-        });
-        return;
-      }
-      const {
-        data: session
-      } = await supabase.auth.getSession();
-      if (!session.session) return;
-      const {
-        error
-      } = await supabase.from('player_evaluations').delete().eq('user_id', session.session.user.id);
-      if (error) {
-        console.error('Error deleting evaluation:', error);
-        toast({
-          title: "שגיאה במחיקת ההערכה",
-          description: "אנא נסה שוב מאוחר יותר",
-          variant: "destructive"
-        });
-        return;
-      }
-      setEvaluationResults(null);
-      setShowDeleteDialog(false);
-      setDeleteCode("");
-      toast({
-        title: "ההערכה נמחקה בהצלחה",
-        description: "תוכל למלא הערכה חדשה בכל עת"
-      });
-    } catch (error) {
-      console.error('Error in handleDeleteEvaluation:', error);
-      toast({
-        title: "שגיאה במחיקת ההערכה",
-        description: "אנא נסה שוב מאוחר יותר",
-        variant: "destructive"
-      });
-    }
-  };
-  const getScoreColor = (score: number): string => {
-    if (score >= 8) return 'text-green-600';
-    if (score >= 6) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-  const getProgressColor = (score: number): string => {
-    if (score >= 8) return 'bg-green-600';
-    if (score >= 6) return 'bg-yellow-600';
-    return 'bg-red-600';
-  };
-  const nextMeeting = "מפגש אישי עם אסף (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
-  const playerName = "אורי";
-  const weeklyProgress = 75;
-  const videos = [{
-    id: "video1",
-    title: "הפסיכולוגיה של הביצוע – פרק 42: חוק ה-1%",
-    url: "https://www.youtube.com/watch?v=3vt10U_ssc8&t=150s",
-    date: "זמין לצפייה",
-    isLocked: false
-  }, {
-    id: "video2",
-    title: "חוק ה-1% - חלק ב'",
-    url: "https://www.youtube.com/watch?v=example2",
-    date: "ייפתח לצפייה ביום שלישי 18.2.25",
-    isLocked: true
-  }];
-  const handleWatchedToggle = (videoId: string) => {
-    setWatchedVideos(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
-  };
-  const goals = ["יישום הנקסט - הטמעת החשיבה כל הזמן של להיות מוכן לנקודה הבאה כל הזמן", "יישום הנקסט על ידי מחיאת כף ומיד חשיבה על ביצוע הפעולה הבאה"];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -311,31 +249,6 @@ const Dashboard = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
-        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>מחיקת הערכת אלמנטים</DialogTitle>
-              <DialogDescription>
-                להמשך המחיקה, אנא הזן את קוד האבטחה
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <Input type="password" placeholder="הזן קוד אבטחה" value={deleteCode} onChange={e => setDeleteCode(e.target.value)} />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => {
-              setShowDeleteDialog(false);
-              setDeleteCode("");
-            }}>
-                ביטול
-              </Button>
-              <Button variant="destructive" onClick={handleDeleteEvaluation}>
-                מחק הערכה
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
