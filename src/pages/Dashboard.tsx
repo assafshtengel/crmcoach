@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const {
@@ -22,10 +23,12 @@ const Dashboard = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteCode, setDeleteCode] = useState("");
   const SECURITY_CODE = "1976";
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
+
   const fetchEvaluationResults = async () => {
     try {
       const {
@@ -54,9 +57,11 @@ const Dashboard = () => {
       setEvaluationResults(null);
     }
   };
+
   useEffect(() => {
     fetchEvaluationResults();
   }, []);
+
   const handleDeleteEvaluation = async () => {
     try {
       if (deleteCode !== SECURITY_CODE) {
@@ -99,16 +104,19 @@ const Dashboard = () => {
       });
     }
   };
+
   const getScoreColor = (score: number): string => {
     if (score >= 8) return 'text-green-600';
     if (score >= 6) return 'text-yellow-600';
     return 'text-red-600';
   };
+
   const getProgressColor = (score: number): string => {
     if (score >= 8) return 'bg-green-600';
     if (score >= 6) return 'bg-yellow-600';
     return 'bg-red-600';
   };
+
   const nextMeeting = "מפגש אישי עם אסף (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
   const playerName = "אורי";
   const weeklyProgress = 75;
@@ -303,7 +311,7 @@ const Dashboard = () => {
           <Card className="bg-white/50 backdrop-blur-sm">
             <CardHeader className="bg-[#377013]/[0.44] py-[11px] px-[51px] my-[9px] mx-0 rounded-sm">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">מטרות</CardTitle>
+                <CardTitle className="text-xl">מטרות לטווח הקצר</CardTitle>
                 <Target className="h-6 w-6 text-primary" />
               </div>
             </CardHeader>
@@ -386,4 +394,5 @@ const Dashboard = () => {
       </div>
     </div>;
 };
+
 export default Dashboard;
