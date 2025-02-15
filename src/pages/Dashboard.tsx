@@ -199,6 +199,7 @@ const Dashboard = () => {
         .from('last_meetings')
         .select('meeting_text, meeting_date')
         .eq('user_id', session.session.user.id)
+        .order('created_at', { ascending: false })
         .maybeSingle();
 
       if (error) {
@@ -239,6 +240,7 @@ const Dashboard = () => {
       }
 
       setIsEditingLastMeeting(false);
+      setLastMeetingDate(new Date().toLocaleDateString('he-IL'));
       toast({
         title: "המפגש האחרון נשמר בהצלחה",
         description: "הפרטים עודכנו",
@@ -247,6 +249,43 @@ const Dashboard = () => {
       console.error('Error in handleSaveLastMeeting:', error);
       toast({
         title: "שגיאה בשמירת המפגש האחרון",
+        description: "אנא נסה שוב מאוחר יותר",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveNextMeeting = async () => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      const { error: upsertError } = await supabase
+        .from('next_meetings')
+        .upsert({
+          user_id: session.session.user.id,
+          meeting_text: nextMeetingText,
+        });
+
+      if (upsertError) {
+        console.error('Error saving next meeting:', upsertError);
+        toast({
+          title: "שגיאה בשמירת המפגש הבא",
+          description: "אנא נסה שוב מאוחר יותר",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsEditingNextMeeting(false);
+      toast({
+        title: "המפגש הבא נשמר בהצלחה",
+        description: "הפרטים עודכנו",
+      });
+    } catch (error) {
+      console.error('Error in handleSaveNextMeeting:', error);
+      toast({
+        title: "שגיאה בשמירת המפגש הבא",
         description: "אנא נסה שוב מאוחר יותר",
         variant: "destructive",
       });
@@ -315,7 +354,7 @@ const Dashboard = () => {
             <CardContent>
               {evaluationResults ? <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">הציון הכולל:</span>
+                    <span className="font-medium">הציון הכול��:</span>
                     <span className={`text-xl font-bold ${getScoreColor(evaluationResults.total_score)}`}>
                       {evaluationResults.total_score.toFixed(1)}
                     </span>
