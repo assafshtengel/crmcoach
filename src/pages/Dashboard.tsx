@@ -29,6 +29,9 @@ const Dashboard = () => {
   ]);
   const [isEditingNextMeeting, setIsEditingNextMeeting] = useState(false);
   const [nextMeetingText, setNextMeetingText] = useState("מפגש אישי עם אסף - יתואם בהמשך השבוע הבא בין 16.2-21.2");
+  const [isEditingLastMeeting, setIsEditingLastMeeting] = useState(false);
+  const [lastMeetingText, setLastMeetingText] = useState("מפגש שני עם אסף בו למדנו את כלי ה-NEXT וה-SCOUT");
+  const [lastMeetingDate, setLastMeetingDate] = useState("14.2.25");
 
   const SECURITY_CODE = "1976";
 
@@ -99,7 +102,7 @@ const Dashboard = () => {
       setDeleteCode("");
       toast({
         title: "ההערכה נמחקה בהצלחה",
-        description: "תוכל למלא הערכה חדשה בכל עת"
+        description: "תוכל למלא הערכה ��דשה בכל עת"
       });
     } catch (error) {
       console.error('Error in handleDeleteEvaluation:', error);
@@ -187,37 +190,63 @@ const Dashboard = () => {
     }
   };
 
-  const handleSaveNextMeeting = async () => {
+  const fetchLastMeeting = async () => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      const { data, error } = await supabase
+        .from('last_meetings')
+        .select('meeting_text, meeting_date')
+        .eq('user_id', session.session.user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching last meeting:', error);
+        return;
+      }
+
+      if (data) {
+        setLastMeetingText(data.meeting_text);
+        setLastMeetingDate(new Date(data.meeting_date).toLocaleDateString('he-IL'));
+      }
+    } catch (error) {
+      console.error('Error in fetchLastMeeting:', error);
+    }
+  };
+
+  const handleSaveLastMeeting = async () => {
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
 
       const { error: upsertError } = await supabase
-        .from('next_meetings')
+        .from('last_meetings')
         .upsert({
           user_id: session.session.user.id,
-          meeting_text: nextMeetingText,
+          meeting_text: lastMeetingText,
+          meeting_date: new Date().toISOString(),
         });
 
       if (upsertError) {
-        console.error('Error saving next meeting:', upsertError);
+        console.error('Error saving last meeting:', upsertError);
         toast({
-          title: "שגיאה בשמירת המפגש הבא",
+          title: "שגיאה בשמירת המפגש האחרון",
           description: "אנא נסה שוב מאוחר יותר",
           variant: "destructive",
         });
         return;
       }
 
-      setIsEditingNextMeeting(false);
+      setIsEditingLastMeeting(false);
       toast({
-        title: "המפגש הבא נשמר בהצלחה",
+        title: "המפגש האחרון נשמר בהצלחה",
         description: "הפרטים עודכנו",
       });
     } catch (error) {
-      console.error('Error in handleSaveNextMeeting:', error);
+      console.error('Error in handleSaveLastMeeting:', error);
       toast({
-        title: "שגיאה בשמירת המפגש הבא",
+        title: "שגיאה בשמירת המפגש האחרון",
         description: "אנא נסה שוב מאוחר יותר",
         variant: "destructive",
       });
@@ -226,6 +255,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchNextMeeting();
+    fetchLastMeeting();
   }, []);
 
   const nextMeeting = "מפגש אישי עם אסף - יתואם בהמשך השבוע הבא בין 16.2-21.2";
@@ -312,23 +342,54 @@ const Dashboard = () => {
             <CardHeader className="bg-orange-400 hover:bg-orange-300 rounded-lg px-[11px]">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">המפגש האחרון</CardTitle>
-                <Calendar className="h-6 w-6 text-primary" />
+                <div className="flex items-center gap-2">
+                  {isEditingLastMeeting ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleSaveLastMeeting}
+                        className="h-8 w-8"
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsEditingLastMeeting(false)}
+                        className="h-8 w-8"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsEditingLastMeeting(true)}
+                      className="h-8 w-8"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Calendar className="h-6 w-6 text-primary" />
+                </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-start gap-2">
-                  <p className="font-medium flex-1">מפגש שני עם אסף בו למדנו את כלי ה-
-                    <Button variant="link" className="px-1 font-semibold" onClick={() => navigate("/next")}>
-                      NEXT
-                    </Button>
-                     וה-
-                    <Button variant="link" className="px-1 font-semibold" onClick={() => navigate("/mental-tools")}>
-                      SCOUT
-                    </Button>
-                  </p>
+                  {isEditingLastMeeting ? (
+                    <Textarea
+                      value={lastMeetingText}
+                      onChange={(e) => setLastMeetingText(e.target.value)}
+                      className="min-h-[100px]"
+                    />
+                  ) : (
+                    <p className="font-medium flex-1">{lastMeetingText}</p>
+                  )}
                 </div>
-                <p className="text-gray-600">תאריך מפגש: 14.2.25</p>
+                <p className="text-gray-600">תאריך מפגש: {lastMeetingDate}</p>
               </div>
             </CardContent>
           </Card>
