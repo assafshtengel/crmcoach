@@ -162,7 +162,7 @@ const Dashboard = () => {
     setEditedGoals(newGoals);
   };
 
-  const nextMeeting = "מפגש אישי עם אסף (30 דקות) - במהלך השבוע של 16.2-21.2, מועד מדויק ייקבע בהמשך";
+  const nextMeeting = "מפגש אישי עם אסף - יתואם בהמשך השבוע הבא בין 16.2-21.2";
   const playerName = "אורי";
   const weeklyProgress = 75;
   const videos = [{
