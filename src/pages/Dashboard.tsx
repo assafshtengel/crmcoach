@@ -319,15 +319,24 @@ const Dashboard = () => {
     setWatchedVideos(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
   };
 
-  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex gap-4 items-center">
-            <Avatar className="h-12 w-12 border-2 border-primary">
-              <AvatarImage src="/lovable-uploads/284c22d0-0b06-45e4-ad3e-59c30a3d43b1.png" alt="הראל אלקריאף" />
-              <AvatarFallback>הא</AvatarFallback>
-            </Avatar>
-            <div className="flex gap-2">
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="max-w-7xl mx-auto p-8">
+        <header className="mb-12">
+          <div className="flex justify-between items-center glass-card p-4 rounded-2xl shadow-md">
+            <div className="flex gap-6 items-center">
+              <Avatar className="h-14 w-14 border-2 border-primary shadow-md">
+                <AvatarImage src="/lovable-uploads/284c22d0-0b06-45e4-ad3e-59c30a3d43b1.png" alt="הראל אלקריאף" />
+                <AvatarFallback>הא</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-1">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                  ברוך הבא, הראל אלקריאף! 🏆
+                </h1>
+                <p className="text-gray-600">מערכת האימון האישית שלך</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -340,54 +349,65 @@ const Dashboard = () => {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="text-destructive hover:bg-destructive hover:text-white transition-colors duration-200" 
+                onClick={() => setShowLogoutDialog(true)}
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent animate-fade-in">
-            ברוך הבא, הראל אלקריאף! 🏆
-          </h1>
-          <Button variant="outline" size="icon" className="text-destructive hover:bg-destructive hover:text-white" onClick={() => setShowLogoutDialog(true)}>
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          <Card className={`bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow cursor-pointer`} onClick={() => navigate("/player-evaluation")}>
-            <CardHeader className="bg-[#377013]/[0.44] py-[11px] px-[51px] my-[9px] mx-0 rounded-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <Card className="glass-card hover:shadow-lg transition-all duration-200 cursor-pointer animate-fade-in" onClick={() => navigate("/player-evaluation")}>
+            <CardHeader className="bg-primary/10 py-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl">שאלון אבחון ראשוני</h3>
+                <h3 className="text-xl font-semibold text-primary">שאלון אבחון ראשוני</h3>
                 <BookOpen className="h-6 w-6 text-primary" />
               </div>
             </CardHeader>
-            <CardContent>
-              {evaluationResults ? <div className="space-y-4">
+            <CardContent className="pt-6">
+              {evaluationResults ? (
+                <div className="space-y-6">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">הציון הכול��:</span>
+                    <span className="font-medium">הציון הכולל:</span>
                     <span className={`text-xl font-bold ${getScoreColor(evaluationResults.total_score)}`}>
                       {evaluationResults.total_score.toFixed(1)}
                     </span>
                   </div>
                   <div className="grid gap-4">
-                    {Object.entries(evaluationResults.category_averages || {}).map(([category, score]: [string, any]) => <div key={category} className="bg-gray-50 p-4 rounded-lg">
+                    {Object.entries(evaluationResults.category_averages || {}).map(([category, score]: [string, any]) => (
+                      <div key={category} className="bg-white/50 p-4 rounded-lg backdrop-blur-sm">
                         <div className="flex justify-between items-center mb-2">
                           <span className="font-medium">{score.name || category}</span>
                           <span className={`font-bold ${getScoreColor(score)}`}>
                             {typeof score === 'number' ? score.toFixed(1) : score}
                           </span>
                         </div>
-                        <Progress value={typeof score === 'number' ? score * 10 : 0} className={`h-2 ${getProgressColor(score)}`} />
-                      </div>)}
+                        <Progress 
+                          value={typeof score === 'number' ? score * 10 : 0} 
+                          className={`h-2 ${getProgressColor(score)}`} 
+                        />
+                      </div>
+                    ))}
                   </div>
-                </div> : <div className="text-center py-4">
+                </div>
+              ) : (
+                <div className="text-center py-6">
                   <p className="text-gray-600 mb-2">טרם מילאת את שאלון האבחון הראשוני</p>
                   <p className="text-sm text-gray-500">לחץ כאן למילוי השאלון</p>
-                </div>}
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="backdrop-blur-sm bg-amber-500/20 hover:bg-amber-500/30 transition-colors">
-            <CardHeader className="bg-orange-400 hover:bg-orange-300 rounded-lg px-[11px]">
+          <Card className="glass-card backdrop-blur-sm hover:shadow-lg transition-all duration-200 animate-fade-in">
+            <CardHeader className="bg-primary/10 py-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">המפגש האחרון</CardTitle>
+                <CardTitle className="text-xl font-semibold text-primary">המפגש האחרון</CardTitle>
                 <div className="flex items-center gap-2">
                   {isEditingLastMeeting ? (
                     <>
@@ -395,7 +415,7 @@ const Dashboard = () => {
                         variant="ghost"
                         size="icon"
                         onClick={handleSaveLastMeeting}
-                        className="h-8 w-8"
+                        className="h-8 w-8 hover:bg-primary/10"
                       >
                         <Save className="h-4 w-4" />
                       </Button>
@@ -403,7 +423,7 @@ const Dashboard = () => {
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsEditingLastMeeting(false)}
-                        className="h-8 w-8"
+                        className="h-8 w-8 hover:bg-primary/10"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -413,7 +433,7 @@ const Dashboard = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => setIsEditingLastMeeting(true)}
-                      className="h-8 w-8"
+                      className="h-8 w-8 hover:bg-primary/10"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -422,28 +442,28 @@ const Dashboard = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
+            <CardContent className="pt-6">
+              <div className="space-y-4">
                 <div className="flex items-start gap-2">
                   {isEditingLastMeeting ? (
                     <Textarea
                       value={lastMeetingText}
                       onChange={(e) => setLastMeetingText(e.target.value)}
-                      className="min-h-[100px]"
+                      className="min-h-[100px] bg-white/50"
                     />
                   ) : (
                     <p className="font-medium flex-1">{lastMeetingText}</p>
                   )}
                 </div>
-                <p className="text-gray-600">תאריך מפגש: {lastMeetingDate}</p>
+                <p className="text-gray-600 text-sm">תאריך מפגש: {lastMeetingDate}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="backdrop-blur-sm bg-emerald-100/50 hover:bg-emerald-100/70 transition-colors">
-            <CardHeader>
+          <Card className="glass-card backdrop-blur-sm hover:shadow-lg transition-all duration-200 animate-fade-in">
+            <CardHeader className="bg-primary/10 py-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">המפגש הבא</CardTitle>
+                <CardTitle className="text-xl font-semibold text-primary">המפגש הבא</CardTitle>
                 <div className="flex items-center gap-2">
                   {isEditingNextMeeting ? (
                     <>
@@ -451,7 +471,7 @@ const Dashboard = () => {
                         variant="ghost"
                         size="icon"
                         onClick={handleSaveNextMeeting}
-                        className="h-8 w-8"
+                        className="h-8 w-8 hover:bg-primary/10"
                       >
                         <Save className="h-4 w-4" />
                       </Button>
@@ -459,7 +479,7 @@ const Dashboard = () => {
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsEditingNextMeeting(false)}
-                        className="h-8 w-8"
+                        className="h-8 w-8 hover:bg-primary/10"
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -469,7 +489,7 @@ const Dashboard = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => setIsEditingNextMeeting(true)}
-                      className="h-8 w-8"
+                      className="h-8 w-8 hover:bg-primary/10"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -478,12 +498,12 @@ const Dashboard = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {isEditingNextMeeting ? (
                 <Textarea
                   value={nextMeetingText}
                   onChange={(e) => setNextMeetingText(e.target.value)}
-                  className="min-h-[100px]"
+                  className="min-h-[100px] bg-white/50"
                 />
               ) : (
                 <p className="text-gray-600">{nextMeetingText}</p>
@@ -699,7 +719,8 @@ const Dashboard = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default Dashboard;
