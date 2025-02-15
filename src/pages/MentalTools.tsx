@@ -114,7 +114,7 @@ const MentalTools = () => {
                   <Edit className="h-4 w-4" />
                 </Button>
               </CardHeader>
-              <CardContent className="bg-gray-400 hover:bg-gray-300">
+              <CardContent className="bg-zinc-200 hover:bg-zinc-100">
                 <p className="text-gray-600 mb-4 font-extrabold">{tool.description}</p>
                 <div className="space-y-4">
                   <div>
