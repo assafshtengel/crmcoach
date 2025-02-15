@@ -172,7 +172,7 @@ const Dashboard = () => {
         .from('next_meetings')
         .select('meeting_text')
         .eq('user_id', session.session.user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching next meeting:', error);
