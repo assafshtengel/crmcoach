@@ -1,78 +1,165 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Plus, Edit, Video } from "lucide-react";
+import { ArrowRight, Plus, Edit, Video, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
 interface Tool {
-  id: number;
+  id: string;
   name: string;
   description: string;
   learned: string;
   key_points: string[];
   implementation: string;
-  videoUrl?: string;
+  video_url?: string;
 }
+
 const MentalTools = () => {
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
-  const [tools, setTools] = useState<Tool[]>([{
-    id: 1,
-    name: "NEXT",
-    description: "כלי לשיפור המיקוד והריכוז במשחק. מתמקד בהכנה המנטלית לנקודה הבאה.",
-    learned: "14.2.25",
-    key_points: ["מחיאת כף מיד אחרי סיום נקודה", "מיקוד בנקודה הבאה", "שחרור המתח מהנקודה הקודמת"],
-    implementation: "ליישם בכל משחק ובכל נקודה, במיוחד אחרי נקודות קשות"
-  }]);
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [newTool, setNewTool] = useState<Partial<Tool>>({
     name: "",
     description: "",
     learned: "",
     key_points: [],
     implementation: "",
-    videoUrl: ""
+    video_url: ""
   });
-  const handleSave = () => {
-    if (editingTool) {
-      setTools(tools.map(tool => tool.id === editingTool.id ? {
-        ...editingTool
-      } : tool));
-      toast({
-        title: "הכלי עודכן בהצלחה",
-        description: `הכלי ${editingTool.name} עודכן`
+
+  // Load tools from Supabase when component mounts
+  useEffect(() => {
+    fetchTools();
+  }, []);
+
+  const fetchTools = async () => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      const { data, error } = await supabase
+        .from('mental_tools')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching tools:', error);
+        toast({
+          title: "שגיאה בטעינת הכלים",
+          description: "אנא נסה שוב מאוחר יותר",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setTools(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast({
+          title: "לא מחובר",
+          description: "יש להתחבר כדי לשמור כלים",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (editingTool) {
+        // Update existing tool
+        const { error } = await supabase
+          .from('mental_tools')
+          .update({
+            name: editingTool.name,
+            description: editingTool.description,
+            learned: editingTool.learned,
+            key_points: editingTool.key_points,
+            implementation: editingTool.implementation,
+            video_url: editingTool.video_url
+          })
+          .eq('id', editingTool.id);
+
+        if (error) {
+          console.error('Error updating tool:', error);
+          toast({
+            title: "שגיאה בעדכון הכלי",
+            description: "אנא נסה שוב מאוחר יותר",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        toast({
+          title: "הכלי עודכן בהצלחה",
+          description: `הכלי ${editingTool.name} עודכן`
+        });
+      } else {
+        // Add new tool
+        const { error } = await supabase
+          .from('mental_tools')
+          .insert([{
+            ...newTool,
+            user_id: session.session.user.id,
+            key_points: newTool.key_points?.toString().split('\n').filter(point => point.trim() !== '') || []
+          }]);
+
+        if (error) {
+          console.error('Error adding tool:', error);
+          toast({
+            title: "שגיאה בהוספת הכלי",
+            description: "אנא נסה שוב מאוחר יותר",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        toast({
+          title: "הכלי נוסף בהצלחה",
+          description: `הכלי ${newTool.name} נוסף למאגר הכלים`
+        });
+      }
+
+      // Refresh tools list
+      await fetchTools();
+
+      // Reset form and close dialog
+      setIsDialogOpen(false);
+      setEditingTool(null);
+      setNewTool({
+        name: "",
+        description: "",
+        learned: "",
+        key_points: [],
+        implementation: "",
+        video_url: ""
       });
-    } else {
-      const newId = Math.max(...tools.map(t => t.id), 0) + 1;
-      const toolToAdd = {
-        ...newTool,
-        id: newId,
-        key_points: newTool.key_points?.toString().split('\n').filter(point => point.trim() !== '') || []
-      } as Tool;
-      setTools([...tools, toolToAdd]);
+    } catch (error) {
+      console.error('Error:', error);
       toast({
-        title: "הכלי נוסף בהצלחה",
-        description: `הכלי ${newTool.name} נוסף למאגר הכלים`
+        title: "שגיאה",
+        description: "אירעה שגיאה בשמירת הכלי",
+        variant: "destructive"
       });
     }
-    setIsDialogOpen(false);
-    setEditingTool(null);
-    setNewTool({
-      name: "",
-      description: "",
-      learned: "",
-      key_points: [],
-      implementation: "",
-      videoUrl: ""
-    });
   };
+
   const handleEdit = (tool: Tool) => {
     setEditingTool({
       ...tool,
@@ -80,6 +167,7 @@ const MentalTools = () => {
     });
     setIsDialogOpen(true);
   };
+
   const handleNewTool = () => {
     setEditingTool(null);
     setNewTool({
@@ -88,10 +176,17 @@ const MentalTools = () => {
       learned: "",
       key_points: [],
       implementation: "",
-      videoUrl: ""
+      video_url: ""
     });
     setIsDialogOpen(true);
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center min-h-screen">
+      <p>טוען...</p>
+    </div>;
+  }
+
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
@@ -130,9 +225,9 @@ const MentalTools = () => {
                     <h4 className="font-medium mb-2">יישום:</h4>
                     <p className="text-gray-600 font-bold">{tool.implementation}</p>
                   </div>
-                  {tool.videoUrl && <div>
+                  {tool.video_url && <div>
                       <h4 className="font-medium mb-2">סרטון הדרכה:</h4>
-                      <Button variant="outline" className="flex items-center gap-2" onClick={() => window.open(tool.videoUrl, '_blank')}>
+                      <Button variant="outline" className="flex items-center gap-2" onClick={() => window.open(tool.video_url, '_blank')}>
                         <Video className="h-4 w-4" />
                         צפה בסרטון
                       </Button>
@@ -202,13 +297,13 @@ const MentalTools = () => {
               })} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="videoUrl">קישור לסרטון</Label>
-                <Input id="videoUrl" type="url" placeholder="הכנס קישור לסרטון YouTube או Vimeo" value={editingTool ? editingTool.videoUrl : newTool.videoUrl} onChange={e => editingTool ? setEditingTool({
+                <Label htmlFor="video_url">קישור לסרטון</Label>
+                <Input id="video_url" type="url" placeholder="הכנס קישור לסרטון YouTube או Vimeo" value={editingTool ? editingTool.video_url : newTool.video_url} onChange={e => editingTool ? setEditingTool({
                 ...editingTool,
-                videoUrl: e.target.value
+                video_url: e.target.value
               }) : setNewTool({
                 ...newTool,
-                videoUrl: e.target.value
+                video_url: e.target.value
               })} />
               </div>
             </div>
@@ -222,4 +317,5 @@ const MentalTools = () => {
       </div>
     </div>;
 };
+
 export default MentalTools;

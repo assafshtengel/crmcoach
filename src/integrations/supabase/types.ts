@@ -204,6 +204,42 @@ export type Database = {
         }
         Relationships: []
       }
+      mental_tools: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          implementation: string
+          key_points: string[]
+          learned: string
+          name: string
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          implementation: string
+          key_points?: string[]
+          learned: string
+          name: string
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          implementation?: string
+          key_points?: string[]
+          learned?: string
+          name?: string
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       player_details: {
         Row: {
           contract_value: number | null
