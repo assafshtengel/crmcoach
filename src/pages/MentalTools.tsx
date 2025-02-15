@@ -19,6 +19,7 @@ interface Tool {
   key_points: string[];
   implementation: string;
   video_url?: string;
+  user_id: string;
 }
 
 const MentalTools = () => {
@@ -28,7 +29,7 @@ const MentalTools = () => {
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
   const [tools, setTools] = useState<Tool[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [newTool, setNewTool] = useState<Partial<Tool>>({
+  const [newTool, setNewTool] = useState<Omit<Tool, 'id' | 'user_id'>>({
     name: "",
     description: "",
     learned: "",
@@ -111,14 +112,28 @@ const MentalTools = () => {
           description: `הכלי ${editingTool.name} עודכן`
         });
       } else {
+        // Validate required fields
+        if (!newTool.name || !newTool.description || !newTool.learned || !newTool.implementation) {
+          toast({
+            title: "שגיאה",
+            description: "יש למלא את כל השדות החובה",
+            variant: "destructive"
+          });
+          return;
+        }
+
         // Add new tool
         const { error } = await supabase
           .from('mental_tools')
-          .insert([{
-            ...newTool,
-            user_id: session.session.user.id,
-            key_points: newTool.key_points?.toString().split('\n').filter(point => point.trim() !== '') || []
-          }]);
+          .insert({
+            name: newTool.name,
+            description: newTool.description,
+            learned: newTool.learned,
+            key_points: newTool.key_points,
+            implementation: newTool.implementation,
+            video_url: newTool.video_url,
+            user_id: session.session.user.id
+          });
 
         if (error) {
           console.error('Error adding tool:', error);
