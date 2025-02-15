@@ -252,9 +252,13 @@ const Dashboard = () => {
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-start gap-2">
-                  <p className="font-medium flex-1">מפגש ראשון עם אסף בו למדנו את כלי ה-
+                  <p className="font-medium flex-1">מפגש שני עם אסף בו למדנו את כלי ה-
                     <Button variant="link" className="px-1 font-semibold" onClick={() => navigate("/next")}>
                       NEXT
+                    </Button>
+                     וה-
+                    <Button variant="link" className="px-1 font-semibold" onClick={() => navigate("/mental-tools")}>
+                      SCOUT
                     </Button>
                   </p>
                 </div>
