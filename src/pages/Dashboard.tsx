@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook, Edit, Save, X } from "lucide-react";
@@ -28,6 +27,8 @@ const Dashboard = () => {
     "יישום הנקסט - הטמעת החשיבה כל הזמן של להיות מוכן לנקודה הבאה כל הזמן",
     "יישום הנקסט על ידי מחיאת כף ומיד חשיבה על ביצוע הפעולה הבאה"
   ]);
+  const [isEditingNextMeeting, setIsEditingNextMeeting] = useState(false);
+  const [nextMeetingText, setNextMeetingText] = useState("מפגש אישי עם אסף - יתואם בהמשך השבוע הבא בין 16.2-21.2");
 
   const SECURITY_CODE = "1976";
 
@@ -49,7 +50,7 @@ const Dashboard = () => {
         ascending: false
       }).limit(1);
       if (error) {
-        console.error('Error fetching evaluation:', error);
+        console.error("Error fetching evaluation:", error);
         return;
       }
       if (data && data.length > 0) {
@@ -162,6 +163,71 @@ const Dashboard = () => {
     setEditedGoals(newGoals);
   };
 
+  const fetchNextMeeting = async () => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      const { data, error } = await supabase
+        .from('next_meetings')
+        .select('meeting_text')
+        .eq('user_id', session.session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching next meeting:', error);
+        return;
+      }
+
+      if (data) {
+        setNextMeetingText(data.meeting_text);
+      }
+    } catch (error) {
+      console.error('Error in fetchNextMeeting:', error);
+    }
+  };
+
+  const handleSaveNextMeeting = async () => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      const { error: upsertError } = await supabase
+        .from('next_meetings')
+        .upsert({
+          user_id: session.session.user.id,
+          meeting_text: nextMeetingText,
+        });
+
+      if (upsertError) {
+        console.error('Error saving next meeting:', upsertError);
+        toast({
+          title: "שגיאה בשמירת המפגש הבא",
+          description: "אנא נסה שוב מאוחר יותר",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsEditingNextMeeting(false);
+      toast({
+        title: "המפגש הבא נשמר בהצלחה",
+        description: "הפרטים עודכנו",
+      });
+    } catch (error) {
+      console.error('Error in handleSaveNextMeeting:', error);
+      toast({
+        title: "שגיאה בשמירת המפגש הבא",
+        description: "אנא נסה שוב מאוחר יותר",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchNextMeeting();
+  }, []);
+
   const nextMeeting = "מפגש אישי עם אסף - יתואם בהמשך השבוע הבא בין 16.2-21.2";
   const playerName = "אורי";
   const weeklyProgress = 75;
@@ -271,11 +337,50 @@ const Dashboard = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl">המפגש הבא</CardTitle>
-                <Calendar className="h-6 w-6 text-primary" />
+                <div className="flex items-center gap-2">
+                  {isEditingNextMeeting ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleSaveNextMeeting}
+                        className="h-8 w-8"
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsEditingNextMeeting(false)}
+                        className="h-8 w-8"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsEditingNextMeeting(true)}
+                      className="h-8 w-8"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Calendar className="h-6 w-6 text-primary" />
+                </div>
               </div>
             </CardHeader>
-            <CardContent className="">
-              <p className="text-gray-600">{nextMeeting}</p>
+            <CardContent>
+              {isEditingNextMeeting ? (
+                <Textarea
+                  value={nextMeetingText}
+                  onChange={(e) => setNextMeetingText(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              ) : (
+                <p className="text-gray-600">{nextMeetingText}</p>
+              )}
             </CardContent>
           </Card>
 
@@ -365,7 +470,7 @@ const Dashboard = () => {
                         size="icon"
                         onClick={handleCancelEditGoals}
                         className="h-8 w-8"
-                      >
+                        >
                         <X className="h-4 w-4" />
                       </Button>
                     </>
@@ -375,7 +480,7 @@ const Dashboard = () => {
                       size="icon"
                       onClick={handleEditGoals}
                       className="h-8 w-8"
-                    >
+                      >
                       <Edit className="h-4 w-4" />
                     </Button>
                   )}
