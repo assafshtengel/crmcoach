@@ -23,6 +23,7 @@ import NewIndex from "./pages/NewIndex";
 import Next from "./pages/Next";
 import Contact from "./pages/Contact";
 import MentalTools from "./pages/MentalTools";
+import GamePreparation from "./pages/GamePreparation";
 
 const queryClient = new QueryClient();
 
@@ -151,6 +152,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <MentalTools />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/game-preparation" 
+            element={
+              <AuthGuard>
+                <GamePreparation />
               </AuthGuard>
             } 
           />

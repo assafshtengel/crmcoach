@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -336,7 +337,14 @@ const Dashboard = () => {
                 <p className="text-gray-600">מערכת האימון האישית שלך</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex gap-4">
+              <Link 
+                to="/game-preparation"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                <Target className="w-5 h-5" />
+                הכנה למשחק
+              </Link>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
