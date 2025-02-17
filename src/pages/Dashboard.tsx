@@ -92,7 +92,7 @@ const Dashboard = () => {
       if (error) {
         console.error('Error deleting evaluation:', error);
         toast({
-          title: "שגיאה במ��יקת ההערכה",
+          title: "שגיאה במ���יקת ההערכה",
           description: "אנא נסה שוב מאוחר יותר",
           variant: "destructive"
         });
@@ -326,7 +326,7 @@ const Dashboard = () => {
           <div className="flex justify-between items-center glass-card p-4 rounded-2xl shadow-md">
             <div className="flex gap-6 items-center">
               <Avatar className="h-14 w-14 border-2 border-primary shadow-md">
-                <AvatarImage src="/lovable-uploads/284c22d0-0b06-45e4-ad3e-59c30a3d43b1.png" alt="ליאם אמזלג" />
+                <AvatarImage src="/lovable-uploads/61e79669-b448-42d3-9bad-463ce7b4e254.png" alt="ליאם אמזלג" />
                 <AvatarFallback>לא</AvatarFallback>
               </Avatar>
               <div className="flex flex-col gap-1">
