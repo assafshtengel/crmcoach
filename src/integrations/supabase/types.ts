@@ -129,6 +129,80 @@ export type Database = {
         }
         Relationships: []
       }
+      evaluation_daily_responses: {
+        Row: {
+          category_averages: Json | null
+          completed_at: string | null
+          day_number: number
+          id: string
+          scores: Json
+          session_id: string
+        }
+        Insert: {
+          category_averages?: Json | null
+          completed_at?: string | null
+          day_number: number
+          id?: string
+          scores?: Json
+          session_id: string
+        }
+        Update: {
+          category_averages?: Json | null
+          completed_at?: string | null
+          day_number?: number
+          id?: string
+          scores?: Json
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluation_daily_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "evaluation_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluation_sessions: {
+        Row: {
+          age: number
+          completion_date: string | null
+          created_at: string | null
+          current_day: number
+          id: string
+          player_name: string
+          start_date: string
+          status: string
+          team: string
+          user_id: string
+        }
+        Insert: {
+          age: number
+          completion_date?: string | null
+          created_at?: string | null
+          current_day?: number
+          id?: string
+          player_name: string
+          start_date?: string
+          status?: string
+          team: string
+          user_id: string
+        }
+        Update: {
+          age?: number
+          completion_date?: string | null
+          created_at?: string | null
+          current_day?: number
+          id?: string
+          player_name?: string
+          start_date?: string
+          status?: string
+          team?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       last_meetings: {
         Row: {
           created_at: string
