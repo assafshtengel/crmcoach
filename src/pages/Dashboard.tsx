@@ -92,7 +92,7 @@ const Dashboard = () => {
       if (error) {
         console.error('Error deleting evaluation:', error);
         toast({
-          title: "שגיאה במחיקת ההערכה",
+          title: "שגיאה במ��יקת ההערכה",
           description: "אנא נסה שוב מאוחר יותר",
           variant: "destructive"
         });
@@ -299,7 +299,7 @@ const Dashboard = () => {
   }, []);
 
   const nextMeeting = "מפגש אישי עם אסף - יתואם בהמשך השבוע הבא בין 16.2-21.2";
-  const playerName = "אורי";
+  const playerName = "ליאם";
   const weeklyProgress = 75;
   const videos = [{
     id: "video1",
@@ -326,12 +326,12 @@ const Dashboard = () => {
           <div className="flex justify-between items-center glass-card p-4 rounded-2xl shadow-md">
             <div className="flex gap-6 items-center">
               <Avatar className="h-14 w-14 border-2 border-primary shadow-md">
-                <AvatarImage src="/lovable-uploads/284c22d0-0b06-45e4-ad3e-59c30a3d43b1.png" alt="הראל אלקריאף" />
-                <AvatarFallback>הא</AvatarFallback>
+                <AvatarImage src="/lovable-uploads/284c22d0-0b06-45e4-ad3e-59c30a3d43b1.png" alt="ליאם אמזלג" />
+                <AvatarFallback>לא</AvatarFallback>
               </Avatar>
               <div className="flex flex-col gap-1">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                  ברוך הבא, הראל אלקריאף! 🏆
+                  ברוך הבא, ליאם אמזלג! 🏆
                 </h1>
                 <p className="text-gray-600">מערכת האימון האישית שלך</p>
               </div>
