@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { usePlayers } from '@/contexts/PlayersContext';
+import { supabase } from '@/lib/supabase';
 import {
   Select,
   SelectContent,
@@ -16,51 +16,118 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface Player {
+  id: string;
+  full_name: string;
+}
+
 interface SessionFormData {
-  date: string;
-  time: string;
-  playerId: string;
-  description: string;
+  session_date: string;
+  session_time: string;
+  player_id: string;
+  notes: string;
 }
 
 const EditSessionForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { players, updateSession } = usePlayers();
+  const sessionId = location.state?.sessionId;
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [formData, setFormData] = useState<SessionFormData>({
-    date: '',
-    time: '',
-    playerId: '',
-    description: ''
+    session_date: '',
+    session_time: '',
+    player_id: '',
+    notes: ''
   });
 
+  // Fetch players
   useEffect(() => {
-    const session = location.state?.session;
-    if (session) {
-      setFormData({
-        date: session.date,
-        time: session.time,
-        playerId: session.playerId,
-        description: session.description
-      });
-    } else {
-      navigate('/sessions-list');
-    }
-  }, [location.state, navigate]);
+    const fetchPlayers = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
 
-  const handleSubmit = (e: React.FormEvent) => {
+      const { data: playersData, error } = await supabase
+        .from('players')
+        .select('id, full_name')
+        .eq('coach_id', user.id);
+
+      if (error) {
+        toast.error('שגיאה בטעינת רשימת השחקנים');
+        return;
+      }
+
+      setPlayers(playersData || []);
+    };
+
+    fetchPlayers();
+  }, [navigate]);
+
+  // Fetch session data
+  useEffect(() => {
+    const fetchSession = async () => {
+      if (!sessionId) {
+        navigate('/sessions-list');
+        return;
+      }
+
+      const { data: sessionData, error } = await supabase
+        .from('sessions')
+        .select(`
+          session_date,
+          session_time,
+          notes,
+          player_id
+        `)
+        .eq('id', sessionId)
+        .single();
+
+      if (error) {
+        toast.error('שגיאה בטעינת פרטי המפגש');
+        navigate('/sessions-list');
+        return;
+      }
+
+      if (sessionData) {
+        setFormData({
+          session_date: sessionData.session_date,
+          session_time: sessionData.session_time,
+          player_id: sessionData.player_id,
+          notes: sessionData.notes || ''
+        });
+      }
+      setIsLoading(false);
+    };
+
+    fetchSession();
+  }, [sessionId, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const session = location.state?.session;
-    if (session) {
-      const selectedPlayer = players.find(p => p.id === formData.playerId);
-      const updatedSession = {
-        ...formData,
-        playerName: selectedPlayer?.name || session.playerName
-      };
-      
-      updateSession(session.id, updatedSession);
-      toast.success('המפגש עודכן בהצלחה!');
+    
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          session_date: formData.session_date,
+          session_time: formData.session_time,
+          player_id: formData.player_id,
+          notes: formData.notes
+        })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      const playerName = players.find(p => p.id === formData.player_id)?.full_name;
+      toast.success(`המפגש עם ${playerName} עודכן בהצלחה!`);
       navigate('/sessions-list');
+    } catch (error) {
+      toast.error('שגיאה בעדכון המפגש');
+      console.error('Error updating session:', error);
     }
   };
 
@@ -72,8 +139,16 @@ const EditSessionForm = () => {
   };
 
   const handlePlayerSelect = (value: string) => {
-    setFormData(prev => ({ ...prev, playerId: value }));
+    setFormData(prev => ({ ...prev, player_id: value }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        טוען...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12">
@@ -85,12 +160,12 @@ const EditSessionForm = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="date">תאריך</Label>
+                <Label htmlFor="session_date">תאריך</Label>
                 <Input
-                  id="date"
-                  name="date"
+                  id="session_date"
+                  name="session_date"
                   type="date"
-                  value={formData.date}
+                  value={formData.session_date}
                   onChange={handleInputChange}
                   required
                   dir="ltr"
@@ -98,12 +173,12 @@ const EditSessionForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="time">שעה</Label>
+                <Label htmlFor="session_time">שעה</Label>
                 <Input
-                  id="time"
-                  name="time"
+                  id="session_time"
+                  name="session_time"
                   type="time"
-                  value={formData.time}
+                  value={formData.session_time}
                   onChange={handleInputChange}
                   required
                   dir="ltr"
@@ -112,44 +187,31 @@ const EditSessionForm = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="player">בחר שחקן</Label>
-                {players.length > 0 ? (
-                  <Select
-                    name="playerId"
-                    value={formData.playerId}
-                    onValueChange={handlePlayerSelect}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="בחר שחקן" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {players.map((player) => (
-                        <SelectItem key={player.id} value={player.id}>
-                          {player.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    id="playerName"
-                    name="playerId"
-                    placeholder="הכנס שם שחקן"
-                    value={formData.playerId}
-                    onChange={handleInputChange}
-                    readOnly
-                  />
-                )}
+                <Select
+                  value={formData.player_id}
+                  onValueChange={handlePlayerSelect}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר שחקן" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {players.map((player) => (
+                      <SelectItem key={player.id} value={player.id}>
+                        {player.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">תיאור המפגש</Label>
+                <Label htmlFor="notes">הערות</Label>
                 <Textarea
-                  id="description"
-                  name="description"
-                  placeholder="תאר את מטרת המפגש..."
-                  value={formData.description}
+                  id="notes"
+                  name="notes"
+                  placeholder="הוסף הערות למפגש..."
+                  value={formData.notes}
                   onChange={handleInputChange}
-                  required
                 />
               </div>
 
@@ -157,7 +219,7 @@ const EditSessionForm = () => {
                 <Button 
                   variant="outline" 
                   type="button" 
-                  onClick={() => navigate(-1)}
+                  onClick={() => navigate('/sessions-list')}
                 >
                   ביטול
                 </Button>
