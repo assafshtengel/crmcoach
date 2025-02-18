@@ -34,7 +34,8 @@ interface Session {
   };
 }
 
-interface SupabaseSession {
+// Define the raw type as it comes from Supabase
+interface RawSession {
   id: string;
   session_date: string;
   session_time: string;
@@ -76,8 +77,9 @@ const SessionsList = () => {
 
       if (error) throw error;
 
-      // Transform the data to match our Session interface
-      const formattedSessions = (sessionsData as SupabaseSession[] || []).map(session => ({
+      // Type assertion and transformation
+      const rawSessions = sessionsData as unknown as RawSession[];
+      const formattedSessions = rawSessions.map(session => ({
         id: session.id,
         session_date: session.session_date,
         session_time: session.session_time,
