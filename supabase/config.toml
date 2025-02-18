@@ -1,1 +1,5 @@
+
 project_id = "hntgzgrlyfhojcaofbjv"
+
+[functions.send-session-reminders]
+verify_jwt = true
