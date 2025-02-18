@@ -1,149 +1,116 @@
-
-import { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { toast } from '@/components/ui/use-toast';
-import { PlayerFormData } from '@/types/player';
+import { Button } from '@/components/ui/button';
+import { ChevronRight, Home } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+
+const formSchema = z.object({
+  username: z.string().min(2, {
+    message: "Username must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+})
 
 const NewPlayerForm = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<PlayerFormData>({
-    full_name: '',
-    email: '',
-    phone: '',
-    position: '',
-    notes: ''
-  });
+  const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.full_name || !formData.email || !formData.phone) {
-      toast({
-        variant: "destructive",
-        title: "שגיאה",
-        description: 'נא למלא את כל שדות החובה'
-      });
-      return;
-    }
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+    },
+  })
 
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: 'לא נמצא משתמש מחובר'
-        });
-        navigate('/auth');
-        return;
-      }
-
-      // Insert the player
-      const { error: playerError } = await supabase.from('players').insert({
-        coach_id: user.id,
-        full_name: formData.full_name,
-        email: formData.email,
-        phone: formData.phone,
-        position: formData.position,
-        notes: formData.notes
-      });
-
-      if (playerError) throw playerError;
-
-      // Create notification for new player
-      const { error: notificationError } = await supabase.from('notifications').insert({
-        coach_id: user.id,
-        type: 'new_player',
-        message: `שחקן ${formData.full_name} נרשם למערכת`
-      });
-
-      if (notificationError) throw notificationError;
-
-      toast({
-        title: "הצלחה",
-        description: `השחקן ${formData.full_name} נוסף בהצלחה!`
-      });
-      navigate('/players-list');
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "שגיאה",
-        description: error.message || 'אירעה שגיאה בהוספת השחקן'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    toast({
+      title: "You submitted the following values:",
+      description: (
+        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 text-white">
+          <code className="block">
+            {JSON.stringify(values, null, 2)}
+          </code>
+        </pre>
+      ),
+    })
+  }
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">הוספת שחקן חדש</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">שם מלא</label>
-          <input
-            type="text"
-            value={formData.full_name}
-            onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-            className="w-full p-2 border rounded"
-            required
-          />
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="max-w-2xl mx-auto p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate(-1)}
+            title="חזור לדף הקודם"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate('/')}
+            title="חזור לדשבורד"
+          >
+            <Home className="h-4 w-4" />
+          </Button>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">אימייל</label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className="w-full p-2 border rounded"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">טלפון</label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-            className="w-full p-2 border rounded"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">תפקיד</label>
-          <input
-            type="text"
-            value={formData.position}
-            onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
-            className="w-full p-2 border rounded"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">הערות</label>
-          <textarea
-            value={formData.notes}
-            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-            className="w-full p-2 border rounded"
-            rows={4}
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-primary text-white py-2 px-4 rounded hover:bg-primary/90 disabled:opacity-50"
-        >
-          {loading ? 'מוסיף...' : 'הוסף שחקן'}
-        </button>
-      </form>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input placeholder="shadcn" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    This is your public display name.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="shadcn@example.com" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    This is your email address.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit">Submit</Button>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };
