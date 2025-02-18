@@ -3,7 +3,7 @@ import React from 'react';
 import { usePlayers } from '@/contexts/PlayersContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home } from 'lucide-react';
+import { Home, Calendar } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -16,6 +16,15 @@ import {
 const PlayersList = () => {
   const { players } = usePlayers();
   const navigate = useNavigate();
+
+  const handleScheduleSession = (playerId: string, playerName: string) => {
+    navigate('/new-session', { 
+      state: { 
+        selectedPlayerId: playerId,
+        selectedPlayerName: playerName 
+      } 
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -53,6 +62,7 @@ const PlayersList = () => {
                   <TableHead>שם השחקן</TableHead>
                   <TableHead>אימייל</TableHead>
                   <TableHead>טלפון</TableHead>
+                  <TableHead>פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -61,6 +71,17 @@ const PlayersList = () => {
                     <TableCell>{player.name}</TableCell>
                     <TableCell dir="ltr">{player.email}</TableCell>
                     <TableCell dir="ltr">{player.phone}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleScheduleSession(player.id, player.name)}
+                        className="gap-2"
+                      >
+                        <Calendar className="h-4 w-4" />
+                        קבע מפגש
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

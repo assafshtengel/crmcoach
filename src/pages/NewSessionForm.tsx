@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { usePlayers } from '@/contexts/PlayersContext';
 import {
@@ -32,8 +32,17 @@ const initialFormData: SessionFormData = {
 
 const NewSessionForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { players, addSession } = usePlayers();
   const [formData, setFormData] = useState<SessionFormData>(initialFormData);
+
+  // טיפול בשחקן נבחר מראש
+  useEffect(() => {
+    const state = location.state as { selectedPlayerId?: string } | null;
+    if (state?.selectedPlayerId) {
+      setFormData(prev => ({ ...prev, playerId: state.selectedPlayerId }));
+    }
+  }, [location.state]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +59,7 @@ const NewSessionForm = () => {
     
     // ניקוי הטופס
     setFormData(initialFormData);
+    navigate('/');
   };
 
   const handleInputChange = (
