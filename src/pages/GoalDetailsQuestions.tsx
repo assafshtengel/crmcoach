@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Target, Calendar, Flag } from 'lucide-react';
+import { Target, Calendar, Flag, ChevronRight, Home } from 'lucide-react';
 
 const GoalDetailsQuestions = () => {
   const { categoryId } = useParams();
@@ -44,6 +44,25 @@ const GoalDetailsQuestions = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 p-6">
       <div className="max-w-2xl mx-auto space-y-8">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate(-1)}
+            title="חזור לדף הקודם"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate('/')}
+            title="חזור לדשבורד"
+          >
+            <Home className="h-4 w-4" />
+          </Button>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
