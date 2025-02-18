@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
@@ -88,45 +87,50 @@ const NewPlayerForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
-      setLoading(true);
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          toast.error('לא נמצא משתמש מחובר');
-          navigate('/auth');
-          return;
-        }
+    if (!formData.player_id || !formData.session_date || !formData.session_time) {
+      toast.error('נא למלא את כל שדות החובה');
+      return;
+    }
 
-        const { data, error } = await supabase.from('players').insert({
-          coach_id: user.id,
-          full_name: formData.full_name,
-          email: formData.email,
-          phone: formData.phone,
-          position: formData.position,
-          notes: formData.notes
-        });
-
-        if (error) throw error;
-
-        toast.success(`השחקן ${formData.full_name} נוסף בהצלחה!`);
-        
-        // נקה את הטופס
-        setFormData({
-          full_name: '',
-          phone: '',
-          email: '',
-          position: '',
-          notes: ''
-        });
-        
-        navigate('/players-list');
-      } catch (error: any) {
-        toast.error(error.message || 'אירעה שגיאה בהוספת השחקן');
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('לא נמצא משתמש מחובר');
+        navigate('/auth');
+        return;
       }
+
+      const selectedPlayer = players.find(p => p.id === formData.player_id);
+      
+      // Insert the player
+      const { error: sessionError } = await supabase.from('players').insert({
+        coach_id: user.id,
+        full_name: formData.full_name,
+        email: formData.email,
+        phone: formData.phone,
+        position: formData.position,
+        notes: formData.notes
+      });
+
+      if (sessionError) throw sessionError;
+
+      // Create notification for new player
+      const { error: notificationError } = await supabase.from('notifications').insert({
+        coach_id: user.id,
+        type: 'new_player',
+        message: `שחקן ${formData.full_name} נרשם למערכת`
+      });
+
+      if (notificationError) throw notificationError;
+
+      toast.success(`השחקן ${formData.full_name} נוסף בהצלחה!`);
+      navigate('/players-list');
+    } catch (error: any) {
+      toast.error(error.message || 'אירעה שגיאה בהוספת השחקן');
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -71,7 +71,7 @@ const NewSessionForm = () => {
     e.preventDefault();
     
     if (!formData.player_id || !formData.session_date || !formData.session_time) {
-      toast.error('נא למלא את כל השדות החובה');
+      toast.error('נא למלא את כל שדות החובה');
       return;
     }
 
@@ -87,7 +87,7 @@ const NewSessionForm = () => {
 
       const selectedPlayer = players.find(p => p.id === formData.player_id);
       
-      const { error } = await supabase.from('sessions').insert({
+      const { error: sessionError } = await supabase.from('sessions').insert({
         coach_id: user.id,
         player_id: formData.player_id,
         session_date: formData.session_date,
@@ -95,18 +95,18 @@ const NewSessionForm = () => {
         notes: formData.notes
       });
 
-      if (error) throw error;
+      if (sessionError) throw sessionError;
+
+      // Create notification for new session
+      const { error: notificationError } = await supabase.from('notifications').insert({
+        coach_id: user.id,
+        type: 'new_session',
+        message: `נקבע מפגש חדש עם ${selectedPlayer?.full_name} בתאריך ${formData.session_date}`
+      });
+
+      if (notificationError) throw notificationError;
 
       toast.success(`המפגש עם ${selectedPlayer?.full_name} נקבע בהצלחה ל-${formData.session_date} בשעה ${formData.session_time}!`);
-      
-      // נקה את הטופס
-      setFormData({
-        player_id: '',
-        session_date: '',
-        session_time: '',
-        notes: ''
-      });
-      
       navigate('/sessions-list');
     } catch (error: any) {
       toast.error(error.message || 'אירעה שגיאה בקביעת המפגש');

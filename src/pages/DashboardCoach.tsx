@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -32,7 +31,6 @@ interface UpcomingSession {
   };
 }
 
-// טיפוס עזר שמייצג את המבנה של הנתונים כפי שהם מגיעים מ-Supabase
 interface RawSession {
   id: string;
   session_date: string;
@@ -58,7 +56,6 @@ const DashboardCoach = () => {
 
   const fetchData = async (userId: string) => {
     try {
-      // Fetch all stats in parallel
       const [playersResult, sessionsResult, remindersResult, upcomingSessionsResult] = await Promise.all([
         supabase
           .from('players')
@@ -96,7 +93,7 @@ const DashboardCoach = () => {
       setStats({
         totalPlayers: playersResult.count || 0,
         upcomingSessions: sessionsResult.count || 0,
-        attendanceRate: 85, // יש להחליף עם חישוב אמיתי
+        attendanceRate: 85,
         totalReminders: remindersResult.count || 0,
       });
 
@@ -129,19 +126,36 @@ const DashboardCoach = () => {
 
   const handleSendReminder = async (sessionId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('לא נמצא משתמש מחובר');
+
+      const session = upcomingSessions.find(s => s.id === sessionId);
+      if (!session) throw new Error('לא נמצא מפגש');
+
+      await supabase.from('notifications').insert({
+        coach_id: user.id,
+        type: 'reminder_scheduled',
+        message: `תזכורת תשלח לשחקן ${session.player.full_name} בעוד 15 דקות`
+      });
+
       const { error } = await supabase
         .from('notifications_log')
-        .insert([
-          {
-            session_id: sessionId,
-            status: 'Sent',
-            message_content: 'תזכורת למפגש'
-          }
-        ]);
+        .insert([{
+          session_id: sessionId,
+          status: 'Sent',
+          message_content: 'תזכורת למפגש',
+          coach_id: user.id
+        }]);
 
-      if (error) throw error;
+      if (error) {
+        await supabase.from('notifications').insert({
+          coach_id: user.id,
+          type: 'reminder_error',
+          message: `⚠️ שגיאה: לא הצלחנו לשלוח תזכורת ל-${session.player.full_name}`
+        });
+        throw error;
+      }
 
-      // עדכון סטטוס התזכורת במפגש
       await supabase
         .from('sessions')
         .update({ reminder_sent: true })
@@ -152,12 +166,7 @@ const DashboardCoach = () => {
         description: "השחקן יקבל הודעה על המפגש"
       });
 
-      // רענון הנתונים
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        fetchData(user.id);
-      }
-
+      fetchData(user.id);
     } catch (error) {
       console.error('Error sending reminder:', error);
       toast({
@@ -174,7 +183,6 @@ const DashboardCoach = () => {
       if (user) {
         await fetchData(user.id);
 
-        // Subscribe to real-time changes
         const channel = supabase
           .channel('dashboard-changes')
           .on(
@@ -214,7 +222,6 @@ const DashboardCoach = () => {
     );
   }
 
-  // Determine stats card colors based on values
   const getStatsColor = (value: number, type: string) => {
     switch (type) {
       case 'attendance':
@@ -228,7 +235,6 @@ const DashboardCoach = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
       <header className="w-full bg-[#1A1F2C] dark:bg-gray-800 text-white py-6 mb-8 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <h1 className="text-2xl sm:text-3xl font-bold">ברוך הבא, מאמן</h1>
@@ -261,9 +267,7 @@ const DashboardCoach = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-gray-800/60 transition-all duration-300 hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -314,7 +318,6 @@ const DashboardCoach = () => {
           </Card>
         </div>
 
-        {/* Upcoming Sessions Table */}
         <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="dark:text-white">מפגשים קרובים</CardTitle>
@@ -371,7 +374,6 @@ const DashboardCoach = () => {
           </CardContent>
         </Card>
 
-        {/* Action Buttons Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card 
             className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary"
