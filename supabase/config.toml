@@ -1,5 +1,5 @@
 
 project_id = "hntgzgrlyfhojcaofbjv"
 
-[functions.send-session-reminders]
+[functions.send-whatsapp-notification]
 verify_jwt = true

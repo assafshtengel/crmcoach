@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { ArrowRight, Bell } from "lucide-react";
+import { ArrowRight, Bell, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -12,6 +12,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+
+interface Session {
+  id: string;
+  session_date: string;
+  session_time: string;
+  reminder_sent: boolean;
+  players: {
+    full_name: string;
+    phone: string;
+  };
+}
 
 interface Notification {
   id: string;
@@ -21,47 +33,111 @@ interface Notification {
   error_message?: string;
   player_name?: string;
   player_phone?: string;
+  session_id: string;
 }
 
 const NotificationsDashboard = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const fetchData = async () => {
+    try {
+      // Fetch notifications
+      const { data: notificationsData, error: notificationsError } = await supabase
+        .from("notifications_log")
+        .select(`
+          *,
+          sessions:session_id (
+            players:player_id (
+              full_name,
+              phone
+            )
+          )
+        `)
+        .order('sent_at', { ascending: false });
+
+      if (notificationsError) throw notificationsError;
+
+      // Fetch upcoming sessions
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from("sessions")
+        .select(`
+          *,
+          players:player_id (
+            full_name,
+            phone
+          )
+        `)
+        .eq('reminder_sent', false)
+        .gte('session_date', new Date().toISOString().split('T')[0]);
+
+      if (sessionsError) throw sessionsError;
+
+      const formattedNotifications = notificationsData.map(notification => ({
+        ...notification,
+        player_name: notification.sessions?.players?.full_name || 'לא ידוע',
+        player_phone: notification.sessions?.players?.phone || 'לא ידוע',
+      }));
+
+      setNotifications(formattedNotifications);
+      setSessions(sessionsData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת הנתונים",
+        description: "אנא נסה שוב מאוחר יותר",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("notifications_log")
-          .select(`
-            *,
-            sessions:session_id (
-              players:player_id (
-                full_name,
-                phone
-              )
-            )
-          `)
-          .order('sent_at', { ascending: false });
-
-        if (error) throw error;
-
-        const formattedData = data.map(notification => ({
-          ...notification,
-          player_name: notification.sessions?.players?.full_name || 'לא ידוע',
-          player_phone: notification.sessions?.players?.phone || 'לא ידוע',
-        }));
-
-        setNotifications(formattedData);
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNotifications();
+    fetchData();
   }, []);
+
+  const handleSendReminder = async (session: Session) => {
+    if (isSending[session.id]) return;
+    
+    setIsSending(prev => ({ ...prev, [session.id]: true }));
+    
+    try {
+      const message = `שלום ${session.players.full_name}!\nתזכורת למפגש ב-${new Date(session.session_date).toLocaleDateString('he-IL')} בשעה ${session.session_time}`;
+      
+      const { data, error } = await supabase.functions.invoke('send-whatsapp-notification', {
+        body: {
+          session_id: session.id,
+          phone_number: session.players.phone,
+          message,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "✅ התזכורת נשלחה בהצלחה",
+        description: `התזכורת נשלחה ל${session.players.full_name}`,
+      });
+
+      // Refresh data
+      await fetchData();
+
+    } catch (error) {
+      console.error('Error sending reminder:', error);
+      toast({
+        variant: "destructive",
+        title: "⚠️ שגיאה בשליחת התזכורת",
+        description: "אנא נסה שוב",
+      });
+    } finally {
+      setIsSending(prev => ({ ...prev, [session.id]: false }));
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -75,6 +151,10 @@ const NotificationsDashboard = () => {
         return 'text-gray-600 bg-gray-50';
     }
   };
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-8 px-4 md:px-8">
@@ -93,11 +173,56 @@ const NotificationsDashboard = () => {
             <Bell className="h-6 w-6" />
             תזכורות שנשלחו
           </h1>
-          <div className="w-10" /> {/* Spacer for alignment */}
+          <div className="w-10" />
         </div>
 
-        {/* Notifications Table */}
+        {/* Pending Reminders */}
+        {sessions.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="p-4 border-b">
+              <h2 className="text-lg font-semibold">תזכורות ממתינות</h2>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>תאריך</TableHead>
+                  <TableHead>שעה</TableHead>
+                  <TableHead>שם השחקן</TableHead>
+                  <TableHead>טלפון</TableHead>
+                  <TableHead>פעולות</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sessions.map((session) => (
+                  <TableRow key={session.id}>
+                    <TableCell>{new Date(session.session_date).toLocaleDateString('he-IL')}</TableCell>
+                    <TableCell>{session.session_time}</TableCell>
+                    <TableCell>{session.players.full_name}</TableCell>
+                    <TableCell dir="ltr">{session.players.phone}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSendReminder(session)}
+                        disabled={isSending[session.id]}
+                        className="gap-2"
+                      >
+                        <Send className="h-4 w-4" />
+                        {isSending[session.id] ? 'שולח...' : 'שלח תזכורת'}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {/* Sent Notifications */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="p-4 border-b">
+            <h2 className="text-lg font-semibold">היסטוריית תזכורות</h2>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
