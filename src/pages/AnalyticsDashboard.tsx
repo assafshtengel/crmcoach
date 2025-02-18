@@ -50,59 +50,91 @@ const AnalyticsDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const fetchData = async (userId: string) => {
+    try {
+      // Fetch basic stats
+      const { data: statsData, error: statsError } = await supabase
+        .rpc('get_coach_statistics', { coach_id: userId });
+
+      if (statsError) throw statsError;
+
+      // Fetch monthly sessions data
+      const { data: monthlyData, error: monthlyError } = await supabase
+        .rpc('get_monthly_sessions_count', { coach_id: userId });
+
+      if (monthlyError) throw monthlyError;
+
+      // Fetch player distribution data
+      const { data: distributionData, error: distributionError } = await supabase
+        .rpc('get_player_session_distribution', { coach_id: userId });
+
+      if (distributionError) throw distributionError;
+
+      // Fetch monthly reminders data
+      const { data: remindersData, error: remindersError } = await supabase
+        .rpc('get_monthly_reminders_count', { coach_id: userId });
+
+      if (remindersError) throw remindersError;
+
+      setStats(statsData[0]);
+      setChartData({
+        monthlySessionsData: monthlyData,
+        playerDistributionData: distributionData,
+        monthlyRemindersData: remindersData
+      });
+
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת הנתונים",
+        description: "אנא נסה שוב מאוחר יותר"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate('/auth');
-          return;
-        }
-
-        // Fetch basic stats
-        const { data: statsData, error: statsError } = await supabase
-          .rpc('get_coach_statistics', { coach_id: user.id });
-
-        if (statsError) throw statsError;
-
-        // Fetch monthly sessions data
-        const { data: monthlyData, error: monthlyError } = await supabase
-          .rpc('get_monthly_sessions_count', { coach_id: user.id });
-
-        if (monthlyError) throw monthlyError;
-
-        // Fetch player distribution data
-        const { data: distributionData, error: distributionError } = await supabase
-          .rpc('get_player_session_distribution', { coach_id: user.id });
-
-        if (distributionError) throw distributionError;
-
-        // Fetch monthly reminders data
-        const { data: remindersData, error: remindersError } = await supabase
-          .rpc('get_monthly_reminders_count', { coach_id: user.id });
-
-        if (remindersError) throw remindersError;
-
-        setStats(statsData[0]);
-        setChartData({
-          monthlySessionsData: monthlyData,
-          playerDistributionData: distributionData,
-          monthlyRemindersData: remindersData
-        });
-
-      } catch (error) {
-        console.error('Error fetching analytics data:', error);
-        toast({
-          variant: "destructive",
-          title: "שגיאה בטעינת הנתונים",
-          description: "אנא נסה שוב מאוחר יותר"
-        });
-      } finally {
-        setIsLoading(false);
+    const initializeData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth');
+        return;
       }
+
+      await fetchData(user.id);
+
+      // Subscribe to real-time changes
+      const sessionsChannel = supabase
+        .channel('analytics-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'sessions'
+          },
+          () => fetchData(user.id)
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notifications_log'
+          },
+          () => fetchData(user.id)
+        )
+        .subscribe();
+
+      // Cleanup subscription
+      return () => {
+        supabase.removeChannel(sessionsChannel);
+      };
     };
 
-    fetchData();
+    initializeData();
   }, [navigate]);
 
   if (isLoading) {
