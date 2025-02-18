@@ -32,6 +32,7 @@ import SessionsList from "./pages/SessionsList";
 import EditPlayerForm from "./pages/EditPlayerForm";
 import EditSessionForm from "./pages/EditSessionForm";
 import ProfileCoach from "./pages/ProfileCoach";
+import NotificationsDashboard from "./pages/NotificationsDashboard";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,11 @@ const App = () => (
             <Route path="/edit-session" element={
               <AuthGuard>
                 <EditSessionForm />
+              </AuthGuard>
+            } />
+            <Route path="/notifications" element={
+              <AuthGuard>
+                <NotificationsDashboard />
               </AuthGuard>
             } />
             <Route path="/auth" element={<AuthPage />} />

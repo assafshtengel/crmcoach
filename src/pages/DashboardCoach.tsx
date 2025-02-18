@@ -1,20 +1,8 @@
-
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, User } from 'lucide-react';
+import { Home, Settings, Bell } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/lib/supabase';
-
-interface Coach {
-  id: string;
-  full_name: string;
-  email: string;
-  phone?: string;
-  profile_picture?: string;
-  description?: string;
-  created_at: string;
-}
 
 const DashboardCoach = () => {
   const navigate = useNavigate();
@@ -37,14 +25,24 @@ const DashboardCoach = () => {
       <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
         <div className="max-w-7xl mx-auto px-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold">ברוך הבא, מאמן</h1>
-          <Button
-            variant="ghost"
-            className="text-white hover:text-white/80"
-            onClick={() => navigate('/profile-coach')}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            פרופיל
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              className="text-white hover:text-white/80"
+              onClick={() => navigate('/notifications')}
+            >
+              <Bell className="h-4 w-4 mr-2" />
+              תזכורות שנשלחו
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-white hover:text-white/80"
+              onClick={() => navigate('/profile-coach')}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              פרופיל
+            </Button>
+          </div>
         </div>
       </header>
 

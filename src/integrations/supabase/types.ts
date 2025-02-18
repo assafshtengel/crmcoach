@@ -397,6 +397,7 @@ export type Database = {
       }
       notifications_log: {
         Row: {
+          coach_id: string
           error_message: string | null
           id: string
           message_content: string
@@ -405,6 +406,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          coach_id: string
           error_message?: string | null
           id?: string
           message_content: string
@@ -413,6 +415,7 @@ export type Database = {
           status: string
         }
         Update: {
+          coach_id?: string
           error_message?: string | null
           id?: string
           message_content?: string
@@ -421,6 +424,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notifications_log_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notifications_log_session_id_fkey"
             columns: ["session_id"]
