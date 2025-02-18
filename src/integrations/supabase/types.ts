@@ -633,7 +633,43 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_coach_statistics: {
+        Args: {
+          coach_id: string
+        }
+        Returns: {
+          totalsessions: number
+          successfulreminders: number
+          activeplayerscount: number
+        }[]
+      }
+      get_monthly_reminders_count: {
+        Args: {
+          coach_id: string
+        }
+        Returns: {
+          name: string
+          reminders: number
+        }[]
+      }
+      get_monthly_sessions_count: {
+        Args: {
+          coach_id: string
+        }
+        Returns: {
+          name: string
+          sessions: number
+        }[]
+      }
+      get_player_session_distribution: {
+        Args: {
+          coach_id: string
+        }
+        Returns: {
+          name: string
+          value: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
