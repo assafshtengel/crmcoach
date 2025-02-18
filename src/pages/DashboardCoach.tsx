@@ -70,7 +70,7 @@ const DashboardCoach = () => {
             session_time,
             notes,
             reminder_sent,
-            player:player_id (
+            players!inner (
               full_name
             )
           `)
@@ -96,7 +96,7 @@ const DashboardCoach = () => {
           notes: session.notes,
           reminder_sent: session.reminder_sent,
           player: {
-            full_name: session.player.full_name
+            full_name: session.players.full_name
           }
         }));
         setUpcomingSessions(formattedSessions);
