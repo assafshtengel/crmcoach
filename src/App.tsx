@@ -31,6 +31,7 @@ import NewSessionForm from "./pages/NewSessionForm";
 import SessionsList from "./pages/SessionsList";
 import EditPlayerForm from "./pages/EditPlayerForm";
 import EditSessionForm from "./pages/EditSessionForm";
+import ProfileCoach from "./pages/ProfileCoach";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,11 @@ const App = () => (
       <PlayersProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/profile-coach" element={
+              <AuthGuard>
+                <ProfileCoach />
+              </AuthGuard>
+            } />
             <Route path="/edit-session" element={
               <AuthGuard>
                 <EditSessionForm />

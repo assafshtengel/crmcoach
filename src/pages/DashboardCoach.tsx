@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home } from 'lucide-react';
+import { Home, Settings } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 
 const DashboardCoach = () => {
@@ -24,8 +24,16 @@ const DashboardCoach = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Header */}
       <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
-        <div className="max-w-7xl mx-auto px-8">
+        <div className="max-w-7xl mx-auto px-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold">ברוך הבא, מאמן</h1>
+          <Button
+            variant="ghost"
+            className="text-white hover:text-white/80"
+            onClick={() => navigate('/profile-coach')}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            פרופיל
+          </Button>
         </div>
       </header>
 
