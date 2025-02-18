@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { 
   Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, 
-  Users, Calendar, StatsChart, Loader2
+  Users, Calendar, BarChart2, Loader2
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
@@ -48,24 +48,23 @@ const DashboardCoach = () => {
 
   const fetchData = async (userId: string) => {
     try {
-      // Fetch stats
-      const { data: statsData, error: statsError } = await Promise.all([
-        supabase.from('players').select('id').eq('coach_id', userId).count(),
+      // Fetch all stats in parallel
+      const [playersResult, sessionsResult, remindersResult] = await Promise.all([
+        supabase
+          .from('players')
+          .select('id', { count: 'exact' })
+          .eq('coach_id', userId),
         supabase
           .from('sessions')
-          .select('id')
+          .select('id', { count: 'exact' })
           .eq('coach_id', userId)
-          .gte('session_date', new Date().toISOString().split('T')[0])
-          .count(),
+          .gte('session_date', new Date().toISOString().split('T')[0]),
         supabase
           .from('notifications_log')
-          .select('id')
+          .select('id', { count: 'exact' })
           .eq('coach_id', userId)
-          .eq('status', 'Sent')
-          .count(),
+          .eq('status', 'Sent'),
       ]);
-
-      if (statsError) throw statsError;
 
       // Fetch upcoming sessions
       const { data: sessions, error: sessionsError } = await supabase
@@ -76,7 +75,7 @@ const DashboardCoach = () => {
           session_time,
           notes,
           reminder_sent,
-          players (full_name)
+          players!inner(full_name)
         `)
         .eq('coach_id', userId)
         .gte('session_date', new Date().toISOString().split('T')[0])
@@ -87,10 +86,10 @@ const DashboardCoach = () => {
       if (sessionsError) throw sessionsError;
 
       setStats({
-        totalPlayers: statsData[0].count || 0,
-        upcomingSessions: statsData[1].count || 0,
+        totalPlayers: playersResult.count || 0,
+        upcomingSessions: sessionsResult.count || 0,
         attendanceRate: 85, // יש להחליף עם חישוב אמיתי
-        totalReminders: statsData[2].count || 0,
+        totalReminders: remindersResult.count || 0,
       });
 
       setUpcomingSessions(sessions.map(session => ({
@@ -243,7 +242,7 @@ const DashboardCoach = () => {
           <Card className="bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">אחוז נוכחות</CardTitle>
-              <StatsChart className="h-4 w-4 text-yellow-500" />
+              <BarChart2 className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.attendanceRate}%</div>
