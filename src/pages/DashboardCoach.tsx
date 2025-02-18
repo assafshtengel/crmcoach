@@ -70,7 +70,7 @@ const DashboardCoach = () => {
             session_time,
             notes,
             reminder_sent,
-            player!inner (
+            player:player_id (
               full_name
             )
           `)
@@ -89,7 +89,17 @@ const DashboardCoach = () => {
       });
 
       if (upcomingSessionsResult.data) {
-        setUpcomingSessions(upcomingSessionsResult.data as UpcomingSession[]);
+        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map(session => ({
+          id: session.id,
+          session_date: session.session_date,
+          session_time: session.session_time,
+          notes: session.notes,
+          reminder_sent: session.reminder_sent,
+          player: {
+            full_name: session.player.full_name
+          }
+        }));
+        setUpcomingSessions(formattedSessions);
       }
 
     } catch (error) {
