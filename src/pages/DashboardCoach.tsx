@@ -12,6 +12,14 @@ import {
 } from "@/components/ui/table";
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -42,9 +50,19 @@ interface RawSession {
   };
 }
 
+interface Notification {
+  id: string;
+  message: string;
+  created_at: string;
+  is_read: boolean;
+  type: string;
+}
+
 const DashboardCoach = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [stats, setStats] = useState<DashboardStats>({
     totalPlayers: 0,
     upcomingSessions: 0,
@@ -124,6 +142,42 @@ const DashboardCoach = () => {
     }
   };
 
+  const fetchNotifications = async (userId: string) => {
+    try {
+      const { data: notificationsData, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('coach_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      setNotifications(notificationsData || []);
+      setUnreadCount(notificationsData?.filter(n => !n.is_read).length || 0);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
   const handleSendReminder = async (sessionId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -182,9 +236,21 @@ const DashboardCoach = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await fetchData(user.id);
+        await fetchNotifications(user.id);
 
         const channel = supabase
           .channel('dashboard-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'notifications'
+            },
+            () => {
+              fetchNotifications(user.id);
+            }
+          )
           .on(
             'postgres_changes',
             {
@@ -247,14 +313,52 @@ const DashboardCoach = () => {
               <PieChart className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">דוחות וסטטיסטיקות</span>
             </Button>
-            <Button
-              variant="ghost"
-              className="text-white hover:text-white/80 transition-all duration-300 hover:scale-105"
-              onClick={() => navigate('/notifications')}
-            >
-              <Bell className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">תזכורות</span>
-            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative text-white hover:text-white/80 transition-all duration-300 hover:scale-105"
+                >
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 bg-white dark:bg-gray-800">
+                <div className="p-2 border-b dark:border-gray-700">
+                  <h3 className="font-semibold text-lg px-2 py-1 dark:text-white">התראות</h3>
+                </div>
+                <ScrollArea className="h-[400px]">
+                  {notifications.length > 0 ? (
+                    <div className="py-2">
+                      {notifications.map((notification) => (
+                        <button
+                          key={notification.id}
+                          className={`w-full text-right px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                            !notification.is_read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                          }`}
+                          onClick={() => markAsRead(notification.id)}
+                        >
+                          <p className="text-sm text-gray-900 dark:text-gray-100">{notification.message}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {format(new Date(notification.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+                      אין התראות חדשות
+                    </div>
+                  )}
+                </ScrollArea>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button
               variant="ghost"
               className="text-white hover:text-white/80 transition-all duration-300 hover:scale-105"
