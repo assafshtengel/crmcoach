@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Home } from 'lucide-react';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 
 const DashboardCoach = () => {
   const navigate = useNavigate();
@@ -16,8 +17,9 @@ const DashboardCoach = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto p-8">
-        <div className="flex items-center justify-between mb-12">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-8">
+        <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -30,13 +32,39 @@ const DashboardCoach = () => {
           </div>
         </div>
 
-        <div className="text-center py-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Dashboard Coach - Coming Soon
-          </h1>
-          <p className="text-xl text-gray-600">
-            דף הבית החדש למאמן המנטלי נמצא בפיתוח...
-          </p>
+        {/* Action Buttons Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="text-xl text-gray-700">
+                כפתור 1: (רישום שחקן חדש)
+              </CardTitle>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="text-xl text-gray-700">
+                כפתור 2: (קביעת מפגש חדש)
+              </CardTitle>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="text-xl text-gray-700">
+                כפתור 3: (ריכוז כל השחקנים)
+              </CardTitle>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer">
+            <CardHeader>
+              <CardTitle className="text-xl text-gray-700">
+                כפתור 4: (כותרת עתידית)
+              </CardTitle>
+            </CardHeader>
+          </Card>
         </div>
       </div>
     </div>
