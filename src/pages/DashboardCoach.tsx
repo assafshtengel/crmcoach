@@ -8,6 +8,10 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 const DashboardCoach = () => {
   const navigate = useNavigate();
 
+  const handleButtonClick = (buttonNumber: number) => {
+    console.log(`Button ${buttonNumber} clicked`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Header */}
@@ -34,7 +38,10 @@ const DashboardCoach = () => {
 
         {/* Action Buttons Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer">
+          <Card 
+            className="bg-white hover:bg-gray-50 transition-colors cursor-pointer transform hover:-translate-y-1 duration-200"
+            onClick={() => handleButtonClick(1)}
+          >
             <CardHeader>
               <CardTitle className="text-xl text-gray-700">
                 כפתור 1: (רישום שחקן חדש)
@@ -42,7 +49,10 @@ const DashboardCoach = () => {
             </CardHeader>
           </Card>
 
-          <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer">
+          <Card 
+            className="bg-white hover:bg-gray-50 transition-colors cursor-pointer transform hover:-translate-y-1 duration-200"
+            onClick={() => handleButtonClick(2)}
+          >
             <CardHeader>
               <CardTitle className="text-xl text-gray-700">
                 כפתור 2: (קביעת מפגש חדש)
@@ -50,7 +60,10 @@ const DashboardCoach = () => {
             </CardHeader>
           </Card>
 
-          <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer">
+          <Card 
+            className="bg-white hover:bg-gray-50 transition-colors cursor-pointer transform hover:-translate-y-1 duration-200"
+            onClick={() => handleButtonClick(3)}
+          >
             <CardHeader>
               <CardTitle className="text-xl text-gray-700">
                 כפתור 3: (ריכוז כל השחקנים)
@@ -58,7 +71,10 @@ const DashboardCoach = () => {
             </CardHeader>
           </Card>
 
-          <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer">
+          <Card 
+            className="bg-white hover:bg-gray-50 transition-colors cursor-pointer transform hover:-translate-y-1 duration-200"
+            onClick={() => handleButtonClick(4)}
+          >
             <CardHeader>
               <CardTitle className="text-xl text-gray-700">
                 כפתור 4: (כותרת עתידית)
