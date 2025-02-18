@@ -34,6 +34,16 @@ interface Session {
   };
 }
 
+interface SupabaseSession {
+  id: string;
+  session_date: string;
+  session_time: string;
+  notes: string;
+  player: {
+    full_name: string;
+  };
+}
+
 const SessionsList = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +77,7 @@ const SessionsList = () => {
       if (error) throw error;
 
       // Transform the data to match our Session interface
-      const formattedSessions: Session[] = (sessionsData || []).map(session => ({
+      const formattedSessions = (sessionsData as SupabaseSession[] || []).map(session => ({
         id: session.id,
         session_date: session.session_date,
         session_time: session.session_time,
