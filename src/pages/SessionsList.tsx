@@ -53,20 +53,31 @@ const SessionsList = () => {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data: sessionsData, error } = await supabase
         .from('sessions')
         .select(`
           id,
           session_date,
           session_time,
           notes,
-          player:players(full_name)
+          player:players!inner(full_name)
         `)
         .eq('coach_id', user.id);
 
       if (error) throw error;
 
-      setSessions(data || []);
+      // Transform the data to match our Session interface
+      const formattedSessions: Session[] = (sessionsData || []).map(session => ({
+        id: session.id,
+        session_date: session.session_date,
+        session_time: session.session_time,
+        notes: session.notes,
+        player: {
+          full_name: session.player.full_name
+        }
+      }));
+
+      setSessions(formattedSessions);
     } catch (error: any) {
       toast.error('שגיאה בטעינת רשימת המפגשים');
       console.error('Error fetching sessions:', error);
