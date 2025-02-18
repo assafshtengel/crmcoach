@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { usePlayers } from '@/contexts/PlayersContext';
+import type { Session } from '@/contexts/PlayersContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Home, Pencil, Trash2 } from 'lucide-react';

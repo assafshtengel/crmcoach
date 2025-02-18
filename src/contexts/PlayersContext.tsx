@@ -1,14 +1,14 @@
 
 import React, { createContext, useContext, useState } from 'react';
 
-interface Player {
+export interface Player {
   id: string;
   name: string;
   phone: string;
   email: string;
 }
 
-interface Session {
+export interface Session {
   id: string;
   date: string;
   time: string;
