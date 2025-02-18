@@ -26,6 +26,7 @@ import MentalTools from "./pages/MentalTools";
 import GamePreparation from "./pages/GamePreparation";
 import DashboardCoach from "./pages/DashboardCoach";
 import NewPlayerForm from "./pages/NewPlayerForm";
+import PlayersList from "./pages/PlayersList";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,11 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/players-list" element={
+              <AuthGuard>
+                <PlayersList />
+              </AuthGuard>
+            } />
             <Route 
               path="/form" 
               element={

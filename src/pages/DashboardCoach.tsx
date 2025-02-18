@@ -11,6 +11,8 @@ const DashboardCoach = () => {
   const handleButtonClick = (buttonNumber: number) => {
     if (buttonNumber === 1) {
       navigate('/new-player');
+    } else if (buttonNumber === 3) {
+      navigate('/players-list');
     } else {
       console.log(`Button ${buttonNumber} clicked`);
     }
