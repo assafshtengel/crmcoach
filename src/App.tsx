@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +28,7 @@ import GamePreparation from "./pages/GamePreparation";
 import DashboardCoach from "./pages/DashboardCoach";
 import NewPlayerForm from "./pages/NewPlayerForm";
 import PlayersList from "./pages/PlayersList";
+import NewSessionForm from "./pages/NewSessionForm";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +44,11 @@ const App = () => (
             <Route path="/players-list" element={
               <AuthGuard>
                 <PlayersList />
+              </AuthGuard>
+            } />
+            <Route path="/new-session" element={
+              <AuthGuard>
+                <NewSessionForm />
               </AuthGuard>
             } />
             <Route 
