@@ -535,6 +535,51 @@ export type Database = {
         }
         Relationships: []
       }
+      sessions: {
+        Row: {
+          coach_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          player_id: string
+          session_date: string
+          session_time: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          player_id: string
+          session_date: string
+          session_time: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          player_id?: string
+          session_date?: string
+          session_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

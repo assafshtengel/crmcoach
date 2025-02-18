@@ -5,9 +5,9 @@ import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { usePlayers } from '@/contexts/PlayersContext';
+import { supabase } from '@/lib/supabase';
 import {
   Select,
   SelectContent,
@@ -16,61 +16,103 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface SessionFormData {
-  date: string;
-  time: string;
-  playerId: string;
-  description: string;
+interface Player {
+  id: string;
+  full_name: string;
 }
 
-const initialFormData: SessionFormData = {
-  date: '',
-  time: '',
-  playerId: '',
-  description: ''
-};
+interface SessionFormData {
+  player_id: string;
+  session_date: string;
+  session_time: string;
+  notes: string;
+}
 
 const NewSessionForm = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { players, addSession } = usePlayers();
-  const [formData, setFormData] = useState<SessionFormData>(initialFormData);
+  const [loading, setLoading] = useState(false);
+  const [players, setPlayers] = useState<Player[]>([]);
+  
+  const [formData, setFormData] = useState<SessionFormData>({
+    player_id: '',
+    session_date: '',
+    session_time: '',
+    notes: ''
+  });
 
-  // טיפול בשחקן נבחר מראש
   useEffect(() => {
-    const state = location.state as { selectedPlayerId?: string } | null;
-    if (state?.selectedPlayerId) {
-      setFormData(prev => ({ ...prev, playerId: state.selectedPlayerId }));
-    }
-  }, [location.state]);
+    fetchPlayers();
+  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fetchPlayers = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('players')
+        .select('id, full_name')
+        .eq('coach_id', user.id);
+
+      if (error) throw error;
+
+      setPlayers(data || []);
+    } catch (error: any) {
+      toast.error('שגיאה בטעינת רשימת השחקנים');
+      console.error('Error fetching players:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const selectedPlayer = players.find(p => p.id === formData.playerId);
-    const sessionData = {
-      ...formData,
-      playerName: selectedPlayer?.name || 'לא נבחר שחקן'
-    };
-    
-    addSession(sessionData);
-    console.log('Session data:', sessionData);
-    toast.success('המפגש נקבע בהצלחה!');
-    
-    // ניקוי הטופס
-    setFormData(initialFormData);
-    navigate('/');
-  };
+    if (!formData.player_id || !formData.session_date || !formData.session_time) {
+      toast.error('נא למלא את כל השדות החובה');
+      return;
+    }
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('לא נמצא משתמש מחובר');
+        navigate('/auth');
+        return;
+      }
 
-  const handlePlayerSelect = (value: string) => {
-    setFormData(prev => ({ ...prev, playerId: value }));
+      const selectedPlayer = players.find(p => p.id === formData.player_id);
+      
+      const { error } = await supabase.from('sessions').insert({
+        coach_id: user.id,
+        player_id: formData.player_id,
+        session_date: formData.session_date,
+        session_time: formData.session_time,
+        notes: formData.notes
+      });
+
+      if (error) throw error;
+
+      toast.success(`המפגש עם ${selectedPlayer?.full_name} נקבע בהצלחה ל-${formData.session_date} בשעה ${formData.session_time}!`);
+      
+      // נקה את הטופס
+      setFormData({
+        player_id: '',
+        session_date: '',
+        session_time: '',
+        notes: ''
+      });
+      
+      navigate('/sessions-list');
+    } catch (error: any) {
+      toast.error(error.message || 'אירעה שגיאה בקביעת המפגש');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,70 +125,59 @@ const NewSessionForm = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="date">תאריך</Label>
-                <Input
-                  id="date"
-                  name="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={handleInputChange}
-                  required
-                  dir="ltr"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="time">שעה</Label>
-                <Input
-                  id="time"
-                  name="time"
-                  type="time"
-                  value={formData.time}
-                  onChange={handleInputChange}
-                  required
-                  dir="ltr"
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="player">בחר שחקן</Label>
-                {players.length > 0 ? (
-                  <Select
-                    name="playerId"
-                    value={formData.playerId}
-                    onValueChange={handlePlayerSelect}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="בחר שחקן" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {players.map((player) => (
-                        <SelectItem key={player.id} value={player.id}>
-                          {player.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    id="playerName"
-                    name="playerId"
-                    placeholder="הכנס שם שחקן"
-                    value={formData.playerId}
-                    onChange={handleInputChange}
-                  />
-                )}
+                <Select 
+                  value={formData.player_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, player_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="בחר שחקן" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {players.map((player) => (
+                      <SelectItem key={player.id} value={player.id}>
+                        {player.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">תיאור המפגש</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  placeholder="תאר את מטרת המפגש..."
-                  value={formData.description}
-                  onChange={handleInputChange}
+                <Label htmlFor="session_date">תאריך</Label>
+                <Input
+                  id="session_date"
+                  name="session_date"
+                  type="date"
+                  value={formData.session_date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, session_date: e.target.value }))}
                   required
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="session_time">שעה</Label>
+                <Input
+                  id="session_time"
+                  name="session_time"
+                  type="time"
+                  value={formData.session_time}
+                  onChange={(e) => setFormData(prev => ({ ...prev, session_time: e.target.value }))}
+                  required
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">הערות</Label>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="הערות על המפגש..."
+                  className="h-24"
                 />
               </div>
 
@@ -158,7 +189,9 @@ const NewSessionForm = () => {
                 >
                   ביטול
                 </Button>
-                <Button type="submit">שמירה</Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? 'שומר...' : 'שמירה'}
+                </Button>
               </div>
             </form>
           </CardContent>

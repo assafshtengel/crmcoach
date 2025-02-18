@@ -1,10 +1,8 @@
 
-import React, { useState } from 'react';
-import { usePlayers } from '@/contexts/PlayersContext';
-import type { Session } from '@/contexts/PlayersContext';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Pencil, Trash2 } from 'lucide-react';
+import { Home, Pencil, Trash2, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,46 +22,115 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+
+interface Session {
+  id: string;
+  session_date: string;
+  session_time: string;
+  notes: string;
+  player: {
+    full_name: string;
+  };
+}
 
 const SessionsList = () => {
-  const { sessions, deleteSession } = usePlayers();
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const [sessionToDelete, setSessionToDelete] = useState<Session | null>(null);
+  const [sessionToDelete, setSessionToDelete] = useState<{ id: string; playerName: string } | null>(null);
 
-  const handleEditSession = (session: Session) => {
-    navigate('/edit-session', { state: { session } });
-  };
+  useEffect(() => {
+    fetchSessions();
+  }, []);
 
-  const handleDeleteConfirm = () => {
-    if (sessionToDelete) {
-      deleteSession(sessionToDelete.id);
-      toast.success('המפגש נמחק בהצלחה');
-      setSessionToDelete(null);
+  const fetchSessions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('sessions')
+        .select(`
+          id,
+          session_date,
+          session_time,
+          notes,
+          player:players(full_name)
+        `)
+        .eq('coach_id', user.id);
+
+      if (error) throw error;
+
+      setSessions(data || []);
+    } catch (error: any) {
+      toast.error('שגיאה בטעינת רשימת המפגשים');
+      console.error('Error fetching sessions:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleEditSession = (sessionId: string) => {
+    navigate('/edit-session', { state: { sessionId } });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!sessionToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('id', sessionToDelete.id);
+
+      if (error) throw error;
+
+      setSessions(sessions.filter(session => session.id !== sessionToDelete.id));
+      toast.success('המפגש נמחק בהצלחה');
+      setSessionToDelete(null);
+    } catch (error: any) {
+      toast.error('שגיאה במחיקת המפגש');
+      console.error('Error deleting session:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Header */}
       <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
         <div className="max-w-7xl mx-auto px-8">
           <h1 className="text-3xl font-bold">רשימת מפגשים</h1>
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-8">
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate('/')}
-              title="חזרה לדף הראשי"
-            >
-              <Home className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate('/')}
+            title="חזרה לדף הראשי"
+          >
+            <Home className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={() => navigate('/new-session')}
+            className="bg-primary hover:bg-primary/90"
+          >
+            קביעת מפגש חדש
+          </Button>
         </div>
 
         {sessions.length === 0 ? (
@@ -78,30 +145,33 @@ const SessionsList = () => {
                   <TableHead>תאריך</TableHead>
                   <TableHead>שעה</TableHead>
                   <TableHead>שם השחקן</TableHead>
-                  <TableHead>תיאור המפגש</TableHead>
+                  <TableHead>הערות</TableHead>
                   <TableHead>פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sessions.map((session) => (
                   <TableRow key={session.id}>
-                    <TableCell dir="ltr">{session.date}</TableCell>
-                    <TableCell dir="ltr">{session.time}</TableCell>
-                    <TableCell>{session.playerName}</TableCell>
-                    <TableCell>{session.description}</TableCell>
+                    <TableCell dir="ltr">{session.session_date}</TableCell>
+                    <TableCell dir="ltr">{session.session_time}</TableCell>
+                    <TableCell>{session.player.full_name}</TableCell>
+                    <TableCell>{session.notes}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleEditSession(session)}
+                          onClick={() => handleEditSession(session.id)}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setSessionToDelete(session)}
+                          onClick={() => setSessionToDelete({ 
+                            id: session.id, 
+                            playerName: session.player.full_name 
+                          })}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -123,8 +193,7 @@ const SessionsList = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
               <AlertDialogDescription>
-                האם אתה בטוח שברצונך למחוק את המפגש עם {sessionToDelete?.playerName} 
-                בתאריך {sessionToDelete?.date} בשעה {sessionToDelete?.time}?
+                האם אתה בטוח שברצונך למחוק את המפגש עם {sessionToDelete?.playerName}?
                 <br />
                 פעולה זו לא ניתנת לביטול.
               </AlertDialogDescription>
