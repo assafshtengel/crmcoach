@@ -235,7 +235,7 @@ const DashboardCoach = () => {
           <div className="flex items-center gap-2 sm:gap-4">
             <Button
               variant="ghost"
-              className="text-white hover:text-white/80"
+              className="text-white hover:text-white/80 transition-all duration-300 hover:scale-105"
               onClick={() => navigate('/analytics')}
             >
               <PieChart className="h-4 w-4 mr-2" />
@@ -243,7 +243,7 @@ const DashboardCoach = () => {
             </Button>
             <Button
               variant="ghost"
-              className="text-white hover:text-white/80"
+              className="text-white hover:text-white/80 transition-all duration-300 hover:scale-105"
               onClick={() => navigate('/notifications')}
             >
               <Bell className="h-4 w-4 mr-2" />
@@ -251,7 +251,7 @@ const DashboardCoach = () => {
             </Button>
             <Button
               variant="ghost"
-              className="text-white hover:text-white/80"
+              className="text-white hover:text-white/80 transition-all duration-300 hover:scale-105"
               onClick={() => navigate('/profile-coach')}
             >
               <Settings className="h-4 w-4 mr-2" />
@@ -265,9 +265,9 @@ const DashboardCoach = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all">
+          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-gray-800/60 transition-all duration-300 hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">שחקנים רשומים</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-white">שחקנים רשומים</CardTitle>
               <Users className={`h-4 w-4 ${getStatsColor(stats.totalPlayers, 'default')}`} />
             </CardHeader>
             <CardContent>
@@ -277,9 +277,9 @@ const DashboardCoach = () => {
             </CardContent>
           </Card>
           
-          <Card className="bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all">
+          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-gray-800/60 transition-all duration-300 hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">מפגשים קרובים</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-white">מפגשים קרובים</CardTitle>
               <Calendar className={`h-4 w-4 ${getStatsColor(stats.upcomingSessions, 'sessions')}`} />
             </CardHeader>
             <CardContent>
@@ -289,9 +289,9 @@ const DashboardCoach = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all">
+          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-gray-800/60 transition-all duration-300 hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">אחוז נוכחות</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-white">אחוז נוכחות</CardTitle>
               <BarChart2 className={`h-4 w-4 ${getStatsColor(stats.attendanceRate, 'attendance')}`} />
             </CardHeader>
             <CardContent>
@@ -301,9 +301,9 @@ const DashboardCoach = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all">
+          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-gray-800/60 transition-all duration-300 hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">תזכורות שנשלחו</CardTitle>
+              <CardTitle className="text-sm font-medium dark:text-white">תזכורות שנשלחו</CardTitle>
               <Bell className={`h-4 w-4 ${getStatsColor(stats.totalReminders, 'default')}`} />
             </CardHeader>
             <CardContent>
@@ -315,26 +315,26 @@ const DashboardCoach = () => {
         </div>
 
         {/* Upcoming Sessions Table */}
-        <Card className="bg-white/80 backdrop-blur-sm">
+        <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>מפגשים קרובים</CardTitle>
+            <CardTitle className="dark:text-white">מפגשים קרובים</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="relative overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>תאריך</TableHead>
-                    <TableHead>שעה</TableHead>
-                    <TableHead>שם השחקן</TableHead>
-                    <TableHead className="hidden md:table-cell">הערות</TableHead>
-                    <TableHead>סטטוס תזכורת</TableHead>
-                    <TableHead>פעולות</TableHead>
+                    <TableHead className="dark:text-gray-300">תאריך</TableHead>
+                    <TableHead className="dark:text-gray-300">שעה</TableHead>
+                    <TableHead className="dark:text-gray-300">שם השחקן</TableHead>
+                    <TableHead className="hidden md:table-cell dark:text-gray-300">הערות</TableHead>
+                    <TableHead className="dark:text-gray-300">סטטוס תזכורת</TableHead>
+                    <TableHead className="dark:text-gray-300">פעולות</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {upcomingSessions.map((session) => (
-                    <TableRow key={session.id}>
+                    <TableRow key={session.id} className="dark:text-gray-300">
                       <TableCell>{session.session_date}</TableCell>
                       <TableCell>{session.session_time}</TableCell>
                       <TableCell>{session.player.full_name}</TableCell>
@@ -343,12 +343,12 @@ const DashboardCoach = () => {
                       </TableCell>
                       <TableCell>
                         {session.reminder_sent ? (
-                          <span className="inline-flex items-center text-green-500">
+                          <span className="inline-flex items-center text-green-500 dark:text-green-400">
                             <Check className="h-4 w-4 mr-1" />
                             נשלח
                           </span>
                         ) : (
-                          <span className="text-orange-500">ממתין</span>
+                          <span className="text-orange-500 dark:text-orange-400">ממתין</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -357,6 +357,7 @@ const DashboardCoach = () => {
                           size="sm"
                           onClick={() => handleSendReminder(session.id)}
                           disabled={session.reminder_sent}
+                          className="transition-all duration-300 hover:scale-105"
                         >
                           <Send className="h-4 w-4" />
                           <span className="sr-only">שלח תזכורת</span>
@@ -373,80 +374,80 @@ const DashboardCoach = () => {
         {/* Action Buttons Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card 
-            className="bg-white/80 backdrop-blur-sm hover:bg-gray-50 transition-all cursor-pointer transform hover:-translate-y-1 duration-200 border-2 border-primary/10 hover:border-primary"
+            className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary"
             onClick={() => navigate('/new-player')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold">רישום שחקן חדש</CardTitle>
-              <UserPlus className="h-6 w-6 text-primary" />
+              <CardTitle className="text-lg font-semibold dark:text-white">רישום שחקן חדש</CardTitle>
+              <UserPlus className="h-6 w-6 text-primary dark:text-primary/80" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">הוסף שחקן חדש למערכת</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">הוסף שחקן חדש למערכת</p>
             </CardContent>
           </Card>
 
           <Card 
-            className="bg-white/80 backdrop-blur-sm hover:bg-gray-50 transition-all cursor-pointer transform hover:-translate-y-1 duration-200 border-2 border-primary/10 hover:border-primary"
+            className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary"
             onClick={() => navigate('/new-session')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold">קביעת מפגש חדש</CardTitle>
-              <CalendarPlus className="h-6 w-6 text-primary" />
+              <CardTitle className="text-lg font-semibold dark:text-white">קביעת מפגש חדש</CardTitle>
+              <CalendarPlus className="h-6 w-6 text-primary dark:text-primary/80" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">קבע מפגש אימון חדש</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">קבע מפגש אימון חדש</p>
             </CardContent>
           </Card>
 
           <Card 
-            className="bg-white/80 backdrop-blur-sm hover:bg-gray-50 transition-all cursor-pointer transform hover:-translate-y-1 duration-200 border-2 border-primary/10 hover:border-primary"
+            className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary"
             onClick={() => navigate('/players-list')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold">ריכוז כל השחקנים</CardTitle>
-              <Users className="h-6 w-6 text-primary" />
+              <CardTitle className="text-lg font-semibold dark:text-white">ריכוז כל השחקנים</CardTitle>
+              <Users className="h-6 w-6 text-primary dark:text-primary/80" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">צפה בכל השחקנים הרשומים</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">צפה בכל השחקנים הרשומים</p>
             </CardContent>
           </Card>
 
           <Card 
-            className="bg-white/80 backdrop-blur-sm hover:bg-gray-50 transition-all cursor-pointer transform hover:-translate-y-1 duration-200 border-2 border-primary/10 hover:border-primary"
+            className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary"
             onClick={() => navigate('/sessions-list')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold">ריכוז כל המפגשים</CardTitle>
-              <Calendar className="h-6 w-6 text-primary" />
+              <CardTitle className="text-lg font-semibold dark:text-white">ריכוז כל המפגשים</CardTitle>
+              <Calendar className="h-6 w-6 text-primary dark:text-primary/80" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">צפה בכל המפגשים המתוכננים</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">צפה בכל המפגשים המתוכננים</p>
             </CardContent>
           </Card>
 
           <Card 
-            className="bg-white/80 backdrop-blur-sm hover:bg-gray-50 transition-all cursor-pointer transform hover:-translate-y-1 duration-200 border-2 border-primary/10 hover:border-primary"
+            className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary"
             onClick={() => navigate('/notifications')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold">מעקב תזכורות</CardTitle>
-              <Bell className="h-6 w-6 text-primary" />
+              <CardTitle className="text-lg font-semibold dark:text-white">מעקב תזכורות</CardTitle>
+              <Bell className="h-6 w-6 text-primary dark:text-primary/80" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">נהל את מערך התזכורות</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">נהל את מערך התזכורות</p>
             </CardContent>
           </Card>
 
           <Card 
-            className="bg-white/80 backdrop-blur-sm hover:bg-gray-50 transition-all cursor-pointer transform hover:-translate-y-1 duration-200 border-2 border-primary/10 hover:border-primary"
+            className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary"
             onClick={() => navigate('/analytics')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold">דוחות וסטטיסטיקות</CardTitle>
-              <PieChart className="h-6 w-6 text-primary" />
+              <CardTitle className="text-lg font-semibold dark:text-white">דוחות וסטטיסטיקות</CardTitle>
+              <PieChart className="h-6 w-6 text-primary dark:text-primary/80" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500">צפה בנתונים וניתוחים</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">צפה בנתונים וניתוחים</p>
             </CardContent>
           </Card>
         </div>
