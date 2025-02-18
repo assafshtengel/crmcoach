@@ -24,6 +24,7 @@ import Next from "./pages/Next";
 import Contact from "./pages/Contact";
 import MentalTools from "./pages/MentalTools";
 import GamePreparation from "./pages/GamePreparation";
+import DashboardCoach from "./pages/DashboardCoach";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,14 @@ const App = () => (
           />
           <Route 
             path="/" 
+            element={
+              <AuthGuard>
+                <DashboardCoach />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/dashboard-player" 
             element={
               <AuthGuard>
                 <Dashboard />
