@@ -395,6 +395,41 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications_log: {
+        Row: {
+          error_message: string | null
+          id: string
+          message_content: string
+          sent_at: string | null
+          session_id: string | null
+          status: string
+        }
+        Insert: {
+          error_message?: string | null
+          id?: string
+          message_content: string
+          sent_at?: string | null
+          session_id?: string | null
+          status: string
+        }
+        Update: {
+          error_message?: string | null
+          id?: string
+          message_content?: string
+          sent_at?: string | null
+          session_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_log_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_details: {
         Row: {
           contract_value: number | null
@@ -542,6 +577,7 @@ export type Database = {
           id: string
           notes: string | null
           player_id: string
+          reminder_sent: boolean | null
           session_date: string
           session_time: string
         }
@@ -551,6 +587,7 @@ export type Database = {
           id?: string
           notes?: string | null
           player_id: string
+          reminder_sent?: boolean | null
           session_date: string
           session_time: string
         }
@@ -560,6 +597,7 @@ export type Database = {
           id?: string
           notes?: string | null
           player_id?: string
+          reminder_sent?: boolean | null
           session_date?: string
           session_time?: string
         }
