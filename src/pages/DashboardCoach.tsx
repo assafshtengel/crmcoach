@@ -190,12 +190,14 @@ const DashboardCoach = () => {
       const session = upcomingSessions.find(s => s.id === sessionId);
       if (!session) throw new Error('לא נמצא מפגש');
 
+      // Create notification for scheduled reminder
       await supabase.from('notifications').insert({
         coach_id: user.id,
         type: 'reminder_scheduled',
         message: `תזכורת תשלח לשחקן ${session.player.full_name} בעוד 15 דקות`
       });
 
+      // Log the reminder attempt
       const { error } = await supabase
         .from('notifications_log')
         .insert([{
@@ -206,6 +208,7 @@ const DashboardCoach = () => {
         }]);
 
       if (error) {
+        // Create error notification if sending fails
         await supabase.from('notifications').insert({
           coach_id: user.id,
           type: 'reminder_error',
@@ -214,6 +217,7 @@ const DashboardCoach = () => {
         throw error;
       }
 
+      // Update session status
       await supabase
         .from('sessions')
         .update({ reminder_sent: true })
