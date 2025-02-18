@@ -23,16 +23,17 @@ interface SessionFormData {
   description: string;
 }
 
+const initialFormData: SessionFormData = {
+  date: '',
+  time: '',
+  playerId: '',
+  description: ''
+};
+
 const NewSessionForm = () => {
   const navigate = useNavigate();
-  const { players } = usePlayers();
-  
-  const [formData, setFormData] = useState<SessionFormData>({
-    date: '',
-    time: '',
-    playerId: '',
-    description: ''
-  });
+  const { players, addSession } = usePlayers();
+  const [formData, setFormData] = useState<SessionFormData>(initialFormData);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,9 +44,12 @@ const NewSessionForm = () => {
       playerName: selectedPlayer?.name || 'לא נבחר שחקן'
     };
     
+    addSession(sessionData);
     console.log('Session data:', sessionData);
     toast.success('המפגש נקבע בהצלחה!');
-    navigate('/');
+    
+    // ניקוי הטופס
+    setFormData(initialFormData);
   };
 
   const handleInputChange = (
