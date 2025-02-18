@@ -1,157 +1,228 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
-import { Home, Pencil } from 'lucide-react';
-import { usePlayers } from '@/contexts/PlayersContext';
+import { Home, Pencil, User } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Coach } from '@/contexts/PlayersContext';
+import { supabase } from '@/lib/supabase';
 
-interface EditableField {
-  name: keyof Coach;
-  isEditing: boolean;
+interface Coach {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+  profile_picture?: string;
+  description?: string;
+  created_at: string;
 }
 
 const ProfileCoach = () => {
+  const [coach, setCoach] = useState<Coach | null>(null);
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [description, setDescription] = useState('');
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [profilePictureURL, setProfilePictureURL] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { coach, updateCoach } = usePlayers();
-  const [editableFields, setEditableFields] = useState<EditableField[]>([
-    { name: 'fullName', isEditing: false },
-    { name: 'email', isEditing: false },
-    { name: 'phone', isEditing: false },
-    { name: 'description', isEditing: false },
-  ]);
-  const [tempValues, setTempValues] = useState<Coach>(coach);
 
-  const startEditing = (fieldName: keyof Coach) => {
-    setEditableFields(prev =>
-      prev.map(field =>
-        field.name === fieldName
-          ? { ...field, isEditing: true }
-          : field
-      )
-    );
+  useEffect(() => {
+    const fetchCoachData = async () => {
+      setLoading(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate('/auth');
+          return;
+        }
+
+        const { data: coachData, error } = await supabase
+          .from('coaches')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching coach data:', error);
+          toast.error('Failed to fetch profile data.');
+          return;
+        }
+
+        if (coachData) {
+          setCoach(coachData as Coach);
+          setFullName(coachData.full_name);
+          setPhone(coachData.phone || '');
+          setDescription(coachData.description || '');
+          setProfilePictureURL(coachData.profile_picture || null);
+        }
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        toast.error('An unexpected error occurred.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCoachData();
+  }, [navigate]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfilePicture(file);
+      const url = URL.createObjectURL(file);
+      setProfilePictureURL(url);
+    }
   };
 
-  const handleSave = (fieldName: keyof Coach) => {
-    updateCoach({ [fieldName]: tempValues[fieldName] });
-    setEditableFields(prev =>
-      prev.map(field =>
-        field.name === fieldName
-          ? { ...field, isEditing: false }
-          : field
-      )
-    );
-    toast.success('הפרטים עודכנו בהצלחה!');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      let profilePicturePath = coach?.profile_picture;
+
+      if (profilePicture) {
+        const fileExt = profilePicture.name.split('.').pop();
+        const filePath = `coaches/${user.id}/profile.${fileExt}`;
+
+        const { data, error: uploadError } = await supabase.storage
+          .from('images')
+          .upload(filePath, profilePicture, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          toast.error('Failed to upload image.');
+          return;
+        }
+
+        profilePicturePath = `https://hntgzgrlyfhojcaofbjv.supabase.co/storage/v1/object/public/images/${filePath}`;
+      }
+
+      const { error: updateError } = await supabase
+        .from('coaches')
+        .upsert({
+          id: user.id,
+          full_name: fullName,
+          phone: phone,
+          description: description,
+          profile_picture: profilePicturePath,
+        }, { onConflict: 'id' });
+
+      if (updateError) {
+        console.error('Error updating coach data:', updateError);
+        toast.error('Failed to update profile.');
+        return;
+      }
+
+      setCoach({
+        ...coach!,
+        full_name: fullName,
+        phone: phone,
+        description: description,
+        profile_picture: profilePicturePath,
+      });
+
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCancel = (fieldName: keyof Coach) => {
-    setTempValues(prev => ({ ...prev, [fieldName]: coach[fieldName] }));
-    setEditableFields(prev =>
-      prev.map(field =>
-        field.name === fieldName
-          ? { ...field, isEditing: false }
-          : field
-      )
-    );
-  };
-
-  const handleChange = (fieldName: keyof Coach, value: string) => {
-    setTempValues(prev => ({ ...prev, [fieldName]: value }));
-  };
-
-  const renderField = (fieldName: keyof Coach, label: string, type: string = 'text') => {
-    const isEditing = editableFields.find(f => f.name === fieldName)?.isEditing;
-
-    return (
-      <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <Label htmlFor={fieldName}>{label}</Label>
-          {!isEditing && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => startEditing(fieldName)}
-              className="h-8 px-2"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-        {fieldName === 'description' ? (
-          <Textarea
-            id={fieldName}
-            value={isEditing ? tempValues[fieldName] : coach[fieldName]}
-            onChange={(e) => handleChange(fieldName, e.target.value)}
-            disabled={!isEditing}
-            placeholder={`הכנס ${label}`}
-            className="resize-none"
-            dir="rtl"
-          />
-        ) : (
-          <Input
-            id={fieldName}
-            type={type}
-            value={isEditing ? tempValues[fieldName] : coach[fieldName]}
-            onChange={(e) => handleChange(fieldName, e.target.value)}
-            disabled={!isEditing}
-            placeholder={`הכנס ${label}`}
-            dir={type === 'email' || type === 'tel' ? 'ltr' : 'rtl'}
-          />
-        )}
-        {isEditing && (
-          <div className="flex justify-end gap-2 mt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleCancel(fieldName)}
-            >
-              ביטול
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => handleSave(fieldName)}
-            >
-              שמור
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  };
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Header */}
-      <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
-        <div className="max-w-7xl mx-auto px-8">
-          <h1 className="text-3xl font-bold">פרופיל מאמן</h1>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div className="max-w-2xl mx-auto px-8">
-        <div className="flex items-center justify-between mb-8">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate('/')}
-            title="חזרה לדף הראשי"
-          >
-            <Home className="h-4 w-4" />
+    <div className="container mx-auto mt-8">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">Your Profile</h1>
+        <Button variant="outline" onClick={() => navigate('/dashboard-coach')}>
+          <Home className="w-4 h-4 mr-2" />
+          Dashboard
+        </Button>
+      </div>
+      <form onSubmit={handleSubmit} className="max-w-lg">
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="fullName">Full Name</Label>
+            <Input
+              type="text"
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              type="email"
+              id="email"
+              value={coach?.email || ''}
+              readOnly
+            />
+          </div>
+          <div>
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              type="tel"
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="profilePicture">Profile Picture</Label>
+            <Input
+              type="file"
+              id="profilePicture"
+              accept="image/*"
+              onChange={handleImageChange}
+            />
+            {profilePictureURL && (
+              <img
+                src={profilePictureURL}
+                alt="Profile Preview"
+                className="mt-2 h-20 w-20 rounded-full object-cover"
+              />
+            )}
+          </div>
+          <Button type="submit" disabled={loading}>
+            {loading ? (
+              <>
+                Updating...
+              </>
+            ) : (
+              <>
+                <Pencil className="w-4 h-4 mr-2" />
+                Update Profile
+              </>
+            )}
           </Button>
         </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
-          {renderField('fullName', 'שם מלא')}
-          {renderField('email', 'אימייל', 'email')}
-          {renderField('phone', 'טלפון', 'tel')}
-          {renderField('description', 'תיאור')}
-        </div>
-      </div>
+      </form>
     </div>
   );
 };

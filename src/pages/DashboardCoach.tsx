@@ -1,9 +1,20 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings } from 'lucide-react';
+import { Home, Settings, User } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+
+interface Coach {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+  profile_picture?: string;
+  description?: string;
+  created_at: string;
+}
 
 const DashboardCoach = () => {
   const navigate = useNavigate();
