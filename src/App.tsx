@@ -30,6 +30,7 @@ import PlayersList from "./pages/PlayersList";
 import NewSessionForm from "./pages/NewSessionForm";
 import SessionsList from "./pages/SessionsList";
 import EditPlayerForm from "./pages/EditPlayerForm";
+import EditSessionForm from "./pages/EditSessionForm";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,11 @@ const App = () => (
       <PlayersProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/edit-session" element={
+              <AuthGuard>
+                <EditSessionForm />
+              </AuthGuard>
+            } />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/players-list" element={
               <AuthGuard>

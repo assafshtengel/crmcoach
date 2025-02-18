@@ -1,9 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { usePlayers } from '@/contexts/PlayersContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home } from 'lucide-react';
+import { Home, Pencil, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -12,10 +22,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { toast } from 'sonner';
 
 const SessionsList = () => {
-  const { sessions } = usePlayers();
+  const { sessions, deleteSession } = usePlayers();
   const navigate = useNavigate();
+  const [sessionToDelete, setSessionToDelete] = useState<Session | null>(null);
+
+  const handleEditSession = (session: Session) => {
+    navigate('/edit-session', { state: { session } });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (sessionToDelete) {
+      deleteSession(sessionToDelete.id);
+      toast.success('המפגש נמחק בהצלחה');
+      setSessionToDelete(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -54,6 +78,7 @@ const SessionsList = () => {
                   <TableHead>שעה</TableHead>
                   <TableHead>שם השחקן</TableHead>
                   <TableHead>תיאור המפגש</TableHead>
+                  <TableHead>פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -63,12 +88,54 @@ const SessionsList = () => {
                     <TableCell dir="ltr">{session.time}</TableCell>
                     <TableCell>{session.playerName}</TableCell>
                     <TableCell>{session.description}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditSession(session)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSessionToDelete(session)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
         )}
+
+        <AlertDialog 
+          open={!!sessionToDelete} 
+          onOpenChange={() => setSessionToDelete(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+              <AlertDialogDescription>
+                האם אתה בטוח שברצונך למחוק את המפגש עם {sessionToDelete?.playerName} 
+                בתאריך {sessionToDelete?.date} בשעה {sessionToDelete?.time}?
+                <br />
+                פעולה זו לא ניתנת לביטול.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+                מחק
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

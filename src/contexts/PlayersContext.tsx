@@ -24,6 +24,8 @@ interface PlayersContextType {
   updatePlayer: (playerId: string, updatedData: Omit<Player, 'id'>) => void;
   deletePlayer: (playerId: string) => void;
   addSession: (session: Omit<Session, 'id'>) => void;
+  updateSession: (sessionId: string, updatedData: Omit<Session, 'id'>) => void;
+  deleteSession: (sessionId: string) => void;
 }
 
 const PlayersContext = createContext<PlayersContextType | undefined>(undefined);
@@ -81,8 +83,31 @@ export const PlayersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSessions(prev => [...prev, newSession]);
   };
 
+  const updateSession = (sessionId: string, updatedData: Omit<Session, 'id'>) => {
+    setSessions(prevSessions =>
+      prevSessions.map(session =>
+        session.id === sessionId
+          ? { ...session, ...updatedData }
+          : session
+      )
+    );
+  };
+
+  const deleteSession = (sessionId: string) => {
+    setSessions(prevSessions => prevSessions.filter(session => session.id !== sessionId));
+  };
+
   return (
-    <PlayersContext.Provider value={{ players, sessions, addPlayer, updatePlayer, deletePlayer, addSession }}>
+    <PlayersContext.Provider value={{ 
+      players, 
+      sessions, 
+      addPlayer, 
+      updatePlayer, 
+      deletePlayer, 
+      addSession,
+      updateSession,
+      deleteSession 
+    }}>
       {children}
     </PlayersContext.Provider>
   );
