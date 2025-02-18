@@ -13,6 +13,12 @@ interface PlayerFormData {
   email: string;
 }
 
+interface FormErrors {
+  name?: string;
+  phone?: string;
+  email?: string;
+}
+
 const NewPlayerForm = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<PlayerFormData>({
@@ -20,16 +26,54 @@ const NewPlayerForm = () => {
     phone: '',
     email: '',
   });
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    let isValid = true;
+
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = 'נא למלא שם שחקן';
+      isValid = false;
+    }
+
+    // Phone validation
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'נא למלא מספר טלפון';
+      isValid = false;
+    }
+
+    // Email validation
+    const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+    if (!formData.email.trim()) {
+      newErrors.email = 'נא למלא כתובת אימייל';
+      isValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'כתובת אימייל לא תקינה';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted with data:', formData);
-    toast.success('הטופס נשלח בהצלחה');
+    
+    if (validateForm()) {
+      console.log('Form submitted with data:', formData);
+      toast.success('הטופס נשלח בהצלחה');
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
   };
 
   return (
@@ -48,9 +92,13 @@ const NewPlayerForm = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
+                  className={errors.name ? 'border-red-500' : ''}
                   required
                   placeholder="הכנס את שם השחקן"
                 />
+                {errors.name && (
+                  <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -61,10 +109,14 @@ const NewPlayerForm = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={handleInputChange}
+                  className={errors.phone ? 'border-red-500' : ''}
                   required
                   placeholder="הכנס מספר טלפון"
                   dir="ltr"
                 />
+                {errors.phone && (
+                  <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -75,10 +127,14 @@ const NewPlayerForm = () => {
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
+                  className={errors.email ? 'border-red-500' : ''}
                   required
                   placeholder="הכנס כתובת אימייל"
                   dir="ltr"
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                )}
               </div>
 
               <div className="flex gap-4 justify-end pt-4">
