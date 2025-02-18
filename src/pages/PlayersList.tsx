@@ -1,9 +1,8 @@
 
-import React, { useState } from 'react';
-import { usePlayers } from '@/contexts/PlayersContext';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Calendar, Pencil, Trash2 } from 'lucide-react';
+import { Home, Calendar, Pencil, Trash2, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,11 +22,60 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+
+interface Player {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  position: string;
+  notes?: string;
+}
+
+const positionLabels: Record<string, string> = {
+  goalkeeper: "שוער",
+  defender: "בלם",
+  fullback: "מגן",
+  midfielder: "קשר",
+  winger: "כנף",
+  striker: "חלוץ"
+};
 
 const PlayersList = () => {
-  const { players, deletePlayer } = usePlayers();
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [playerToDelete, setPlayerToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  useEffect(() => {
+    fetchPlayers();
+  }, []);
+
+  const fetchPlayers = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('coach_id', user.id);
+
+      if (error) throw error;
+
+      setPlayers(data || []);
+    } catch (error: any) {
+      toast.error('שגיאה בטעינת רשימת השחקנים');
+      console.error('Error fetching players:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleScheduleSession = (playerId: string, playerName: string) => {
     navigate('/new-session', { 
@@ -42,13 +90,33 @@ const PlayersList = () => {
     navigate('/edit-player', { state: { playerId } });
   };
 
-  const handleDeleteConfirm = () => {
-    if (playerToDelete) {
-      deletePlayer(playerToDelete.id);
+  const handleDeleteConfirm = async () => {
+    if (!playerToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('players')
+        .delete()
+        .eq('id', playerToDelete.id);
+
+      if (error) throw error;
+
+      setPlayers(players.filter(player => player.id !== playerToDelete.id));
       toast.success('השחקן נמחק בהצלחה');
       setPlayerToDelete(null);
+    } catch (error: any) {
+      toast.error('שגיאה במחיקת השחקן');
+      console.error('Error deleting player:', error);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -72,6 +140,12 @@ const PlayersList = () => {
               <Home className="h-4 w-4" />
             </Button>
           </div>
+          <Button
+            onClick={() => navigate('/new-player')}
+            className="bg-primary hover:bg-primary/90"
+          >
+            הוספת שחקן חדש
+          </Button>
         </div>
 
         {players.length === 0 ? (
@@ -84,6 +158,7 @@ const PlayersList = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>שם השחקן</TableHead>
+                  <TableHead>עמדה</TableHead>
                   <TableHead>אימייל</TableHead>
                   <TableHead>טלפון</TableHead>
                   <TableHead>פעולות</TableHead>
@@ -92,7 +167,8 @@ const PlayersList = () => {
               <TableBody>
                 {players.map((player) => (
                   <TableRow key={player.id}>
-                    <TableCell>{player.name}</TableCell>
+                    <TableCell className="font-medium">{player.full_name}</TableCell>
+                    <TableCell>{positionLabels[player.position] || player.position}</TableCell>
                     <TableCell dir="ltr">{player.email}</TableCell>
                     <TableCell dir="ltr">{player.phone}</TableCell>
                     <TableCell>
@@ -107,7 +183,7 @@ const PlayersList = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleScheduleSession(player.id, player.name)}
+                          onClick={() => handleScheduleSession(player.id, player.full_name)}
                           className="gap-2"
                         >
                           <Calendar className="h-4 w-4" />
@@ -116,7 +192,7 @@ const PlayersList = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setPlayerToDelete({ id: player.id, name: player.name })}
+                          onClick={() => setPlayerToDelete({ id: player.id, name: player.full_name })}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
