@@ -25,6 +25,7 @@ import Contact from "./pages/Contact";
 import MentalTools from "./pages/MentalTools";
 import GamePreparation from "./pages/GamePreparation";
 import DashboardCoach from "./pages/DashboardCoach";
+import NewPlayerForm from "./pages/NewPlayerForm";
 
 const queryClient = new QueryClient();
 
@@ -97,6 +98,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <PlayerForm />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/new-player" 
+            element={
+              <AuthGuard>
+                <NewPlayerForm />
               </AuthGuard>
             } 
           />

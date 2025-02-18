@@ -9,7 +9,11 @@ const DashboardCoach = () => {
   const navigate = useNavigate();
 
   const handleButtonClick = (buttonNumber: number) => {
-    console.log(`Button ${buttonNumber} clicked`);
+    if (buttonNumber === 1) {
+      navigate('/new-player');
+    } else {
+      console.log(`Button ${buttonNumber} clicked`);
+    }
   };
 
   return (
