@@ -1,0 +1,77 @@
+
+import React from 'react';
+import { usePlayers } from '@/contexts/PlayersContext';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { Home } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+const SessionsList = () => {
+  const { sessions } = usePlayers();
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      {/* Header */}
+      <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
+        <div className="max-w-7xl mx-auto px-8">
+          <h1 className="text-3xl font-bold">רשימת מפגשים</h1>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate('/')}
+              title="חזרה לדף הראשי"
+            >
+              <Home className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {sessions.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            לא נמצאו מפגשים במערכת
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>תאריך</TableHead>
+                  <TableHead>שעה</TableHead>
+                  <TableHead>שם השחקן</TableHead>
+                  <TableHead>תיאור המפגש</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sessions.map((session) => (
+                  <TableRow key={session.id}>
+                    <TableCell dir="ltr">{session.date}</TableCell>
+                    <TableCell dir="ltr">{session.time}</TableCell>
+                    <TableCell>{session.playerName}</TableCell>
+                    <TableCell>{session.description}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default SessionsList;

@@ -15,8 +15,8 @@ const DashboardCoach = () => {
       navigate('/new-session');
     } else if (buttonNumber === 3) {
       navigate('/players-list');
-    } else {
-      console.log(`Button ${buttonNumber} clicked`);
+    } else if (buttonNumber === 4) {
+      navigate('/sessions-list');
     }
   };
 
@@ -85,7 +85,7 @@ const DashboardCoach = () => {
           >
             <CardHeader>
               <CardTitle className="text-xl text-gray-700">
-                כפתור 4: (כותרת עתידית)
+                כפתור 4: (ריכוז כל המפגשים)
               </CardTitle>
             </CardHeader>
           </Card>
