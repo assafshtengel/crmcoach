@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { usePlayers } from '@/contexts/PlayersContext';
 
 interface PlayerFormData {
   name: string;
@@ -21,6 +21,8 @@ interface FormErrors {
 
 const NewPlayerForm = () => {
   const navigate = useNavigate();
+  const { addPlayer } = usePlayers();
+  
   const [formData, setFormData] = useState<PlayerFormData>({
     name: '',
     phone: '',
@@ -32,19 +34,16 @@ const NewPlayerForm = () => {
     const newErrors: FormErrors = {};
     let isValid = true;
 
-    // Name validation
     if (!formData.name.trim()) {
       newErrors.name = 'נא למלא שם שחקן';
       isValid = false;
     }
 
-    // Phone validation
     if (!formData.phone.trim()) {
       newErrors.phone = 'נא למלא מספר טלפון';
       isValid = false;
     }
 
-    // Email validation
     const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
     if (!formData.email.trim()) {
       newErrors.email = 'נא למלא כתובת אימייל';
@@ -62,15 +61,16 @@ const NewPlayerForm = () => {
     e.preventDefault();
     
     if (validateForm()) {
+      addPlayer(formData);
       console.log('Form submitted with data:', formData);
-      toast.success('הטופס נשלח בהצלחה');
+      toast.success('השחקן נשמר בהצלחה!');
+      navigate('/');
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
