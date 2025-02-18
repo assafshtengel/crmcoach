@@ -12,7 +12,7 @@ const DashboardCoach = () => {
       {/* Header */}
       <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
         <div className="max-w-7xl mx-auto px-8">
-          <h1 className="text-3xl font-bold">ברוכים הבאים, מאמן</h1>
+          <h1 className="text-3xl font-bold">ברוך הבא, מאמן</h1>
         </div>
       </header>
 
