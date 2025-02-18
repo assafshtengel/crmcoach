@@ -39,17 +39,6 @@ interface UpcomingSession {
   };
 }
 
-interface RawSession {
-  id: string;
-  session_date: string;
-  session_time: string;
-  notes: string;
-  reminder_sent: boolean;
-  players: {
-    full_name: string;
-  };
-}
-
 interface Notification {
   id: string;
   message: string;
@@ -160,7 +149,10 @@ const DashboardCoach = () => {
     }
   };
 
-  const markAsRead = async (notificationId: string) => {
+  const markAsRead = async (notificationId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
     try {
       const { error } = await supabase
         .from('notifications')
@@ -247,27 +239,18 @@ const DashboardCoach = () => {
               schema: 'public',
               table: 'notifications'
             },
-            () => {
-              fetchNotifications(user.id);
+            (payload) => {
+              if (payload.eventType === 'INSERT') {
+                toast({
+                  title: "📢 התראה חדשה",
+                  description: payload.new.message,
+                  duration: 5000
+                });
+                fetchNotifications(user.id);
+              } else {
+                fetchNotifications(user.id);
+              }
             }
-          )
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'sessions'
-            },
-            () => fetchData(user.id)
-          )
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'players'
-            },
-            () => fetchData(user.id)
           )
           .subscribe();
 
@@ -336,18 +319,29 @@ const DashboardCoach = () => {
                   {notifications.length > 0 ? (
                     <div className="py-2">
                       {notifications.map((notification) => (
-                        <button
+                        <div
                           key={notification.id}
-                          className={`w-full text-right px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                          className={`relative w-full text-right px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
                             !notification.is_read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                           }`}
-                          onClick={() => markAsRead(notification.id)}
                         >
-                          <p className="text-sm text-gray-900 dark:text-gray-100">{notification.message}</p>
+                          <div className="flex justify-between items-start">
+                            <p className="text-sm text-gray-900 dark:text-gray-100">{notification.message}</p>
+                            {!notification.is_read && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 ml-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                onClick={(e) => markAsRead(notification.id, e)}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             {format(new Date(notification.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
                           </p>
-                        </button>
+                        </div>
                       ))}
                     </div>
                   ) : (
