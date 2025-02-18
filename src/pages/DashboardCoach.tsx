@@ -40,15 +40,15 @@ interface UpcomingSession {
   };
 }
 
-interface SessionWithPlayer {
+interface SessionFromDb {
   id: string;
   session_date: string;
   session_time: string;
   notes: string;
   reminder_sent: boolean;
-  players: {
+  players: Array<{
     full_name: string;
-  };
+  }>;
 }
 
 interface Notification {
@@ -117,15 +117,15 @@ const DashboardCoach = () => {
       });
 
       if (upcomingSessionsResult.data) {
-        const sessions = upcomingSessionsResult.data as SessionWithPlayer[];
-        const formattedSessions: UpcomingSession[] = sessions.map(session => ({
+        const sessionsFromDb = upcomingSessionsResult.data as SessionFromDb[];
+        const formattedSessions: UpcomingSession[] = sessionsFromDb.map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
           notes: session.notes,
           reminder_sent: session.reminder_sent,
           player: {
-            full_name: session.players.full_name
+            full_name: session.players[0]?.full_name || 'לא נמצא שחקן'
           }
         }));
         setUpcomingSessions(formattedSessions);
