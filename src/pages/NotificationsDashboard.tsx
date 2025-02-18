@@ -131,7 +131,6 @@ const NotificationsDashboard = () => {
         </div>
       </div>
     </div>
-  </div>
   );
 };
 
