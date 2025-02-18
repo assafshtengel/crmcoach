@@ -395,6 +395,44 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          coach_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          timestamp: string
+          type: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          timestamp?: string
+          type: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          timestamp?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications_log: {
         Row: {
           coach_id: string
