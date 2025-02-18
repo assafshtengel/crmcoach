@@ -40,6 +40,17 @@ interface UpcomingSession {
   };
 }
 
+interface SessionWithPlayer {
+  id: string;
+  session_date: string;
+  session_time: string;
+  notes: string;
+  reminder_sent: boolean;
+  players: {
+    full_name: string;
+  };
+}
+
 interface Notification {
   id: string;
   message: string;
@@ -106,7 +117,8 @@ const DashboardCoach = () => {
       });
 
       if (upcomingSessionsResult.data) {
-        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map(session => ({
+        const sessions = upcomingSessionsResult.data as SessionWithPlayer[];
+        const formattedSessions: UpcomingSession[] = sessions.map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
