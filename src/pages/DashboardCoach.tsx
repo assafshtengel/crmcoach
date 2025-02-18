@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -105,8 +106,7 @@ const DashboardCoach = () => {
       });
 
       if (upcomingSessionsResult.data) {
-        const rawSessions = upcomingSessionsResult.data as unknown as RawSession[];
-        const formattedSessions: UpcomingSession[] = rawSessions.map(session => ({
+        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
