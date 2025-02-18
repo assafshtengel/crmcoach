@@ -32,6 +32,18 @@ interface UpcomingSession {
   };
 }
 
+// טיפוס עזר שמייצג את המבנה של הנתונים כפי שהם מגיעים מ-Supabase
+interface RawSession {
+  id: string;
+  session_date: string;
+  session_time: string;
+  notes: string;
+  reminder_sent: boolean;
+  players: {
+    full_name: string;
+  };
+}
+
 const DashboardCoach = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -70,7 +82,7 @@ const DashboardCoach = () => {
             session_time,
             notes,
             reminder_sent,
-            players!inner (
+            players!inner(
               full_name
             )
           `)
@@ -89,7 +101,8 @@ const DashboardCoach = () => {
       });
 
       if (upcomingSessionsResult.data) {
-        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map(session => ({
+        const rawSessions = upcomingSessionsResult.data as unknown as RawSession[];
+        const formattedSessions: UpcomingSession[] = rawSessions.map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
