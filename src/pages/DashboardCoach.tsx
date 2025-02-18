@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +31,17 @@ interface UpcomingSession {
   player_name: string;
   notes: string;
   reminder_sent: boolean;
+}
+
+interface SessionWithPlayer {
+  id: string;
+  session_date: string;
+  session_time: string;
+  notes: string | null;
+  reminder_sent: boolean | null;
+  players: {
+    full_name: string;
+  };
 }
 
 const DashboardCoach = () => {
@@ -92,13 +102,14 @@ const DashboardCoach = () => {
         totalReminders: remindersResult.count || 0,
       });
 
-      setUpcomingSessions(sessions.map(session => ({
+      const typedSessions = sessions as SessionWithPlayer[];
+      setUpcomingSessions(typedSessions.map(session => ({
         id: session.id,
         session_date: session.session_date,
         session_time: session.session_time,
-        player_name: session.players?.full_name || '',
+        player_name: session.players.full_name,
         notes: session.notes || '',
-        reminder_sent: session.reminder_sent
+        reminder_sent: session.reminder_sent || false
       })));
 
     } catch (error) {
