@@ -52,35 +52,63 @@ const AnalyticsDashboard = () => {
 
   const fetchData = async (userId: string) => {
     try {
+      console.log("Fetching stats for user:", userId);
+
       // Fetch basic stats
       const { data: statsData, error: statsError } = await supabase
         .rpc('get_coach_statistics', { coach_id: userId });
 
-      if (statsError) throw statsError;
+      if (statsError) {
+        console.error('Stats error:', statsError);
+        throw statsError;
+      }
+
+      console.log("Stats data received:", statsData);
 
       // Fetch monthly sessions data
       const { data: monthlyData, error: monthlyError } = await supabase
         .rpc('get_monthly_sessions_count', { coach_id: userId });
 
-      if (monthlyError) throw monthlyError;
+      if (monthlyError) {
+        console.error('Monthly sessions error:', monthlyError);
+        throw monthlyError;
+      }
+
+      console.log("Monthly data received:", monthlyData);
 
       // Fetch player distribution data
       const { data: distributionData, error: distributionError } = await supabase
         .rpc('get_player_session_distribution', { coach_id: userId });
 
-      if (distributionError) throw distributionError;
+      if (distributionError) {
+        console.error('Distribution error:', distributionError);
+        throw distributionError;
+      }
+
+      console.log("Distribution data received:", distributionData);
 
       // Fetch monthly reminders data
       const { data: remindersData, error: remindersError } = await supabase
         .rpc('get_monthly_reminders_count', { coach_id: userId });
 
-      if (remindersError) throw remindersError;
+      if (remindersError) {
+        console.error('Reminders error:', remindersError);
+        throw remindersError;
+      }
 
-      setStats(statsData[0]);
+      console.log("Reminders data received:", remindersData);
+
+      // עדכון הנתונים בסטייט
+      setStats({
+        totalSessions: statsData[0]?.totalsessions || 0,
+        successfulReminders: statsData[0]?.successfulreminders || 0,
+        activePlayersCount: statsData[0]?.activeplayerscount || 0
+      });
+
       setChartData({
-        monthlySessionsData: monthlyData,
-        playerDistributionData: distributionData,
-        monthlyRemindersData: remindersData
+        monthlySessionsData: monthlyData || [],
+        playerDistributionData: distributionData || [],
+        monthlyRemindersData: remindersData || []
       });
 
     } catch (error) {
@@ -103,6 +131,7 @@ const AnalyticsDashboard = () => {
         return;
       }
 
+      console.log("Initializing data for user:", user.id);
       await fetchData(user.id);
 
       // Subscribe to real-time changes
