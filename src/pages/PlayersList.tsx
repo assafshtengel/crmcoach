@@ -1,9 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { usePlayers } from '@/contexts/PlayersContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Calendar, Pencil } from 'lucide-react';
+import { Home, Calendar, Pencil, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -12,10 +22,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { toast } from 'sonner';
 
 const PlayersList = () => {
-  const { players } = usePlayers();
+  const { players, deletePlayer } = usePlayers();
   const navigate = useNavigate();
+  const [playerToDelete, setPlayerToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const handleScheduleSession = (playerId: string, playerName: string) => {
     navigate('/new-session', { 
@@ -28,6 +40,14 @@ const PlayersList = () => {
 
   const handleEditPlayer = (playerId: string) => {
     navigate('/edit-player', { state: { playerId } });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (playerToDelete) {
+      deletePlayer(playerToDelete.id);
+      toast.success('השחקן נמחק בהצלחה');
+      setPlayerToDelete(null);
+    }
   };
 
   return (
@@ -93,6 +113,14 @@ const PlayersList = () => {
                           <Calendar className="h-4 w-4" />
                           קבע מפגש
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPlayerToDelete({ id: player.id, name: player.name })}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -101,6 +129,28 @@ const PlayersList = () => {
             </Table>
           </div>
         )}
+
+        <AlertDialog 
+          open={!!playerToDelete} 
+          onOpenChange={() => setPlayerToDelete(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+              <AlertDialogDescription>
+                האם אתה בטוח שברצונך למחוק את השחקן {playerToDelete?.name}?
+                <br />
+                פעולה זו לא ניתנת לביטול.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+                מחק
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

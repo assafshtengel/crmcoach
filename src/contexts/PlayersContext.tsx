@@ -22,6 +22,7 @@ interface PlayersContextType {
   sessions: Session[];
   addPlayer: (player: Omit<Player, 'id'>) => void;
   updatePlayer: (playerId: string, updatedData: Omit<Player, 'id'>) => void;
+  deletePlayer: (playerId: string) => void;
   addSession: (session: Omit<Session, 'id'>) => void;
 }
 
@@ -66,6 +67,12 @@ export const PlayersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
+  const deletePlayer = (playerId: string) => {
+    setPlayers(prevPlayers => prevPlayers.filter(player => player.id !== playerId));
+    // מחיקת כל המפגשים הקשורים לשחקן
+    setSessions(prevSessions => prevSessions.filter(session => session.playerId !== playerId));
+  };
+
   const addSession = (session: Omit<Session, 'id'>) => {
     const newSession = {
       ...session,
@@ -75,7 +82,7 @@ export const PlayersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   return (
-    <PlayersContext.Provider value={{ players, sessions, addPlayer, updatePlayer, addSession }}>
+    <PlayersContext.Provider value={{ players, sessions, addPlayer, updatePlayer, deletePlayer, addSession }}>
       {children}
     </PlayersContext.Provider>
   );
