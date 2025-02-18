@@ -21,6 +21,7 @@ interface PlayersContextType {
   players: Player[];
   sessions: Session[];
   addPlayer: (player: Omit<Player, 'id'>) => void;
+  updatePlayer: (playerId: string, updatedData: Omit<Player, 'id'>) => void;
   addSession: (session: Omit<Session, 'id'>) => void;
 }
 
@@ -46,6 +47,25 @@ export const PlayersProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setPlayers(prev => [...prev, newPlayer]);
   };
 
+  const updatePlayer = (playerId: string, updatedData: Omit<Player, 'id'>) => {
+    setPlayers(prevPlayers =>
+      prevPlayers.map(player =>
+        player.id === playerId
+          ? { ...player, ...updatedData }
+          : player
+      )
+    );
+
+    // עדכון שם השחקן בכל המפגשים שלו
+    setSessions(prevSessions =>
+      prevSessions.map(session =>
+        session.playerId === playerId
+          ? { ...session, playerName: updatedData.name }
+          : session
+      )
+    );
+  };
+
   const addSession = (session: Omit<Session, 'id'>) => {
     const newSession = {
       ...session,
@@ -55,7 +75,7 @@ export const PlayersProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   return (
-    <PlayersContext.Provider value={{ players, sessions, addPlayer, addSession }}>
+    <PlayersContext.Provider value={{ players, sessions, addPlayer, updatePlayer, addSession }}>
       {children}
     </PlayersContext.Provider>
   );

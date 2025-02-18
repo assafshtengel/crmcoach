@@ -3,7 +3,7 @@ import React from 'react';
 import { usePlayers } from '@/contexts/PlayersContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Calendar } from 'lucide-react';
+import { Home, Calendar, Pencil } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -24,6 +24,10 @@ const PlayersList = () => {
         selectedPlayerName: playerName 
       } 
     });
+  };
+
+  const handleEditPlayer = (playerId: string) => {
+    navigate('/edit-player', { state: { playerId } });
   };
 
   return (
@@ -72,15 +76,24 @@ const PlayersList = () => {
                     <TableCell dir="ltr">{player.email}</TableCell>
                     <TableCell dir="ltr">{player.phone}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleScheduleSession(player.id, player.name)}
-                        className="gap-2"
-                      >
-                        <Calendar className="h-4 w-4" />
-                        קבע מפגש
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditPlayer(player.id)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleScheduleSession(player.id, player.name)}
+                          className="gap-2"
+                        >
+                          <Calendar className="h-4 w-4" />
+                          קבע מפגש
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
