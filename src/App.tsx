@@ -33,6 +33,7 @@ import EditPlayerForm from "./pages/EditPlayerForm";
 import EditSessionForm from "./pages/EditSessionForm";
 import ProfileCoach from "./pages/ProfileCoach";
 import NotificationsDashboard from "./pages/NotificationsDashboard";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 
 const queryClient = new QueryClient();
 
@@ -225,6 +226,11 @@ const App = () => (
               } 
             />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/analytics" element={
+              <AuthGuard>
+                <AnalyticsDashboard />
+              </AuthGuard>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
