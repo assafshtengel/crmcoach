@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -52,6 +53,9 @@ const PlayerForm = () => {
     followers: "",
     contractValue: "",
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const getPositionLabel = (value: string) => {
     return positions.find(pos => pos.value === value)?.label || "";
@@ -65,82 +69,111 @@ const PlayerForm = () => {
     return league?.label || "";
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploading(true);
     
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast({
-        title: "שגיאה",
-        description: "יש להתחבר מחדש",
-        variant: "destructive",
-      });
-      navigate("/auth");
-      return;
-    }
-
-    // First, check if a record already exists for this user
-    const { data: existingRecord } = await supabase
-      .from("player_details")
-      .select()
-      .eq('id', user.id)
-      .single();
-
-    let error;
-    
-    if (existingRecord) {
-      // If record exists, update it
-      const { error: updateError } = await supabase
-        .from("player_details")
-        .update({
-          full_name: formData.fullName,
-          position: formData.position,
-          jersey_number: parseInt(formData.jerseyNumber),
-          team: formData.team,
-          league: formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league),
-          followers: parseInt(formData.followers),
-          contract_value: parseInt(formData.contractValue),
-        })
-        .eq('id', user.id);
-      
-      error = updateError;
-    } else {
-      // If no record exists, insert new one
-      const { error: insertError } = await supabase
-        .from("player_details")
-        .insert({
-          id: user.id,
-          full_name: formData.fullName,
-          position: formData.position,
-          jersey_number: parseInt(formData.jerseyNumber),
-          team: formData.team,
-          league: formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league),
-          followers: parseInt(formData.followers),
-          contract_value: parseInt(formData.contractValue),
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "שגיאה",
+          description: "יש להתחבר מחדש",
+          variant: "destructive",
         });
-      
-      error = insertError;
-    }
+        navigate("/auth");
+        return;
+      }
 
-    if (error) {
+      let profileImagePath = null;
+
+      if (selectedImage) {
+        const fileExt = selectedImage.name.split('.').pop();
+        const filePath = `${user.id}-${Math.random()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('player-avatars')
+          .upload(filePath, selectedImage);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('player-avatars')
+          .getPublicUrl(filePath);
+
+        profileImagePath = publicUrl;
+      }
+
+      const { data: existingRecord } = await supabase
+        .from("player_details")
+        .select()
+        .eq('id', user.id)
+        .single();
+
+      const playerData = {
+        full_name: formData.fullName,
+        position: formData.position,
+        jersey_number: parseInt(formData.jerseyNumber),
+        team: formData.team,
+        league: formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league),
+        followers: parseInt(formData.followers),
+        contract_value: parseInt(formData.contractValue),
+        profile_image: profileImagePath,
+      };
+
+      let error;
+      
+      if (existingRecord) {
+        const { error: updateError } = await supabase
+          .from("player_details")
+          .update(playerData)
+          .eq('id', user.id);
+        
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("player_details")
+          .insert({
+            id: user.id,
+            ...playerData
+          });
+        
+        error = insertError;
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "הפרטים נשמרו בהצלחה",
+        description: "בוא נמשיך להתחייבות המנטלית שלך",
+      });
+      navigate("/mental-commitment", { 
+        state: { 
+          playerName: formData.fullName 
+        } 
+      });
+    } catch (error: any) {
       console.error('Error:', error);
       toast({
         title: "שגיאה",
         description: "אירעה שגיאה בשמירת הפרטים",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setUploading(false);
     }
-
-    toast({
-      title: "הפרטים נשמרו בהצלחה",
-      description: "בוא נמשיך להתחייבות המנטלית שלך",
-    });
-    navigate("/mental-commitment", { 
-      state: { 
-        playerName: formData.fullName 
-      } 
-    });
   };
 
   return (
@@ -168,6 +201,42 @@ const PlayerForm = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="flex flex-col items-center space-y-4">
+                    <Avatar className="w-32 h-32">
+                      <AvatarImage src={imagePreview || undefined} alt="תמונת פרופיל" />
+                      <AvatarFallback>
+                        {formData.fullName ? formData.fullName.charAt(0).toUpperCase() : 'P'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-center">
+                      <Label htmlFor="profile-image" className="cursor-pointer">
+                        <div className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                          {imagePreview ? 'החלף תמונה' : 'העלה תמונת פרופיל'}
+                        </div>
+                        <Input
+                          id="profile-image"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageChange}
+                        />
+                      </Label>
+                      {imagePreview && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="mt-2 text-sm text-destructive"
+                          onClick={() => {
+                            setSelectedImage(null);
+                            setImagePreview(null);
+                          }}
+                        >
+                          הסר תמונה
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="fullName">שם מלא</Label>
                     <Input
@@ -219,7 +288,6 @@ const PlayerForm = () => {
                     />
                   </div>
 
-                  {/* שדות חדשים */}
                   <div className="space-y-2">
                     <Label htmlFor="team">באיזו קבוצה אתה משחק בגיל 24?</Label>
                     <Input
@@ -255,7 +323,6 @@ const PlayerForm = () => {
                     </Select>
                   </div>
 
-                  {/* שדה ליגה מותאמת אישית */}
                   {formData.league === 'other' && (
                     <div className="space-y-2">
                       <Label htmlFor="customLeague">שם הליגה</Label>
@@ -305,25 +372,23 @@ const PlayerForm = () => {
                     type="submit"
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                     size="lg"
+                    disabled={uploading}
                   >
-                    המשך להתחייבות המנטלית
+                    {uploading ? 'שומר...' : 'המשך להתחייבות המנטלית'}
                   </Button>
                 </form>
               </CardContent>
             </Card>
           </div>
 
-          {/* Contract Preview Section */}
           <div className="hidden md:block">
             <div className="bg-white p-8 rounded-xl shadow-xl border-2 border-gray-100 min-h-[600px] relative">
-              {/* Logo and Header */}
               <div className="flex justify-center mb-8">
                 <div className="w-24 h-24 bg-gradient-to-r from-purple-600 to-orange-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-2xl font-bold">FC</span>
                 </div>
               </div>
 
-              {/* Contract Title */}
               <h1 className="text-2xl font-bold text-center mb-8 text-gray-800">
                 {formData.fullName ? 
                   `החוזה המקצועני הראשון של ${formData.fullName}` :
@@ -331,7 +396,6 @@ const PlayerForm = () => {
                 }
               </h1>
 
-              {/* Contract Body */}
               <div className="space-y-6 text-gray-700 leading-relaxed">
                 <p>
                   {formData.fullName && formData.team && formData.league ? 
@@ -356,7 +420,6 @@ const PlayerForm = () => {
                 <p>עם יכולותיו המרשימות וכוחו המנטלי, הוא בדרכו להפוך לאחד הכוכבים הגדולים בעולם!</p>
               </div>
 
-              {/* Watermark */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
                 <div className="transform rotate-45 text-6xl font-bold text-gray-300">
                   OFFICIAL

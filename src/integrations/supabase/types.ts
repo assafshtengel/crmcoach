@@ -563,6 +563,7 @@ export type Database = {
           notes: string | null
           phone: string | null
           position: string | null
+          profile_image: string | null
         }
         Insert: {
           coach_id: string
@@ -573,6 +574,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           position?: string | null
+          profile_image?: string | null
         }
         Update: {
           coach_id?: string
@@ -583,6 +585,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           position?: string | null
+          profile_image?: string | null
         }
         Relationships: [
           {
