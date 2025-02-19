@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -95,6 +96,28 @@ const NewPlayerForm = () => {
         });
         navigate('/auth');
         return;
+      }
+
+      // בדיקה אם המאמן כבר קיים במערכת
+      const { data: coach, error: coachError } = await supabase
+        .from('coaches')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      // אם המאמן לא קיים, ניצור אותו
+      if (!coach) {
+        const { error: createCoachError } = await supabase
+          .from('coaches')
+          .insert({
+            id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown'
+          });
+
+        if (createCoachError) {
+          throw createCoachError;
+        }
       }
 
       // שמירת הנתונים בטבלת players
