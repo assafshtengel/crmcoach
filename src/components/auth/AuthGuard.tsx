@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { AuthChangeEvent } from "@supabase/supabase-js";
@@ -12,6 +12,7 @@ interface AuthGuardProps {
 export const AuthGuard = ({ children }: AuthGuardProps) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,6 +31,13 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
           return;
         }
 
+        // בדיקת תפקיד המשתמש והפניה לדף המתאים
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
         // Session exists but let's verify it's still valid
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
@@ -43,6 +51,15 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
           });
           navigate("/auth");
           return;
+        }
+
+        // נתב את המשתמש לדף המתאים לפי התפקיד שלו
+        if (location.pathname === '/') {
+          if (roleData?.role === 'coach') {
+            navigate('/coach-dashboard');
+          } else if (roleData?.role === 'player') {
+            navigate('/dashboard-player');
+          }
         }
       } catch (error) {
         console.error("Fatal error checking auth status:", error);
@@ -66,7 +83,7 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, toast]);
+  }, [navigate, toast, location]);
 
   if (loading) {
     return <div>טוען...</div>;

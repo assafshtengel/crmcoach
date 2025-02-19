@@ -23,13 +23,12 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: { user }, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        // Check for email confirmation error
         if (error.message.includes("Email not confirmed")) {
           toast({
             variant: "destructive",
@@ -41,7 +40,20 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
         throw error;
       }
 
-      navigate("/"); // Changed from "/index" to "/"
+      // בדיקת תפקיד המשתמש והפניה לדף המתאים
+      if (user) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        if (roleData?.role === 'coach') {
+          navigate('/coach-dashboard');
+        } else {
+          navigate('/dashboard-player');
+        }
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
