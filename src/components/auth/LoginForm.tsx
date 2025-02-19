@@ -23,29 +23,41 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
     setLoading(true);
 
     try {
-      const { data: { user }, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        if (error.message.includes("Email not confirmed")) {
+        console.error("Login error:", error);
+        
+        if (error.message.includes("Invalid login credentials")) {
+          toast({
+            variant: "destructive",
+            title: "שגיאת התחברות",
+            description: "האימייל או הסיסמה שגויים",
+          });
+        } else if (error.message.includes("Email not confirmed")) {
           toast({
             variant: "destructive",
             title: "המייל לא אומת",
             description: "אנא בדוק את תיבת הדואר שלך ולחץ על קישור האימות שנשלח אליך",
           });
-          return;
+        } else {
+          toast({
+            variant: "destructive",
+            title: "שגיאת התחברות",
+            description: error.message,
+          });
         }
-        throw error;
+        return;
       }
 
-      // בדיקת תפקיד המשתמש והפניה לדף המתאים
-      if (user) {
+      if (data.user) {
         const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('id', user.id)
+          .eq('id', data.user.id)
           .single();
 
         if (roleData?.role === 'coach') {
@@ -54,6 +66,7 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
           navigate('/dashboard-player');
         }
       }
+
     } catch (error: any) {
       toast({
         variant: "destructive",
