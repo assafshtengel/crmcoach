@@ -83,22 +83,33 @@ const ProfileCoach = () => {
     setLoading(true);
 
     try {
+      console.log('Starting registration process...');
+      console.log('Form values:', { fullName, email, phone, selectedSpecialties, otherSpecialty });
+
       const specialtiesArray = [
         ...selectedSpecialties.filter(s => s !== 'other').map(s => specialties.find(spec => spec.id === s)?.label || ''),
         ...(selectedSpecialties.includes('other') && otherSpecialty ? [otherSpecialty] : [])
       ];
+      
+      console.log('Processed specialties:', specialtiesArray);
 
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const userData = {
         email,
         password,
         options: {
           data: {
             full_name: fullName,
             phone,
-            specialty: specialtiesArray.join(',') // Convert array to comma-separated string
+            specialty: specialtiesArray.join(',')
           }
         }
-      });
+      };
+      
+      console.log('Sending registration data:', { ...userData, password: '***' });
+
+      const { data, error: signUpError } = await supabase.auth.signUp(userData);
+
+      console.log('Registration response:', { data, error: signUpError });
 
       if (signUpError) {
         throw signUpError;
@@ -107,7 +118,7 @@ const ProfileCoach = () => {
       toast.success('ההרשמה בוצעה בהצלחה! נשלח אליך מייל לאימות.');
       navigate('/auth');
     } catch (error: any) {
-      console.error('Error:', error);
+      console.error('Registration error:', error);
       toast.error(error.message || 'אירעה שגיאה בתהליך ההרשמה');
     } finally {
       setLoading(false);
