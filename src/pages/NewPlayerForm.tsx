@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -24,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { supabase } from '@/integrations/supabase/client';
 
 const phoneRegex = /^[\d-]{10,12}$/;  // מאפשר מספרים ומקפים, באורך של 10-12 תווים
 
@@ -59,6 +59,7 @@ const NewPlayerForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showSuccessDialog, setShowSuccessDialog] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -79,15 +80,66 @@ const NewPlayerForm = () => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // שמירת הנתונים
-    setShowSuccessDialog(true);
-    
-    // המתנה של שנייה וחצי ומעבר לדף הדשבורד
-    setTimeout(() => {
-      setShowSuccessDialog(false);
-      navigate('/coach-dashboard');
-    }, 1500);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      setIsSubmitting(true);
+
+      // קבלת ה-ID של המאמן המחובר
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "לא נמצא משתמש מחובר. אנא התחבר מחדש.",
+        });
+        navigate('/auth');
+        return;
+      }
+
+      // שמירת הנתונים בטבלת players
+      const { error: insertError } = await supabase
+        .from('players')
+        .insert({
+          coach_id: user.id,
+          full_name: `${values.firstName} ${values.lastName}`,
+          email: values.playerEmail,
+          phone: values.playerPhone,
+          notes: `
+            תאריך לידה: ${values.birthDate}
+            עיר: ${values.city}
+            מועדון: ${values.club}
+            שנתון: ${values.yearGroup}
+            פציעות: ${values.injuries || 'אין'}
+            פרטי הורה:
+            שם: ${values.parentName}
+            טלפון: ${values.parentPhone}
+            אימייל: ${values.parentEmail}
+            הערות נוספות: ${values.notes || 'אין'}
+          `
+        });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      // הצגת הודעת הצלחה והעברה לדף הדשבורד
+      setShowSuccessDialog(true);
+      setTimeout(() => {
+        setShowSuccessDialog(false);
+        navigate('/coach-dashboard');
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error saving player:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בשמירת הנתונים",
+        description: "אירעה שגיאה בשמירת פרטי השחקן. אנא נסה שוב.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -313,7 +365,13 @@ const NewPlayerForm = () => {
               )}
             />
 
-            <Button type="submit" className="w-full">שמור פרטי שחקן</Button>
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'שומר...' : 'שמור פרטי שחקן'}
+            </Button>
           </form>
         </Form>
       </div>
