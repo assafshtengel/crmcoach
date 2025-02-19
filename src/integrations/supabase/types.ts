@@ -11,31 +11,43 @@ export type Database = {
     Tables: {
       coaches: {
         Row: {
+          certifications: string[] | null
           created_at: string
           description: string | null
+          education: string | null
           email: string
           full_name: string
           id: string
           phone: string | null
           profile_picture: string | null
+          specialty: string | null
+          years_of_experience: number | null
         }
         Insert: {
+          certifications?: string[] | null
           created_at?: string
           description?: string | null
+          education?: string | null
           email: string
           full_name: string
           id: string
           phone?: string | null
           profile_picture?: string | null
+          specialty?: string | null
+          years_of_experience?: number | null
         }
         Update: {
+          certifications?: string[] | null
           created_at?: string
           description?: string | null
+          education?: string | null
           email?: string
           full_name?: string
           id?: string
           phone?: string | null
           profile_picture?: string | null
+          specialty?: string | null
+          years_of_experience?: number | null
         }
         Relationships: []
       }
