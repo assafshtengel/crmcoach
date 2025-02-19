@@ -184,7 +184,7 @@ const ProfileCoach = () => {
               <div>
                 <Label>תחומי התמחות</Label>
                 <div className="space-y-1 mt-2 mx-1 my-[19px] py-[12px] px-[2px] bg-zinc-10">
-                  {specialties.map(specialty => <div key={specialty.id} className="flex items-center space-x-2 rtl:space-x-reverse">
+                  {specialties.map(specialty => <div key={specialty.id} className="flex items-center space-x-4 rtl:space-x-reverse px-2 py-1.5 hover:bg-gray-50 rounded-lg transition-colors">
                       <Checkbox id={specialty.id} checked={selectedSpecialties.includes(specialty.id)} onCheckedChange={() => handleSpecialtyChange(specialty.id)} />
                       <Label htmlFor={specialty.id} className="cursor-pointer">
                         {specialty.label}
