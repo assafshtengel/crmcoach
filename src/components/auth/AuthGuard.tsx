@@ -32,11 +32,15 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
         }
 
         // בדיקת תפקיד המשתמש והפניה לדף המתאים
-        const { data: roleData } = await supabase
+        const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();  // שימוש ב-maybeSingle במקום single
+
+        if (roleError) {
+          console.error("Error fetching user role:", roleError);
+        }
 
         // Session exists but let's verify it's still valid
         const { error: refreshError } = await supabase.auth.refreshSession();
@@ -57,7 +61,8 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
         if (location.pathname === '/') {
           if (roleData?.role === 'coach') {
             navigate('/coach-dashboard');
-          } else if (roleData?.role === 'player') {
+          } else {
+            // אם אין תפקיד או התפקיד הוא שחקן, ננתב לדף השחקן
             navigate('/dashboard-player');
           }
         }
