@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,9 +8,8 @@ import { Brain, Target, Users, ClipboardList, LineChart, Rocket, Shield } from '
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+
 const specialties = [{
   id: 'sports-mental',
   label: 'מאמן מנטאלי לספורטאים'
@@ -41,6 +41,7 @@ const specialties = [{
   id: 'other',
   label: 'אחר'
 }];
+
 const ProfileCoach = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -50,6 +51,7 @@ const ProfileCoach = () => {
   const [otherSpecialty, setOtherSpecialty] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   const features = [{
     icon: <Users className="w-6 h-6 text-primary" />,
     title: "ניהול שחקנים",
@@ -75,38 +77,41 @@ const ProfileCoach = () => {
     title: "חדשנות מתמדת",
     description: "עדכונים שוטפים עם כלים ומחקרים חדשים"
   }];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const specialtiesArray = [...selectedSpecialties.filter(s => s !== 'other').map(s => specialties.find(spec => spec.id === s)?.label || ''), ...(selectedSpecialties.includes('other') && otherSpecialty ? [otherSpecialty] : [])];
+
+    const specialtiesArray = [
+      ...selectedSpecialties.filter(s => s !== 'other').map(s => specialties.find(spec => spec.id === s)?.label || ''),
+      ...(selectedSpecialties.includes('other') && otherSpecialty ? [otherSpecialty] : [])
+    ];
+
     try {
-      // 1. Sign up the user
-      const {
-        data: authData,
-        error: signUpError
-      } = await supabase.auth.signUp({
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
+            phone,
             specialty: specialtiesArray
           }
         }
       });
+
       if (signUpError) throw signUpError;
 
-      // 2. Create coach profile
-      const {
-        error: coachError
-      } = await supabase.from('coaches').insert([{
+      const { error: coachError } = await supabase.from('coaches').insert([{
         id: authData.user?.id,
         full_name: fullName,
         email,
         phone,
         specialty: specialtiesArray
       }]);
+
       if (coachError) throw coachError;
+
       toast.success('ההרשמה בוצעה בהצלחה! נשלח אליך מייל לאימות.');
       navigate('/auth');
     } catch (error: any) {
@@ -116,6 +121,7 @@ const ProfileCoach = () => {
       setLoading(false);
     }
   };
+
   const handleSpecialtyChange = (specialtyId: string) => {
     setSelectedSpecialties(current => {
       const isSelected = current.includes(specialtyId);
@@ -126,7 +132,9 @@ const ProfileCoach = () => {
       }
     });
   };
-  return <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -224,6 +232,8 @@ const ProfileCoach = () => {
           </Card>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default ProfileCoach;
