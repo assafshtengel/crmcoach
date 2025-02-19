@@ -36,10 +36,11 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
           .from('user_roles')
           .select('role')
           .eq('id', session.user.id)
-          .maybeSingle();  // שימוש ב-maybeSingle במקום single
+          .maybeSingle();
 
         if (roleError) {
           console.error("Error fetching user role:", roleError);
+          return;
         }
 
         // Session exists but let's verify it's still valid
@@ -58,14 +59,27 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
         }
 
         // נתב את המשתמש לדף המתאים לפי התפקיד שלו
-        if (location.pathname === '/') {
-          if (roleData?.role === 'coach') {
-            navigate('/coach-dashboard');
-          } else {
-            // אם אין תפקיד או התפקיד הוא שחקן, ננתב לדף השחקן
-            navigate('/dashboard-player');
-          }
+        const isCoach = roleData?.role === 'coach';
+        const isOnCoachPage = location.pathname.includes('coach');
+        const isOnPlayerPage = location.pathname.includes('player');
+
+        // אם המשתמש הוא מאמן אבל נמצא בדף של שחקן, ננתב אותו לדף המאמן
+        if (isCoach && isOnPlayerPage) {
+          navigate('/coach-dashboard');
+          return;
         }
+
+        // אם המשתמש הוא שחקן אבל נמצא בדף של מאמן, ננתב אותו לדף השחקן
+        if (!isCoach && isOnCoachPage) {
+          navigate('/dashboard-player');
+          return;
+        }
+
+        // אם המשתמש בדף הבית, ננתב אותו לדף המתאים
+        if (location.pathname === '/') {
+          navigate(isCoach ? '/coach-dashboard' : '/dashboard-player');
+        }
+
       } catch (error) {
         console.error("Fatal error checking auth status:", error);
         navigate("/auth");
