@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -45,6 +46,10 @@ const App = () => (
       <PlayersProvider>
         <BrowserRouter>
           <Routes>
+            {/* דף הרשמת מאמן - נגיש ללא התחברות */}
+            <Route path="/coach-signup" element={<ProfileCoach />} />
+            
+            {/* שאר הנתיבים נשארים כפי שהם */}
             <Route path="/profile-coach" element={
               <AuthGuard>
                 <ProfileCoach />
