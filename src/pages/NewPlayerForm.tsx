@@ -18,6 +18,12 @@ import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const phoneRegex = /^[\d-]{10,12}$/;  // מאפשר מספרים ומקפים, באורך של 10-12 תווים
 
@@ -52,6 +58,7 @@ const formSchema = z.object({
 const NewPlayerForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showSuccessDialog, setShowSuccessDialog] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -73,16 +80,14 @@ const NewPlayerForm = () => {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    toast({
-      title: "פרטי השחקן נשמרו בהצלחה",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">
-            {JSON.stringify(values, null, 2)}
-          </code>
-        </pre>
-      ),
-    });
+    // שמירת הנתונים
+    setShowSuccessDialog(true);
+    
+    // המתנה של שנייה וחצי ומעבר לדף הדשבורד
+    setTimeout(() => {
+      setShowSuccessDialog(false);
+      navigate('/coach-dashboard');
+    }, 1500);
   }
 
   return (
@@ -312,6 +317,14 @@ const NewPlayerForm = () => {
           </form>
         </Form>
       </div>
+
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="text-center">
+          <DialogHeader>
+            <DialogTitle>פרטי השחקן נשמרו בהצלחה!</DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
