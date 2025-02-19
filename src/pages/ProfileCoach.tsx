@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +35,7 @@ const specialties = [{
   label: 'מדריך mindfulness/מדיטציה'
 }, {
   id: 'cbt',
-  label: 'מטפל קוגניטיבי-התנהגותי (CBT)'
+  label: 'מטפל קוגניטיבי-acteriaי (CBT)'
 }, {
   id: 'other',
   label: 'אחר'
@@ -100,23 +99,15 @@ const ProfileCoach = () => {
         }
       });
 
-      if (signUpError) throw signUpError;
-
-      const { error: coachError } = await supabase.from('coaches').insert([{
-        id: authData.user?.id,
-        full_name: fullName,
-        email,
-        phone,
-        specialty: specialtiesArray
-      }]);
-
-      if (coachError) throw coachError;
+      if (signUpError) {
+        throw signUpError;
+      }
 
       toast.success('ההרשמה בוצעה בהצלחה! נשלח אליך מייל לאימות.');
       navigate('/auth');
     } catch (error: any) {
       console.error('Error:', error);
-      toast.error(error.message);
+      toast.error(error.message || 'אירעה שגיאה בתהליך ההרשמה');
     } finally {
       setLoading(false);
     }
