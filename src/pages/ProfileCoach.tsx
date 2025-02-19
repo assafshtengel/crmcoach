@@ -1,9 +1,7 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
 import { Brain, Target, Users, ClipboardList, LineChart, Rocket, Shield } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,17 +13,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const specialties = [
+  { id: 'sports-mental', label: 'מאמן מנטאלי לספורטאים' },
+  { id: 'sports-fitness', label: 'מאמן כושר לספורטאים' },
+  { id: 'sports-psych', label: 'פסיכולוג ספורט' },
+  { id: 'emotional', label: 'מטפל רגשי' },
+  { id: 'mentor', label: 'מנטור' },
+  { id: 'org-consultant', label: 'יועץ ארגוני' },
+  { id: 'exec-mental', label: 'יועץ מנטאלי למנהלים' },
+  { id: 'mindfulness', label: 'מדריך mindfulness/מדיטציה' },
+  { id: 'cbt', label: 'מטפל קוגניטיבי-התנהגותי (CBT)' },
+  { id: 'other', label: 'אחר' }
+];
 
 const ProfileCoach = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [description, setDescription] = useState('');
-  const [specialty, setSpecialty] = useState('');
-  const [yearsOfExperience, setYearsOfExperience] = useState('');
-  const [education, setEducation] = useState('');
-  const [certifications, setCertifications] = useState('');
+  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
+  const [otherSpecialty, setOtherSpecialty] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -66,6 +83,11 @@ const ProfileCoach = () => {
     e.preventDefault();
     setLoading(true);
 
+    const specialtiesArray = [
+      ...selectedSpecialties.filter(s => s !== 'other').map(s => specialties.find(spec => spec.id === s)?.label || ''),
+      ...(selectedSpecialties.includes('other') && otherSpecialty ? [otherSpecialty] : [])
+    ];
+
     try {
       // 1. Sign up the user
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -74,10 +96,7 @@ const ProfileCoach = () => {
         options: {
           data: {
             full_name: fullName,
-            specialty,
-            years_of_experience: parseInt(yearsOfExperience),
-            education,
-            certifications: certifications.split(',').map(cert => cert.trim()),
+            specialty: specialtiesArray,
           },
         },
       });
@@ -93,11 +112,7 @@ const ProfileCoach = () => {
             full_name: fullName,
             email,
             phone,
-            description,
-            specialty,
-            years_of_experience: parseInt(yearsOfExperience),
-            education,
-            certifications: certifications.split(',').map(cert => cert.trim()),
+            specialty: specialtiesArray,
           },
         ]);
 
@@ -111,6 +126,17 @@ const ProfileCoach = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSpecialtyChange = (specialtyId: string) => {
+    setSelectedSpecialties(current => {
+      const isSelected = current.includes(specialtyId);
+      if (isSelected) {
+        return current.filter(id => id !== specialtyId);
+      } else {
+        return [...current, specialtyId];
+      }
+    });
   };
 
   return (
@@ -204,63 +230,32 @@ const ProfileCoach = () => {
               </div>
 
               <div>
-                <Label htmlFor="specialty">התמחות</Label>
-                <Input
-                  type="text"
-                  id="specialty"
-                  value={specialty}
-                  onChange={(e) => setSpecialty(e.target.value)}
-                  required
-                  className="mt-1"
-                  placeholder="תחום ההתמחות שלך"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="yearsOfExperience">שנות ניסיון</Label>
-                <Input
-                  type="number"
-                  id="yearsOfExperience"
-                  value={yearsOfExperience}
-                  onChange={(e) => setYearsOfExperience(e.target.value)}
-                  required
-                  className="mt-1"
-                  min="0"
-                  placeholder="מספר שנות ניסיון"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="education">השכלה</Label>
-                <Textarea
-                  id="education"
-                  value={education}
-                  onChange={(e) => setEducation(e.target.value)}
-                  className="mt-1"
-                  placeholder="פרט את השכלתך האקדמית..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="certifications">תעודות והסמכות</Label>
-                <Textarea
-                  id="certifications"
-                  value={certifications}
-                  onChange={(e) => setCertifications(e.target.value)}
-                  className="mt-1"
-                  placeholder="פרט את ההסמכות שלך (הפרד בפסיקים)..."
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description">רקע מקצועי</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="mt-1"
-                  placeholder="ספר לנו קצת על הניסיון המקצועי שלך..."
-                />
+                <Label>תחומי התמחות</Label>
+                <div className="space-y-2 mt-2">
+                  {specialties.map((specialty) => (
+                    <div key={specialty.id} className="flex items-center space-x-2 rtl:space-x-reverse">
+                      <Checkbox
+                        id={specialty.id}
+                        checked={selectedSpecialties.includes(specialty.id)}
+                        onCheckedChange={() => handleSpecialtyChange(specialty.id)}
+                      />
+                      <Label htmlFor={specialty.id} className="cursor-pointer">
+                        {specialty.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {selectedSpecialties.includes('other') && (
+                  <div className="mt-2">
+                    <Input
+                      type="text"
+                      value={otherSpecialty}
+                      onChange={(e) => setOtherSpecialty(e.target.value)}
+                      placeholder="פרט את תחום ההתמחות שלך"
+                      className="mt-1"
+                    />
+                  </div>
+                )}
               </div>
 
               <Button type="submit" className="w-full" size="lg" disabled={loading}>
