@@ -19,21 +19,32 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-const phoneRegex = /^\(\d{3}\) \d{3}-\d{4}$/;
+const phoneRegex = /^[\d-]{10,12}$/;  // מאפשר מספרים ומקפים, באורך של 10-12 תווים
+
 const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
 
 const formSchema = z.object({
   firstName: z.string().min(2, "שם פרטי חייב להכיל לפחות 2 תווים"),
   lastName: z.string().min(2, "שם משפחה חייב להכיל לפחות 2 תווים"),
   playerEmail: z.string().email("אנא הכנס כתובת אימייל תקינה"),
-  playerPhone: z.string().regex(phoneRegex, "אנא הכנס מספר טלפון בפורמט (000) 000-0000"),
+  playerPhone: z.string()
+    .refine((val) => {
+      // מסיר את המקפים ובודק שיש בדיוק 10 ספרות
+      const digitsOnly = val.replace(/-/g, '');
+      return /^\d{10}$/.test(digitsOnly);
+    }, "אנא הכנס מספר טלפון בן 10 ספרות"),
   birthDate: z.string().regex(dateRegex, "אנא הכנס תאריך בפורמט DD-MM-YYYY"),
   city: z.string().min(2, "עיר חייבת להכיל לפחות 2 תווים"),
   club: z.string().min(2, "שם המועדון חייב להכיל לפחות 2 תווים"),
   yearGroup: z.string().min(4, "אנא הכנס שנתון תקין"),
   injuries: z.string().optional(),
   parentName: z.string().min(2, "שם ההורה חייב להכיל לפחות 2 תווים"),
-  parentPhone: z.string().regex(phoneRegex, "אנא הכנס מספר טלפון בפורמט (000) 000-0000"),
+  parentPhone: z.string()
+    .refine((val) => {
+      // מסיר את המקפים ובודק שיש בדיוק 10 ספרות
+      const digitsOnly = val.replace(/-/g, '');
+      return /^\d{10}$/.test(digitsOnly);
+    }, "אנא הכנס מספר טלפון בן 10 ספרות"),
   parentEmail: z.string().email("אנא הכנס כתובת אימייל תקינה"),
   notes: z.string().optional(),
 });
