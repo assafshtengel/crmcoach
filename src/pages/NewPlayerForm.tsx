@@ -21,7 +21,7 @@ import * as z from "zod";
 
 const phoneRegex = /^[\d-]{10,12}$/;  // מאפשר מספרים ומקפים, באורך של 10-12 תווים
 
-const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
+const dateRegex = /^(0?[1-9]|[12][0-9]|3[01])[-/](0?[1-9]|1[012])[-/]\d{4}$/;
 
 const formSchema = z.object({
   firstName: z.string().min(2, "שם פרטי חייב להכיל לפחות 2 תווים"),
@@ -33,7 +33,7 @@ const formSchema = z.object({
       const digitsOnly = val.replace(/-/g, '');
       return /^\d{10}$/.test(digitsOnly);
     }, "אנא הכנס מספר טלפון בן 10 ספרות"),
-  birthDate: z.string().regex(dateRegex, "אנא הכנס תאריך בפורמט DD-MM-YYYY"),
+  birthDate: z.string().regex(dateRegex, "אנא הכנס תאריך בפורמט DD/MM/YYYY או DD-MM-YYYY"),
   city: z.string().min(2, "עיר חייבת להכיל לפחות 2 תווים"),
   club: z.string().min(2, "שם המועדון חייב להכיל לפחות 2 תווים"),
   yearGroup: z.string().min(4, "אנא הכנס שנתון תקין"),
