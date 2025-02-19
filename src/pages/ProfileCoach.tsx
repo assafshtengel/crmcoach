@@ -22,6 +22,10 @@ const ProfileCoach = () => {
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [description, setDescription] = useState('');
+  const [specialty, setSpecialty] = useState('');
+  const [yearsOfExperience, setYearsOfExperience] = useState('');
+  const [education, setEducation] = useState('');
+  const [certifications, setCertifications] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -63,19 +67,41 @@ const ProfileCoach = () => {
     setLoading(true);
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      // 1. Sign up the user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
-            phone,
-            description,
+            specialty,
+            years_of_experience: parseInt(yearsOfExperience),
+            education,
+            certifications: certifications.split(',').map(cert => cert.trim()),
           },
         },
       });
 
       if (signUpError) throw signUpError;
+
+      // 2. Create coach profile
+      const { error: coachError } = await supabase
+        .from('coaches')
+        .insert([
+          {
+            id: authData.user?.id,
+            full_name: fullName,
+            email,
+            phone,
+            description,
+            specialty,
+            years_of_experience: parseInt(yearsOfExperience),
+            education,
+            certifications: certifications.split(',').map(cert => cert.trim()),
+          },
+        ]);
+
+      if (coachError) throw coachError;
 
       toast.success('ההרשמה בוצעה בהצלחה! נשלח אליך מייל לאימות.');
       navigate('/auth');
@@ -174,6 +200,55 @@ const ProfileCoach = () => {
                   onChange={(e) => setPhone(e.target.value)}
                   className="mt-1"
                   placeholder="מספר טלפון ליצירת קשר"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="specialty">התמחות</Label>
+                <Input
+                  type="text"
+                  id="specialty"
+                  value={specialty}
+                  onChange={(e) => setSpecialty(e.target.value)}
+                  required
+                  className="mt-1"
+                  placeholder="תחום ההתמחות שלך"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="yearsOfExperience">שנות ניסיון</Label>
+                <Input
+                  type="number"
+                  id="yearsOfExperience"
+                  value={yearsOfExperience}
+                  onChange={(e) => setYearsOfExperience(e.target.value)}
+                  required
+                  className="mt-1"
+                  min="0"
+                  placeholder="מספר שנות ניסיון"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="education">השכלה</Label>
+                <Textarea
+                  id="education"
+                  value={education}
+                  onChange={(e) => setEducation(e.target.value)}
+                  className="mt-1"
+                  placeholder="פרט את השכלתך האקדמית..."
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="certifications">תעודות והסמכות</Label>
+                <Textarea
+                  id="certifications"
+                  value={certifications}
+                  onChange={(e) => setCertifications(e.target.value)}
+                  className="mt-1"
+                  placeholder="פרט את ההסמכות שלך (הפרד בפסיקים)..."
                 />
               </div>
 
