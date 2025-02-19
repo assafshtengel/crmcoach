@@ -11,6 +11,7 @@ interface EmailPayload {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -25,7 +26,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // שליחת האימייל דרך הטמפלייט של Supabase
+    // שליחת האימייל
     const { error } = await supabaseClient.auth.admin.inviteUserByEmail(email, {
       data: {
         temporary_password: password,
@@ -47,6 +48,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
+    console.error('Error sending welcome email:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
