@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -98,15 +97,38 @@ const NewPlayerForm = () => {
         return;
       }
 
-      // בדיקה אם המאמן כבר קיים במערכת
-      const { data: coach, error: coachError } = await supabase
+      // יצירת סיסמה זמנית
+      const temporaryPassword = Math.random().toString(36).slice(-8);
+
+      // יצירת חשבון משתמש חדש לשחקן
+      const { data: newUser, error: signUpError } = await supabase.auth.signUp({
+        email: values.playerEmail,
+        password: temporaryPassword,
+        options: {
+          data: {
+            full_name: `${values.firstName} ${values.lastName}`,
+            role: 'player'
+          }
+        }
+      });
+
+      if (signUpError) {
+        throw signUpError;
+      }
+
+      if (!newUser.user) {
+        throw new Error("Failed to create user account");
+      }
+
+      // בדיקה אם המאמן קיים
+      let coach = await supabase
         .from('coaches')
         .select('id')
         .eq('id', user.id)
         .single();
 
       // אם המאמן לא קיים, ניצור אותו
-      if (!coach) {
+      if (!coach.data) {
         const { error: createCoachError } = await supabase
           .from('coaches')
           .insert({
@@ -120,10 +142,11 @@ const NewPlayerForm = () => {
         }
       }
 
-      // שמירת הנתונים בטבלת players
+      // שמירת השחקן בטבלת players
       const { error: insertError } = await supabase
         .from('players')
         .insert({
+          id: newUser.user.id, // משתמשים ב-ID של המשתמש החדש
           coach_id: user.id,
           full_name: `${values.firstName} ${values.lastName}`,
           email: values.playerEmail,
@@ -146,19 +169,39 @@ const NewPlayerForm = () => {
         throw insertError;
       }
 
+      // שליחת אימייל עם פרטי ההתחברות
+      const { error: emailError } = await supabase.functions.invoke('send-welcome-email', {
+        body: {
+          email: values.playerEmail,
+          password: temporaryPassword,
+          playerName: `${values.firstName} ${values.lastName}`,
+          coachName: user.user_metadata?.full_name || 'המאמן שלך'
+        }
+      });
+
+      if (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // נמשיך למרות השגיאה בשליחת המייל
+      }
+
       // הצגת הודעת הצלחה והעברה לדף הדשבורד
+      toast({
+        title: "השחקן נוצר בהצלחה!",
+        description: "נשלח מייל לשחקן עם פרטי ההתחברות שלו.",
+      });
+
       setShowSuccessDialog(true);
       setTimeout(() => {
         setShowSuccessDialog(false);
         navigate('/coach-dashboard');
       }, 1500);
 
-    } catch (error) {
-      console.error('Error saving player:', error);
+    } catch (error: any) {
+      console.error('Error creating player:', error);
       toast({
         variant: "destructive",
-        title: "שגיאה בשמירת הנתונים",
-        description: "אירעה שגיאה בשמירת פרטי השחקן. אנא נסה שוב.",
+        title: "שגיאה ביצירת השחקן",
+        description: typeof error === 'string' ? error : error.message || "אירעה שגיאה ביצירת חשבון השחקן. אנא נסה שוב.",
       });
     } finally {
       setIsSubmitting(false);
