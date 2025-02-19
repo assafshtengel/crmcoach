@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,7 @@ const specialties = [{
   label: 'מדריך mindfulness/מדיטציה'
 }, {
   id: 'cbt',
-  label: 'מטפל קוגניטיבי-acteriaי (CBT)'
+  label: 'מטפל קוגניטיבי-התנהגותי (CBT)'
 }, {
   id: 'other',
   label: 'אחר'
@@ -81,20 +82,20 @@ const ProfileCoach = () => {
     e.preventDefault();
     setLoading(true);
 
-    const specialtiesArray = [
-      ...selectedSpecialties.filter(s => s !== 'other').map(s => specialties.find(spec => spec.id === s)?.label || ''),
-      ...(selectedSpecialties.includes('other') && otherSpecialty ? [otherSpecialty] : [])
-    ];
-
     try {
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      const specialtiesArray = [
+        ...selectedSpecialties.filter(s => s !== 'other').map(s => specialties.find(spec => spec.id === s)?.label || ''),
+        ...(selectedSpecialties.includes('other') && otherSpecialty ? [otherSpecialty] : [])
+      ];
+
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
             phone,
-            specialty: specialtiesArray
+            specialty: specialtiesArray.join(',') // Convert array to comma-separated string
           }
         }
       });
