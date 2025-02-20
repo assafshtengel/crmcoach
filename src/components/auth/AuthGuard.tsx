@@ -38,6 +38,8 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
           .eq('id', session.user.id)
           .maybeSingle();
 
+        console.log("Role data:", roleData); // בדיקת נתוני התפקיד
+
         if (roleError) {
           console.error("Error fetching user role:", roleError);
           return;
@@ -61,19 +63,30 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
         // נתב את המשתמש לדף המתאים לפי התפקיד שלו
         const isCoach = roleData?.role === 'coach';
         
+        console.log("Is coach?", isCoach); // בדיקת תפקיד המשתמש
+        console.log("Current path:", location.pathname); // בדיקת הנתיב הנוכחי
+
         if (location.pathname === '/auth') {
-          navigate(isCoach ? '/' : '/dashboard-player');
+          if (isCoach) {
+            console.log("Navigating coach to home");
+            navigate('/');
+          } else {
+            console.log("Navigating player to dashboard");
+            navigate('/dashboard-player');
+          }
           return;
         }
 
         // אם המשתמש הוא מאמן אבל נמצא בדף של שחקן, ננתב אותו לדף המאמן
-        if (isCoach && location.pathname.includes('player')) {
+        if (isCoach && location.pathname.includes('dashboard-player')) {
+          console.log("Coach on player page, redirecting to coach dashboard");
           navigate('/');
           return;
         }
 
         // אם המשתמש הוא שחקן אבל נמצא בדף של מאמן, ננתב אותו לדף השחקן
-        if (!isCoach && !location.pathname.includes('player')) {
+        if (!isCoach && location.pathname === '/') {
+          console.log("Player on coach page, redirecting to player dashboard");
           navigate('/dashboard-player');
           return;
         }
