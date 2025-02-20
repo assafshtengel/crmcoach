@@ -46,8 +46,8 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
           return;
         }
 
-        // אם המשתמש מחובר ונמצא בדף ההתחברות או בנתיב לא תקין, נעביר אותו לדף הבית
-        if (location.pathname === '/auth' || location.pathname === '/dashboard-player') {
+        // אם המשתמש מחובר ונמצא בדף ההתחברות, נעביר אותו לדף הבית
+        if (location.pathname === '/auth') {
           navigate('/');
           return;
         }
@@ -68,9 +68,6 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
         navigate("/auth");
       } else if (!session && event !== 'INITIAL_SESSION') {
         navigate("/auth");
-      } else if (session && location.pathname === '/dashboard-player') {
-        // אם המשתמש מחובר ומנסה להגיע לדשבורד שחקן, נעביר אותו לדף הבית
-        navigate('/');
       }
     });
 
