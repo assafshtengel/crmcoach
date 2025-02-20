@@ -49,7 +49,14 @@ const App = () => (
             {/* דף הרשמת מאמן - נגיש ללא התחברות */}
             <Route path="/coach-signup" element={<ProfileCoach />} />
             
-            {/* שאר הנתיבים נשארים כפי שהם */}
+            {/* דף הבית - דשבורד המאמן */}
+            <Route path="/" element={
+              <AuthGuard>
+                <DashboardCoach />
+              </AuthGuard>
+            } />
+
+            {/* שאר הנתיבים */}
             <Route path="/profile-coach" element={
               <AuthGuard>
                 <ProfileCoach />
@@ -99,14 +106,6 @@ const App = () => (
               element={
                 <AuthGuard>
                   <NewIndex />
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/" 
-              element={
-                <AuthGuard>
-                  <DashboardCoach />
                 </AuthGuard>
               } 
             />
