@@ -111,7 +111,7 @@ const NewPlayerForm = () => {
         return;
       }
 
-      // וידוא שהמאמן קיים במערכת
+      // וידוא שהמאמן קיים במער��ת
       const { data: coach } = await supabase
         .from('coaches')
         .select('id')
@@ -207,7 +207,7 @@ const NewPlayerForm = () => {
         // נמשיך למרות השגיאה בשליחת המייל
       }
 
-      // הצגת הודעת הצלחה והעברה לדף הדשבורד
+      // הצגת הודעת הצלחה והעברה לדף רשימת השחקנים
       toast({
         title: "השחקן נוצר בהצלחה!",
         description: "נשלח מייל לשחקן עם פרטי ההתחברות שלו.",
@@ -216,7 +216,7 @@ const NewPlayerForm = () => {
       setShowSuccessDialog(true);
       setTimeout(() => {
         setShowSuccessDialog(false);
-        navigate('/');
+        navigate('/players-list'); // שינוי הניתוב לדף רשימת השחקנים
       }, 1500);
 
     } catch (error: any) {

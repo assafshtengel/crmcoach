@@ -57,26 +57,41 @@ const PlayersList = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        console.error('No authenticated user found');
         navigate('/auth');
         return;
       }
 
-      console.log('Fetching players for coach:', user.id); // הוספת לוג לדיבוג
+      console.log('Fetching players for coach:', user.id);
 
+      // שינוי הבקשה כדי לכלול את כל השדות הנדרשים
       const { data, error } = await supabase
         .from('players')
-        .select('*')
+        .select(`
+          id,
+          full_name,
+          email,
+          phone,
+          position,
+          notes,
+          coach_id
+        `)
         .eq('coach_id', user.id);
 
       if (error) {
-        console.error('Error details:', error); // הוספת לוג לדיבוג
+        console.error('Error fetching players:', error);
         throw error;
       }
 
-      console.log('Players fetched:', data); // הוספת לוג לדיבוג
+      console.log('Players fetched successfully:', data);
+      
+      if (!data || data.length === 0) {
+        console.log('No players found for coach:', user.id);
+      }
+
       setPlayers(data || []);
     } catch (error: any) {
-      console.error('Full error details:', error); // הוספת לוג לדיבוג
+      console.error('Error in fetchPlayers:', error);
       toast.error('שגיאה בטעינת רשימת השחקנים');
     } finally {
       setLoading(false);
