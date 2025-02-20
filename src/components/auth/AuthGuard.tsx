@@ -31,6 +31,24 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
           return;
         }
 
+        // בדיקת תפקיד המשתמש
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!roleData || roleData.role !== 'coach') {
+          toast({
+            variant: "destructive",
+            title: "גישה נדחתה",
+            description: "ממשק זה מיועד למאמנים בלבד",
+          });
+          await supabase.auth.signOut();
+          navigate("/auth");
+          return;
+        }
+
         // Session exists but let's verify it's still valid
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {

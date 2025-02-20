@@ -61,9 +61,17 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
           .single();
 
         if (roleData?.role === 'coach') {
-          navigate('/coach-dashboard');
+          // מאמנים מנותבים לדף הבית שהוא דשבורד המאמן
+          navigate('/');
         } else {
-          navigate('/dashboard-player');
+          // שחקנים יקבלו דף שגיאה בינתיים כי אין להם דשבורד
+          toast({
+            variant: "destructive",
+            title: "גישה נדחתה",
+            description: "ממשק זה מיועד למאמנים בלבד",
+          });
+          // מתנתקים כדי למנוע לולאה אינסופית
+          await supabase.auth.signOut();
         }
       }
 
