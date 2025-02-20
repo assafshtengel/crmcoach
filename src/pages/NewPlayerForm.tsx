@@ -24,21 +24,16 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
 
-const phoneRegex = /^[\d-]{10,12}$/;  // מאפשר מספרים ומקפים, באורך של 10-12 תווים
-
-const dateRegex = /^(0?[1-9]|[12][0-9]|3[01])[-/](0?[1-9]|1[012])[-/]\d{4}$/;
-
 const formSchema = z.object({
   firstName: z.string().min(2, "שם פרטי חייב להכיל לפחות 2 תווים"),
   lastName: z.string().min(2, "שם משפחה חייב להכיל לפחות 2 תווים"),
   playerEmail: z.string().email("אנא הכנס כתובת אימייל תקינה"),
   playerPhone: z.string()
     .refine((val) => {
-      // מסיר את המקפים ובודק שיש בדיוק 10 ספרות
       const digitsOnly = val.replace(/-/g, '');
       return /^\d{10}$/.test(digitsOnly);
     }, "אנא הכנס מספר טלפון בן 10 ספרות"),
-  birthDate: z.string().regex(dateRegex, "אנא הכנס תאריך בפורמט DD/MM/YYYY או DD-MM-YYYY"),
+  birthDate: z.string().regex(/^(0?[1-9]|[12][0-9]|3[01])[-/](0?[1-9]|1[012])[-/]\d{4}$/, "אנא הכנס תאריך בפורמט DD/MM/YYYY או DD-MM-YYYY"),
   city: z.string().min(2, "עיר חייבת להכיל לפחות 2 תווים"),
   club: z.string().min(2, "שם המועדון חייב להכיל לפחות 2 תווים"),
   yearGroup: z.string().min(4, "אנא הכנס שנתון תקין"),
@@ -46,12 +41,12 @@ const formSchema = z.object({
   parentName: z.string().min(2, "שם ההורה חייב להכיל לפחות 2 תווים"),
   parentPhone: z.string()
     .refine((val) => {
-      // מסיר את המקפים ובודק שיש בדיוק 10 ספרות
       const digitsOnly = val.replace(/-/g, '');
       return /^\d{10}$/.test(digitsOnly);
     }, "אנא הכנס מספר טלפון בן 10 ספרות"),
   parentEmail: z.string().email("אנא הכנס כתובת אימייל תקינה"),
   notes: z.string().optional(),
+  position: z.string().min(1, "אנא בחר עמדה")
 });
 
 const NewPlayerForm = () => {
@@ -76,6 +71,7 @@ const NewPlayerForm = () => {
       parentPhone: "",
       parentEmail: "",
       notes: "",
+      position: ""
     },
   });
 
@@ -99,39 +95,17 @@ const NewPlayerForm = () => {
       // בדיקה אם השחקן כבר קיים במערכת
       const { data: existingPlayer } = await supabase
         .from('players')
-        .select('id, email')
-        .or(`email.eq.${values.playerEmail},email.eq.${values.playerEmail.toLowerCase()}`);
+        .select('id')
+        .eq('email', values.playerEmail.toLowerCase())
+        .single();
 
-      if (existingPlayer && existingPlayer.length > 0) {
+      if (existingPlayer) {
         toast({
           variant: "destructive",
           title: "שגיאה",
           description: "שחקן עם כתובת האימייל הזו כבר קיים במערכת.",
         });
         return;
-      }
-
-      // וידוא שהמאמן קיים במער��ת
-      const { data: coach } = await supabase
-        .from('coaches')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      // אם המאמן לא קיים, ניצור אותו
-      if (!coach) {
-        const { error: createCoachError } = await supabase
-          .from('coaches')
-          .insert([{
-            id: user.id,
-            email: user.email,
-            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown'
-          }]);
-
-        if (createCoachError) {
-          console.error('Error creating coach:', createCoachError);
-          throw createCoachError;
-        }
       }
 
       // יצירת סיסמה זמנית
@@ -150,14 +124,6 @@ const NewPlayerForm = () => {
       });
 
       if (signUpError) {
-        if (signUpError.message.includes('already registered')) {
-          toast({
-            variant: "destructive",
-            title: "שגיאה",
-            description: "כתובת האימייל כבר רשומה במערכת.",
-          });
-          return;
-        }
         throw signUpError;
       }
 
@@ -174,6 +140,7 @@ const NewPlayerForm = () => {
           full_name: `${values.firstName} ${values.lastName}`,
           email: values.playerEmail.toLowerCase(),
           phone: values.playerPhone,
+          position: values.position,
           notes: `
             תאריך לידה: ${values.birthDate}
             עיר: ${values.city}
@@ -189,7 +156,21 @@ const NewPlayerForm = () => {
         }]);
 
       if (insertError) {
+        console.error('Error inserting player:', insertError);
         throw insertError;
+      }
+
+      // עדכון תפקיד המשתמש
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert([{
+          id: authData.user.id,
+          role: 'player'
+        }]);
+
+      if (roleError) {
+        console.error('Error setting user role:', roleError);
+        // נמשיך למרות השגיאה בהגדרת התפקיד
       }
 
       // שליחת אימייל עם פרטי ההתחברות
@@ -207,7 +188,6 @@ const NewPlayerForm = () => {
         // נמשיך למרות השגיאה בשליחת המייל
       }
 
-      // הצגת הודעת הצלחה והעברה לדף רשימת השחקנים
       toast({
         title: "השחקן נוצר בהצלחה!",
         description: "נשלח מייל לשחקן עם פרטי ההתחברות שלו.",
@@ -216,7 +196,7 @@ const NewPlayerForm = () => {
       setShowSuccessDialog(true);
       setTimeout(() => {
         setShowSuccessDialog(false);
-        navigate('/players-list'); // שינוי הניתוב לדף רשימת השחקנים
+        navigate('/players-list');
       }, 1500);
 
     } catch (error: any) {
@@ -224,7 +204,7 @@ const NewPlayerForm = () => {
       toast({
         variant: "destructive",
         title: "שגיאה ביצירת השחקן",
-        description: typeof error === 'string' ? error : error.message || "אירעה שגיאה ביצירת חשבון השחקן. אנא נסה שוב.",
+        description: error.message || "אירעה שגיאה ביצירת חשבון השחקן. אנא נסה שוב.",
       });
     } finally {
       setIsSubmitting(false);
