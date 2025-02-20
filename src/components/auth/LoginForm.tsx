@@ -56,11 +56,14 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
       if (data.user) {
         console.log("User authenticated:", data.user);
         
+        // בדיקת תפקיד המשתמש - שימו לב שהשתנה מ-id ל-user_id
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
+
+        console.log("Role query result:", { roleData, roleError });
 
         if (roleError) {
           console.error("Error fetching user role:", roleError);
