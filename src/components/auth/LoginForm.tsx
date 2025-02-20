@@ -54,28 +54,42 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
       }
 
       if (data.user) {
-        const { data: roleData } = await supabase
+        console.log("User authenticated:", data.user);
+        
+        const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
           .eq('id', data.user.id)
           .single();
 
+        if (roleError) {
+          console.error("Error fetching user role:", roleError);
+          toast({
+            variant: "destructive",
+            title: "שגיאה",
+            description: "לא ניתן לאמת את ההרשאות שלך. אנא נסה שוב.",
+          });
+          return;
+        }
+
+        console.log("User role data:", roleData);
+
         if (roleData?.role === 'coach') {
-          // מאמנים מנותבים לדף הבית שהוא דשבורד המאמן
+          console.log("User is a coach, navigating to home");
           navigate('/');
         } else {
-          // שחקנים יקבלו דף שגיאה בינתיים כי אין להם דשבורד
+          console.log("User is not a coach, showing error");
           toast({
             variant: "destructive",
             title: "גישה נדחתה",
             description: "ממשק זה מיועד למאמנים בלבד",
           });
-          // מתנתקים כדי למנוע לולאה אינסופית
           await supabase.auth.signOut();
         }
       }
 
     } catch (error: any) {
+      console.error("Unexpected error during login:", error);
       toast({
         variant: "destructive",
         title: "שגיאה בהתחברות",
