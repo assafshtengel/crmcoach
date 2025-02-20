@@ -84,16 +84,14 @@ const ProfileCoach = () => {
 
     try {
       console.log('Starting registration process...');
-      console.log('Form values:', { fullName, email, phone, selectedSpecialties, otherSpecialty });
-
+      
       const specialtiesArray = [
         ...selectedSpecialties.filter(s => s !== 'other').map(s => specialties.find(spec => spec.id === s)?.label || ''),
         ...(selectedSpecialties.includes('other') && otherSpecialty ? [otherSpecialty] : [])
       ];
-      
-      console.log('Processed specialties:', specialtiesArray);
 
-      const userData = {
+      // 1. רישום המשתמש
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -103,20 +101,29 @@ const ProfileCoach = () => {
             specialty: specialtiesArray.join(',')
           }
         }
-      };
-      
-      console.log('Sending registration data:', { ...userData, password: '***' });
+      });
 
-      const { data, error: signUpError } = await supabase.auth.signUp(userData);
+      if (signUpError) throw signUpError;
 
-      console.log('Registration response:', { data, error: signUpError });
+      if (authData.user) {
+        // 2. הוספת תפקיד המאמן
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([
+            {
+              id: authData.user.id,
+              role: 'coach'
+            }
+          ]);
 
-      if (signUpError) {
-        throw signUpError;
+        if (roleError) {
+          console.error('Error setting user role:', roleError);
+          throw new Error('שגיאה בהגדרת תפקיד המשתמש');
+        }
+
+        toast.success('ההרשמה בוצעה בהצלחה! נשלח אליך מייל לאימות.');
+        navigate('/auth');
       }
-
-      toast.success('ההרשמה בוצעה בהצלחה! נשלח אליך מייל לאימות.');
-      navigate('/auth');
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error(error.message || 'אירעה שגיאה בתהליך ההרשמה');
