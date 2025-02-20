@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PlayersProvider } from "./contexts/PlayersContext";
 import AuthPage from "./pages/auth/AuthPage";
 import { AuthGuard } from "./components/auth/AuthGuard";
@@ -40,6 +40,13 @@ const App = () => (
             <Route path="/" element={
               <AuthGuard>
                 <DashboardCoach />
+              </AuthGuard>
+            } />
+
+            {/* ניתוב מחדש מדשבורד שחקן לדף הבית */}
+            <Route path="/dashboard-player" element={
+              <AuthGuard>
+                <Navigate to="/" replace />
               </AuthGuard>
             } />
 
