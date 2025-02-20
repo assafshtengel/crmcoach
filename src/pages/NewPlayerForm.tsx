@@ -97,6 +97,22 @@ const NewPlayerForm = () => {
         return;
       }
 
+      // בדיקה אם השחקן כבר קיים במערכת
+      const { data: existingPlayer } = await supabase
+        .from('players')
+        .select('id')
+        .eq('email', values.playerEmail)
+        .single();
+
+      if (existingPlayer) {
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "שחקן עם כתובת האימייל הזו כבר קיים במערכת.",
+        });
+        return;
+      }
+
       // יצירת סיסמה זמנית
       const temporaryPassword = Math.random().toString(36).slice(-8);
 
@@ -113,6 +129,14 @@ const NewPlayerForm = () => {
       });
 
       if (signUpError) {
+        if (signUpError.message.includes('already registered')) {
+          toast({
+            variant: "destructive",
+            title: "שגיאה",
+            description: "כתובת האימייל כבר רשומה במערכת.",
+          });
+          return;
+        }
         throw signUpError;
       }
 
@@ -121,32 +145,42 @@ const NewPlayerForm = () => {
       }
 
       // בדיקה אם המאמן קיים
-      let coach = await supabase
+      const { data: coach, error: coachError } = await supabase
         .from('coaches')
         .select('id')
         .eq('id', user.id)
         .single();
 
+      if (coachError && !coachError.message.includes('No rows found')) {
+        throw coachError;
+      }
+
       // אם המאמן לא קיים, ניצור אותו
-      if (!coach.data) {
+      if (!coach) {
         const { error: createCoachError } = await supabase
           .from('coaches')
-          .insert({
+          .insert([{
             id: user.id,
             email: user.email,
             full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown'
-          });
+          }]);
 
         if (createCoachError) {
-          throw createCoachError;
+          console.error('Error creating coach:', createCoachError);
+          if (createCoachError.message.includes('violates row-level security')) {
+            // נמשיך למרות השגיאה כי ייתכן שהמאמן כבר קיים
+            console.log('Coach might already exist, continuing...');
+          } else {
+            throw createCoachError;
+          }
         }
       }
 
       // שמירת השחקן בטבלת players
       const { error: insertError } = await supabase
         .from('players')
-        .insert({
-          id: newUser.user.id, // משתמשים ב-ID של המשתמש החדש
+        .insert([{
+          id: newUser.user.id,
           coach_id: user.id,
           full_name: `${values.firstName} ${values.lastName}`,
           email: values.playerEmail,
@@ -163,7 +197,7 @@ const NewPlayerForm = () => {
             אימייל: ${values.parentEmail}
             הערות נוספות: ${values.notes || 'אין'}
           `
-        });
+        }]);
 
       if (insertError) {
         throw insertError;
