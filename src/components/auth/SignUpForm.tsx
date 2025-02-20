@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,9 +16,6 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [specialty, setSpecialty] = useState("");
-  const [yearsOfExperience, setYearsOfExperience] = useState("");
-  const [education, setEducation] = useState("");
-  const [certifications, setCertifications] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -33,10 +30,7 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
         options: {
           data: {
             full_name: fullName,
-            specialty,
-            years_of_experience: parseInt(yearsOfExperience),
-            education,
-            certifications,
+            specialty
           },
         },
       });
@@ -49,7 +43,7 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
         duration: 6000,
       });
       
-      onLoginClick(); // חזרה למסך ההתחברות
+      onLoginClick();
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -97,44 +91,12 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="specialty">התמחות</Label>
-        <Input
+        <Label htmlFor="specialty">תחום התמחות</Label>
+        <Textarea
           id="specialty"
-          type="text"
           value={specialty}
           onChange={(e) => setSpecialty(e.target.value)}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="yearsOfExperience">שנות ניסיון</Label>
-        <Input
-          id="yearsOfExperience"
-          type="number"
-          value={yearsOfExperience}
-          onChange={(e) => setYearsOfExperience(e.target.value)}
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="education">השכלה</Label>
-        <Textarea
-          id="education"
-          value={education}
-          onChange={(e) => setEducation(e.target.value)}
-          placeholder="פרט את השכלתך..."
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="certifications">תעודות והסמכות</Label>
-        <Textarea
-          id="certifications"
-          value={certifications}
-          onChange={(e) => setCertifications(e.target.value)}
-          placeholder="פרט את התעודות וההסמכות שלך..."
+          placeholder="תאר את תחום ההתמחות שלך..."
         />
       </div>
 
