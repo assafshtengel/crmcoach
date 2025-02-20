@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -100,11 +99,10 @@ const NewPlayerForm = () => {
       // בדיקה אם השחקן כבר קיים במערכת
       const { data: existingPlayer } = await supabase
         .from('players')
-        .select('id')
-        .eq('email', values.playerEmail)
-        .single();
+        .select('id, email')
+        .or(`email.eq.${values.playerEmail},email.eq.${values.playerEmail.toLowerCase()}`);
 
-      if (existingPlayer) {
+      if (existingPlayer && existingPlayer.length > 0) {
         toast({
           variant: "destructive",
           title: "שגיאה",
@@ -113,12 +111,35 @@ const NewPlayerForm = () => {
         return;
       }
 
+      // וידוא שהמאמן קיים במערכת
+      const { data: coach } = await supabase
+        .from('coaches')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      // אם המאמן לא קיים, ניצור אותו
+      if (!coach) {
+        const { error: createCoachError } = await supabase
+          .from('coaches')
+          .insert([{
+            id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown'
+          }]);
+
+        if (createCoachError) {
+          console.error('Error creating coach:', createCoachError);
+          throw createCoachError;
+        }
+      }
+
       // יצירת סיסמה זמנית
       const temporaryPassword = Math.random().toString(36).slice(-8);
 
       // יצירת חשבון משתמש חדש לשחקן
-      const { data: newUser, error: signUpError } = await supabase.auth.signUp({
-        email: values.playerEmail,
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: values.playerEmail.toLowerCase(),
         password: temporaryPassword,
         options: {
           data: {
@@ -140,50 +161,18 @@ const NewPlayerForm = () => {
         throw signUpError;
       }
 
-      if (!newUser.user) {
+      if (!authData.user) {
         throw new Error("Failed to create user account");
-      }
-
-      // בדיקה אם המאמן קיים
-      const { data: coach, error: coachError } = await supabase
-        .from('coaches')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      if (coachError && !coachError.message.includes('No rows found')) {
-        throw coachError;
-      }
-
-      // אם המאמן לא קיים, ניצור אותו
-      if (!coach) {
-        const { error: createCoachError } = await supabase
-          .from('coaches')
-          .insert([{
-            id: user.id,
-            email: user.email,
-            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown'
-          }]);
-
-        if (createCoachError) {
-          console.error('Error creating coach:', createCoachError);
-          if (createCoachError.message.includes('violates row-level security')) {
-            // נמשיך למרות השגיאה כי ייתכן שהמאמן כבר קיים
-            console.log('Coach might already exist, continuing...');
-          } else {
-            throw createCoachError;
-          }
-        }
       }
 
       // שמירת השחקן בטבלת players
       const { error: insertError } = await supabase
         .from('players')
         .insert([{
-          id: newUser.user.id,
+          id: authData.user.id,
           coach_id: user.id,
           full_name: `${values.firstName} ${values.lastName}`,
-          email: values.playerEmail,
+          email: values.playerEmail.toLowerCase(),
           phone: values.playerPhone,
           notes: `
             תאריך לידה: ${values.birthDate}
@@ -227,7 +216,7 @@ const NewPlayerForm = () => {
       setShowSuccessDialog(true);
       setTimeout(() => {
         setShowSuccessDialog(false);
-        navigate('/coach-dashboard');
+        navigate('/');
       }, 1500);
 
     } catch (error: any) {
