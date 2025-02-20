@@ -61,17 +61,23 @@ const PlayersList = () => {
         return;
       }
 
+      console.log('Fetching players for coach:', user.id); // הוספת לוג לדיבוג
+
       const { data, error } = await supabase
         .from('players')
         .select('*')
         .eq('coach_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error); // הוספת לוג לדיבוג
+        throw error;
+      }
 
+      console.log('Players fetched:', data); // הוספת לוג לדיבוג
       setPlayers(data || []);
     } catch (error: any) {
+      console.error('Full error details:', error); // הוספת לוג לדיבוג
       toast.error('שגיאה בטעינת רשימת השחקנים');
-      console.error('Error fetching players:', error);
     } finally {
       setLoading(false);
     }
