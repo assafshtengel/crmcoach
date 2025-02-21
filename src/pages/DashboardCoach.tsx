@@ -1,10 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { 
   Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, 
-  Users, Calendar, BarChart2, Loader2, Send, Check
+  Users, Calendar, BarChart2, Loader2, Send, Check, LogOut
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { 
@@ -21,6 +20,16 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface DashboardStats {
   totalPlayers: number;
@@ -72,6 +81,7 @@ const DashboardCoach = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [upcomingSessions, setUpcomingSessions] = useState<UpcomingSession[]>([]);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   const fetchData = async (userId: string) => {
     try {
@@ -190,14 +200,12 @@ const DashboardCoach = () => {
       const session = upcomingSessions.find(s => s.id === sessionId);
       if (!session) throw new Error('לא נמצא מפגש');
 
-      // Create notification for scheduled reminder
       await supabase.from('notifications').insert({
         coach_id: user.id,
         type: 'reminder_scheduled',
         message: `תזכורת תשלח לשחקן ${session.player.full_name} בעוד 15 דקות`
       });
 
-      // Log the reminder attempt
       const { error } = await supabase
         .from('notifications_log')
         .insert([{
@@ -208,7 +216,6 @@ const DashboardCoach = () => {
         }]);
 
       if (error) {
-        // Create error notification if sending fails
         await supabase.from('notifications').insert({
           coach_id: user.id,
           type: 'reminder_error',
@@ -217,7 +224,6 @@ const DashboardCoach = () => {
         throw error;
       }
 
-      // Update session status
       await supabase
         .from('sessions')
         .update({ reminder_sent: true })
@@ -235,6 +241,24 @@ const DashboardCoach = () => {
         variant: "destructive",
         title: "שגיאה בשליחת התזכורת",
         description: "אנא נסה שוב מאוחר יותר"
+      });
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/auth');
+      toast({
+        title: "התנתקת בהצלחה",
+        description: "להתראות!"
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהתנתקות",
+        description: "אנא נסה שוב"
       });
     }
   };
@@ -302,7 +326,18 @@ const DashboardCoach = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <header className="w-full bg-[#1A1F2C] dark:bg-gray-800 text-white py-6 mb-8 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-2xl sm:text-3xl font-bold">ברוך הבא, מאמן</h1>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:text-white/80 hover:bg-gray-700 transition-all duration-300"
+              onClick={() => setIsLogoutDialogOpen(true)}
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="sr-only">התנתק</span>
+            </Button>
+            <h1 className="text-2xl sm:text-3xl font-bold">ברוך הבא, מאמן</h1>
+          </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <Button
               variant="ghost"
@@ -568,6 +603,21 @@ const DashboardCoach = () => {
           </Card>
         </div>
       </div>
+
+      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>האם אתה בטוח שברצונך להתנתק?</AlertDialogTitle>
+            <AlertDialogDescription>
+              לאחר ההתנתקות תצטרך להתחבר מחדש כדי לגשת למערכת
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row-reverse sm:flex-row gap-2">
+            <AlertDialogCancel className="sm:ml-2">ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>התנתק</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
