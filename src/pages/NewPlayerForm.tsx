@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -95,13 +94,11 @@ const NewPlayerForm = () => {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsSubmitting(true);
-      console.log("Starting player creation with values:", values);
 
       // קבלת ה-ID של המאמן המחובר
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
-        console.error("No authenticated user found:", userError);
         toast({
           variant: "destructive",
           title: "שגיאה",
@@ -121,12 +118,10 @@ const NewPlayerForm = () => {
         .single();
 
       if (checkError && checkError.code !== 'PGRST116') {
-        console.error("Error checking existing player:", checkError);
         throw checkError;
       }
 
       if (existingPlayer) {
-        console.log("Player already exists:", existingPlayer);
         toast({
           variant: "destructive",
           title: "שגיאה",
@@ -138,62 +133,52 @@ const NewPlayerForm = () => {
       // יצירת סיסמה זמנית
       const temporaryPassword = Math.random().toString(36).slice(-8);
 
-      console.log("Creating new user account...");
-
-      // יצירת חשבון משתמש חדש לשחקן
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      // יצירת חשבון משתמש חדש לשחקן - משתמשים ב-admin client
+      const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
         email: values.playerEmail.toLowerCase(),
         password: temporaryPassword,
-        options: {
-          data: {
-            full_name: `${values.firstName} ${values.lastName}`,
-            role: 'player'
-          }
+        email_confirm: true,
+        user_metadata: {
+          full_name: `${values.firstName} ${values.lastName}`,
+          role: 'player'
         }
       });
 
       if (signUpError) {
-        console.error("Error creating user account:", signUpError);
         throw signUpError;
       }
 
       if (!authData.user) {
-        console.error("No user data returned after signup");
         throw new Error("Failed to create user account");
       }
 
       console.log("User account created successfully:", authData.user.id);
 
       // שמירת השחקן בטבלת players
-      const playerData = {
-        id: authData.user.id,
-        coach_id: user.id,
-        full_name: `${values.firstName} ${values.lastName}`,
-        email: values.playerEmail.toLowerCase(),
-        phone: values.playerPhone,
-        position: values.position,
-        notes: `
-          תאריך לידה: ${values.birthDate}
-          עיר: ${values.city}
-          מועדון: ${values.club}
-          שנתון: ${values.yearGroup}
-          פציעות: ${values.injuries || 'אין'}
-          פרטי הורה:
-          שם: ${values.parentName}
-          טלפון: ${values.parentPhone}
-          אימייל: ${values.parentEmail}
-          הערות נוספות: ${values.notes || 'אין'}
-        `
-      };
-
-      console.log("Inserting player data:", playerData);
-
       const { error: insertError } = await supabase
         .from('players')
-        .insert([playerData]);
+        .insert([{
+          id: authData.user.id,
+          coach_id: user.id,
+          full_name: `${values.firstName} ${values.lastName}`,
+          email: values.playerEmail.toLowerCase(),
+          phone: values.playerPhone,
+          position: values.position,
+          notes: `
+            תאריך לידה: ${values.birthDate}
+            עיר: ${values.city}
+            מועדון: ${values.club}
+            שנתון: ${values.yearGroup}
+            פציעות: ${values.injuries || 'אין'}
+            פרטי הורה:
+            שם: ${values.parentName}
+            טלפון: ${values.parentPhone}
+            אימייל: ${values.parentEmail}
+            הערות נוספות: ${values.notes || 'אין'}
+          `
+        }]);
 
       if (insertError) {
-        console.error('Error inserting player:', insertError);
         throw insertError;
       }
 
@@ -224,7 +209,6 @@ const NewPlayerForm = () => {
       });
 
       if (emailError) {
-        console.error('Failed to send welcome email:', emailError);
         toast({
           variant: "destructive",
           title: "שים לב",
