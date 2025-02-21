@@ -108,7 +108,7 @@ const NewSessionForm = () => {
       if (notificationError) throw notificationError;
 
       toast.success(`המפגש עם ${selectedPlayer?.full_name} נקבע בהצלחה ל-${formData.session_date} בשעה ${formData.session_time}!`);
-      navigate('/sessions-list');
+      navigate('/'); // שינוי כאן - ניווט לדף הראשי במקום לרשימת המפגשים
     } catch (error: any) {
       toast.error(error.message || 'אירעה שגיאה בקביעת המפגש');
     } finally {
