@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, isAfter, isBefore } from 'date-fns';
 import { he } from 'date-fns/locale';
 import {
   AlertDialog,
@@ -30,11 +30,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 
 interface DashboardStats {
   totalPlayers: number;
   upcomingSessions: number;
-  attendanceRate: number;
+  currentMonthPastSessions: number;
+  currentMonthFutureSessions: number;
+  lastMonthSessions: number;
+  twoMonthsAgoSessions: number;
   totalReminders: number;
 }
 
@@ -78,7 +91,10 @@ const DashboardCoach = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalPlayers: 0,
     upcomingSessions: 0,
-    attendanceRate: 0,
+    currentMonthPastSessions: 0,
+    currentMonthFutureSessions: 0,
+    lastMonthSessions: 0,
+    twoMonthsAgoSessions: 0,
     totalReminders: 0
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -87,16 +103,44 @@ const DashboardCoach = () => {
 
   const fetchData = async (userId: string) => {
     try {
-      const [playersResult, sessionsResult, remindersResult, upcomingSessionsResult] = await Promise.all([
+      const today = new Date();
+      const startCurrentMonth = startOfMonth(today);
+      const endCurrentMonth = endOfMonth(today);
+      const lastMonth = subMonths(today, 1);
+      const twoMonthsAgo = subMonths(today, 2);
+
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('sessions')
+        .select('session_date')
+        .eq('coach_id', userId);
+
+      if (sessionsError) throw sessionsError;
+
+      const currentMonthPastSessions = sessionsData.filter(session => 
+        isBefore(new Date(session.session_date), today) && 
+        isAfter(new Date(session.session_date), startCurrentMonth)
+      ).length;
+
+      const currentMonthFutureSessions = sessionsData.filter(session => 
+        isAfter(new Date(session.session_date), today) && 
+        isBefore(new Date(session.session_date), endCurrentMonth)
+      ).length;
+
+      const lastMonthSessions = sessionsData.filter(session => 
+        isBefore(new Date(session.session_date), startCurrentMonth) && 
+        isAfter(new Date(session.session_date), startOfMonth(lastMonth))
+      ).length;
+
+      const twoMonthsAgoSessions = sessionsData.filter(session => 
+        isBefore(new Date(session.session_date), startOfMonth(lastMonth)) && 
+        isAfter(new Date(session.session_date), startOfMonth(twoMonthsAgo))
+      ).length;
+
+      const [playersResult, remindersResult, upcomingSessionsResult] = await Promise.all([
         supabase
           .from('players')
           .select('id', { count: 'exact' })
           .eq('coach_id', userId),
-        supabase
-          .from('sessions')
-          .select('id', { count: 'exact' })
-          .eq('coach_id', userId)
-          .gte('session_date', new Date().toISOString().split('T')[0]),
         supabase
           .from('notifications_log')
           .select('id', { count: 'exact' })
@@ -105,16 +149,16 @@ const DashboardCoach = () => {
         supabase
           .from('sessions')
           .select(`
-          id,
-          session_date,
-          session_time,
-          notes,
-          location,
-          reminder_sent,
-          players:players!inner(
-            full_name
-          )
-        `)
+            id,
+            session_date,
+            session_time,
+            notes,
+            location,
+            reminder_sent,
+            players:players!inner(
+              full_name
+            )
+          `)
           .eq('coach_id', userId)
           .gte('session_date', new Date().toISOString().split('T')[0])
           .order('session_date', { ascending: true })
@@ -124,8 +168,11 @@ const DashboardCoach = () => {
 
       setStats({
         totalPlayers: playersResult.count || 0,
-        upcomingSessions: sessionsResult.count || 0,
-        attendanceRate: 85,
+        upcomingSessions: currentMonthFutureSessions,
+        currentMonthPastSessions,
+        currentMonthFutureSessions,
+        lastMonthSessions,
+        twoMonthsAgoSessions,
         totalReminders: remindersResult.count || 0,
       });
 
@@ -307,6 +354,31 @@ const DashboardCoach = () => {
     initializeDashboard();
   }, []);
 
+  const getMonthlySessionsData = () => {
+    return [
+      {
+        name: 'לפני חודשיים',
+        מפגשים: stats.twoMonthsAgoSessions,
+        fill: '#9CA3AF'
+      },
+      {
+        name: 'חודש קודם',
+        מפגשים: stats.lastMonthSessions,
+        fill: '#F59E0B'
+      },
+      {
+        name: 'החודש (בוצעו)',
+        מפגשים: stats.currentMonthPastSessions,
+        fill: '#10B981'
+      },
+      {
+        name: 'החודש (מתוכננים)',
+        מפגשים: stats.currentMonthFutureSessions,
+        fill: '#3B82F6'
+      }
+    ];
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -421,52 +493,34 @@ const DashboardCoach = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-gray-800/60 transition-all duration-300 hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium dark:text-white">שחקנים רשומים</CardTitle>
-              <Users className={`h-4 w-4 ${getStatsColor(stats.totalPlayers, 'default')}`} />
+              <Users className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${getStatsColor(stats.totalPlayers, 'default')}`}>
+              <div className="text-2xl font-bold text-primary">
                 {stats.totalPlayers}
               </div>
             </CardContent>
           </Card>
-          
-          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-gray-800/60 transition-all duration-300 hover:scale-105">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium dark:text-white">מפגשים קרובים</CardTitle>
-              <Calendar className={`h-4 w-4 ${getStatsColor(stats.upcomingSessions, 'sessions')}`} />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${getStatsColor(stats.upcomingSessions, 'sessions')}`}>
-                {stats.upcomingSessions}
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-gray-800/60 transition-all duration-300 hover:scale-105">
+          <Card className="col-span-1 sm:col-span-2 lg:col-span-2 bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium dark:text-white">אחוז נוכחות</CardTitle>
-              <BarChart2 className={`h-4 w-4 ${getStatsColor(stats.attendanceRate, 'attendance')}`} />
+              <CardTitle className="text-sm font-medium dark:text-white">מפגשים לפי חודשים</CardTitle>
+              <BarChart2 className="h-4 w-4 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${getStatsColor(stats.attendanceRate, 'attendance')}`}>
-                {stats.attendanceRate}%
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-gray-800/60 transition-all duration-300 hover:scale-105">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium dark:text-white">תזכורות שנשלחו</CardTitle>
-              <Bell className={`h-4 w-4 ${getStatsColor(stats.totalReminders, 'default')}`} />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${getStatsColor(stats.totalReminders, 'default')}`}>
-                {stats.totalReminders}
-              </div>
+            <CardContent className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={getMonthlySessionsData()} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="מפגשים" />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
