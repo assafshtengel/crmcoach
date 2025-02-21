@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from '@/integrations/supabase/client';
 
 const formSchema = z.object({
@@ -48,6 +56,15 @@ const formSchema = z.object({
   notes: z.string().optional(),
   position: z.string().min(1, "אנא בחר עמדה")
 });
+
+const positions = [
+  { value: "goalkeeper", label: "שוער" },
+  { value: "defender", label: "בלם" },
+  { value: "fullback", label: "מגן" },
+  { value: "midfielder", label: "קשר" },
+  { value: "winger", label: "כנף" },
+  { value: "striker", label: "חלוץ" }
+];
 
 const NewPlayerForm = () => {
   const navigate = useNavigate();
@@ -78,15 +95,13 @@ const NewPlayerForm = () => {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsSubmitting(true);
-      toast({
-        title: "שומר נתונים...",
-        description: "אנא המתן בזמן שהנתונים נשמרים",
-      });
+      console.log("Starting player creation with values:", values);
 
       // קבלת ה-ID של המאמן המחובר
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
+        console.error("No authenticated user found:", userError);
         toast({
           variant: "destructive",
           title: "שגיאה",
@@ -96,14 +111,22 @@ const NewPlayerForm = () => {
         return;
       }
 
+      console.log("Authenticated coach ID:", user.id);
+
       // בדיקה אם השחקן כבר קיים במערכת
-      const { data: existingPlayer } = await supabase
+      const { data: existingPlayer, error: checkError } = await supabase
         .from('players')
         .select('id')
         .eq('email', values.playerEmail.toLowerCase())
         .single();
 
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error("Error checking existing player:", checkError);
+        throw checkError;
+      }
+
       if (existingPlayer) {
+        console.log("Player already exists:", existingPlayer);
         toast({
           variant: "destructive",
           title: "שגיאה",
@@ -114,6 +137,8 @@ const NewPlayerForm = () => {
 
       // יצירת סיסמה זמנית
       const temporaryPassword = Math.random().toString(36).slice(-8);
+
+      console.log("Creating new user account...");
 
       // יצירת חשבון משתמש חדש לשחקן
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -128,41 +153,51 @@ const NewPlayerForm = () => {
       });
 
       if (signUpError) {
+        console.error("Error creating user account:", signUpError);
         throw signUpError;
       }
 
       if (!authData.user) {
+        console.error("No user data returned after signup");
         throw new Error("Failed to create user account");
       }
 
+      console.log("User account created successfully:", authData.user.id);
+
       // שמירת השחקן בטבלת players
+      const playerData = {
+        id: authData.user.id,
+        coach_id: user.id,
+        full_name: `${values.firstName} ${values.lastName}`,
+        email: values.playerEmail.toLowerCase(),
+        phone: values.playerPhone,
+        position: values.position,
+        notes: `
+          תאריך לידה: ${values.birthDate}
+          עיר: ${values.city}
+          מועדון: ${values.club}
+          שנתון: ${values.yearGroup}
+          פציעות: ${values.injuries || 'אין'}
+          פרטי הורה:
+          שם: ${values.parentName}
+          טלפון: ${values.parentPhone}
+          אימייל: ${values.parentEmail}
+          הערות נוספות: ${values.notes || 'אין'}
+        `
+      };
+
+      console.log("Inserting player data:", playerData);
+
       const { error: insertError } = await supabase
         .from('players')
-        .insert([{
-          id: authData.user.id,
-          coach_id: user.id,
-          full_name: `${values.firstName} ${values.lastName}`,
-          email: values.playerEmail.toLowerCase(),
-          phone: values.playerPhone,
-          position: values.position,
-          notes: `
-            תאריך לידה: ${values.birthDate}
-            עיר: ${values.city}
-            מועדון: ${values.club}
-            שנתון: ${values.yearGroup}
-            פציעות: ${values.injuries || 'אין'}
-            פרטי הורה:
-            שם: ${values.parentName}
-            טלפון: ${values.parentPhone}
-            אימייל: ${values.parentEmail}
-            הערות נוספות: ${values.notes || 'אין'}
-          `
-        }]);
+        .insert([playerData]);
 
       if (insertError) {
         console.error('Error inserting player:', insertError);
         throw insertError;
       }
+
+      console.log("Player data inserted successfully");
 
       // עדכון תפקיד המשתמש
       const { error: roleError } = await supabase
@@ -174,8 +209,9 @@ const NewPlayerForm = () => {
 
       if (roleError) {
         console.error('Error setting user role:', roleError);
-        // נמשיך למרות השגיאה בהגדרת התפקיד
       }
+
+      console.log("Sending welcome email...");
 
       // שליחת אימייל עם פרטי ההתחברות
       const { error: emailError } = await supabase.functions.invoke('send-welcome-email', {
@@ -195,6 +231,7 @@ const NewPlayerForm = () => {
           description: "השחקן נוצר בהצלחה, אך לא הצלחנו לשלוח אימייל. אנא צור קשר עם השחקן ומסור לו את פרטי ההתחברות.",
         });
       } else {
+        console.log("Welcome email sent successfully");
         toast({
           title: "השחקן נוצר בהצלחה!",
           description: "נשלח מייל לשחקן עם פרטי ההתחברות שלו.",
@@ -300,6 +337,34 @@ const NewPlayerForm = () => {
                     <FormControl>
                       <Input placeholder="(000) 000-0000" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="position"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>עמדה</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="בחר עמדה" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {positions.map((position) => (
+                          <SelectItem key={position.value} value={position.value}>
+                            {position.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
