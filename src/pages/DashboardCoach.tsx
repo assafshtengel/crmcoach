@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -61,6 +62,18 @@ interface UpcomingSession {
   player: {
     full_name: string;
   };
+}
+
+interface SessionWithPlayer {
+  id: string;
+  session_date: string;
+  session_time: string;
+  notes: string | null;
+  location: string | null;
+  reminder_sent: boolean | null;
+  players: {
+    full_name: string;
+  }[];
 }
 
 interface Notification {
@@ -165,7 +178,7 @@ const DashboardCoach = () => {
       });
 
       if (upcomingSessionsResult.data) {
-        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map(session => ({
+        const formattedSessions: UpcomingSession[] = (upcomingSessionsResult.data as SessionWithPlayer[]).map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
@@ -173,7 +186,7 @@ const DashboardCoach = () => {
           location: session.location || '',
           reminder_sent: session.reminder_sent || false,
           player: {
-            full_name: session.players?.full_name || 'לא נמצא שחקן'
+            full_name: session.players[0]?.full_name || 'לא נמצא שחקן'
           }
         }));
         setUpcomingSessions(formattedSessions);
