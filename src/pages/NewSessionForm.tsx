@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { Home } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -118,6 +119,17 @@ const NewSessionForm = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12">
       <div className="max-w-md mx-auto px-4">
+        <div className="flex justify-end mb-6">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate('/')}
+            title="חזרה לדף הראשי"
+          >
+            <Home className="h-4 w-4" />
+          </Button>
+        </div>
+
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">קביעת מפגש חדש</CardTitle>
