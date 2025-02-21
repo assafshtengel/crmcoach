@@ -13,6 +13,7 @@ import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 interface DashboardStats {
   totalPlayers: number;
   upcomingSessions: number;
@@ -22,6 +23,7 @@ interface DashboardStats {
   twoMonthsAgoSessions: number;
   totalReminders: number;
 }
+
 interface UpcomingSession {
   id: string;
   session_date: string;
@@ -33,6 +35,7 @@ interface UpcomingSession {
     full_name: string;
   };
 }
+
 interface SessionWithPlayer {
   id: string;
   session_date: string;
@@ -44,6 +47,7 @@ interface SessionWithPlayer {
     full_name: string;
   }[];
 }
+
 interface Notification {
   id: string;
   message: string;
@@ -51,6 +55,7 @@ interface Notification {
   is_read: boolean;
   type: string;
 }
+
 const DashboardCoach = () => {
   const navigate = useNavigate();
   const {
@@ -71,6 +76,7 @@ const DashboardCoach = () => {
   const [upcomingSessions, setUpcomingSessions] = useState<UpcomingSession[]>([]);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isUpcomingSessionsOpen, setIsUpcomingSessionsOpen] = useState(false);
+
   const fetchData = async (userId: string) => {
     try {
       const today = new Date();
@@ -140,6 +146,7 @@ const DashboardCoach = () => {
       setIsLoading(false);
     }
   };
+
   const fetchNotifications = async (userId: string) => {
     try {
       const {
@@ -155,6 +162,7 @@ const DashboardCoach = () => {
       console.error('Error fetching notifications:', error);
     }
   };
+
   const markAsRead = async (notificationId: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
@@ -175,6 +183,7 @@ const DashboardCoach = () => {
       console.error('Error marking notification as read:', error);
     }
   };
+
   const handleSendReminder = async (sessionId: string) => {
     try {
       const {
@@ -223,6 +232,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -240,6 +250,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   useEffect(() => {
     const initializeDashboard = async () => {
       const {
@@ -273,6 +284,7 @@ const DashboardCoach = () => {
     };
     initializeDashboard();
   }, []);
+
   const getMonthlySessionsData = () => {
     return [{
       name: 'לפני חודשיים',
@@ -292,11 +304,13 @@ const DashboardCoach = () => {
       fill: '#3B82F6'
     }];
   };
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>;
   }
+
   const getStatsColor = (value: number, type: string) => {
     switch (type) {
       case 'attendance':
@@ -307,6 +321,7 @@ const DashboardCoach = () => {
         return value === 0 ? 'text-orange-500' : 'text-green-500';
     }
   };
+
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <header className="w-full bg-[#1A1F2C] dark:bg-gray-800 text-white py-6 mb-8 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
@@ -424,37 +439,49 @@ const DashboardCoach = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="dark:text-gray-300">תאריך</TableHead>
-                        <TableHead className="dark:text-gray-300">שעה</TableHead>
-                        <TableHead className="dark:text-gray-300">שם השחקן</TableHead>
-                        <TableHead className="dark:text-gray-300">מיקום</TableHead>
-                        <TableHead className="hidden md:table-cell dark:text-gray-300">הערות</TableHead>
-                        <TableHead className="dark:text-gray-300 mx-0 px-0 py-0">סטטוס תזכורת</TableHead>
-                        <TableHead className="dark:text-gray-300">פעולות</TableHead>
+                        <TableHead className="dark:text-gray-300 text-right">תאריך</TableHead>
+                        <TableHead className="dark:text-gray-300 text-right">שעה</TableHead>
+                        <TableHead className="dark:text-gray-300 text-right">שם השחקן</TableHead>
+                        <TableHead className="dark:text-gray-300 text-right">מיקום</TableHead>
+                        <TableHead className="hidden md:table-cell dark:text-gray-300 text-right">הערות</TableHead>
+                        <TableHead className="dark:text-gray-300 text-right">סטטוס תזכורת</TableHead>
+                        <TableHead className="dark:text-gray-300 text-right">פעולות</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {upcomingSessions.map(session => <TableRow key={session.id} className="dark:text-gray-300">
-                          <TableCell>{session.session_date}</TableCell>
-                          <TableCell>{session.session_time}</TableCell>
-                          <TableCell>{session.player.full_name}</TableCell>
-                          <TableCell>{session.location}</TableCell>
-                          <TableCell className="hidden md:table-cell max-w-xs truncate">
+                      {upcomingSessions.map(session => (
+                        <TableRow key={session.id} className="dark:text-gray-300">
+                          <TableCell className="text-right">{session.session_date}</TableCell>
+                          <TableCell className="text-right">{session.session_time}</TableCell>
+                          <TableCell className="text-right">{session.player.full_name}</TableCell>
+                          <TableCell className="text-right">{session.location}</TableCell>
+                          <TableCell className="hidden md:table-cell max-w-xs truncate text-right">
                             {session.notes || 'אין הערות'}
                           </TableCell>
-                          <TableCell>
-                            {session.reminder_sent ? <span className="inline-flex items-center text-green-500 dark:text-green-400">
+                          <TableCell className="text-right">
+                            {session.reminder_sent ? (
+                              <span className="inline-flex items-center text-green-500 dark:text-green-400">
                                 <Check className="h-4 w-4 mr-1" />
                                 נשלח
-                              </span> : <span className="text-orange-500 dark:text-orange-400">ממתין</span>}
+                              </span>
+                            ) : (
+                              <span className="text-orange-500 dark:text-orange-400">ממתין</span>
+                            )}
                           </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm" onClick={() => handleSendReminder(session.id)} disabled={session.reminder_sent} className="transition-all duration-300 hover:scale-105">
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSendReminder(session.id)}
+                              disabled={session.reminder_sent}
+                              className="transition-all duration-300 hover:scale-105"
+                            >
                               <Send className="h-4 w-4" />
                               <span className="sr-only">שלח תזכורת</span>
                             </Button>
                           </TableCell>
-                        </TableRow>)}
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </div>
@@ -542,4 +569,5 @@ const DashboardCoach = () => {
       </AlertDialog>
     </div>;
 };
+
 export default DashboardCoach;
