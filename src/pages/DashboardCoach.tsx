@@ -44,6 +44,7 @@ interface UpcomingSession {
   session_time: string;
   notes: string;
   reminder_sent: boolean;
+  location: string;
   player: {
     full_name: string;
   };
@@ -55,9 +56,10 @@ interface SessionFromDb {
   session_time: string;
   notes: string;
   reminder_sent: boolean;
-  players: Array<{
+  location: string;
+  players: {
     full_name: string;
-  }>;
+  };
 }
 
 interface Notification {
@@ -103,15 +105,16 @@ const DashboardCoach = () => {
         supabase
           .from('sessions')
           .select(`
-            id,
-            session_date,
-            session_time,
-            notes,
-            reminder_sent,
-            players!inner(
-              full_name
-            )
-          `)
+          id,
+          session_date,
+          session_time,
+          notes,
+          location,
+          reminder_sent,
+          players:players!inner(
+            full_name
+          )
+        `)
           .eq('coach_id', userId)
           .gte('session_date', new Date().toISOString().split('T')[0])
           .order('session_date', { ascending: true })
@@ -133,9 +136,10 @@ const DashboardCoach = () => {
           session_date: session.session_date,
           session_time: session.session_time,
           notes: session.notes,
+          location: session.location,
           reminder_sent: session.reminder_sent,
           player: {
-            full_name: session.players[0]?.full_name || 'לא נמצא שחקן'
+            full_name: session.players?.full_name || 'לא נמצא שחקן'
           }
         }));
         setUpcomingSessions(formattedSessions);
