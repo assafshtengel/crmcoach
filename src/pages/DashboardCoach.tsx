@@ -93,25 +93,36 @@ const DashboardCoach = () => {
       const currentMonthFutureSessions = sessionsData.filter(session => isAfter(new Date(session.session_date), today) && isBefore(new Date(session.session_date), endCurrentMonth)).length;
       const lastMonthSessions = sessionsData.filter(session => isBefore(new Date(session.session_date), startCurrentMonth) && isAfter(new Date(session.session_date), startOfMonth(lastMonth))).length;
       const twoMonthsAgoSessions = sessionsData.filter(session => isBefore(new Date(session.session_date), startOfMonth(lastMonth)) && isAfter(new Date(session.session_date), startOfMonth(twoMonthsAgo))).length;
-      const [playersResult, remindersResult, upcomingSessionsResult] = await Promise.all([supabase.from('players').select('id', {
-        count: 'exact'
-      }).eq('coach_id', userId), supabase.from('notifications_log').select('id', {
-        count: 'exact'
-      }).eq('coach_id', userId).eq('status', 'Sent'), supabase.from('sessions').select(`
+      const [playersResult, remindersResult, upcomingSessionsResult] = await Promise.all([
+        supabase
+          .from('players')
+          .select('id', { count: 'exact' })
+          .eq('coach_id', userId),
+        supabase
+          .from('notifications_log')
+          .select('id', { count: 'exact' })
+          .eq('coach_id', userId)
+          .eq('status', 'Sent'),
+        supabase
+          .from('sessions')
+          .select(`
             id,
             session_date,
             session_time,
             notes,
             location,
             reminder_sent,
-            players (
+            player:player_id (
               full_name
             )
-          `).eq('coach_id', userId).gte('session_date', new Date().toISOString().split('T')[0]).order('session_date', {
-        ascending: true
-      }).order('session_time', {
-        ascending: true
-      }).limit(10)]);
+          `)
+          .eq('coach_id', userId)
+          .gte('session_date', new Date().toISOString().split('T')[0])
+          .order('session_date', { ascending: true })
+          .order('session_time', { ascending: true })
+          .limit(10)
+      ]);
+
       setStats({
         totalPlayers: playersResult.count || 0,
         upcomingSessions: currentMonthFutureSessions,
@@ -121,8 +132,9 @@ const DashboardCoach = () => {
         twoMonthsAgoSessions,
         totalReminders: remindersResult.count || 0
       });
+
       if (upcomingSessionsResult.data) {
-        const formattedSessions: UpcomingSession[] = (upcomingSessionsResult.data as SessionWithPlayer[]).map(session => ({
+        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
@@ -130,7 +142,7 @@ const DashboardCoach = () => {
           location: session.location || '',
           reminder_sent: session.reminder_sent || false,
           player: {
-            full_name: session.players[0]?.full_name || 'לא נמצא שחקן'
+            full_name: session.player?.full_name || 'לא נמצא שחקן'
           }
         }));
         setUpcomingSessions(formattedSessions);
@@ -334,7 +346,7 @@ const DashboardCoach = () => {
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <Button variant="ghost" className="text-white hover:text-white/80 transition-all duration-300 hover:scale-105" onClick={() => navigate('/analytics')}>
-              <PieChart className="h-4 w-4 mr-2" />
+              <PieChart className="h-4 w-4" />
               <span className="hidden sm:inline">דוחות וסטטיסטיקות</span>
             </Button>
             
