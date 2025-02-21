@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -155,7 +156,7 @@ const DashboardCoach = () => {
             notes,
             location,
             reminder_sent,
-            players:players!inner(
+            players!inner(
               full_name
             )
           `)
@@ -177,14 +178,13 @@ const DashboardCoach = () => {
       });
 
       if (upcomingSessionsResult.data) {
-        const sessionsFromDb = upcomingSessionsResult.data as SessionFromDb[];
-        const formattedSessions: UpcomingSession[] = sessionsFromDb.map(session => ({
+        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
-          notes: session.notes,
-          location: session.location,
-          reminder_sent: session.reminder_sent,
+          notes: session.notes || '',
+          location: session.location || '',
+          reminder_sent: session.reminder_sent || false,
           player: {
             full_name: session.players?.full_name || 'לא נמצא שחקן'
           }
