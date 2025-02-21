@@ -39,21 +39,32 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
           .single();
 
         if (!roleData || roleData.role !== 'coach') {
-          toast({
-            variant: "destructive",
-            title: "גישה נדחתה",
-            description: "ממשק זה מיועד למאמנים בלבד",
-          });
-          await supabase.auth.signOut();
-          navigate("/auth");
-          return;
+          // נבדוק אם צריך ליצור את תפקיד המאמן
+          const { error: insertError } = await supabase
+            .from('user_roles')
+            .insert([{ 
+              id: session.user.id,
+              role: 'coach'
+            }])
+            .single();
+
+          if (insertError) {
+            console.error("Error creating coach role:", insertError);
+            toast({
+              variant: "destructive",
+              title: "שגיאה",
+              description: "לא ניתן ליצור הרשאת מאמן",
+            });
+            await supabase.auth.signOut();
+            navigate("/auth");
+            return;
+          }
         }
 
-        // Session exists but let's verify it's still valid
+        // נרענן את הסשן
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
           console.error("Error refreshing session:", refreshError);
-          // Clear any existing session data
           await supabase.auth.signOut();
           toast({
             title: "פג תוקף החיבור",
