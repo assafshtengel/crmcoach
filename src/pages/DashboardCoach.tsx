@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -36,24 +37,16 @@ interface UpcomingSession {
   };
 }
 
-interface SessionWithPlayer {
+interface SessionResponse {
   id: string;
   session_date: string;
   session_time: string;
   notes: string | null;
   location: string | null;
   reminder_sent: boolean | null;
-  players: {
+  player: {
     full_name: string;
-  }[];
-}
-
-interface Notification {
-  id: string;
-  message: string;
-  created_at: string;
-  is_read: boolean;
-  type: string;
+  } | null;
 }
 
 const DashboardCoach = () => {
@@ -84,15 +77,34 @@ const DashboardCoach = () => {
       const endCurrentMonth = endOfMonth(today);
       const lastMonth = subMonths(today, 1);
       const twoMonthsAgo = subMonths(today, 2);
-      const {
-        data: sessionsData,
-        error: sessionsError
-      } = await supabase.from('sessions').select('session_date').eq('coach_id', userId);
+      
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('sessions')
+        .select('session_date')
+        .eq('coach_id', userId);
+      
       if (sessionsError) throw sessionsError;
-      const currentMonthPastSessions = sessionsData.filter(session => isBefore(new Date(session.session_date), today) && isAfter(new Date(session.session_date), startCurrentMonth)).length;
-      const currentMonthFutureSessions = sessionsData.filter(session => isAfter(new Date(session.session_date), today) && isBefore(new Date(session.session_date), endCurrentMonth)).length;
-      const lastMonthSessions = sessionsData.filter(session => isBefore(new Date(session.session_date), startCurrentMonth) && isAfter(new Date(session.session_date), startOfMonth(lastMonth))).length;
-      const twoMonthsAgoSessions = sessionsData.filter(session => isBefore(new Date(session.session_date), startOfMonth(lastMonth)) && isAfter(new Date(session.session_date), startOfMonth(twoMonthsAgo))).length;
+
+      const currentMonthPastSessions = sessionsData.filter(session => 
+        isBefore(new Date(session.session_date), today) && 
+        isAfter(new Date(session.session_date), startCurrentMonth)
+      ).length;
+
+      const currentMonthFutureSessions = sessionsData.filter(session => 
+        isAfter(new Date(session.session_date), today) && 
+        isBefore(new Date(session.session_date), endCurrentMonth)
+      ).length;
+
+      const lastMonthSessions = sessionsData.filter(session => 
+        isBefore(new Date(session.session_date), startCurrentMonth) && 
+        isAfter(new Date(session.session_date), startOfMonth(lastMonth))
+      ).length;
+
+      const twoMonthsAgoSessions = sessionsData.filter(session => 
+        isBefore(new Date(session.session_date), startOfMonth(lastMonth)) && 
+        isAfter(new Date(session.session_date), startOfMonth(twoMonthsAgo))
+      ).length;
+
       const [playersResult, remindersResult, upcomingSessionsResult] = await Promise.all([
         supabase
           .from('players')
@@ -112,7 +124,7 @@ const DashboardCoach = () => {
             notes,
             location,
             reminder_sent,
-            player:player_id (
+            player:players!inner (
               full_name
             )
           `)
@@ -134,7 +146,7 @@ const DashboardCoach = () => {
       });
 
       if (upcomingSessionsResult.data) {
-        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map(session => ({
+        const formattedSessions: UpcomingSession[] = (upcomingSessionsResult.data as SessionResponse[]).map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
