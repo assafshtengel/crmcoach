@@ -78,6 +78,10 @@ const NewPlayerForm = () => {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsSubmitting(true);
+      toast({
+        title: "שומר נתונים...",
+        description: "אנא המתן בזמן שהנתונים נשמרים",
+      });
 
       // קבלת ה-ID של המאמן המחובר
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -185,13 +189,17 @@ const NewPlayerForm = () => {
 
       if (emailError) {
         console.error('Failed to send welcome email:', emailError);
-        // נמשיך למרות השגיאה בשליחת המייל
+        toast({
+          variant: "warning",
+          title: "השחקן נוצר, אך לא הצלחנו לשלוח אימייל",
+          description: "אנא צור קשר עם השחקן ומסור לו את פרטי ההתחברות.",
+        });
+      } else {
+        toast({
+          title: "השחקן נוצר בהצלחה!",
+          description: "נשלח מייל לשחקן עם פרטי ההתחברות שלו.",
+        });
       }
-
-      toast({
-        title: "השחקן נוצר בהצלחה!",
-        description: "נשלח מייל לשחקן עם פרטי ההתחברות שלו.",
-      });
 
       setShowSuccessDialog(true);
       setTimeout(() => {
