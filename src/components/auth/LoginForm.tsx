@@ -11,7 +11,7 @@ interface LoginFormProps {
   onForgotPasswordClick: () => void;
 }
 
-export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormProps) => {
+export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -151,7 +151,7 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
         </button>
         <button
           type="button"
-          onClick={onSignUpClick}
+          onClick={() => navigate('/coach-signup')}
           className="text-primary hover:underline"
         >
           אין לך חשבון? הירשם עכשיו
