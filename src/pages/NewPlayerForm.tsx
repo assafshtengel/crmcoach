@@ -1,69 +1,26 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from '@/integrations/supabase/client';
 
-const formSchema = z.object({
-  firstName: z.string().min(2, "שם פרטי חייב להכיל לפחות 2 תווים"),
-  lastName: z.string().min(2, "שם משפחה חייב להכיל לפחות 2 תווים"),
-  playerEmail: z.string().email("אנא הכנס כתובת אימייל תקינה"),
-  playerPhone: z.string()
-    .refine((val) => {
-      const digitsOnly = val.replace(/-/g, '');
-      return /^\d{10}$/.test(digitsOnly);
-    }, "אנא הכנס מספר טלפון בן 10 ספרות"),
-  birthDate: z.string().regex(/^(0?[1-9]|[12][0-9]|3[01])[-/](0?[1-9]|1[012])[-/]\d{4}$/, "אנא הכנס תאריך בפורמט DD/MM/YYYY או DD-MM-YYYY"),
-  city: z.string().min(2, "עיר חייבת להכיל לפחות 2 תווים"),
-  club: z.string().min(2, "שם המועדון חייב להכיל לפחות 2 תווים"),
-  yearGroup: z.string().min(4, "אנא הכנס שנתון תקין"),
-  injuries: z.string().optional(),
-  parentName: z.string().min(2, "שם ההורה חייב להכיל לפחות 2 תווים"),
-  parentPhone: z.string()
-    .refine((val) => {
-      const digitsOnly = val.replace(/-/g, '');
-      return /^\d{10}$/.test(digitsOnly);
-    }, "אנא הכנס מספר טלפון בן 10 ספרות"),
-  parentEmail: z.string().email("אנא הכנס כתובת אימייל תקינה"),
-  notes: z.string().optional(),
-  position: z.string().min(1, "אנא בחר עמדה")
-});
-
-const positions = [
-  { value: "goalkeeper", label: "שוער" },
-  { value: "defender", label: "בלם" },
-  { value: "fullback", label: "מגן" },
-  { value: "midfielder", label: "קשר" },
-  { value: "winger", label: "כנף" },
-  { value: "striker", label: "חלוץ" }
-];
+import { formSchema, PlayerFormValues } from '@/components/new-player/PlayerFormSchema';
+import { PlayerPersonalInfo } from '@/components/new-player/PlayerPersonalInfo';
+import { PlayerClubInfo } from '@/components/new-player/PlayerClubInfo';
+import { PlayerParentInfo } from '@/components/new-player/PlayerParentInfo';
+import { PlayerAdditionalInfo } from '@/components/new-player/PlayerAdditionalInfo';
+import { createPlayer } from '@/services/playerService';
 
 const NewPlayerForm = () => {
   const navigate = useNavigate();
@@ -71,7 +28,7 @@ const NewPlayerForm = () => {
   const [showSuccessDialog, setShowSuccessDialog] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<PlayerFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       firstName: "",
@@ -91,7 +48,7 @@ const NewPlayerForm = () => {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: PlayerFormValues) {
     try {
       setIsSubmitting(true);
 
@@ -107,8 +64,6 @@ const NewPlayerForm = () => {
         navigate('/auth');
         return;
       }
-
-      console.log("Authenticated coach ID:", user.id);
 
       // בדיקה אם השחקן כבר קיים במערכת
       const { data: existingPlayer, error: checkError } = await supabase
@@ -130,83 +85,7 @@ const NewPlayerForm = () => {
         return;
       }
 
-      // יצירת סיסמה זמנית
-      const temporaryPassword = Math.random().toString(36).slice(-8);
-
-      // יצירת חשבון משתמש חדש לשחקן - משתמשים ב-admin client
-      const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
-        email: values.playerEmail.toLowerCase(),
-        password: temporaryPassword,
-        email_confirm: true,
-        user_metadata: {
-          full_name: `${values.firstName} ${values.lastName}`,
-          role: 'player'
-        }
-      });
-
-      if (signUpError) {
-        throw signUpError;
-      }
-
-      if (!authData.user) {
-        throw new Error("Failed to create user account");
-      }
-
-      console.log("User account created successfully:", authData.user.id);
-
-      // שמירת השחקן בטבלת players
-      const { error: insertError } = await supabase
-        .from('players')
-        .insert([{
-          id: authData.user.id,
-          coach_id: user.id,
-          full_name: `${values.firstName} ${values.lastName}`,
-          email: values.playerEmail.toLowerCase(),
-          phone: values.playerPhone,
-          position: values.position,
-          notes: `
-            תאריך לידה: ${values.birthDate}
-            עיר: ${values.city}
-            מועדון: ${values.club}
-            שנתון: ${values.yearGroup}
-            פציעות: ${values.injuries || 'אין'}
-            פרטי הורה:
-            שם: ${values.parentName}
-            טלפון: ${values.parentPhone}
-            אימייל: ${values.parentEmail}
-            הערות נוספות: ${values.notes || 'אין'}
-          `
-        }]);
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      console.log("Player data inserted successfully");
-
-      // עדכון תפקיד המשתמש
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          id: authData.user.id,
-          role: 'player'
-        }]);
-
-      if (roleError) {
-        console.error('Error setting user role:', roleError);
-      }
-
-      console.log("Sending welcome email...");
-
-      // שליחת אימייל עם פרטי ההתחברות
-      const { error: emailError } = await supabase.functions.invoke('send-welcome-email', {
-        body: {
-          email: values.playerEmail,
-          password: temporaryPassword,
-          playerName: `${values.firstName} ${values.lastName}`,
-          coachName: user.user_metadata?.full_name || 'המאמן שלך'
-        }
-      });
+      const { emailError } = await createPlayer(values, user.id);
 
       if (emailError) {
         toast({
@@ -215,7 +94,6 @@ const NewPlayerForm = () => {
           description: "השחקן נוצר בהצלחה, אך לא הצלחנו לשלוח אימייל. אנא צור קשר עם השחקן ומסור לו את פרטי ההתחברות.",
         });
       } else {
-        console.log("Welcome email sent successfully");
         toast({
           title: "השחקן נוצר בהצלחה!",
           description: "נשלח מייל לשחקן עם פרטי ההתחברות שלו.",
@@ -229,7 +107,6 @@ const NewPlayerForm = () => {
       }, 1500);
 
     } catch (error: any) {
-      console.error('Error creating player:', error);
       toast({
         variant: "destructive",
         title: "שגיאה ביצירת השחקן",
@@ -269,227 +146,10 @@ const NewPlayerForm = () => {
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>שם פרטי</FormLabel>
-                    <FormControl>
-                      <Input placeholder="ישראל" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>שם משפחה</FormLabel>
-                    <FormControl>
-                      <Input placeholder="ישראלי" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="playerEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>אימייל שחקן</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="example@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="playerPhone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>טלפון שחקן</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(000) 000-0000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="position"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>עמדה</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="בחר עמדה" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {positions.map((position) => (
-                          <SelectItem key={position.value} value={position.value}>
-                            {position.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="birthDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>תאריך לידה</FormLabel>
-                    <FormControl>
-                      <Input placeholder="DD-MM-YYYY" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>עיר מגורים</FormLabel>
-                    <FormControl>
-                      <Input placeholder="תל אביב" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="club"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>מועדון</FormLabel>
-                    <FormControl>
-                      <Input placeholder="הפועל/מכבי" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="yearGroup"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>שנתון</FormLabel>
-                    <FormControl>
-                      <Input placeholder="2010" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="injuries"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>פציעות עבר</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="פרט את פציעות העבר של השחקן"
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="parentName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>שם ההורה</FormLabel>
-                    <FormControl>
-                      <Input placeholder="שם מלא" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="parentPhone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>טלפון הורה</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(000) 000-0000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="parentEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>אימייל הורה</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="example@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>הערות נוספות</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="הוסף הערות נוספות על השחקן"
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <PlayerPersonalInfo form={form} />
+            <PlayerClubInfo form={form} />
+            <PlayerAdditionalInfo form={form} />
+            <PlayerParentInfo form={form} />
 
             <Button 
               type="submit" 
