@@ -56,7 +56,7 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
       if (data.user) {
         console.log("User authenticated:", data.user);
         
-        // בדיקת תפקיד המשתמש - שימו לב שהשתנה מ-id ל-user_id
+        // בדיקת תפקיד המשתמש
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
@@ -75,9 +75,20 @@ export const LoginForm = ({ onSignUpClick, onForgotPasswordClick }: LoginFormPro
           return;
         }
 
+        if (!roleData) {
+          console.log("No role found for user");
+          toast({
+            variant: "destructive",
+            title: "גישה נדחתה",
+            description: "ממשק זה מיועד למאמנים בלבד",
+          });
+          await supabase.auth.signOut();
+          return;
+        }
+
         console.log("User role data:", roleData);
 
-        if (roleData?.role === 'coach') {
+        if (roleData.role === 'coach') {
           console.log("User is a coach, navigating to home");
           navigate('/');
         } else {

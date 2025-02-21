@@ -567,7 +567,7 @@ export type Database = {
       }
       players: {
         Row: {
-          coach_id: string
+          coach_id: string | null
           created_at: string
           email: string
           full_name: string
@@ -578,7 +578,7 @@ export type Database = {
           profile_image: string | null
         }
         Insert: {
-          coach_id: string
+          coach_id?: string | null
           created_at?: string
           email: string
           full_name: string
@@ -589,7 +589,7 @@ export type Database = {
           profile_image?: string | null
         }
         Update: {
-          coach_id?: string
+          coach_id?: string | null
           created_at?: string
           email?: string
           full_name?: string
