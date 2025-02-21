@@ -6,14 +6,15 @@ export const createPlayer = async (values: PlayerFormValues, coachId: string) =>
   // יצירת סיסמה זמנית
   const temporaryPassword = Math.random().toString(36).slice(-8);
 
-  // יצירת חשבון משתמש חדש לשחקן
-  const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
+  // יצירת חשבון משתמש חדש לשחקן באמצעות signUp רגיל
+  const { data: authData, error: signUpError } = await supabase.auth.signUp({
     email: values.playerEmail.toLowerCase(),
     password: temporaryPassword,
-    email_confirm: true,
-    user_metadata: {
-      full_name: `${values.firstName} ${values.lastName}`,
-      role: 'player'
+    options: {
+      data: {
+        full_name: `${values.firstName} ${values.lastName}`,
+        role: 'player'
+      }
     }
   });
 
