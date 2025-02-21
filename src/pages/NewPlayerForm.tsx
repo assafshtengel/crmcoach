@@ -190,9 +190,9 @@ const NewPlayerForm = () => {
       if (emailError) {
         console.error('Failed to send welcome email:', emailError);
         toast({
-          variant: "warning",
-          title: "השחקן נוצר, אך לא הצלחנו לשלוח אימייל",
-          description: "אנא צור קשר עם השחקן ומסור לו את פרטי ההתחברות.",
+          variant: "destructive",
+          title: "שים לב",
+          description: "השחקן נוצר בהצלחה, אך לא הצלחנו לשלוח אימייל. אנא צור קשר עם השחקן ומסור לו את פרטי ההתחברות.",
         });
       } else {
         toast({
