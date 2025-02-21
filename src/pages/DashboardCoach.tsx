@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { 
   Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, 
-  Users, Calendar, BarChart2, Loader2, Send, Check, LogOut
+  Users, Calendar, BarChart2, Loader2, Send, Check, LogOut,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { 
@@ -41,6 +41,11 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface DashboardStats {
   totalPlayers: number;
@@ -101,6 +106,7 @@ const DashboardCoach = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [upcomingSessions, setUpcomingSessions] = useState<UpcomingSession[]>([]);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [isUpcomingSessionsOpen, setIsUpcomingSessionsOpen] = useState(false);
 
   const fetchData = async (userId: string) => {
     try {
@@ -525,63 +531,84 @@ const DashboardCoach = () => {
           </Card>
         </div>
 
-        <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="dark:text-white">מפגשים קרובים</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="relative overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="dark:text-gray-300">תאריך</TableHead>
-                    <TableHead className="dark:text-gray-300">שעה</TableHead>
-                    <TableHead className="dark:text-gray-300">שם השחקן</TableHead>
-                    <TableHead className="dark:text-gray-300">מיקום</TableHead>
-                    <TableHead className="hidden md:table-cell dark:text-gray-300">הערות</TableHead>
-                    <TableHead className="dark:text-gray-300">סטטוס תזכורת</TableHead>
-                    <TableHead className="dark:text-gray-300">פעולות</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {upcomingSessions.map((session) => (
-                    <TableRow key={session.id} className="dark:text-gray-300">
-                      <TableCell>{session.session_date}</TableCell>
-                      <TableCell>{session.session_time}</TableCell>
-                      <TableCell>{session.player.full_name}</TableCell>
-                      <TableCell>{session.location}</TableCell>
-                      <TableCell className="hidden md:table-cell max-w-xs truncate">
-                        {session.notes || 'אין הערות'}
-                      </TableCell>
-                      <TableCell>
-                        {session.reminder_sent ? (
-                          <span className="inline-flex items-center text-green-500 dark:text-green-400">
-                            <Check className="h-4 w-4 mr-1" />
-                            נשלח
-                          </span>
-                        ) : (
-                          <span className="text-orange-500 dark:text-orange-400">ממתין</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleSendReminder(session.id)}
-                          disabled={session.reminder_sent}
-                          className="transition-all duration-300 hover:scale-105"
-                        >
-                          <Send className="h-4 w-4" />
-                          <span className="sr-only">שלח תזכורת</span>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+        <Collapsible
+          open={isUpcomingSessionsOpen}
+          onOpenChange={setIsUpcomingSessionsOpen}
+          className="w-full"
+        >
+          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm">
+            <CollapsibleTrigger className="w-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 cursor-pointer">
+                <div className="flex items-center space-x-2">
+                  <CardTitle className="dark:text-white">מפגשים קרובים</CardTitle>
+                  <span className="text-sm text-muted-foreground">
+                    ({upcomingSessions.length} מפגשים)
+                  </span>
+                </div>
+                {isUpcomingSessionsOpen ? (
+                  <ChevronUp className="h-4 w-4 text-gray-500 transition-transform duration-200" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-500 transition-transform duration-200" />
+                )}
+              </CardHeader>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent className="animate-accordion-down">
+              <CardContent>
+                <div className="relative overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="dark:text-gray-300">תאריך</TableHead>
+                        <TableHead className="dark:text-gray-300">שעה</TableHead>
+                        <TableHead className="dark:text-gray-300">שם השחקן</TableHead>
+                        <TableHead className="dark:text-gray-300">מיקום</TableHead>
+                        <TableHead className="hidden md:table-cell dark:text-gray-300">הערות</TableHead>
+                        <TableHead className="dark:text-gray-300">סטטוס תזכורת</TableHead>
+                        <TableHead className="dark:text-gray-300">פעולות</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {upcomingSessions.map((session) => (
+                        <TableRow key={session.id} className="dark:text-gray-300">
+                          <TableCell>{session.session_date}</TableCell>
+                          <TableCell>{session.session_time}</TableCell>
+                          <TableCell>{session.player.full_name}</TableCell>
+                          <TableCell>{session.location}</TableCell>
+                          <TableCell className="hidden md:table-cell max-w-xs truncate">
+                            {session.notes || 'אין הערות'}
+                          </TableCell>
+                          <TableCell>
+                            {session.reminder_sent ? (
+                              <span className="inline-flex items-center text-green-500 dark:text-green-400">
+                                <Check className="h-4 w-4 mr-1" />
+                                נשלח
+                              </span>
+                            ) : (
+                              <span className="text-orange-500 dark:text-orange-400">ממתין</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSendReminder(session.id)}
+                              disabled={session.reminder_sent}
+                              className="transition-all duration-300 hover:scale-105"
+                            >
+                              <Send className="h-4 w-4" />
+                              <span className="sr-only">שלח תזכורת</span>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card 
