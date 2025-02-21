@@ -3,81 +3,50 @@ import { supabase } from '@/integrations/supabase/client';
 import { PlayerFormValues } from '@/components/new-player/PlayerFormSchema';
 
 export const createPlayer = async (values: PlayerFormValues, coachId: string) => {
-  // יצירת סיסמה זמנית
-  const temporaryPassword = Math.random().toString(36).slice(-8);
+  try {
+    // בדיקה אם השחקן כבר קיים במערכת
+    const { data: existingPlayer } = await supabase
+      .from('players')
+      .select('id')
+      .eq('email', values.playerEmail.toLowerCase())
+      .single();
 
-  // יצירת חשבון משתמש חדש לשחקן באמצעות signUp רגיל
-  const { data: authData, error: signUpError } = await supabase.auth.signUp({
-    email: values.playerEmail.toLowerCase(),
-    password: temporaryPassword,
-    options: {
-      data: {
+    if (existingPlayer) {
+      throw new Error('שחקן עם כתובת האימייל הזו כבר קיים במערכת');
+    }
+
+    // שמירת השחקן בטבלת players
+    const { data: playerData, error: insertError } = await supabase
+      .from('players')
+      .insert([{
+        coach_id: coachId,
         full_name: `${values.firstName} ${values.lastName}`,
-        role: 'player'
-      }
+        email: values.playerEmail.toLowerCase(),
+        phone: values.playerPhone,
+        position: values.position,
+        notes: `
+          תאריך לידה: ${values.birthDate}
+          עיר: ${values.city}
+          מועדון: ${values.club}
+          שנתון: ${values.yearGroup}
+          פציעות: ${values.injuries || 'אין'}
+          פרטי הורה:
+          שם: ${values.parentName}
+          טלפון: ${values.parentPhone}
+          אימייל: ${values.parentEmail}
+          הערות נוספות: ${values.notes || 'אין'}
+        `
+      }])
+      .select()
+      .single();
+
+    if (insertError) {
+      throw insertError;
     }
-  });
 
-  if (signUpError) {
-    if (signUpError.message.includes('User already registered')) {
-      throw new Error('משתמש עם כתובת האימייל הזו כבר קיים במערכת');
-    }
-    throw signUpError;
+    return { playerData };
+
+  } catch (error: any) {
+    throw error;
   }
-
-  if (!authData.user) {
-    throw new Error("Failed to create user account");
-  }
-
-  // שמירת השחקן בטבלת players
-  const { error: insertError } = await supabase
-    .from('players')
-    .insert([{
-      id: authData.user.id,
-      coach_id: coachId,
-      full_name: `${values.firstName} ${values.lastName}`,
-      email: values.playerEmail.toLowerCase(),
-      phone: values.playerPhone,
-      position: values.position,
-      notes: `
-        תאריך לידה: ${values.birthDate}
-        עיר: ${values.city}
-        מועדון: ${values.club}
-        שנתון: ${values.yearGroup}
-        פציעות: ${values.injuries || 'אין'}
-        פרטי הורה:
-        שם: ${values.parentName}
-        טלפון: ${values.parentPhone}
-        אימייל: ${values.parentEmail}
-        הערות נוספות: ${values.notes || 'אין'}
-      `
-    }]);
-
-  if (insertError) {
-    throw insertError;
-  }
-
-  // עדכון תפקיד המשתמש
-  const { error: roleError } = await supabase
-    .from('user_roles')
-    .insert([{
-      id: authData.user.id,
-      role: 'player'
-    }]);
-
-  if (roleError) {
-    console.error('Error setting user role:', roleError);
-  }
-
-  // שליחת אימייל עם פרטי ההתחברות
-  const { error: emailError } = await supabase.functions.invoke('send-welcome-email', {
-    body: {
-      email: values.playerEmail,
-      password: temporaryPassword,
-      playerName: `${values.firstName} ${values.lastName}`,
-      coachName: 'המאמן שלך'
-    }
-  });
-
-  return { emailError, playerData: authData.user };
 };

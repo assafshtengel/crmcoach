@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -65,40 +64,12 @@ const NewPlayerForm = () => {
         return;
       }
 
-      // בדיקה אם השחקן כבר קיים במערכת
-      const { data: existingPlayer, error: checkError } = await supabase
-        .from('players')
-        .select('id')
-        .eq('email', values.playerEmail.toLowerCase())
-        .single();
+      const { playerData } = await createPlayer(values, user.id);
 
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
-
-      if (existingPlayer) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "שחקן עם כתובת האימייל הזו כבר קיים במערכת.",
-        });
-        return;
-      }
-
-      const { emailError } = await createPlayer(values, user.id);
-
-      if (emailError) {
-        toast({
-          variant: "destructive",
-          title: "שים לב",
-          description: "השחקן נוצר בהצלחה, אך לא הצלחנו לשלוח אימייל. אנא צור קשר עם השחקן ומסור לו את פרטי ההתחברות.",
-        });
-      } else {
-        toast({
-          title: "השחקן נוצר בהצלחה!",
-          description: "נשלח מייל לשחקן עם פרטי ההתחברות שלו.",
-        });
-      }
+      toast({
+        title: "השחקן נוצר בהצלחה!",
+        description: "השחקן נוסף לרשימת השחקנים שלך.",
+      });
 
       setShowSuccessDialog(true);
       setTimeout(() => {
@@ -110,7 +81,7 @@ const NewPlayerForm = () => {
       toast({
         variant: "destructive",
         title: "שגיאה ביצירת השחקן",
-        description: error.message || "אירעה שגיאה ביצירת חשבון השחקן. אנא נסה שוב.",
+        description: error.message || "אירעה שגיאה ביצירת השחקן. אנא נסה שוב.",
       });
     } finally {
       setIsSubmitting(false);
