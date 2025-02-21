@@ -14,7 +14,8 @@ export const createPlayer = async (values: PlayerFormValues, coachId: string) =>
       data: {
         full_name: `${values.firstName} ${values.lastName}`,
         role: 'player'
-      }
+      },
+      emailRedirectTo: window.location.origin
     }
   });
 
@@ -24,6 +25,17 @@ export const createPlayer = async (values: PlayerFormValues, coachId: string) =>
 
   if (!authData.user) {
     throw new Error("Failed to create user account");
+  }
+
+  // אימות אוטומטי של האימייל
+  const { error: verifyError } = await supabase.auth.verifyOtp({
+    email: values.playerEmail.toLowerCase(),
+    token: temporaryPassword,
+    type: 'email'
+  });
+
+  if (verifyError) {
+    console.error('Error verifying email:', verifyError);
   }
 
   // שמירת השחקן בטבלת players
