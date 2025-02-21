@@ -483,6 +483,7 @@ const DashboardCoach = () => {
                     <TableHead className="dark:text-gray-300">תאריך</TableHead>
                     <TableHead className="dark:text-gray-300">שעה</TableHead>
                     <TableHead className="dark:text-gray-300">שם השחקן</TableHead>
+                    <TableHead className="dark:text-gray-300">מיקום</TableHead>
                     <TableHead className="hidden md:table-cell dark:text-gray-300">הערות</TableHead>
                     <TableHead className="dark:text-gray-300">סטטוס תזכורת</TableHead>
                     <TableHead className="dark:text-gray-300">פעולות</TableHead>
@@ -494,6 +495,7 @@ const DashboardCoach = () => {
                       <TableCell>{session.session_date}</TableCell>
                       <TableCell>{session.session_time}</TableCell>
                       <TableCell>{session.player.full_name}</TableCell>
+                      <TableCell>{session.location}</TableCell>
                       <TableCell className="hidden md:table-cell max-w-xs truncate">
                         {session.notes || 'אין הערות'}
                       </TableCell>
