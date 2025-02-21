@@ -638,6 +638,7 @@ export type Database = {
           coach_id: string
           created_at: string
           id: string
+          location: string | null
           notes: string | null
           player_id: string
           reminder_sent: boolean | null
@@ -648,6 +649,7 @@ export type Database = {
           coach_id: string
           created_at?: string
           id?: string
+          location?: string | null
           notes?: string | null
           player_id: string
           reminder_sent?: boolean | null
@@ -658,6 +660,7 @@ export type Database = {
           coach_id?: string
           created_at?: string
           id?: string
+          location?: string | null
           notes?: string | null
           player_id?: string
           reminder_sent?: boolean | null

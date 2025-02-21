@@ -26,6 +26,7 @@ interface SessionFormData {
   player_id: string;
   session_date: string;
   session_time: string;
+  location: string;
   notes: string;
 }
 
@@ -38,6 +39,7 @@ const NewSessionForm = () => {
     player_id: '',
     session_date: '',
     session_time: '',
+    location: '',
     notes: ''
   });
 
@@ -71,7 +73,7 @@ const NewSessionForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.player_id || !formData.session_date || !formData.session_time) {
+    if (!formData.player_id || !formData.session_date || !formData.session_time || !formData.location) {
       toast.error('נא למלא את כל שדות החובה');
       return;
     }
@@ -93,6 +95,7 @@ const NewSessionForm = () => {
         player_id: formData.player_id,
         session_date: formData.session_date,
         session_time: formData.session_time,
+        location: formData.location,
         notes: formData.notes
       });
 
@@ -108,7 +111,7 @@ const NewSessionForm = () => {
       if (notificationError) throw notificationError;
 
       toast.success(`המפגש עם ${selectedPlayer?.full_name} נקבע בהצלחה ל-${formData.session_date} בשעה ${formData.session_time}!`);
-      navigate('/'); // שינוי כאן - ניווט לדף הראשי במקום לרשימת המפגשים
+      navigate('/');
     } catch (error: any) {
       toast.error(error.message || 'אירעה שגיאה בקביעת המפגש');
     } finally {
@@ -178,6 +181,19 @@ const NewSessionForm = () => {
                   onChange={(e) => setFormData(prev => ({ ...prev, session_time: e.target.value }))}
                   required
                   dir="ltr"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">מיקום</Label>
+                <Input
+                  id="location"
+                  name="location"
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                  placeholder="הכנס את מיקום המפגש"
+                  required
                 />
               </div>
 
