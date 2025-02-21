@@ -24,18 +24,37 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
     setLoading(true);
 
     try {
+      // הרשמת המשתמש עם metadata שכולל את תפקיד המאמן
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
-            specialty
+            specialty,
+            role: 'coach' // מסמן את המשתמש כמאמן
           },
         },
       });
 
       if (error) throw error;
+
+      if (data.user) {
+        console.log("User created successfully:", data.user);
+        
+        // בדיקה שהתפקיד נוצר בהצלחה
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (roleError) {
+          console.error("Error verifying coach role:", roleError);
+        } else {
+          console.log("User role verified:", roleData);
+        }
+      }
 
       toast({
         title: "הרשמה בוצעה בהצלחה",
