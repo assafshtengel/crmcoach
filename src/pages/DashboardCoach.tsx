@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -60,18 +59,6 @@ interface UpcomingSession {
   reminder_sent: boolean;
   location: string;
   player: {
-    full_name: string;
-  };
-}
-
-interface SessionFromDb {
-  id: string;
-  session_date: string;
-  session_time: string;
-  notes: string;
-  reminder_sent: boolean;
-  location: string;
-  players: {
     full_name: string;
   };
 }
@@ -156,7 +143,7 @@ const DashboardCoach = () => {
             notes,
             location,
             reminder_sent,
-            players!inner(
+            players (
               full_name
             )
           `)
