@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { ChevronRight, Loader2, Pencil, ScrollText } from 'lucide-react';
+import { ChevronRight, Loader2, Pencil, ScrollText, User, Home, Calendar, Phone } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -101,8 +100,7 @@ const PlayerProfile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-sm p-6 mb-6 border border-indigo-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
@@ -113,11 +111,11 @@ const PlayerProfile = () => {
                 <ChevronRight className="h-4 w-4 ml-2" />
                 חזרה לרשימת השחקנים
               </Button>
-              <h1 className="text-2xl font-bold">{player.full_name}</h1>
+              <h1 className="text-2xl font-bold text-indigo-950">{player.full_name}</h1>
             </div>
             <Button
               onClick={handleEdit}
-              className="gap-2"
+              className="gap-2 bg-indigo-600 hover:bg-indigo-700"
             >
               <Pencil className="h-4 w-4" />
               ערוך פרטים
@@ -126,53 +124,55 @@ const PlayerProfile = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Info Card */}
-          <Card className="lg:col-span-2">
-            <CardHeader className="border-b">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <ScrollText className="h-5 w-5" />
+          <Card className="lg:col-span-2 bg-white/80 backdrop-blur-sm border-indigo-100">
+            <CardHeader className="border-b border-indigo-100">
+              <CardTitle className="text-xl flex items-center gap-2 text-indigo-950">
+                <User className="h-5 w-5 text-indigo-600" />
                 פרטים אישיים
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-indigo-50/50 rounded-lg mb-6">
                 <div>
-                  <Label className="font-medium text-gray-600">שם מלא</Label>
+                  <Label className="font-medium text-indigo-900">שם מלא</Label>
                   <p className="mt-1 text-lg">{player.full_name}</p>
                 </div>
                 <div>
-                  <Label className="font-medium text-gray-600">תאריך לידה</Label>
-                  <p className="mt-1 text-lg">{player.birthDate}</p>
-                </div>
-                <div>
-                  <Label className="font-medium text-gray-600">אימייל</Label>
+                  <Label className="font-medium text-indigo-900">אימייל</Label>
                   <p className="mt-1 text-lg" dir="ltr">{player.email}</p>
                 </div>
                 <div>
-                  <Label className="font-medium text-gray-600">טלפון</Label>
+                  <Label className="font-medium text-indigo-900">טלפון</Label>
                   <p className="mt-1 text-lg" dir="ltr">{player.phone}</p>
                 </div>
                 <div>
-                  <Label className="font-medium text-gray-600">עמדה</Label>
+                  <Label className="font-medium text-indigo-900">עמדה</Label>
                   <p className="mt-1 text-lg">
                     {positionLabels[player.position] || player.position}
                   </p>
                 </div>
+                <div>
+                  <Label className="font-medium text-indigo-900">תאריך לידה</Label>
+                  <p className="mt-1 text-lg">{player.birthDate}</p>
+                </div>
               </div>
 
-              <div className="mt-8">
-                <h3 className="text-lg font-semibold mb-4">פרטי מועדון</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="border-t border-indigo-100 pt-6 mt-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-indigo-950">
+                  <Home className="h-5 w-5 text-indigo-600" />
+                  פרטי מועדון
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 bg-indigo-50/50 rounded-lg">
                   <div>
-                    <Label className="font-medium text-gray-600">עיר</Label>
+                    <Label className="font-medium text-indigo-900">עיר</Label>
                     <p className="mt-1 text-lg">{player.city}</p>
                   </div>
                   <div>
-                    <Label className="font-medium text-gray-600">מועדון</Label>
+                    <Label className="font-medium text-indigo-900">מועדון</Label>
                     <p className="mt-1 text-lg">{player.club}</p>
                   </div>
                   <div>
-                    <Label className="font-medium text-gray-600">שנתון</Label>
+                    <Label className="font-medium text-indigo-900">שנתון</Label>
                     <p className="mt-1 text-lg">{player.yearGroup}</p>
                   </div>
                 </div>
@@ -180,46 +180,52 @@ const PlayerProfile = () => {
             </CardContent>
           </Card>
 
-          {/* Parent Info Card */}
-          <Card>
-            <CardHeader className="border-b">
-              <CardTitle className="text-xl">פרטי הורה</CardTitle>
+          <Card className="bg-white/80 backdrop-blur-sm border-indigo-100">
+            <CardHeader className="border-b border-indigo-100">
+              <CardTitle className="text-xl flex items-center gap-2 text-indigo-950">
+                <Phone className="h-5 w-5 text-indigo-600" />
+                פרטי הורה
+              </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 space-y-4">
-              <div>
-                <Label className="font-medium text-gray-600">שם ההורה</Label>
-                <p className="mt-1 text-lg">{player.parentName}</p>
-              </div>
-              <div>
-                <Label className="font-medium text-gray-600">טלפון הורה</Label>
-                <p className="mt-1 text-lg" dir="ltr">{player.parentPhone}</p>
-              </div>
-              <div>
-                <Label className="font-medium text-gray-600">אימייל הורה</Label>
-                <p className="mt-1 text-lg" dir="ltr">{player.parentEmail}</p>
+            <CardContent className="pt-6">
+              <div className="space-y-4 p-4 bg-indigo-50/50 rounded-lg">
+                <div>
+                  <Label className="font-medium text-indigo-900">שם ההורה</Label>
+                  <p className="mt-1 text-lg">{player.parentName}</p>
+                </div>
+                <div>
+                  <Label className="font-medium text-indigo-900">טלפון הורה</Label>
+                  <p className="mt-1 text-lg" dir="ltr">{player.parentPhone}</p>
+                </div>
+                <div>
+                  <Label className="font-medium text-indigo-900">אימייל הורה</Label>
+                  <p className="mt-1 text-lg" dir="ltr">{player.parentEmail}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Additional Info Card */}
           {(player.injuries || player.notes) && (
-            <Card className="lg:col-span-3">
-              <CardHeader className="border-b">
-                <CardTitle className="text-xl">מידע נוסף</CardTitle>
+            <Card className="lg:col-span-3 bg-white/80 backdrop-blur-sm border-indigo-100">
+              <CardHeader className="border-b border-indigo-100">
+                <CardTitle className="text-xl flex items-center gap-2 text-indigo-950">
+                  <ScrollText className="h-5 w-5 text-indigo-600" />
+                  מידע נוסף
+                </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
                 {player.injuries && (
-                  <div>
-                    <Label className="font-medium text-gray-600">פציעות עבר</Label>
-                    <p className="mt-2 text-lg p-4 bg-gray-50 rounded-lg">
+                  <div className="p-4 bg-indigo-50/50 rounded-lg">
+                    <Label className="font-medium text-indigo-900">פציעות עבר</Label>
+                    <p className="mt-2 text-lg">
                       {player.injuries}
                     </p>
                   </div>
                 )}
                 {player.notes && (
-                  <div>
-                    <Label className="font-medium text-gray-600">הערות נוספות</Label>
-                    <p className="mt-2 text-lg p-4 bg-gray-50 rounded-lg">
+                  <div className="p-4 bg-indigo-50/50 rounded-lg">
+                    <Label className="font-medium text-indigo-900">הערות נוספות</Label>
+                    <p className="mt-2 text-lg">
                       {player.notes}
                     </p>
                   </div>
