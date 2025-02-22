@@ -20,6 +20,7 @@ import NotificationsDashboard from "./pages/NotificationsDashboard";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import NotFound from "./pages/NotFound";
 import Contact from "./pages/Contact";
+import PlayerProfile from "./pages/PlayerProfile";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,11 @@ const App = () => (
             <Route path="/players-list" element={
               <AuthGuard>
                 <PlayersList />
+              </AuthGuard>
+            } />
+            <Route path="/player-profile/:playerId" element={
+              <AuthGuard>
+                <PlayerProfile />
               </AuthGuard>
             } />
             <Route path="/new-player" element={
