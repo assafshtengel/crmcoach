@@ -138,10 +138,6 @@ const PlayerProfile = () => {
                   <p className="mt-1 text-lg">{player.full_name}</p>
                 </div>
                 <div>
-                  <Label className="font-medium text-indigo-900">תאריך לידה</Label>
-                  <p className="mt-1 text-lg">{player.birthDate}</p>
-                </div>
-                <div>
                   <Label className="font-medium text-indigo-900">אימייל</Label>
                   <p className="mt-1 text-lg" dir="ltr">{player.email}</p>
                 </div>
@@ -154,6 +150,10 @@ const PlayerProfile = () => {
                   <p className="mt-1 text-lg">
                     {positionLabels[player.position] || player.position}
                   </p>
+                </div>
+                <div>
+                  <Label className="font-medium text-indigo-900">תאריך לידה</Label>
+                  <p className="mt-1 text-lg">{player.birthDate}</p>
                 </div>
               </div>
 
