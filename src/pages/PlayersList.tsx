@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Calendar, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,7 +64,6 @@ const PlayersList = () => {
 
       console.log('Fetching players for coach:', user.id);
 
-      // שינוי הבקשה כדי לכלול את כל השדות הנדרשים
       const { data, error } = await supabase
         .from('players')
         .select(`
@@ -109,6 +108,10 @@ const PlayersList = () => {
 
   const handleEditPlayer = (playerId: string) => {
     navigate('/edit-player', { state: { playerId } });
+  };
+
+  const handleViewProfile = (playerId: string) => {
+    navigate(`/player-profile/${playerId}`);
   };
 
   const handleDeleteConfirm = async () => {
@@ -194,6 +197,14 @@ const PlayersList = () => {
                     <TableCell dir="ltr">{player.phone}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewProfile(player.id)}
+                          title="צפה בפרופיל"
+                        >
+                          <UserCircle className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
