@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -45,7 +46,7 @@ interface SessionResponse {
   reminder_sent: boolean | null;
   players: {
     full_name: string;
-  };
+  } | null;
 }
 
 interface Notification {
@@ -131,7 +132,7 @@ const DashboardCoach = () => {
             notes,
             location,
             reminder_sent,
-            players (
+            players!inner (
               full_name
             )
           `)
@@ -153,7 +154,8 @@ const DashboardCoach = () => {
       });
 
       if (upcomingSessionsResult.data) {
-        const formattedSessions: UpcomingSession[] = (upcomingSessionsResult.data as SessionResponse[]).map(session => ({
+        const rawData = upcomingSessionsResult.data as unknown as SessionResponse[];
+        const formattedSessions: UpcomingSession[] = rawData.map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
