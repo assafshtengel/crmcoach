@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -44,9 +43,17 @@ interface SessionResponse {
   notes: string | null;
   location: string | null;
   reminder_sent: boolean | null;
-  player: {
+  players: {
     full_name: string;
-  } | null;
+  };
+}
+
+interface Notification {
+  id: string;
+  message: string;
+  created_at: string;
+  is_read: boolean;
+  type: string;
 }
 
 const DashboardCoach = () => {
@@ -124,7 +131,7 @@ const DashboardCoach = () => {
             notes,
             location,
             reminder_sent,
-            player:players!inner (
+            players (
               full_name
             )
           `)
@@ -154,7 +161,7 @@ const DashboardCoach = () => {
           location: session.location || '',
           reminder_sent: session.reminder_sent || false,
           player: {
-            full_name: session.player?.full_name || 'לא נמצא שחקן'
+            full_name: session.players?.full_name || 'לא נמצא שחקן'
           }
         }));
         setUpcomingSessions(formattedSessions);
