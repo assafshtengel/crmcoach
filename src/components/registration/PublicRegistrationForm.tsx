@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { positions } from '@/components/new-player/PlayerFormSchema';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface PlayerFormData {
@@ -55,22 +55,35 @@ const PublicRegistrationForm = () => {
         return;
       }
 
-      const { data: linkData, error: linkError } = await supabase
-        .from('registration_links')
-        .select('coach_id, custom_message, coaches(id, full_name)')
-        .eq('id', linkId)
-        .single();
+      try {
+        const { data: linkData, error: linkError } = await supabase
+          .from('registration_links')
+          .select(`
+            id,
+            custom_message,
+            coach_id,
+            coaches (
+              id,
+              full_name
+            )
+          `)
+          .eq('id', linkId)
+          .single();
 
-      if (linkError || !linkData) {
-        toast.error('הלינק אינו תקין או שפג תוקפו');
-        return;
+        if (linkError || !linkData) {
+          toast.error('הלינק אינו תקין או שפג תוקפו');
+          return;
+        }
+
+        setCoachData({
+          id: linkData.coach_id,
+          full_name: linkData.coaches.full_name,
+          custom_message: linkData.custom_message
+        });
+      } catch (error: any) {
+        console.error('Error verifying link:', error);
+        toast.error('אירעה שגיאה בטעינת הטופס');
       }
-
-      setCoachData({
-        id: linkData.coaches.id,
-        full_name: linkData.coaches.full_name,
-        custom_message: linkData.custom_message
-      });
     };
 
     verifyLink();
@@ -80,18 +93,26 @@ const PublicRegistrationForm = () => {
     e.preventDefault();
     if (!coachData) return;
 
+    // בסיסית ולידציה
+    if (!formData.full_name || !formData.email || !formData.phone) {
+      toast.error('נא למלא את כל השדות החובה');
+      return;
+    }
+
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('players')
-        .insert([{ ...formData, coach_id: coachData.id }]);
+        .insert([{ ...formData, coach_id: coachData.id }])
+        .select()
+        .single();
 
       if (error) throw error;
 
       toast.success('הרישום בוצע בהצלחה!');
-      // ניתן להוסיף כאן הפניה לדף תודה
       navigate('/registration-success');
     } catch (error: any) {
+      console.error('Registration error:', error);
       toast.error('שגיאה בתהליך הרישום: ' + error.message);
     } finally {
       setLoading(false);
@@ -116,7 +137,10 @@ const PublicRegistrationForm = () => {
         <div className="max-w-4xl mx-auto px-4">
           <Card>
             <CardContent className="pt-6">
-              <p className="text-center text-gray-500">טוען...</p>
+              <div className="flex justify-center items-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                <span className="mr-2">טוען...</span>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -128,8 +152,8 @@ const PublicRegistrationForm = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8">
       <div className="max-w-4xl mx-auto px-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">הרשמה לאימונים אצל {coachData.full_name}</CardTitle>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl mb-2">הרשמה לאימונים אצל {coachData.full_name}</CardTitle>
             {coachData.custom_message && (
               <p className="mt-2 text-gray-600">{coachData.custom_message}</p>
             )}
@@ -141,7 +165,7 @@ const PublicRegistrationForm = () => {
                 <h3 className="text-lg font-semibold mb-4">פרטים אישיים</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="full_name">שם מלא</Label>
+                    <Label htmlFor="full_name">שם מלא *</Label>
                     <Input
                       id="full_name"
                       name="full_name"
@@ -151,17 +175,19 @@ const PublicRegistrationForm = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="birthdate">תאריך לידה</Label>
+                    <Label htmlFor="birthdate">תאריך לידה *</Label>
                     <Input
                       id="birthdate"
                       name="birthdate"
+                      type="date"
                       value={formData.birthdate}
                       onChange={(e) => handleInputChange(e, 'birthdate')}
                       required
+                      dir="ltr"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="email">אימייל</Label>
+                    <Label htmlFor="email">אימייל *</Label>
                     <Input
                       id="email"
                       name="email"
@@ -173,7 +199,7 @@ const PublicRegistrationForm = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="phone">טלפון</Label>
+                    <Label htmlFor="phone">טלפון *</Label>
                     <Input
                       id="phone"
                       name="phone"
@@ -246,7 +272,7 @@ const PublicRegistrationForm = () => {
                 <h3 className="text-lg font-semibold mb-4">פרטי הורה</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="parent_name">שם ההורה</Label>
+                    <Label htmlFor="parent_name">שם ההורה *</Label>
                     <Input
                       id="parent_name"
                       name="parent_name"
@@ -256,7 +282,7 @@ const PublicRegistrationForm = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="parent_phone">טלפון הורה</Label>
+                    <Label htmlFor="parent_phone">טלפון הורה *</Label>
                     <Input
                       id="parent_phone"
                       name="parent_phone"
@@ -267,7 +293,7 @@ const PublicRegistrationForm = () => {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <Label htmlFor="parent_email">אימייל הורה</Label>
+                    <Label htmlFor="parent_email">אימייל הורה *</Label>
                     <Input
                       id="parent_email"
                       name="parent_email"
@@ -312,8 +338,16 @@ const PublicRegistrationForm = () => {
                 <Button
                   type="submit"
                   disabled={loading}
+                  className="min-w-[150px]"
                 >
-                  {loading ? 'שולח טופס...' : 'שלח טופס'}
+                  {loading ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      שולח טופס...
+                    </div>
+                  ) : (
+                    'שלח טופס'
+                  )}
                 </Button>
               </div>
             </form>
@@ -325,3 +359,4 @@ const PublicRegistrationForm = () => {
 };
 
 export default PublicRegistrationForm;
+
