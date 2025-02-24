@@ -684,6 +684,41 @@ export type Database = {
         }
         Relationships: []
       }
+      registration_links: {
+        Row: {
+          coach_id: string
+          created_at: string
+          custom_message: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          custom_message?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          custom_message?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_links_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           coach_id: string

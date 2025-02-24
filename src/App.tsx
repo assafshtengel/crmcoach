@@ -21,6 +21,8 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import NotFound from "./pages/NotFound";
 import Contact from "./pages/Contact";
 import PlayerProfile from "./pages/PlayerProfile";
+import PublicRegistrationForm from "./components/registration/PublicRegistrationForm";
+import RegistrationLinksList from "./components/registration/RegistrationLinksList";
 
 const queryClient = new QueryClient();
 
@@ -32,20 +34,18 @@ const App = () => (
       <PlayersProvider>
         <BrowserRouter>
           <Routes>
-            {/* דף הרשמת מאמן חדש - נגיש ללא התחברות */}
+            {/* נתיבים ציבוריים */}
             <Route path="/coach-signup" element={<CoachSignUp />} />
-            
-            {/* דף התחברות */}
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
 
-            {/* דף הבית - דשבורד המאמן */}
+            {/* נתיבים מוגנים */}
             <Route path="/" element={
               <AuthGuard>
                 <DashboardCoach />
               </AuthGuard>
             } />
-
-            {/* נתיבים מוגנים */}
             <Route path="/profile-coach" element={
               <AuthGuard>
                 <ProfileCoach />
@@ -64,6 +64,11 @@ const App = () => (
             <Route path="/new-player" element={
               <AuthGuard>
                 <NewPlayerForm />
+              </AuthGuard>
+            } />
+            <Route path="/registration-links" element={
+              <AuthGuard>
+                <RegistrationLinksList />
               </AuthGuard>
             } />
             <Route path="/new-session" element={
@@ -96,9 +101,6 @@ const App = () => (
                 <AnalyticsDashboard />
               </AuthGuard>
             } />
-            
-            {/* דף קשר - נגיש ללא התחברות */}
-            <Route path="/contact" element={<Contact />} />
             
             {/* דף 404 */}
             <Route path="*" element={<NotFound />} />
