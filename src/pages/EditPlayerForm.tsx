@@ -22,15 +22,15 @@ interface PlayerFormData {
   full_name: string;
   email: string;
   phone: string;
-  birthDate: string;
+  birthdate: string;
   city: string;
   club: string;
-  yearGroup: string;
+  year_group: string;
   position: string;
   injuries?: string;
-  parentName: string;
-  parentPhone: string;
-  parentEmail: string;
+  parent_name: string;
+  parent_phone: string;
+  parent_email: string;
   notes?: string;
 }
 
@@ -41,15 +41,15 @@ const EditPlayerForm = () => {
     full_name: '',
     email: '',
     phone: '',
-    birthDate: '',
+    birthdate: '',
     city: '',
     club: '',
-    yearGroup: '',
+    year_group: '',
     position: '',
     injuries: '',
-    parentName: '',
-    parentPhone: '',
-    parentEmail: '',
+    parent_name: '',
+    parent_phone: '',
+    parent_email: '',
     notes: ''
   });
   const [loading, setLoading] = useState(false);
@@ -150,12 +150,12 @@ const EditPlayerForm = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="birthDate">תאריך לידה</Label>
+                    <Label htmlFor="birthdate">תאריך לידה</Label>
                     <Input
-                      id="birthDate"
-                      name="birthDate"
-                      value={formData.birthDate}
-                      onChange={(e) => handleInputChange(e, 'birthDate')}
+                      id="birthdate"
+                      name="birthdate"
+                      value={formData.birthdate}
+                      onChange={(e) => handleInputChange(e, 'birthdate')}
                       required
                     />
                   </div>
@@ -228,12 +228,12 @@ const EditPlayerForm = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="yearGroup">שנתון</Label>
+                    <Label htmlFor="year_group">שנתון</Label>
                     <Input
-                      id="yearGroup"
-                      name="yearGroup"
-                      value={formData.yearGroup}
-                      onChange={(e) => handleInputChange(e, 'yearGroup')}
+                      id="year_group"
+                      name="year_group"
+                      value={formData.year_group}
+                      onChange={(e) => handleInputChange(e, 'year_group')}
                       required
                     />
                   </div>
@@ -245,34 +245,34 @@ const EditPlayerForm = () => {
                 <h3 className="text-lg font-semibold mb-4">פרטי הורה</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="parentName">שם ההורה</Label>
+                    <Label htmlFor="parent_name">שם ההורה</Label>
                     <Input
-                      id="parentName"
-                      name="parentName"
-                      value={formData.parentName}
-                      onChange={(e) => handleInputChange(e, 'parentName')}
+                      id="parent_name"
+                      name="parent_name"
+                      value={formData.parent_name}
+                      onChange={(e) => handleInputChange(e, 'parent_name')}
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="parentPhone">טלפון הורה</Label>
+                    <Label htmlFor="parent_phone">טלפון הורה</Label>
                     <Input
-                      id="parentPhone"
-                      name="parentPhone"
-                      value={formData.parentPhone}
-                      onChange={(e) => handleInputChange(e, 'parentPhone')}
+                      id="parent_phone"
+                      name="parent_phone"
+                      value={formData.parent_phone}
+                      onChange={(e) => handleInputChange(e, 'parent_phone')}
                       dir="ltr"
                       required
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <Label htmlFor="parentEmail">אימייל הורה</Label>
+                    <Label htmlFor="parent_email">אימייל הורה</Label>
                     <Input
-                      id="parentEmail"
-                      name="parentEmail"
+                      id="parent_email"
+                      name="parent_email"
                       type="email"
-                      value={formData.parentEmail}
-                      onChange={(e) => handleInputChange(e, 'parentEmail')}
+                      value={formData.parent_email}
+                      onChange={(e) => handleInputChange(e, 'parent_email')}
                       dir="ltr"
                       required
                     />
