@@ -56,28 +56,32 @@ const PublicRegistrationForm = () => {
       }
 
       try {
+        // שינוי הקריאה לשרת כדי לקבל את הנתונים הנכונים
         const { data: linkData, error: linkError } = await supabase
           .from('registration_links')
           .select(`
             id,
             custom_message,
             coach_id,
-            coaches (
+            coaches!inner (
               id,
               full_name
             )
           `)
           .eq('id', linkId)
-          .single();
+          .maybeSingle();
 
         if (linkError || !linkData) {
+          console.error('Link error:', linkError);
           toast.error('הלינק אינו תקין או שפג תוקפו');
           return;
         }
 
+        // עדכון אופן הגישה לנתונים מהתשובה
+        const coach = linkData.coaches;
         setCoachData({
           id: linkData.coach_id,
-          full_name: linkData.coaches.full_name,
+          full_name: coach.full_name,
           custom_message: linkData.custom_message
         });
       } catch (error: any) {
@@ -359,4 +363,3 @@ const PublicRegistrationForm = () => {
 };
 
 export default PublicRegistrationForm;
-
