@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -56,14 +55,13 @@ const PublicRegistrationForm = () => {
       }
 
       try {
-        // שינוי הקריאה לשרת כדי לקבל את הנתונים הנכונים
         const { data: linkData, error: linkError } = await supabase
           .from('registration_links')
           .select(`
             id,
             custom_message,
             coach_id,
-            coaches!inner (
+            coaches!inner(
               id,
               full_name
             )
@@ -77,11 +75,9 @@ const PublicRegistrationForm = () => {
           return;
         }
 
-        // עדכון אופן הגישה לנתונים מהתשובה
-        const coach = linkData.coaches;
         setCoachData({
           id: linkData.coach_id,
-          full_name: coach.full_name,
+          full_name: linkData.coaches.full_name,
           custom_message: linkData.custom_message
         });
       } catch (error: any) {
@@ -97,7 +93,6 @@ const PublicRegistrationForm = () => {
     e.preventDefault();
     if (!coachData) return;
 
-    // בסיסית ולידציה
     if (!formData.full_name || !formData.email || !formData.phone) {
       toast.error('נא למלא את כל השדות החובה');
       return;
@@ -164,7 +159,6 @@ const PublicRegistrationForm = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* פרטים אישיים */}
               <section>
                 <h3 className="text-lg font-semibold mb-4">פרטים אישיים</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -234,7 +228,6 @@ const PublicRegistrationForm = () => {
                 </div>
               </section>
 
-              {/* פרטי מועדון */}
               <section>
                 <h3 className="text-lg font-semibold mb-4">פרטי מועדון</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -271,7 +264,6 @@ const PublicRegistrationForm = () => {
                 </div>
               </section>
 
-              {/* פרטי הורה */}
               <section>
                 <h3 className="text-lg font-semibold mb-4">פרטי הורה</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -311,7 +303,6 @@ const PublicRegistrationForm = () => {
                 </div>
               </section>
 
-              {/* מידע נוסף */}
               <section>
                 <h3 className="text-lg font-semibold mb-4">מידע נוסף</h3>
                 <div className="space-y-4">
