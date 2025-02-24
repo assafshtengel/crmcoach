@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,15 +12,15 @@ interface PlayerProfile {
   full_name: string;
   email: string;
   phone: string;
-  birthDate: string;
+  birthdate: string;
   city: string;
   club: string;
-  yearGroup: string;
+  year_group: string;
   position: string;
   injuries?: string;
-  parentName: string;
-  parentPhone: string;
-  parentEmail: string;
+  parent_name: string;
+  parent_phone: string;
+  parent_email: string;
   notes?: string;
 }
 
@@ -153,7 +154,7 @@ const PlayerProfile = () => {
                 </div>
                 <div>
                   <Label className="font-medium text-indigo-900">תאריך לידה</Label>
-                  <p className="mt-1 text-lg">{player.birthDate}</p>
+                  <p className="mt-1 text-lg">{player.birthdate}</p>
                 </div>
               </div>
 
@@ -173,7 +174,7 @@ const PlayerProfile = () => {
                   </div>
                   <div>
                     <Label className="font-medium text-indigo-900">שנתון</Label>
-                    <p className="mt-1 text-lg">{player.yearGroup}</p>
+                    <p className="mt-1 text-lg">{player.year_group}</p>
                   </div>
                 </div>
               </div>
@@ -191,15 +192,15 @@ const PlayerProfile = () => {
               <div className="space-y-4 p-4 bg-indigo-50/50 rounded-lg">
                 <div>
                   <Label className="font-medium text-indigo-900">שם ההורה</Label>
-                  <p className="mt-1 text-lg">{player.parentName}</p>
+                  <p className="mt-1 text-lg">{player.parent_name}</p>
                 </div>
                 <div>
                   <Label className="font-medium text-indigo-900">טלפון הורה</Label>
-                  <p className="mt-1 text-lg" dir="ltr">{player.parentPhone}</p>
+                  <p className="mt-1 text-lg" dir="ltr">{player.parent_phone}</p>
                 </div>
                 <div>
                   <Label className="font-medium text-indigo-900">אימייל הורה</Label>
-                  <p className="mt-1 text-lg" dir="ltr">{player.parentEmail}</p>
+                  <p className="mt-1 text-lg" dir="ltr">{player.parent_email}</p>
                 </div>
               </div>
             </CardContent>

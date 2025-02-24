@@ -595,39 +595,60 @@ export type Database = {
       players: {
         Row: {
           birthdate: string | null
+          city: string | null
+          club: string | null
           coach_id: string | null
           created_at: string
           email: string
           full_name: string
           id: string
+          injuries: string | null
           notes: string | null
+          parent_email: string | null
+          parent_name: string | null
+          parent_phone: string | null
           phone: string | null
           position: string | null
           profile_image: string | null
+          year_group: string | null
         }
         Insert: {
           birthdate?: string | null
+          city?: string | null
+          club?: string | null
           coach_id?: string | null
           created_at?: string
           email: string
           full_name: string
           id?: string
+          injuries?: string | null
           notes?: string | null
+          parent_email?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
           phone?: string | null
           position?: string | null
           profile_image?: string | null
+          year_group?: string | null
         }
         Update: {
           birthdate?: string | null
+          city?: string | null
+          club?: string | null
           coach_id?: string | null
           created_at?: string
           email?: string
           full_name?: string
           id?: string
+          injuries?: string | null
           notes?: string | null
+          parent_email?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
           phone?: string | null
           position?: string | null
           profile_image?: string | null
+          year_group?: string | null
         }
         Relationships: [
           {
