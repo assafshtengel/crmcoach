@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,7 +56,11 @@ const EditPlayerForm = () => {
   useEffect(() => {
     const fetchPlayerData = async () => {
       const playerId = location.state?.playerId;
-      if (!playerId) return;
+      if (!playerId) {
+        toast.error('לא נמצא מזהה שחקן');
+        navigate(-1);
+        return;
+      }
 
       try {
         const { data, error } = await supabase
@@ -67,17 +70,33 @@ const EditPlayerForm = () => {
           .single();
 
         if (error) throw error;
+
         if (data) {
-          setFormData(data);
+          setFormData({
+            full_name: data.full_name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            birthdate: data.birthdate || '',
+            city: data.city || '',
+            club: data.club || '',
+            year_group: data.year_group || '',
+            position: data.position || '',
+            injuries: data.injuries || '',
+            parent_name: data.parent_name || '',
+            parent_phone: data.parent_phone || '',
+            parent_email: data.parent_email || '',
+            notes: data.notes || ''
+          });
         }
       } catch (error) {
         console.error('Error fetching player data:', error);
         toast.error('שגיאה בטעינת פרטי השחקן');
+        navigate(-1);
       }
     };
 
     fetchPlayerData();
-  }, [location.state]);
+  }, [location.state, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
