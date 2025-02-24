@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2 } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { format, subMonths, startOfMonth, endOfMonth, isAfter, isBefore } from 'date-fns';
+import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Toaster } from "@/components/ui/toaster";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface DashboardStats {
   totalPlayers: number;
@@ -76,7 +75,6 @@ const DashboardCoach = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [upcomingSessions, setUpcomingSessions] = useState<UpcomingSession[]>([]);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
-  const [isUpcomingSessionsOpen, setIsUpcomingSessionsOpen] = useState(false);
 
   const fetchData = async (userId: string) => {
     try {
@@ -224,7 +222,7 @@ const DashboardCoach = () => {
           user
         }
       } = await supabase.auth.getUser();
-      if (!user) throw new Error('לא נמצא משתמש מחובר');
+      if (!user) throw new Error('��א נמצא משתמש מחובר');
       const session = upcomingSessions.find(s => s.id === sessionId);
       if (!session) throw new Error('לא נמצא מפגש');
       await supabase.from('notifications').insert({
@@ -344,251 +342,231 @@ const DashboardCoach = () => {
       </div>;
   }
 
-  const getStatsColor = (value: number, type: string) => {
-    switch (type) {
-      case 'attendance':
-        return value < 70 ? 'text-red-500' : value < 85 ? 'text-orange-500' : 'text-green-500';
-      case 'sessions':
-        return value === 0 ? 'text-red-500' : value < 3 ? 'text-orange-500' : 'text-green-500';
-      default:
-        return value === 0 ? 'text-orange-500' : 'text-green-500';
-    }
-  };
-
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <header className="w-full bg-[#1A1F2C] dark:bg-gray-800 text-white py-6 mb-8 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="text-white hover:text-white/80 hover:bg-gray-700 transition-all duration-300" onClick={() => setIsLogoutDialogOpen(true)}>
-              <LogOut className="h-5 w-5" />
-              <span className="sr-only">התנתק</span>
-            </Button>
-            <h1 className="text-2xl sm:text-3xl font-bold">ברוך הבא, מאמן</h1>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Button variant="ghost" className="text-white hover:text-white/80 transition-all duration-300 hover:scale-105" onClick={() => navigate('/analytics')}>
-              <PieChart className="h-4 w-4" />
-              <span className="hidden sm:inline">דוחות וסטטיסטיקות</span>
-            </Button>
-
-            <Button variant="ghost" className="text-white hover:text-white/80 transition-all duration-300 hover:scale-105" onClick={() => navigate('/registration-links')}>
-              <Share2 className="h-4 w-4" />
-              <span className="hidden sm:inline">לינקי הרשמה</span>
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative text-white hover:text-white/80 transition-all duration-300 hover:scale-105">
-                  <Bell className="h-4 w-4" />
-                  {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
-                      {unreadCount}
-                    </span>}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 bg-white dark:bg-gray-800">
-                <div className="p-2 border-b dark:border-gray-700">
-                  <h3 className="font-semibold text-lg px-2 py-1 dark:text-white">התראות</h3>
-                </div>
-                <ScrollArea className="h-[400px]">
-                  {notifications.length > 0 ? <div className="py-2">
-                      {notifications.map(notification => <div key={notification.id} className={`relative w-full text-right px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${!notification.is_read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
-                          <div className="flex justify-between items-start">
-                            <p className="text-sm text-gray-900 dark:text-gray-100">{notification.message}</p>
-                            {!notification.is_read && <Button variant="ghost" size="sm" className="h-6 ml-2 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={e => markAsRead(notification.id, e)}>
-                                <Check className="h-4 w-4" />
-                              </Button>}
-                          </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {format(new Date(notification.created_at), 'dd/MM/yyyy HH:mm', {
+      <header className="w-full bg-[#2C3E50] text-white py-6 mb-8 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6 text-white/90" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">ברוך הבא, מאמן</h1>
+                <p className="text-white/70 text-sm">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: he })}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" className="text-white hover:bg-white/10">
+                <Share2 className="h-5 w-5 mr-2" />
+                <span className="hidden sm:inline">לינקי הרשמה</span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative text-white hover:bg-white/10">
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && 
+                      <span className="absolute -top-1 -right-1 bg-[#E74C3C] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                        {unreadCount}
+                      </span>
+                    }
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  <div className="p-2 border-b dark:border-gray-700">
+                    <h3 className="font-semibold text-lg px-2 py-1 dark:text-white">התראות</h3>
+                  </div>
+                  <ScrollArea className="h-[400px]">
+                    {notifications.length > 0 ? <div className="py-2">
+                        {notifications.map(notification => <div key={notification.id} className={`relative w-full text-right px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${!notification.is_read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                            <div className="flex justify-between items-start">
+                              <p className="text-sm text-gray-900 dark:text-gray-100">{notification.message}</p>
+                              {!notification.is_read && <Button variant="ghost" size="sm" className="h-6 ml-2 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={e => markAsRead(notification.id, e)}>
+                                  <Check className="h-4 w-4" />
+                                </Button>}
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {format(new Date(notification.created_at), 'dd/MM/yyyy HH:mm', {
                         locale: he
                       })}
-                          </p>
-                        </div>)}
-                    </div> : <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-                      אין התראות חדשות
-                    </div>}
-                </ScrollArea>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button variant="ghost" className="text-white hover:text-white/80 transition-all duration-300 hover:scale-105" onClick={() => navigate('/profile-coach')}>
-              <Settings className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">פרופיל</span>
-            </Button>
+                            </p>
+                          </div>)}
+                      </div> : <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+                        אין התראות חדשות
+                      </div>}
+                  </ScrollArea>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => navigate('/profile-coach')}>
+                <Settings className="h-5 w-5 mr-2" />
+                <span className="hidden sm:inline">פרופיל</span>
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setIsLogoutDialogOpen(true)}>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-gray-800/60 transition-all duration-300 hover:scale-105">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#27AE60]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium dark:text-white">שחקנים רשומים</CardTitle>
-              <Users className="h-4 w-4 text-primary" />
+              <CardTitle className="text-lg font-medium">שחקנים פעילים</CardTitle>
+              <Users className="h-5 w-5 text-[#27AE60]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {stats.totalPlayers}
-              </div>
+              <div className="text-3xl font-bold text-[#2C3E50]">{stats.totalPlayers}</div>
+              <p className="text-sm text-gray-500">רשומים במערכת</p>
             </CardContent>
           </Card>
 
-          <Card className="col-span-1 sm:col-span-2 lg:col-span-2 bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm">
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium dark:text-white">מפגשים לפי חודשים</CardTitle>
-              <BarChart2 className="h-4 w-4 text-primary" />
+              <CardTitle className="text-lg font-medium">מפגשים קרובים</CardTitle>
+              <Calendar className="h-5 w-5 text-[#3498DB]" />
             </CardHeader>
-            <CardContent className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={getMonthlySessionsData()} margin={{
-                top: 5,
-                right: 30,
-                left: 20,
-                bottom: 5
-              }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="מפגשים" />
-                </BarChart>
-              </ResponsiveContainer>
+            <CardContent>
+              <div className="text-3xl font-bold text-[#2C3E50]">{stats.upcomingSessions}</div>
+              <p className="text-sm text-gray-500">בשבוע הקרוב</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F]">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">תזכורות שנשלחו</CardTitle>
+              <Bell className="h-5 w-5 text-[#F1C40F]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-[#2C3E50]">{stats.totalReminders}</div>
+              <p className="text-sm text-gray-500">סה״כ תזכורות</p>
             </CardContent>
           </Card>
         </div>
 
-        <Collapsible open={isUpcomingSessionsOpen} onOpenChange={setIsUpcomingSessionsOpen} className="w-full">
-          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm">
-            <CollapsibleTrigger className="w-full">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 cursor-pointer">
-                <div className="flex items-center space-x-2">
-                  <CardTitle className="dark:text-white">מפגשים קרובים</CardTitle>
-                  <span className="text-sm text-muted-foreground">
-                    ({upcomingSessions.length} מפגשים)
-                  </span>
-                </div>
-                {isUpcomingSessionsOpen ? <ChevronUp className="h-4 w-4 text-gray-500 transition-transform duration-200" /> : <ChevronDown className="h-4 w-4 text-gray-500 transition-transform duration-200" />}
-              </CardHeader>
-            </CollapsibleTrigger>
+        <Card className="bg-white/90 shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+            <CardTitle className="text-xl font-semibold text-[#2C3E50]">מפגשים קרובים</CardTitle>
+            <Button variant="outline" onClick={() => navigate('/new-session')}>
+              <CalendarPlus className="h-4 w-4 mr-2" />
+              קביעת מפגש חדש
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {upcomingSessions.map((session) => (
+                <Card key={session.id} className="bg-gray-50 hover:bg-white transition-all duration-300">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-[#2C3E50]">{session.player.full_name}</h3>
+                        <p className="text-sm text-gray-500">
+                          {session.session_date} | {session.session_time}
+                        </p>
+                      </div>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <FileEdit className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>סיכום מפגש</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 pt-4">
+                            <Textarea placeholder="הזן את סיכום המפגש כאן..." className="h-32" />
+                            <Button className="w-full">שמור סיכום</Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-500">{session.location || 'לא צוין מיקום'}</span>
+                      {!session.reminder_sent ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSendReminder(session.id)}
+                          className="text-[#27AE60] hover:text-[#219A52]"
+                        >
+                          <Send className="h-4 w-4 mr-1" />
+                          שלח תזכורת
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-[#27AE60] flex items-center">
+                          <Check className="h-4 w-4 mr-1" />
+                          נשלחה תזכורת
+                        </span>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-            <CollapsibleContent className="animate-accordion-down">
-              <CardContent className="bg-zinc-200 hover:bg-zinc-100 rounded-3xl">
-                <div className="relative overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="dark:text-gray-300 text-right">תאריך</TableHead>
-                        <TableHead className="dark:text-gray-300 text-right">שעה</TableHead>
-                        <TableHead className="dark:text-gray-300 text-right">שם השחקן</TableHead>
-                        <TableHead className="dark:text-gray-300 text-right">מיקום</TableHead>
-                        <TableHead className="hidden md:table-cell dark:text-gray-300 text-right">הערות</TableHead>
-                        <TableHead className="dark:text-gray-300 text-right">סטטוס תזכורת</TableHead>
-                        <TableHead className="dark:text-gray-300 text-right">פעולות</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {upcomingSessions.map(session => (
-                        <TableRow key={session.id} className="dark:text-gray-300">
-                          <TableCell className="text-right">{session.session_date}</TableCell>
-                          <TableCell className="text-right">{session.session_time}</TableCell>
-                          <TableCell className="text-right">{session.player.full_name}</TableCell>
-                          <TableCell className="text-right">{session.location}</TableCell>
-                          <TableCell className="hidden md:table-cell max-w-xs truncate text-right">
-                            {session.notes || 'אין הערות'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {session.reminder_sent ? (
-                              <span className="inline-flex items-center text-green-500 dark:text-green-400">
-                                <Check className="h-4 w-4 mr-1" />
-                                נשלח
-                              </span>
-                            ) : (
-                              <span className="text-orange-500 dark:text-orange-400">ממתין</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleSendReminder(session.id)}
-                              disabled={session.reminder_sent}
-                              className="transition-all duration-300 hover:scale-105"
-                            >
-                              <Send className="h-4 w-4" />
-                              <span className="sr-only">שלח תזכורת</span>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Button 
+            className="h-auto py-6 bg-[#2C3E50] hover:bg-[#2C3E50]/90"
+            onClick={() => navigate('/new-player')}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <UserPlus className="h-6 w-6" />
+              <span>הוספת שחקן חדש</span>
+            </div>
+          </Button>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary" onClick={() => navigate('/new-player')}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold dark:text-white">רישום שחקן חדש</CardTitle>
-              <UserPlus className="h-6 w-6 text-primary dark:text-primary/80" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-500 dark:text-gray-400">הוסף שחקן חדש למערכת</p>
-            </CardContent>
-          </Card>
+          <Button 
+            className="h-auto py-6 bg-[#27AE60] hover:bg-[#27AE60]/90"
+            onClick={() => navigate('/new-session')}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <CalendarPlus className="h-6 w-6" />
+              <span>קביעת מפגש חדש</span>
+            </div>
+          </Button>
 
-          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary" onClick={() => navigate('/new-session')}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold dark:text-white">קביעת מפגש חדש</CardTitle>
-              <CalendarPlus className="h-6 w-6 text-primary dark:text-primary/80" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-500 dark:text-gray-400">קבע מפגש אימון חדש</p>
-            </CardContent>
-          </Card>
+          <Button 
+            className="h-auto py-6 bg-[#3498DB] hover:bg-[#3498DB]/90"
+            onClick={() => navigate('/players-list')}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <Users className="h-6 w-6" />
+              <span>רשימת שחקנים</span>
+            </div>
+          </Button>
 
-          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary" onClick={() => navigate('/players-list')}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold dark:text-white">ריכוז כל השחקנים</CardTitle>
-              <Users className="h-6 w-6 text-primary dark:text-primary/80" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-500 dark:text-gray-400">צפה בכל השחקנים הרשומים</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary" onClick={() => navigate('/sessions-list')}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold dark:text-white">ריכוז כל המפגשים</CardTitle>
-              <Calendar className="h-6 w-6 text-primary dark:text-primary/80" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-500 dark:text-gray-400">צפה בכל המפגשים המתוכננים</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary" onClick={() => navigate('/notifications')}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold dark:text-white">מעקב תזכורות</CardTitle>
-              <Bell className="h-6 w-6 text-primary dark:text-primary/80" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-500 dark:text-gray-400">נהל את מערך התזכורות</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-300 cursor-pointer transform hover:scale-105 border-2 border-primary/10 hover:border-primary" onClick={() => navigate('/analytics')}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-semibold dark:text-white">דוחות וסטטיסטיקות</CardTitle>
-              <PieChart className="h-6 w-6 text-primary dark:text-primary/80" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-500 dark:text-gray-400">צפה בנתונים וניתוחים</p>
-            </CardContent>
-          </Card>
+          <Button 
+            className="h-auto py-6 bg-[#F1C40F] hover:bg-[#F1C40F]/90"
+            onClick={() => navigate('/analytics')}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <BarChart2 className="h-6 w-6" />
+              <span>דוחות וסטטיסטיקות</span>
+            </div>
+          </Button>
         </div>
+
+        <Card className="bg-white/90 shadow-lg">
+          <CardHeader className="border-b pb-4">
+            <CardTitle className="text-xl font-semibold text-[#2C3E50]">סטטיסטיקת מפגשים</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={getMonthlySessionsData()}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="name" stroke="#6B7280" />
+                <YAxis stroke="#6B7280" />
+                <Tooltip />
+                <Bar dataKey="מפגשים" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
 
       <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
