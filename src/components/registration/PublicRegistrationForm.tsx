@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,16 @@ interface PlayerFormData {
   parent_phone: string;
   parent_email: string;
   notes?: string;
+}
+
+interface RegistrationLinkData {
+  id: string;
+  custom_message: string | null;
+  coach_id: string;
+  coaches: {
+    id: string;
+    full_name: string;
+  };
 }
 
 const PublicRegistrationForm = () => {
@@ -67,7 +78,7 @@ const PublicRegistrationForm = () => {
             )
           `)
           .eq('id', linkId)
-          .maybeSingle();
+          .maybeSingle() as { data: RegistrationLinkData | null; error: any };
 
         if (linkError || !linkData) {
           console.error('Link error:', linkError);
@@ -78,7 +89,7 @@ const PublicRegistrationForm = () => {
         setCoachData({
           id: linkData.coach_id,
           full_name: linkData.coaches.full_name,
-          custom_message: linkData.custom_message
+          custom_message: linkData.custom_message || undefined
         });
       } catch (error: any) {
         console.error('Error verifying link:', error);
