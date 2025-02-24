@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from '@/lib/supabase';
@@ -14,6 +13,7 @@ import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Toaster } from "@/components/ui/toaster";
 
 interface DashboardStats {
   totalPlayers: number;
@@ -369,6 +369,11 @@ const DashboardCoach = () => {
             <Button variant="ghost" className="text-white hover:text-white/80 transition-all duration-300 hover:scale-105" onClick={() => navigate('/analytics')}>
               <PieChart className="h-4 w-4" />
               <span className="hidden sm:inline">דוחות וסטטיסטיקות</span>
+            </Button>
+
+            <Button variant="ghost" className="text-white hover:text-white/80 transition-all duration-300 hover:scale-105" onClick={() => navigate('/registration-links')}>
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:inline">לינקי הרשמה</span>
             </Button>
             
             <DropdownMenu>
