@@ -171,6 +171,33 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_content: {
+        Row: {
+          content: string
+          content_type: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          content_type: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       evaluation_daily_responses: {
         Row: {
           category_averages: Json | null
@@ -567,6 +594,7 @@ export type Database = {
       }
       players: {
         Row: {
+          birthdate: string | null
           coach_id: string | null
           created_at: string
           email: string
@@ -578,6 +606,7 @@ export type Database = {
           profile_image: string | null
         }
         Insert: {
+          birthdate?: string | null
           coach_id?: string | null
           created_at?: string
           email: string
@@ -589,6 +618,7 @@ export type Database = {
           profile_image?: string | null
         }
         Update: {
+          birthdate?: string | null
           coach_id?: string | null
           created_at?: string
           email?: string
@@ -683,6 +713,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      short_term_goals: {
+        Row: {
+          created_at: string
+          goals: string[]
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goals?: string[]
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goals?: string[]
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      training_videos: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          unlock_date: string | null
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title: string
+          unlock_date?: string | null
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          unlock_date?: string | null
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
