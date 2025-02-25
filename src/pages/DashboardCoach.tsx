@@ -13,7 +13,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
-import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface DashboardStats {
   totalPlayers: number;
