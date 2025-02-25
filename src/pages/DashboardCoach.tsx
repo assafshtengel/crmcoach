@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
@@ -574,7 +574,7 @@ const DashboardCoach = () => {
 
           <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-medium">תזכורות שנ��לחו</CardTitle>
+              <CardTitle className="text-lg font-medium">תזכורות שנשלחו</CardTitle>
               <Bell className="h-5 w-5 text-[#F1C40F]" />
             </CardHeader>
             <CardContent>
@@ -632,6 +632,16 @@ const DashboardCoach = () => {
 
           <Button 
             className="h-auto py-6 bg-[#F1C40F] hover:bg-[#F1C40F]/90"
+            onClick={() => navigate('/session-summaries')}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <FileText className="h-6 w-6" />
+              <span>סיכומי מפגשים</span>
+            </div>
+          </Button>
+
+          <Button 
+            className="h-auto py-6 bg-[#9B59B6] hover:bg-[#9B59B6]/90"
             onClick={() => navigate('/analytics')}
           >
             <div className="flex flex-col items-center gap-2">
@@ -664,7 +674,7 @@ const DashboardCoach = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>האם אתה בטוח שברצונך להתנתק?</AlertDialogTitle>
             <AlertDialogDescription>
-              לאחר ההתנתק��ת תצטרך להתחבר מחדש כדי לגשת למערכת
+              לאחר ההתנתקות תצטרך להתחבר מחדש כדי לגשת למערכת
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-row-reverse sm:flex-row gap-2">
