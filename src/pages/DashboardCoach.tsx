@@ -145,7 +145,7 @@ const DashboardCoach = () => {
       ]);
 
       if (upcomingSessionsResult.data) {
-        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map(session => ({
+        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map((session: SessionResponse) => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
