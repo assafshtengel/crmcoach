@@ -12,7 +12,7 @@ import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
 
 interface DashboardStats {
   totalPlayers: number;
@@ -82,7 +82,6 @@ const DashboardCoach = () => {
       const lastMonth = subMonths(today, 1);
       const twoMonthsAgo = subMonths(today, 2);
       
-      // שליפת כל המפגשים
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
         .select('session_date')
@@ -90,7 +89,6 @@ const DashboardCoach = () => {
       
       if (sessionsError) throw sessionsError;
 
-      // חישוב מפגשים לפי תקופות
       const currentMonthPastSessions = sessionsData?.filter(session => 
         isBefore(new Date(session.session_date), today) && 
         isAfter(new Date(session.session_date), firstDayOfMonth)
@@ -111,7 +109,6 @@ const DashboardCoach = () => {
         isAfter(new Date(session.session_date), startOfMonth(twoMonthsAgo))
       )?.length || 0;
 
-      // שליפת נתוני שחקנים ותזכורות
       const [playersCountResult, remindersResult, upcomingSessionsResult] = await Promise.all([
         supabase
           .from('players')
@@ -279,6 +276,38 @@ const DashboardCoach = () => {
         variant: "destructive",
         title: "שגיאה בהתנתקות",
         description: "אנא נסה שוב"
+      });
+    }
+  };
+
+  const handleSaveSessionSummary = async (sessionId: string, data: any) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('לא נמצא משתמש מחובר');
+
+      const { error } = await supabase.from('session_summaries').insert({
+        session_id: sessionId,
+        coach_id: user.id,
+        summary_text: data.summary_text,
+        achieved_goals: data.achieved_goals.split('\n').filter(Boolean),
+        future_goals: data.future_goals.split('\n').filter(Boolean),
+        additional_notes: data.additional_notes,
+        progress_rating: data.progress_rating,
+        next_session_focus: data.next_session_focus
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "הסיכום נשמר בהצלחה",
+        description: "סיכום המפגש נשמר במערכת"
+      });
+    } catch (error) {
+      console.error('Error saving session summary:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בשמירת הסיכום",
+        description: "אנא נסה שוב מאוחר יותר"
       });
     }
   };
@@ -471,13 +500,16 @@ const DashboardCoach = () => {
                             <FileEdit className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="max-w-2xl">
                           <DialogHeader>
-                            <DialogTitle>סיכום מפגש</DialogTitle>
+                            <DialogTitle>סיכום מפגש - {session.player.full_name}</DialogTitle>
                           </DialogHeader>
-                          <div className="space-y-4 pt-4">
-                            <Textarea placeholder="הזן את סיכום המפגש כאן..." className="h-32" />
-                            <Button className="w-full">שמור סיכום</Button>
+                          <div className="mt-4">
+                            <SessionSummaryForm
+                              sessionId={session.id}
+                              onSubmit={(data) => handleSaveSessionSummary(session.id, data)}
+                              onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()}
+                            />
                           </div>
                         </DialogContent>
                       </Dialog>
