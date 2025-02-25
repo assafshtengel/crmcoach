@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -315,8 +314,15 @@ const DashboardCoach = () => {
 
       toast({
         title: "הסיכום נשמר בהצלחה",
-        description: "סיכום המפגש נשמר במערכת"
+        description: "סיכום המפגש נשמר במערכת",
+        duration: 1000
       });
+
+      setTimeout(() => {
+        document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click();
+        navigate('/dashboard-coach');
+      }, 1000);
+
     } catch (error) {
       console.error('Error saving session summary:', error);
       toast({
@@ -514,11 +520,13 @@ const DashboardCoach = () => {
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
-                            <DialogTitle>סיכום מפגש - {session.player.full_name}</DialogTitle>
+                            <DialogTitle>סיכום מפגש</DialogTitle>
                           </DialogHeader>
                           <div className="mt-4">
                             <SessionSummaryForm
                               sessionId={session.id}
+                              playerName={session.player.full_name}
+                              sessionDate={session.session_date}
                               onSubmit={(data) => handleSaveSessionSummary(session.id, data)}
                               onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()}
                             />

@@ -7,6 +7,8 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Slider } from "@/components/ui/slider";
+import { format } from "date-fns";
+import { he } from 'date-fns/locale';
 
 const formSchema = z.object({
   summary_text: z.string().min(1, "נדרש למלא סיכום"),
@@ -19,11 +21,13 @@ const formSchema = z.object({
 
 interface SessionSummaryFormProps {
   sessionId: string;
-  onSubmit: (data: z.infer<typeof formSchema>) => void;
+  playerName: string;
+  sessionDate: string;
+  onSubmit: (data: z.infer<typeof formSchema>) => Promise<void>;
   onCancel: () => void;
 }
 
-export function SessionSummaryForm({ sessionId, onSubmit, onCancel }: SessionSummaryFormProps) {
+export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmit, onCancel }: SessionSummaryFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -36,9 +40,19 @@ export function SessionSummaryForm({ sessionId, onSubmit, onCancel }: SessionSum
     }
   });
 
+  const handleSubmit = async (data: z.infer<typeof formSchema>) => {
+    await onSubmit(data);
+  };
+
+  const formattedDate = format(new Date(sessionDate), 'dd/MM/yyyy', { locale: he });
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <div className="mb-6 text-center">
+        <h2 className="text-xl font-semibold mb-2">{playerName}</h2>
+        <p className="text-gray-600">{formattedDate}</p>
+      </div>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="summary_text"
