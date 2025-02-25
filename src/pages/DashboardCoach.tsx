@@ -320,7 +320,7 @@ const DashboardCoach = () => {
 
       setTimeout(() => {
         document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click();
-        navigate('/dashboard-coach');
+        navigate('/');
       }, 1000);
 
     } catch (error) {
@@ -481,7 +481,7 @@ const DashboardCoach = () => {
 
           <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-medium">תזכורות שנשלחו</CardTitle>
+              <CardTitle className="text-lg font-medium">תזכורות שנ��לחו</CardTitle>
               <Bell className="h-5 w-5 text-[#F1C40F]" />
             </CardHeader>
             <CardContent>
@@ -627,7 +627,7 @@ const DashboardCoach = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>האם אתה בטוח שברצונך להתנתק?</AlertDialogTitle>
             <AlertDialogDescription>
-              לאחר ההתנתקות תצטרך להתחבר מחדש כדי לגשת למערכת
+              לאחר ההתנתק��ת תצטרך להתחבר מחדש כדי לגשת למערכת
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-row-reverse sm:flex-row gap-2">
