@@ -482,7 +482,7 @@ const DashboardCoach = () => {
     </div>;
   }
 
-  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <header className="w-full bg-[#2C3E50] text-white py-6 mb-8 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
