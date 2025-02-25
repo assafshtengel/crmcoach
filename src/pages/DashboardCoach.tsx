@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, isBefore, isAfter } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -79,11 +80,12 @@ const DashboardCoach = () => {
   const fetchData = async (userId: string) => {
     try {
       const today = new Date();
-      const startCurrentMonth = startOfMonth(today);
-      const endCurrentMonth = endOfMonth(today);
+      const firstDayOfMonth = startOfMonth(today);
+      const lastDayOfMonth = endOfMonth(today);
       const lastMonth = subMonths(today, 1);
       const twoMonthsAgo = subMonths(today, 2);
       
+      // שליפת כל המפגשים
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
         .select('session_date')
@@ -91,34 +93,36 @@ const DashboardCoach = () => {
       
       if (sessionsError) throw sessionsError;
 
-      const currentMonthPastSessions = sessionsData.filter(session => 
+      // חישוב מפגשים לפי תקופות
+      const currentMonthPastSessions = sessionsData?.filter(session => 
         isBefore(new Date(session.session_date), today) && 
-        isAfter(new Date(session.session_date), startCurrentMonth)
-      ).length;
+        isAfter(new Date(session.session_date), firstDayOfMonth)
+      )?.length || 0;
 
-      const currentMonthFutureSessions = sessionsData.filter(session => 
+      const currentMonthFutureSessions = sessionsData?.filter(session => 
         isAfter(new Date(session.session_date), today) && 
-        isBefore(new Date(session.session_date), endCurrentMonth)
-      ).length;
+        isBefore(new Date(session.session_date), lastDayOfMonth)
+      )?.length || 0;
 
-      const lastMonthSessions = sessionsData.filter(session => 
-        isBefore(new Date(session.session_date), startCurrentMonth) && 
+      const lastMonthSessions = sessionsData?.filter(session => 
+        isBefore(new Date(session.session_date), firstDayOfMonth) && 
         isAfter(new Date(session.session_date), startOfMonth(lastMonth))
-      ).length;
+      )?.length || 0;
 
-      const twoMonthsAgoSessions = sessionsData.filter(session => 
+      const twoMonthsAgoSessions = sessionsData?.filter(session => 
         isBefore(new Date(session.session_date), startOfMonth(lastMonth)) && 
         isAfter(new Date(session.session_date), startOfMonth(twoMonthsAgo))
-      ).length;
+      )?.length || 0;
 
-      const [playersResult, remindersResult, upcomingSessionsResult] = await Promise.all([
+      // שליפת נתוני שחקנים ותזכורות
+      const [playersCountResult, remindersResult, upcomingSessionsResult] = await Promise.all([
         supabase
           .from('players')
-          .select('id', { count: 'exact' })
+          .select('id')
           .eq('coach_id', userId),
         supabase
           .from('notifications_log')
-          .select('id', { count: 'exact' })
+          .select('id')
           .eq('coach_id', userId)
           .eq('status', 'Sent'),
         supabase
@@ -130,7 +134,7 @@ const DashboardCoach = () => {
             notes,
             location,
             reminder_sent,
-            players!inner (
+            player:players (
               full_name
             )
           `)
@@ -142,18 +146,17 @@ const DashboardCoach = () => {
       ]);
 
       setStats({
-        totalPlayers: playersResult.count || 0,
+        totalPlayers: playersCountResult.data?.length || 0,
         upcomingSessions: currentMonthFutureSessions,
         currentMonthPastSessions,
         currentMonthFutureSessions,
         lastMonthSessions,
         twoMonthsAgoSessions,
-        totalReminders: remindersResult.count || 0
+        totalReminders: remindersResult.data?.length || 0
       });
 
       if (upcomingSessionsResult.data) {
-        const rawData = upcomingSessionsResult.data as unknown as SessionResponse[];
-        const formattedSessions: UpcomingSession[] = rawData.map(session => ({
+        const formattedSessions = upcomingSessionsResult.data.map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
@@ -161,11 +164,12 @@ const DashboardCoach = () => {
           location: session.location || '',
           reminder_sent: session.reminder_sent || false,
           player: {
-            full_name: session.players?.full_name || 'לא נמצא שחקן'
+            full_name: session.player?.full_name || 'לא נמצא שחקן'
           }
         }));
         setUpcomingSessions(formattedSessions);
       }
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast({
