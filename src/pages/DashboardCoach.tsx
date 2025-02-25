@@ -139,18 +139,8 @@ const DashboardCoach = () => {
           .limit(10)
       ]);
 
-      setStats({
-        totalPlayers: playersCountResult.data?.length || 0,
-        upcomingSessions: currentMonthFutureSessions,
-        currentMonthPastSessions,
-        currentMonthFutureSessions,
-        lastMonthSessions,
-        twoMonthsAgoSessions,
-        totalReminders: remindersResult.data?.length || 0
-      });
-
       if (upcomingSessionsResult.data) {
-        const formattedSessions = (upcomingSessionsResult.data as SessionResponse[]).map(session => ({
+        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
@@ -163,6 +153,16 @@ const DashboardCoach = () => {
         }));
         setUpcomingSessions(formattedSessions);
       }
+
+      setStats({
+        totalPlayers: playersCountResult.data?.length || 0,
+        upcomingSessions: currentMonthFutureSessions,
+        currentMonthPastSessions,
+        currentMonthFutureSessions,
+        lastMonthSessions,
+        twoMonthsAgoSessions,
+        totalReminders: remindersResult.data?.length || 0
+      });
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
