@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -75,6 +76,7 @@ const DashboardCoach = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [upcomingSessions, setUpcomingSessions] = useState<UpcomingSession[]>([]);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [isSessionsExpanded, setIsSessionsExpanded] = useState(false);
 
   const fetchData = async (userId: string) => {
     try {
@@ -585,18 +587,33 @@ const DashboardCoach = () => {
         </div>
 
         <Card className="bg-white/90 shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+          <CardHeader 
+            className="flex flex-row items-center justify-between border-b pb-4 cursor-pointer"
+            onClick={() => setIsSessionsExpanded(!isSessionsExpanded)}
+          >
             <CardTitle className="text-xl font-semibold text-[#2C3E50]">מפגשים קרובים</CardTitle>
-            <Button variant="outline" onClick={() => navigate('/new-session')}>
-              <CalendarPlus className="h-4 w-4 mr-2" />
-              קביעת מפגש חדש
-            </Button>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {upcomingSessions.map(session => renderSessionCard(session)).filter(Boolean)}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={(e) => {
+                e.stopPropagation();
+                navigate('/new-session');
+              }}>
+                <CalendarPlus className="h-4 w-4 mr-2" />
+                קביעת מפגש חדש
+              </Button>
+              {isSessionsExpanded ? (
+                <ChevronUp className="h-6 w-6 text-gray-500" />
+              ) : (
+                <ChevronDown className="h-6 w-6 text-gray-500" />
+              )}
             </div>
-          </CardContent>
+          </CardHeader>
+          {isSessionsExpanded && (
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {upcomingSessions.map(session => renderSessionCard(session)).filter(Boolean)}
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
