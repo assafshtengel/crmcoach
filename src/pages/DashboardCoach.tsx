@@ -660,7 +660,7 @@ const DashboardCoach = () => {
               <BarChart data={getMonthlySessionsData()}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis dataKey="name" stroke="#6B7280" />
-                <YAxis stroke="#6B7280" />
+                <YAxis stroke="#6B7280" tickCount={10} allowDecimals={false} />
                 <Tooltip />
                 <Bar dataKey="מפגשים" />
               </BarChart>
