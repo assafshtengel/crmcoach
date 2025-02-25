@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -44,7 +43,7 @@ interface SessionResponse {
   notes: string | null;
   location: string | null;
   reminder_sent: boolean | null;
-  players: {
+  player: {
     full_name: string;
   } | null;
 }
@@ -59,9 +58,7 @@ interface Notification {
 
 const DashboardCoach = () => {
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [stats, setStats] = useState<DashboardStats>({
@@ -156,7 +153,7 @@ const DashboardCoach = () => {
       });
 
       if (upcomingSessionsResult.data) {
-        const formattedSessions = upcomingSessionsResult.data.map(session => ({
+        const formattedSessions = (upcomingSessionsResult.data as SessionResponse[]).map(session => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
@@ -226,7 +223,7 @@ const DashboardCoach = () => {
           user
         }
       } = await supabase.auth.getUser();
-      if (!user) throw new Error('��א נמצא משתמש מחובר');
+      if (!user) throw new Error('לא נמצא משתמש מחובר');
       const session = upcomingSessions.find(s => s.id === sessionId);
       if (!session) throw new Error('לא נמצא מפגש');
       await supabase.from('notifications').insert({
