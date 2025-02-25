@@ -34,6 +34,7 @@ interface UpcomingSession {
   player: {
     full_name: string;
   };
+  has_summary?: boolean;
 }
 
 interface SessionResponse {
@@ -46,6 +47,7 @@ interface SessionResponse {
   player: {
     full_name: string;
   } | null;
+  session_summaries?: { id: string }[];
 }
 
 interface Notification {
@@ -130,6 +132,9 @@ const DashboardCoach = () => {
             reminder_sent,
             player:players (
               full_name
+            ),
+            session_summaries (
+              id
             )
           `)
           .eq('coach_id', userId)
@@ -149,7 +154,8 @@ const DashboardCoach = () => {
           reminder_sent: session.reminder_sent || false,
           player: {
             full_name: session.player?.full_name || 'לא נמצא שחקן'
-          }
+          },
+          has_summary: (session.session_summaries || []).length > 0
         }));
         setUpcomingSessions(formattedSessions);
       }
@@ -298,6 +304,14 @@ const DashboardCoach = () => {
 
       if (error) throw error;
 
+      setUpcomingSessions(prev => 
+        prev.map(session => 
+          session.id === sessionId 
+            ? { ...session, has_summary: true }
+            : session
+        )
+      );
+
       toast({
         title: "הסיכום נשמר בהצלחה",
         description: "סיכום המפגש נשמר במערכת"
@@ -314,11 +328,7 @@ const DashboardCoach = () => {
 
   useEffect(() => {
     const initializeDashboard = async () => {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await fetchData(user.id);
         await fetchNotifications(user.id);
@@ -368,8 +378,8 @@ const DashboardCoach = () => {
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>;
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>;
   }
 
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
@@ -496,8 +506,9 @@ const DashboardCoach = () => {
                       </div>
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className={session.has_summary ? "text-green-600" : ""}>
                             <FileEdit className="h-4 w-4" />
+                            {session.has_summary && <Check className="h-3 w-3 ml-1" />}
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">

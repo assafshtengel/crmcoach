@@ -719,6 +719,53 @@ export type Database = {
           },
         ]
       }
+      session_summaries: {
+        Row: {
+          achieved_goals: string[] | null
+          additional_notes: string | null
+          coach_id: string
+          created_at: string
+          future_goals: string[] | null
+          id: string
+          next_session_focus: string | null
+          progress_rating: number | null
+          session_id: string
+          summary_text: string
+        }
+        Insert: {
+          achieved_goals?: string[] | null
+          additional_notes?: string | null
+          coach_id: string
+          created_at?: string
+          future_goals?: string[] | null
+          id?: string
+          next_session_focus?: string | null
+          progress_rating?: number | null
+          session_id: string
+          summary_text: string
+        }
+        Update: {
+          achieved_goals?: string[] | null
+          additional_notes?: string | null
+          coach_id?: string
+          created_at?: string
+          future_goals?: string[] | null
+          id?: string
+          next_session_focus?: string | null
+          progress_rating?: number | null
+          session_id?: string
+          summary_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_summaries_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           coach_id: string
