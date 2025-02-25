@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { format, startOfMonth, endOfMonth, subMonths, isBefore, isAfter } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, isBefore, isAfter, isSameDay, isPast, formatDistance } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -333,6 +333,99 @@ const DashboardCoach = () => {
     }
   };
 
+  const renderSessionCard = (session: UpcomingSession) => {
+    const sessionDate = new Date(session.session_date);
+    const isToday = isSameDay(sessionDate, new Date());
+    const isPastSession = isPast(sessionDate);
+    const hasNoSummary = isPastSession && !session.has_summary;
+
+    if (isPastSession && session.has_summary) {
+      return null;
+    }
+
+    return (
+      <Card 
+        key={session.id} 
+        className={`bg-gray-50 hover:bg-white transition-all duration-300 ${
+          isToday ? 'border-l-4 border-l-blue-500 shadow-blue-200' :
+          hasNoSummary ? 'border-l-4 border-l-red-500 shadow-red-200' :
+          'border'
+        }`}
+      >
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-semibold text-[#2C3E50]">{session.player.full_name}</h3>
+              <p className="text-sm text-gray-500">
+                {session.session_date} | {session.session_time}
+              </p>
+            </div>
+            <div>
+              {isToday && (
+                <div className="flex items-center text-blue-600 text-sm font-medium">
+                  <Clock className="h-4 w-4 mr-1" />
+                  היום
+                </div>
+              )}
+              {hasNoSummary && (
+                <div className="flex items-center text-red-600 text-sm font-medium">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  חסר סיכום
+                </div>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">{session.location || 'לא צוין מיקום'}</span>
+            <div className="flex gap-2">
+              {!session.reminder_sent ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleSendReminder(session.id)}
+                  className="text-[#27AE60] hover:text-[#219A52]"
+                >
+                  <Send className="h-4 w-4 mr-1" />
+                  שלח תזכורת
+                </Button>
+              ) : (
+                <span className="text-sm text-[#27AE60] flex items-center">
+                  <Check className="h-4 w-4 mr-1" />
+                  נשלחה תזכורת
+                </span>
+              )}
+              {!session.has_summary && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <FileEdit className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>סיכום מפגש</DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-4">
+                      <SessionSummaryForm
+                        sessionId={session.id}
+                        playerName={session.player.full_name}
+                        sessionDate={session.session_date}
+                        onSubmit={(data) => handleSaveSessionSummary(session.id, data)}
+                        onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()}
+                      />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   useEffect(() => {
     const initializeDashboard = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -501,63 +594,7 @@ const DashboardCoach = () => {
           </CardHeader>
           <CardContent className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {upcomingSessions.map((session) => (
-                <Card key={session.id} className="bg-gray-50 hover:bg-white transition-all duration-300">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-[#2C3E50]">{session.player.full_name}</h3>
-                        <p className="text-sm text-gray-500">
-                          {session.session_date} | {session.session_time}
-                        </p>
-                      </div>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className={session.has_summary ? "text-green-600" : ""}>
-                            <FileEdit className="h-4 w-4" />
-                            {session.has_summary && <Check className="h-3 w-3 ml-1" />}
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>סיכום מפגש</DialogTitle>
-                          </DialogHeader>
-                          <div className="mt-4">
-                            <SessionSummaryForm
-                              sessionId={session.id}
-                              playerName={session.player.full_name}
-                              sessionDate={session.session_date}
-                              onSubmit={(data) => handleSaveSessionSummary(session.id, data)}
-                              onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()}
-                            />
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">{session.location || 'לא צוין מיקום'}</span>
-                      {!session.reminder_sent ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleSendReminder(session.id)}
-                          className="text-[#27AE60] hover:text-[#219A52]"
-                        >
-                          <Send className="h-4 w-4 mr-1" />
-                          שלח תזכורת
-                        </Button>
-                      ) : (
-                        <span className="text-sm text-[#27AE60] flex items-center">
-                          <Check className="h-4 w-4 mr-1" />
-                          נשלחה תזכורת
-                        </span>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {upcomingSessions.map(session => renderSessionCard(session)).filter(Boolean)}
             </div>
           </CardContent>
         </Card>
