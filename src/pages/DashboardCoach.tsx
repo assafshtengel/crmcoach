@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -47,7 +48,7 @@ interface SessionResponse {
   player: {
     full_name: string;
   } | null;
-  session_summaries?: { id: string }[];
+  session_summaries: { id: string }[] | null;
 }
 
 interface Notification {
@@ -145,7 +146,7 @@ const DashboardCoach = () => {
       ]);
 
       if (upcomingSessionsResult.data) {
-        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map((session: SessionResponse) => ({
+        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map((session: any) => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
@@ -155,7 +156,7 @@ const DashboardCoach = () => {
           player: {
             full_name: session.player?.full_name || 'לא נמצא שחקן'
           },
-          has_summary: (session.session_summaries || []).length > 0
+          has_summary: Array.isArray(session.session_summaries) && session.session_summaries.length > 0
         }));
         setUpcomingSessions(formattedSessions);
       }
