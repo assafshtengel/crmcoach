@@ -16,6 +16,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<DashboardCoach />} />
+        <Route path="/index" element={<Navigate to="/" replace />} />
         <Route path="/sessions" element={<SessionsList />} />
         <Route path="/session-summaries" element={<SessionSummaries />} />
         <Route path="/players-list" element={<PlayersList />} />
