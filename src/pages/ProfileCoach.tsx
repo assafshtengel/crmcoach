@@ -106,7 +106,7 @@ const ProfileCoach = () => {
 
       toast.success('הפרופיל עודכן בהצלחה');
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/');
       }, 1000); // מחכה שניה אחת כדי שהמשתמש יראה את הודעת ההצלחה לפני הניווט
 
     } catch (error: any) {
@@ -140,7 +140,7 @@ const ProfileCoach = () => {
         <Button
           variant="ghost"
           className="mb-6"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/')}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           חזרה לדשבורד
