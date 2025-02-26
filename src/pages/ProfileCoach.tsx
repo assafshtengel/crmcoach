@@ -105,6 +105,10 @@ const ProfileCoach = () => {
       if (error) throw error;
 
       toast.success('הפרופיל עודכן בהצלחה');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000); // מחכה שניה אחת כדי שהמשתמש יראה את הודעת ההצלחה לפני הניווט
+
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast.error('שגיאה בעדכון הפרופיל');
