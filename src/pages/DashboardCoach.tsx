@@ -42,13 +42,11 @@ interface SessionResponse {
   id: string;
   session_date: string;
   session_time: string;
-  notes: string | null;
   location: string | null;
   reminder_sent: boolean | null;
   player: {
     full_name: string;
-  } | null;
-  session_summaries: { id: string }[] | null;
+  }[];
 }
 
 interface Notification {
@@ -471,11 +469,11 @@ const DashboardCoach = () => {
 
       const events: CalendarEvent[] = (sessions as SessionResponse[])?.map(session => ({
         id: session.id,
-        title: session.player?.full_name || 'לא נמצא שחקן',
+        title: session.player[0]?.full_name || 'לא נמצא שחקן',
         start: `${session.session_date}T${session.session_time}`,
         location: session.location || undefined,
         extendedProps: {
-          playerName: session.player?.full_name || 'לא נמצא שחקן',
+          playerName: session.player[0]?.full_name || 'לא נמצא שחקן',
           location: session.location || undefined,
           reminderSent: session.reminder_sent || false
         }
