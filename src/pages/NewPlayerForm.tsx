@@ -59,7 +59,6 @@ const NewPlayerForm = () => {
     setPreviewUrl('');
   };
 
-  // פונקציה חדשה לטיפול בהעלאת תמונה
   const uploadProfileImage = async (userId: string, file: File): Promise<string> => {
     try {
       const fileExt = file.name.split('.').pop();
@@ -85,8 +84,9 @@ const NewPlayerForm = () => {
     }
   };
 
-  // פונקציה חדשה ליצירת שחקן
   const createPlayer = async (userId: string, values: PlayerFormValues, imageUrl: string = '') => {
+    console.log('Creating player with values:', values); // Debug log
+    
     const { data: playerData, error: playerError } = await supabase
       .from('players')
       .insert([
@@ -95,7 +95,7 @@ const NewPlayerForm = () => {
           full_name: `${values.firstName} ${values.lastName}`,
           email: values.playerEmail,
           phone: values.playerPhone,
-          birth_date: values.birthDate,
+          birthdate: values.birthDate, // שינוי שם השדה ל-birthdate
           city: values.city,
           club: values.club,
           year_group: values.yearGroup,
@@ -120,7 +120,9 @@ const NewPlayerForm = () => {
   };
 
   async function onSubmit(values: PlayerFormValues) {
-    if (isSubmitting) return; // מניעת שליחות כפולות
+    console.log('Form submitted with values:', values); // Debug log
+    
+    if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
@@ -137,12 +139,12 @@ const NewPlayerForm = () => {
         return;
       }
 
-      // קודם נטפל בתמונה אם יש
       let profileImageUrl = '';
       if (profileImage) {
         try {
           profileImageUrl = await uploadProfileImage(user.id, profileImage);
         } catch (error) {
+          console.error('Error uploading image:', error); // Debug log
           toast({
             variant: "destructive",
             title: "שגיאה בהעלאת התמונה",
@@ -151,24 +153,19 @@ const NewPlayerForm = () => {
         }
       }
 
-      // אחר כך ניצור את השחקן
-      await createPlayer(user.id, values, profileImageUrl);
+      const playerData = await createPlayer(user.id, values, profileImageUrl);
+      console.log('Player created successfully:', playerData); // Debug log
 
-      // נציג הודעת הצלחה
       toast({
         title: "השחקן נוצר בהצלחה!",
         description: "השחקן נוסף לרשימת השחקנים שלך.",
       });
 
-      // נציג דיאלוג הצלחה ונווט לדף הבית
       setShowSuccessDialog(true);
-      const timeoutId = setTimeout(() => {
+      setTimeout(() => {
         setShowSuccessDialog(false);
         navigate('/');
-      }, 1000);
-
-      // ניקוי הטיימר אם הקומפוננטה מתפרקת
-      return () => clearTimeout(timeoutId);
+      }, 1500);
 
     } catch (error: any) {
       console.error('Error in form submission:', error);
