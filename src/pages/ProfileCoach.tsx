@@ -1,246 +1,290 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
-import { Brain, Target, Users, ClipboardList, LineChart, Rocket, Shield } from 'lucide-react';
+import { Award, BookOpen, GraduationCap, Upload, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 
-const specialties = [{
-  id: 'sports-mental',
-  label: 'מאמן מנטאלי לספורטאים'
-}, {
-  id: 'sports-fitness',
-  label: 'מאמן כושר לספורטאים'
-}, {
-  id: 'sports-psych',
-  label: 'פסיכולוג ספורט'
-}, {
-  id: 'emotional',
-  label: 'מטפל רגשי'
-}, {
-  id: 'mentor',
-  label: 'מנטור'
-}, {
-  id: 'org-consultant',
-  label: 'יועץ ארגוני'
-}, {
-  id: 'exec-mental',
-  label: 'יועץ מנטאלי למנהלים'
-}, {
-  id: 'mindfulness',
-  label: 'מדריך mindfulness/מדיטציה'
-}, {
-  id: 'cbt',
-  label: 'מטפל קוגניטיבי-התנהגותי (CBT)'
-}, {
-  id: 'other',
-  label: 'אחר'
-}];
+interface CoachProfile {
+  full_name: string;
+  email: string;
+  phone: string;
+  specialty: string;
+  years_of_experience: number | null;
+  certifications: string[];
+  education: string;
+  description: string;
+  profile_picture: string | null;
+}
 
 const ProfileCoach = () => {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
-  const [otherSpecialty, setOtherSpecialty] = useState('');
+  const [profile, setProfile] = useState<CoachProfile>({
+    full_name: '',
+    email: '',
+    phone: '',
+    specialty: '',
+    years_of_experience: null,
+    certifications: [],
+    education: '',
+    description: '',
+    profile_picture: null
+  });
   const [loading, setLoading] = useState(false);
+  const [newCertification, setNewCertification] = useState('');
   const navigate = useNavigate();
 
-  const features = [{
-    icon: <Users className="w-6 h-6 text-primary" />,
-    title: "ניהול שחקנים",
-    description: "ניהול קל ומהיר של כל השחקנים שלכם, כולל פרופילים אישיים"
-  }, {
-    icon: <ClipboardList className="w-6 h-6 text-primary" />,
-    title: "תיעוד אימונים",
-    description: "תיעוד מפורט של כל אימון עם כלים וטכניקות"
-  }, {
-    icon: <Target className="w-6 h-6 text-primary" />,
-    title: "הגדרת מטרות",
-    description: "תכנון וניהול מטרות לטווח הקצר והארוך"
-  }, {
-    icon: <Brain className="w-6 h-6 text-primary" />,
-    title: "כלים מנטליים",
-    description: "מגוון רחב של כלים וטכניקות לאימון מנטלי"
-  }, {
-    icon: <LineChart className="w-6 h-6 text-primary" />,
-    title: "ניתוח ביצועים",
-    description: "מעקב ואנליזה מתקדמת אחר התקדמות השחקנים"
-  }, {
-    icon: <Rocket className="w-6 h-6 text-primary" />,
-    title: "חדשנות מתמדת",
-    description: "עדכונים שוטפים עם כלים ומחקרים חדשים"
-  }];
+  useEffect(() => {
+    loadCoachProfile();
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
+  const loadCoachProfile = async () => {
     try {
-      console.log('Starting registration process...');
-      
-      const specialtiesArray = [
-        ...selectedSpecialties.filter(s => s !== 'other').map(s => specialties.find(spec => spec.id === s)?.label || ''),
-        ...(selectedSpecialties.includes('other') && otherSpecialty ? [otherSpecialty] : [])
-      ];
-
-      // 1. רישום המשתמש
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            phone,
-            specialty: specialtiesArray.join(',')
-          }
-        }
-      });
-
-      if (signUpError) throw signUpError;
-
-      if (authData.user) {
-        // 2. הוספת תפקיד המאמן
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert([
-            {
-              id: authData.user.id,
-              role: 'coach'
-            }
-          ]);
-
-        if (roleError) {
-          console.error('Error setting user role:', roleError);
-          throw new Error('שגיאה בהגדרת תפקיד המשתמש');
-        }
-
-        toast.success('ההרשמה בוצעה בהצלחה! נשלח אליך מייל לאימות.');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         navigate('/auth');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('coaches')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setProfile({
+          full_name: data.full_name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          specialty: data.specialty || '',
+          years_of_experience: data.years_of_experience || null,
+          certifications: data.certifications || [],
+          education: data.education || '',
+          description: data.description || '',
+          profile_picture: data.profile_picture || null
+        });
       }
     } catch (error: any) {
-      console.error('Registration error:', error);
-      toast.error(error.message || 'אירעה שגיאה בתהליך ההרשמה');
+      console.error('Error loading profile:', error);
+      toast.error('שגיאה בטעינת הפרופיל');
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('לא נמצא משתמש מחובר');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('coaches')
+        .update({
+          full_name: profile.full_name,
+          email: profile.email,
+          phone: profile.phone,
+          specialty: profile.specialty,
+          years_of_experience: profile.years_of_experience,
+          certifications: profile.certifications,
+          education: profile.education,
+          description: profile.description,
+          profile_picture: profile.profile_picture
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast.success('הפרופיל עודכן בהצלחה');
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast.error('שגיאה בעדכון הפרופיל');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSpecialtyChange = (specialtyId: string) => {
-    setSelectedSpecialties(current => {
-      const isSelected = current.includes(specialtyId);
-      if (isSelected) {
-        return current.filter(id => id !== specialtyId);
-      } else {
-        return [...current, specialtyId];
-      }
-    });
+  const addCertification = () => {
+    if (newCertification.trim()) {
+      setProfile(prev => ({
+        ...prev,
+        certifications: [...prev.certifications, newCertification.trim()]
+      }));
+      setNewCertification('');
+    }
+  };
+
+  const removeCertification = (index: number) => {
+    setProfile(prev => ({
+      ...prev,
+      certifications: prev.certifications.filter((_, i) => i !== index)
+    }));
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            ברוכים הבאים למערכת ה-CRM המתקדמת למאמנים מנטליים
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            הצטרפו למערכת החדשנית שתעזור לכם לנהל את האימונים ביעילות, לעקוב אחר התקדמות השחקנים ולהגיע לתוצאות מיטביות
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        <Button
+          variant="ghost"
+          className="mb-6"
+          onClick={() => navigate('/dashboard')}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          חזרה לדשבורד
+        </Button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          <div className="space-y-6">
-            <Card className="border-2 border-primary/10 hover:border-primary/20 transition-all">
-              <CardHeader>
-                <CardTitle>למה להצטרף למערכת?</CardTitle>
-                <CardDescription>כל הכלים שמאמן מנטלי צריך במקום אחד</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {features.map((feature, index) => <div key={index} className="flex items-start space-x-4 rtl:space-x-reverse p-4 rounded-lg bg-white shadow-sm">
-                      {feature.icon}
-                      <div>
-                        <h3 className="font-semibold mb-1">{feature.title}</h3>
-                        <p className="text-sm text-gray-600">{feature.description}</p>
+        <Card className="border-2 border-primary/10">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-primary">פרופיל מאמן</CardTitle>
+            <CardDescription>ערוך את פרטי הפרופיל שלך</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* מידע אישי */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Award className="h-5 w-5 text-primary" />
+                מידע אישי
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">שם מלא</Label>
+                  <Input
+                    id="fullName"
+                    value={profile.full_name}
+                    onChange={e => setProfile(prev => ({ ...prev, full_name: e.target.value }))}
+                    placeholder="הכנס את שמך המלא"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">דוא״ל</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={profile.email}
+                    onChange={e => setProfile(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="your@email.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">טלפון</Label>
+                  <Input
+                    id="phone"
+                    value={profile.phone}
+                    onChange={e => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="מספר טלפון"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="specialty">תחום התמחות</Label>
+                  <Input
+                    id="specialty"
+                    value={profile.specialty}
+                    onChange={e => setProfile(prev => ({ ...prev, specialty: e.target.value }))}
+                    placeholder="תחום התמחות עיקרי"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* מידע מקצועי */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-primary" />
+                מידע מקצועי
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="years">שנות ניסיון</Label>
+                  <Input
+                    id="years"
+                    type="number"
+                    value={profile.years_of_experience || ''}
+                    onChange={e => setProfile(prev => ({ ...prev, years_of_experience: parseInt(e.target.value) || null }))}
+                    placeholder="מספר שנות ניסיון"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="education">השכלה</Label>
+                  <Input
+                    id="education"
+                    value={profile.education}
+                    onChange={e => setProfile(prev => ({ ...prev, education: e.target.value }))}
+                    placeholder="פרטי השכלה והכשרה"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>תעודות והסמכות</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newCertification}
+                      onChange={e => setNewCertification(e.target.value)}
+                      placeholder="הוסף תעודה או הסמכה"
+                    />
+                    <Button type="button" onClick={addCertification}>הוסף</Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {profile.certifications.map((cert, index) => (
+                      <div
+                        key={index}
+                        className="bg-primary/10 text-primary px-3 py-1 rounded-full flex items-center gap-2"
+                      >
+                        <span>{cert}</span>
+                        <button
+                          onClick={() => removeCertification(index)}
+                          className="hover:text-red-500"
+                        >
+                          ×
+                        </button>
                       </div>
-                    </div>)}
+                    ))}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-            <h2 className="text-2xl font-bold mb-6 text-center">הרשמה למערכת</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="fullName">שם מלא</Label>
-                <Input type="text" id="fullName" value={fullName} onChange={e => setFullName(e.target.value)} required className="mt-1" placeholder="הכנס את שמך המלא" />
               </div>
+            </div>
 
-              <div>
-                <Label htmlFor="email">אימייל</Label>
-                <Input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} required className="mt-1" placeholder="your@email.com" />
+            {/* תיאור */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-primary" />
+                תיאור
+              </h3>
+              <div className="space-y-2">
+                <Label htmlFor="description">תיאור מקצועי</Label>
+                <Textarea
+                  id="description"
+                  value={profile.description}
+                  onChange={e => setProfile(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="ספר על עצמך ועל הניסיון המקצועי שלך"
+                  className="min-h-[150px]"
+                />
               </div>
+            </div>
 
-              <div>
-                <Label htmlFor="password">סיסמה</Label>
-                <Input type="password" id="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="mt-1" placeholder="לפחות 6 תווים" />
-              </div>
-
-              <div>
-                <Label htmlFor="phone">טלפון</Label>
-                <Input type="tel" id="phone" value={phone} onChange={e => setPhone(e.target.value)} className="mt-1" placeholder="מספר טלפון ליצירת קשר" />
-              </div>
-
-              <div>
-                <Label>תחומי התמחות</Label>
-                <div className="space-y-1 mt-2 mx-1 my-[19px] py-[12px] px-[2px] bg-zinc-10">
-                  {specialties.map(specialty => <div key={specialty.id} className="flex items-center space-x-4 rtl:space-x-reverse px-2 py-1.5 hover:bg-gray-50 rounded-lg transition-colors">
-                      <Checkbox id={specialty.id} checked={selectedSpecialties.includes(specialty.id)} onCheckedChange={() => handleSpecialtyChange(specialty.id)} />
-                      <Label htmlFor={specialty.id} className="cursor-pointer">
-                        {specialty.label}
-                      </Label>
-                    </div>)}
-                </div>
-                {selectedSpecialties.includes('other') && <div className="mt-2">
-                    <Input type="text" value={otherSpecialty} onChange={e => setOtherSpecialty(e.target.value)} placeholder="פרט את תחום ההתמחות שלך" className="mt-1" />
-                  </div>}
-              </div>
-
-              <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                {loading ? 'מעבד...' : 'הרשמה למערכת'}
+            <div className="flex justify-end gap-4">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/dashboard')}
+              >
+                ביטול
               </Button>
-
-              <div className="text-center mt-4">
-                <Button variant="link" type="button" onClick={() => navigate('/auth')}>
-                  יש לך כבר חשבון? התחבר
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <div className="text-center">
-          <Card className="border-2 border-primary/10 max-w-2xl mx-auto">
-            <CardHeader>
-              <div className="mx-auto rounded-full bg-primary/10 p-3 w-fit">
-                <Shield className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle>מערכת בטוחה ואמינה</CardTitle>
-              <CardDescription>
-                אנחנו מחויבים לאבטחת המידע שלכם ולשמירה על פרטיותכם.
-                המערכת עומדת בתקני האבטחה המחמירים ביותר.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
+              <Button
+                onClick={handleSave}
+                disabled={loading}
+              >
+                {loading ? 'שומר...' : 'שמור שינויים'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
