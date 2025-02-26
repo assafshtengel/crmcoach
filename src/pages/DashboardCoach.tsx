@@ -43,10 +43,11 @@ interface SessionResponse {
   session_date: string;
   session_time: string;
   location: string | null;
+  notes: string | null;
   reminder_sent: boolean | null;
   player: {
     full_name: string;
-  }[];
+  };
 }
 
 interface Notification {
