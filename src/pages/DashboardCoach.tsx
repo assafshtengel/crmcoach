@@ -453,7 +453,7 @@ const DashboardCoach = () => {
 
   const fetchCalendarEvents = async (userId: string) => {
     try {
-      const { data: sessions, error } = await supabase
+      const { data: rawSessions, error } = await supabase
         .from('sessions')
         .select(`
           id,
@@ -470,7 +470,19 @@ const DashboardCoach = () => {
 
       if (error) throw error;
 
-      const events: CalendarEvent[] = (sessions as SessionResponse[])?.map(session => ({
+      const sessions = (rawSessions as any[])?.map(session => ({
+        id: session.id as string,
+        session_date: session.session_date as string,
+        session_time: session.session_time as string,
+        location: session.location as string | null,
+        notes: session.notes as string | null,
+        reminder_sent: session.reminder_sent as boolean | null,
+        player: {
+          full_name: session.player?.full_name as string
+        }
+      })) as SessionResponse[];
+
+      const events: CalendarEvent[] = sessions.map(session => ({
         id: session.id,
         title: session.player.full_name,
         start: `${session.session_date}T${session.session_time}`,
@@ -481,7 +493,7 @@ const DashboardCoach = () => {
           reminderSent: session.reminder_sent || false,
           notes: session.notes || undefined
         }
-      })) || [];
+      }));
 
       setCalendarEvents(events);
     } catch (error) {
