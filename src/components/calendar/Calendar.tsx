@@ -4,10 +4,9 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarIcon } from 'lucide-react';
-import { he } from 'date-fns/locale';
 import { format } from 'date-fns';
 
 interface CalendarEvent {
@@ -144,39 +143,44 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
 
       {selectedEvent && (
         <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>פרטי מפגש</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="grid gap-4 py-4">
               <div>
                 <h3 className="font-bold mb-1">שם השחקן</h3>
-                <p>{selectedEvent.extendedProps.playerName}</p>
+                <p className="text-lg">{selectedEvent.extendedProps.playerName}</p>
               </div>
               <div>
                 <h3 className="font-bold mb-1">תאריך ושעה</h3>
-                <p>{format(new Date(selectedEvent.start), 'dd/MM/yyyy HH:mm')}</p>
+                <p className="text-lg">{format(new Date(selectedEvent.start), 'dd/MM/yyyy HH:mm')}</p>
               </div>
               {selectedEvent.extendedProps.location && (
                 <div>
                   <h3 className="font-bold mb-1">מיקום</h3>
-                  <p>{selectedEvent.extendedProps.location}</p>
+                  <p className="text-lg">{selectedEvent.extendedProps.location}</p>
                 </div>
               )}
               {selectedEvent.extendedProps.notes && (
                 <div>
                   <h3 className="font-bold mb-1">הערות</h3>
-                  <p>{selectedEvent.extendedProps.notes}</p>
+                  <p className="text-lg whitespace-pre-wrap">{selectedEvent.extendedProps.notes}</p>
                 </div>
               )}
               <div>
                 <h3 className="font-bold mb-1">סטטוס תזכורת</h3>
-                <p>{selectedEvent.extendedProps.reminderSent ? 'נשלחה תזכורת' : 'טרם נשלחה תזכורת'}</p>
+                <p className="text-lg">
+                  {selectedEvent.extendedProps.reminderSent ? 
+                    'נשלחה תזכורת' : 
+                    'טרם נשלחה תזכורת'
+                  }
+                </p>
               </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={closeDialog}>סגור</Button>
-                <Button onClick={handleEditClick}>ערוך מפגש</Button>
-              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={closeDialog}>סגור</Button>
+              <Button onClick={handleEditClick}>ערוך מפגש</Button>
             </div>
           </DialogContent>
         </Dialog>

@@ -67,6 +67,7 @@ interface CalendarEvent {
     playerName: string;
     location?: string;
     reminderSent: boolean;
+    notes?: string;
   };
 }
 
@@ -458,8 +459,9 @@ const DashboardCoach = () => {
           session_date,
           session_time,
           location,
+          notes,
           reminder_sent,
-          player:players!inner (
+          player:players!inner(
             full_name
           )
         `)
@@ -469,13 +471,14 @@ const DashboardCoach = () => {
 
       const events: CalendarEvent[] = (sessions as SessionResponse[])?.map(session => ({
         id: session.id,
-        title: session.player[0]?.full_name || 'לא נמצא שחקן',
+        title: session.player.full_name,
         start: `${session.session_date}T${session.session_time}`,
         location: session.location || undefined,
         extendedProps: {
-          playerName: session.player[0]?.full_name || 'לא נמצא שחקן',
+          playerName: session.player.full_name,
           location: session.location || undefined,
-          reminderSent: session.reminder_sent || false
+          reminderSent: session.reminder_sent || false,
+          notes: session.notes || undefined
         }
       })) || [];
 
