@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, FileText, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface SessionSummary {
   id: string;
@@ -89,51 +89,44 @@ const SessionSummaries = () => {
 
   const renderSummaryDetails = (summary: SessionSummary) => {
     return (
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-2">סיכום המפגש</h3>
-          <p className="text-gray-700 whitespace-pre-wrap">{summary.summary_text}</p>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold mb-2">מטרות שהושגו</h3>
-          <ul className="list-disc list-inside space-y-1">
-            {summary.achieved_goals.map((goal, index) => (
-              <li key={index} className="text-gray-700">{goal}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold mb-2">מטרות להמשך</h3>
-          <ul className="list-disc list-inside space-y-1">
-            {summary.future_goals.map((goal, index) => (
-              <li key={index} className="text-gray-700">{goal}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold mb-2">פוקוס למפגש הבא</h3>
-          <p className="text-gray-700">{summary.next_session_focus}</p>
-        </div>
-
-        {summary.additional_notes && (
+      <ScrollArea className="h-[calc(100vh-200px)] pr-4">
+        <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold mb-2">הערות נוספות</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{summary.additional_notes}</p>
+            <h3 className="text-lg font-semibold mb-2">סיכום המפגש</h3>
+            <p className="text-gray-700 whitespace-pre-wrap">{summary.summary_text}</p>
           </div>
-        )}
 
-        <div className="flex items-center justify-between pt-4 border-t">
-          <div className="text-gray-600">
-            דירוג התקדמות: <span className="font-semibold">{summary.progress_rating}/5</span>
+          <div>
+            <h3 className="text-lg font-semibold mb-2">מטרות שהושגו</h3>
+            <ul className="list-disc list-inside space-y-1">
+              {summary.achieved_goals.map((goal, index) => (
+                <li key={index} className="text-gray-700">{goal}</li>
+              ))}
+            </ul>
           </div>
-          <DialogClose asChild>
-            <Button variant="outline">סגור</Button>
-          </DialogClose>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2">מטרות להמשך</h3>
+            <ul className="list-disc list-inside space-y-1">
+              {summary.future_goals.map((goal, index) => (
+                <li key={index} className="text-gray-700">{goal}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2">פוקוס למפגש הבא</h3>
+            <p className="text-gray-700">{summary.next_session_focus}</p>
+          </div>
+
+          {summary.additional_notes && (
+            <div>
+              <h3 className="text-lg font-semibold mb-2">הערות נוספות</h3>
+              <p className="text-gray-700 whitespace-pre-wrap">{summary.additional_notes}</p>
+            </div>
+          )}
         </div>
-      </div>
+      </ScrollArea>
     );
   };
 
@@ -187,9 +180,9 @@ const SessionSummaries = () => {
                           <Eye className="h-4 w-4 text-gray-500 hover:text-gray-700" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-3xl">
+                      <DialogContent className="max-w-3xl max-h-screen">
                         <DialogHeader>
-                          <DialogTitle className="flex items-center justify-between">
+                          <DialogTitle className="flex items-center justify-between mb-4">
                             <span>סיכום מפגש - {summary.session.player.full_name}</span>
                             <span className="text-sm font-normal text-gray-500">
                               {format(new Date(summary.session.session_date), 'dd/MM/yyyy', { locale: he })}
@@ -197,6 +190,14 @@ const SessionSummaries = () => {
                           </DialogTitle>
                         </DialogHeader>
                         {renderSummaryDetails(summary)}
+                        <div className="flex items-center justify-between pt-4 border-t mt-4">
+                          <div className="text-gray-600">
+                            דירוג התקדמות: <span className="font-semibold">{summary.progress_rating}/5</span>
+                          </div>
+                          <DialogClose asChild>
+                            <Button variant="outline">סגור</Button>
+                          </DialogClose>
+                        </div>
                       </DialogContent>
                     </Dialog>
                   </div>
