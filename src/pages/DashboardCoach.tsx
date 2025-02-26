@@ -347,7 +347,7 @@ const DashboardCoach = () => {
 
       toast({
         title: "הסיכום נשמר בהצלחה",
-        description: "סיכום המפגש נשמר במערכת",
+        description: "סיכום המפגש נשמר במ��רכת",
         duration: 1000
       });
 
@@ -814,4 +814,36 @@ const DashboardCoach = () => {
           <CardHeader className="border-b pb-4">
             <CardTitle className="text-xl font-semibold text-[#2C3E50]">סטטיסטיקת מפגשים</CardTitle>
           </CardHeader>
-          <
+          <CardContent className="pt-4 h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={getMonthlySessionsData()}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="name" stroke="#6B7280" />
+                <YAxis stroke="#6B7280" tickCount={10} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="מפגשים" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>האם אתה בטוח שברצונך להתנתק?</AlertDialogTitle>
+            <AlertDialogDescription>
+              לאחר ההתנתקות תצטרך להתחבר מחדש כדי לגשת למערכת
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row-reverse sm:flex-row gap-2">
+            <AlertDialogCancel className="sm:ml-2">ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>התנתק</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+export default DashboardCoach;
