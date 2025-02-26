@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
+import { Calendar as CalendarComponent } from '@/components/calendar/Calendar';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -58,6 +59,19 @@ interface Notification {
   type: string;
 }
 
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end?: string;
+  location?: string;
+  extendedProps: {
+    playerName: string;
+    location?: string;
+    reminderSent: boolean;
+  };
+}
+
 const DashboardCoach = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -77,6 +91,7 @@ const DashboardCoach = () => {
   const [upcomingSessions, setUpcomingSessions] = useState<UpcomingSession[]>([]);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isSessionsExpanded, setIsSessionsExpanded] = useState(false);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
   const fetchData = async (userId: string) => {
     try {
@@ -436,6 +451,47 @@ const DashboardCoach = () => {
     );
   };
 
+  const fetchCalendarEvents = async (userId: string) => {
+    try {
+      const { data: sessions, error } = await supabase
+        .from('sessions')
+        .select(`
+          id,
+          session_date,
+          session_time,
+          location,
+          reminder_sent,
+          player:players (
+            full_name
+          )
+        `)
+        .eq('coach_id', userId);
+
+      if (error) throw error;
+
+      const events: CalendarEvent[] = sessions?.map(session => ({
+        id: session.id,
+        title: session.player.full_name,
+        start: `${session.session_date}T${session.session_time}`,
+        location: session.location,
+        extendedProps: {
+          playerName: session.player.full_name,
+          location: session.location,
+          reminderSent: session.reminder_sent
+        }
+      })) || [];
+
+      setCalendarEvents(events);
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת המפגשים",
+        description: "אנא נסה שוב מאוחר יותר"
+      });
+    }
+  };
+
   useEffect(() => {
     const initializeDashboard = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -452,6 +508,7 @@ const DashboardCoach = () => {
 
         await fetchData(user.id);
         await fetchNotifications(user.id);
+        await fetchCalendarEvents(user.id);
         const channel = supabase.channel('dashboard-changes').on('postgres_changes', {
           event: '*',
           schema: 'public',
@@ -475,6 +532,14 @@ const DashboardCoach = () => {
     };
     initializeDashboard();
   }, []);
+
+  const handleEventClick = (eventId: string) => {
+    const session = upcomingSessions.find(s => s.id === eventId);
+    if (session) {
+      // Implement any action you want when clicking an event
+      navigate('/edit-session', { state: { sessionId: eventId } });
+    }
+  };
 
   const getMonthlySessionsData = () => {
     return [{
@@ -524,6 +589,7 @@ const DashboardCoach = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} />
               <Button variant="ghost" className="text-white hover:bg-white/10">
                 <Share2 className="h-5 w-5 mr-2" />
                 <span className="hidden sm:inline">לינקי הרשמה</span>
