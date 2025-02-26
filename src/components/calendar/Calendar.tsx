@@ -6,8 +6,13 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
+import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 
 interface CalendarEvent {
   id: string;
@@ -26,12 +31,30 @@ interface CalendarEvent {
 interface CalendarProps {
   events: CalendarEvent[];
   onEventClick: (eventId: string) => void;
+  onEventAdd?: (event: Omit<CalendarEvent, 'id'>) => Promise<void>;
 }
 
-export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
+interface EventFormData {
+  title: string;
+  date: string;
+  time: string;
+  notes?: string;
+}
+
+export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEventAdd }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [selectedView, setSelectedView] = useState<'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'>('dayGridMonth');
+  const [selectedView, setSelectedView] = useState<'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'>('timeGridMonth');
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  
+  const form = useForm<EventFormData>({
+    defaultValues: {
+      title: '',
+      date: new Date().toISOString().split('T')[0],
+      time: '12:00',
+      notes: ''
+    }
+  });
 
   const handleEventClick = (info: any) => {
     const event = events.find(e => e.id === info.event.id);
@@ -51,16 +74,49 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
     }
   };
 
+  const onAddEvent = async (data: EventFormData) => {
+    try {
+      if (onEventAdd) {
+        await onEventAdd({
+          title: data.title,
+          start: `${data.date}T${data.time}`,
+          extendedProps: {
+            playerName: data.title,
+            notes: data.notes,
+            reminderSent: false
+          }
+        });
+        setIsAddEventOpen(false);
+        form.reset();
+        toast.success('האירוע נוסף בהצלחה');
+      }
+    } catch (error) {
+      toast.error('שגיאה בהוספת האירוע');
+    }
+  };
+
   return (
     <>
-      <Button 
-        variant="ghost" 
-        className="flex items-center gap-2 text-white hover:bg-white/10"
-        onClick={() => setIsOpen(true)}
-      >
-        <CalendarIcon className="h-5 w-5" />
-        <span>לוח מפגשים</span>
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          variant="ghost" 
+          className="flex items-center gap-2 text-white hover:bg-white/10"
+          onClick={() => setIsOpen(true)}
+        >
+          <CalendarIcon className="h-5 w-5" />
+          <span>לוח מפגשים</span>
+        </Button>
+        {onEventAdd && (
+          <Button
+            variant="ghost"
+            className="flex items-center gap-2 text-white hover:bg-white/10"
+            onClick={() => setIsAddEventOpen(true)}
+          >
+            <Plus className="h-5 w-5" />
+            <span>הוסף תזכורת</span>
+          </Button>
+        )}
+      </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-6xl h-[80vh]">
@@ -100,13 +156,16 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
               }}
               views={{
                 timeGridDay: {
-                  titleFormat: { year: 'numeric', month: 'long', day: 'numeric' }
+                  type: 'timeGrid',
+                  duration: { days: 1 }
                 },
                 timeGridWeek: {
-                  titleFormat: { year: 'numeric', month: 'long' }
+                  type: 'timeGrid',
+                  duration: { weeks: 1 }
                 },
                 dayGridMonth: {
-                  titleFormat: { year: 'numeric', month: 'long' }
+                  type: 'dayGrid',
+                  duration: { months: 1 }
                 }
               }}
               events={events}
@@ -145,11 +204,11 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
         <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>פרטי מפגש</DialogTitle>
+              <DialogTitle>פרטי תזכורת</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div>
-                <h3 className="font-bold mb-1">שם השחקן</h3>
+                <h3 className="font-bold mb-1">כותרת</h3>
                 <p className="text-lg">{selectedEvent.extendedProps.playerName}</p>
               </div>
               <div>
@@ -168,23 +227,82 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
                   <p className="text-lg whitespace-pre-wrap">{selectedEvent.extendedProps.notes}</p>
                 </div>
               )}
-              <div>
-                <h3 className="font-bold mb-1">סטטוס תזכורת</h3>
-                <p className="text-lg">
-                  {selectedEvent.extendedProps.reminderSent ? 
-                    'נשלחה תזכורת' : 
-                    'טרם נשלחה תזכורת'
-                  }
-                </p>
-              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={closeDialog}>סגור</Button>
-              <Button onClick={handleEditClick}>ערוך מפגש</Button>
+              <Button onClick={handleEditClick}>ערוך</Button>
             </div>
           </DialogContent>
         </Dialog>
       )}
+
+      <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>הוספת תזכורת חדשה</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onAddEvent)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>כותרת</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>תאריך</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>שעה</FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>הערות</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsAddEventOpen(false)}>
+                  ביטול
+                </Button>
+                <Button type="submit">
+                  שמור
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

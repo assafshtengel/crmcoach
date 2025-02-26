@@ -72,6 +72,13 @@ interface CalendarEvent {
   };
 }
 
+interface EventFormData {
+  title: string;
+  date: string;
+  time: string;
+  notes?: string;
+}
+
 const DashboardCoach = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -506,6 +513,31 @@ const DashboardCoach = () => {
     }
   };
 
+  const handleAddEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .insert([
+          {
+            coach_id: user?.id,
+            session_date: eventData.start.split('T')[0],
+            session_time: eventData.start.split('T')[1],
+            notes: eventData.extendedProps.notes,
+            reminder_sent: false
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await fetchCalendarEvents(user?.id as string);
+    } catch (error) {
+      console.error('Error adding event:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     const initializeDashboard = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -602,7 +634,7 @@ const DashboardCoach = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} />
+              <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} onEventAdd={handleAddEvent} />
               <Button variant="ghost" className="text-white hover:bg-white/10">
                 <Share2 className="h-5 w-5 mr-2" />
                 <span className="hidden sm:inline">לינקי הרשמה</span>
