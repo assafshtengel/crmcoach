@@ -461,7 +461,7 @@ const DashboardCoach = () => {
           session_time,
           location,
           reminder_sent,
-          player:players (
+          player:players!inner (
             full_name
           )
         `)
@@ -469,15 +469,15 @@ const DashboardCoach = () => {
 
       if (error) throw error;
 
-      const events: CalendarEvent[] = sessions?.map(session => ({
+      const events: CalendarEvent[] = (sessions as SessionResponse[])?.map(session => ({
         id: session.id,
-        title: session.player.full_name,
+        title: session.player?.full_name || 'לא נמצא שחקן',
         start: `${session.session_date}T${session.session_time}`,
-        location: session.location,
+        location: session.location || undefined,
         extendedProps: {
-          playerName: session.player.full_name,
-          location: session.location,
-          reminderSent: session.reminder_sent
+          playerName: session.player?.full_name || 'לא נמצא שחקן',
+          location: session.location || undefined,
+          reminderSent: session.reminder_sent || false
         }
       })) || [];
 
@@ -536,7 +536,6 @@ const DashboardCoach = () => {
   const handleEventClick = (eventId: string) => {
     const session = upcomingSessions.find(s => s.id === eventId);
     if (session) {
-      // Implement any action you want when clicking an event
       navigate('/edit-session', { state: { sessionId: eventId } });
     }
   };
