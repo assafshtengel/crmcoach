@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -44,7 +43,7 @@ interface EventFormData {
 export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEventAdd }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [selectedView, setSelectedView] = useState<'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'>('timeGridMonth');
+  const [selectedView, setSelectedView] = useState<'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'>('dayGridMonth');
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   
   const form = useForm<EventFormData>({

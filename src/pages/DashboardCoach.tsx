@@ -99,6 +99,7 @@ const DashboardCoach = () => {
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isSessionsExpanded, setIsSessionsExpanded] = useState(false);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const { data: { user } } = await supabase.auth.getUser();
 
   const fetchData = async (userId: string) => {
     try {
@@ -515,11 +516,15 @@ const DashboardCoach = () => {
 
   const handleAddEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
     try {
+      if (!user?.id) {
+        throw new Error('משתמש לא מחובר');
+      }
+
       const { data, error } = await supabase
         .from('sessions')
         .insert([
           {
-            coach_id: user?.id,
+            coach_id: user.id,
             session_date: eventData.start.split('T')[0],
             session_time: eventData.start.split('T')[1],
             notes: eventData.extendedProps.notes,
@@ -531,7 +536,7 @@ const DashboardCoach = () => {
 
       if (error) throw error;
 
-      await fetchCalendarEvents(user?.id as string);
+      await fetchCalendarEvents(user.id);
     } catch (error) {
       console.error('Error adding event:', error);
       throw error;
@@ -809,35 +814,4 @@ const DashboardCoach = () => {
           <CardHeader className="border-b pb-4">
             <CardTitle className="text-xl font-semibold text-[#2C3E50]">סטטיסטיקת מפגשים</CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={getMonthlySessionsData()}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="name" stroke="#6B7280" />
-                <YAxis stroke="#6B7280" tickCount={10} allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="מפגשים" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>האם אתה בטוח שברצונך להתנתק?</AlertDialogTitle>
-            <AlertDialogDescription>
-              לאחר ההתנתקות תצטרך להתחבר מחדש כדי לגשת למערכת
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-row-reverse sm:flex-row gap-2">
-            <AlertDialogCancel className="sm:ml-2">ביטול</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogout}>התנתק</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>;
-};
-
-export default DashboardCoach;
+          <
