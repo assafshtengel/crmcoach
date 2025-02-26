@@ -1,5 +1,5 @@
 
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { BrowserRouter as Router } from 'react-router-dom';
 import DashboardCoach from './pages/DashboardCoach';
 import SessionsList from './pages/SessionsList';
@@ -24,6 +24,7 @@ function App() {
         <Route path="/new-player" element={<NewPlayerForm />} />
         <Route path="/player-profile/:playerId" element={<PlayerProfile />} />
         <Route path="/edit-player" element={<EditPlayerForm />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );
