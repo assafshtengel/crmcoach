@@ -85,6 +85,7 @@ const DashboardCoach = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [coachName, setCoachName] = useState('');
+  const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalPlayers: 0,
     upcomingSessions: 0,
@@ -99,7 +100,14 @@ const DashboardCoach = () => {
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isSessionsExpanded, setIsSessionsExpanded] = useState(false);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
-  const { data: { user } } = await supabase.auth.getUser();
+
+  useEffect(() => {
+    const initUser = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      setUser(authUser);
+    };
+    initUser();
+  }, []);
 
   const fetchData = async (userId: string) => {
     try {
@@ -545,21 +553,22 @@ const DashboardCoach = () => {
 
   useEffect(() => {
     const initializeDashboard = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
         const { data: coachData } = await supabase
           .from('coaches')
           .select('full_name')
-          .eq('id', user.id)
+          .eq('id', authUser.id)
           .single();
         
         if (coachData) {
           setCoachName(coachData.full_name);
         }
 
-        await fetchData(user.id);
-        await fetchNotifications(user.id);
-        await fetchCalendarEvents(user.id);
+        await fetchData(authUser.id);
+        await fetchNotifications(authUser.id);
+        await fetchCalendarEvents(authUser.id);
+
         const channel = supabase.channel('dashboard-changes').on('postgres_changes', {
           event: '*',
           schema: 'public',
@@ -571,11 +580,12 @@ const DashboardCoach = () => {
               description: payload.new.message,
               duration: 5000
             });
-            fetchNotifications(user.id);
+            fetchNotifications(authUser.id);
           } else {
-            fetchNotifications(user.id);
+            fetchNotifications(authUser.id);
           }
         }).subscribe();
+
         return () => {
           supabase.removeChannel(channel);
         };
@@ -843,7 +853,7 @@ const DashboardCoach = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  };
 };
 
 export default DashboardCoach;
