@@ -59,7 +59,69 @@ const NewPlayerForm = () => {
     setPreviewUrl('');
   };
 
+  // פונקציה חדשה לטיפול בהעלאת תמונה
+  const uploadProfileImage = async (userId: string, file: File): Promise<string> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${userId}/${crypto.randomUUID()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('player-avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('player-avatars')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error in uploadProfileImage:', error);
+      throw new Error('Failed to upload profile image');
+    }
+  };
+
+  // פונקציה חדשה ליצירת שחקן
+  const createPlayer = async (userId: string, values: PlayerFormValues, imageUrl: string = '') => {
+    const { data: playerData, error: playerError } = await supabase
+      .from('players')
+      .insert([
+        {
+          coach_id: userId,
+          full_name: `${values.firstName} ${values.lastName}`,
+          email: values.playerEmail,
+          phone: values.playerPhone,
+          birth_date: values.birthDate,
+          city: values.city,
+          club: values.club,
+          year_group: values.yearGroup,
+          injuries: values.injuries,
+          parent_name: values.parentName,
+          parent_phone: values.parentPhone,
+          parent_email: values.parentEmail,
+          notes: values.notes,
+          position: values.position,
+          profile_image: imageUrl
+        }
+      ])
+      .select()
+      .single();
+
+    if (playerError) {
+      console.error('Error creating player:', playerError);
+      throw playerError;
+    }
+
+    return playerData;
+  };
+
   async function onSubmit(values: PlayerFormValues) {
+    if (isSubmitting) return; // מניעת שליחות כפולות
+
     try {
       setIsSubmitting(true);
 
@@ -75,63 +137,41 @@ const NewPlayerForm = () => {
         return;
       }
 
+      // קודם נטפל בתמונה אם יש
       let profileImageUrl = '';
-      
       if (profileImage) {
-        const fileExt = profileImage.name.split('.').pop();
-        const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('player-avatars')
-          .upload(filePath, profileImage);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('player-avatars')
-          .getPublicUrl(filePath);
-
-        profileImageUrl = publicUrl;
+        try {
+          profileImageUrl = await uploadProfileImage(user.id, profileImage);
+        } catch (error) {
+          toast({
+            variant: "destructive",
+            title: "שגיאה בהעלאת התמונה",
+            description: "לא הצלחנו להעלות את התמונה. השחקן יישמר ללא תמונת פרופיל.",
+          });
+        }
       }
 
-      const { data: playerData, error: playerError } = await supabase
-        .from('players')
-        .insert([
-          {
-            coach_id: user.id,
-            full_name: `${values.firstName} ${values.lastName}`,
-            email: values.playerEmail,
-            phone: values.playerPhone,
-            birth_date: values.birthDate,
-            city: values.city,
-            club: values.club,
-            year_group: values.yearGroup,
-            injuries: values.injuries,
-            parent_name: values.parentName,
-            parent_phone: values.parentPhone,
-            parent_email: values.parentEmail,
-            notes: values.notes,
-            position: values.position,
-            profile_image: profileImageUrl
-          }
-        ])
-        .select()
-        .single();
+      // אחר כך ניצור את השחקן
+      await createPlayer(user.id, values, profileImageUrl);
 
-      if (playerError) throw playerError;
-
+      // נציג הודעת הצלחה
       toast({
         title: "השחקן נוצר בהצלחה!",
         description: "השחקן נוסף לרשימת השחקנים שלך.",
       });
 
+      // נציג דיאלוג הצלחה ונווט לדף הבית
       setShowSuccessDialog(true);
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setShowSuccessDialog(false);
-        navigate('/'); // שינוי הניווט לדף הראשי
-      }, 1000); // שינוי הזמן ל-1 שנייה
+        navigate('/');
+      }, 1000);
+
+      // ניקוי הטיימר אם הקומפוננטה מתפרקת
+      return () => clearTimeout(timeoutId);
 
     } catch (error: any) {
+      console.error('Error in form submission:', error);
       toast({
         variant: "destructive",
         title: "שגיאה ביצירת השחקן",
@@ -200,7 +240,7 @@ const NewPlayerForm = () => {
 
             <Button 
               type="submit" 
-              className="w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full font-medium text-base py-3"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'שומר...' : 'שמור פרטי שחקן'}
@@ -210,7 +250,7 @@ const NewPlayerForm = () => {
       </div>
 
       <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <DialogContent className="text-center animate-in zoom-in-50 duration-200">
+        <DialogContent className="text-center">
           <DialogHeader>
             <DialogTitle>פרטי השחקן נשמרו בהצלחה!</DialogTitle>
           </DialogHeader>
