@@ -9,6 +9,7 @@ import * as z from "zod";
 import { Slider } from "@/components/ui/slider";
 import { format } from "date-fns";
 import { he } from 'date-fns/locale';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const formSchema = z.object({
   summary_text: z.string().min(1, "נדרש למלא סיכום"),
@@ -52,106 +53,107 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
         <h2 className="text-xl font-semibold mb-2">{playerName}</h2>
         <p className="text-gray-600">{formattedDate}</p>
       </div>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="summary_text"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>סיכום המפגש</FormLabel>
-              <FormControl>
-                <Textarea placeholder="תאר את המפגש..." {...field} className="h-32" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <ScrollArea className="h-[calc(100vh-280px)] px-1">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="summary_text"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>סיכום המפגש</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="תאר את המפגש..." {...field} className="h-24 resize-none" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="achieved_goals"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>מטרות שהושגו</FormLabel>
-              <FormControl>
-                <Textarea placeholder="פרט את המטרות שהושגו במפגש..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="achieved_goals"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>מטרות שהושגו</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="פרט את המטרות שהושגו במפגש..." {...field} className="h-20 resize-none" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="future_goals"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>מטרות להמשך</FormLabel>
-              <FormControl>
-                <Textarea placeholder="הגדר מטרות להמשך..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="future_goals"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>מטרות להמשך</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="הגדר מטרות להמשך..." {...field} className="h-20 resize-none" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="progress_rating"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>דירוג התקדמות (1-5)</FormLabel>
-              <FormControl>
-                <Slider
-                  min={1}
-                  max={5}
-                  step={1}
-                  value={[field.value]}
-                  onValueChange={([value]) => field.onChange(value)}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="progress_rating"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>דירוג התקדמות (1-5)</FormLabel>
+                <FormControl>
+                  <Slider
+                    min={1}
+                    max={5}
+                    step={1}
+                    value={[field.value]}
+                    onValueChange={([value]) => field.onChange(value)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="next_session_focus"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>מיקוד למפגש הבא</FormLabel>
-              <FormControl>
-                <Textarea placeholder="על מה נתמקד במפגש הבא..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="next_session_focus"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>מיקוד למפגש הבא</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="על מה נתמקד במפגש הבא..." {...field} className="h-20 resize-none" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="additional_notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>הערות נוספות</FormLabel>
-              <FormControl>
-                <Textarea placeholder="הערות נוספות..." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex justify-end space-x-2 rtl:space-x-reverse">
-          <Button variant="outline" type="button" onClick={onCancel}>
-            ביטול
-          </Button>
-          <Button type="submit">
-            שמירת סיכום
-          </Button>
-        </div>
-      </form>
+          <FormField
+            control={form.control}
+            name="additional_notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>הערות נוספות</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="הערות נוספות..." {...field} className="h-20 resize-none" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </form>
+      </ScrollArea>
+      <div className="flex justify-end space-x-2 rtl:space-x-reverse mt-4 pt-4 border-t">
+        <Button variant="outline" type="button" onClick={onCancel}>
+          ביטול
+        </Button>
+        <Button type="submit" onClick={form.handleSubmit(handleSubmit)}>
+          שמירת סיכום
+        </Button>
+      </div>
     </Form>
   );
 }
