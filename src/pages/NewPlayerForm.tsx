@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,6 @@ import { PlayerPersonalInfo } from '@/components/new-player/PlayerPersonalInfo';
 import { PlayerClubInfo } from '@/components/new-player/PlayerClubInfo';
 import { PlayerParentInfo } from '@/components/new-player/PlayerParentInfo';
 import { PlayerAdditionalInfo } from '@/components/new-player/PlayerAdditionalInfo';
-import { createPlayer } from '@/services/playerService';
 
 const NewPlayerForm = () => {
   const navigate = useNavigate();
@@ -51,7 +51,6 @@ const NewPlayerForm = () => {
     try {
       setIsSubmitting(true);
 
-      // קבלת ה-ID של המאמן המחובר
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
@@ -64,7 +63,31 @@ const NewPlayerForm = () => {
         return;
       }
 
-      const { playerData } = await createPlayer(values, user.id);
+      // Create the player record
+      const { data: playerData, error: playerError } = await supabase
+        .from('players')
+        .insert([
+          {
+            coach_id: user.id,
+            full_name: `${values.firstName} ${values.lastName}`,
+            email: values.playerEmail,
+            phone: values.playerPhone,
+            birth_date: values.birthDate,
+            city: values.city,
+            club: values.club,
+            year_group: values.yearGroup,
+            injuries: values.injuries,
+            parent_name: values.parentName,
+            parent_phone: values.parentPhone,
+            parent_email: values.parentEmail,
+            notes: values.notes,
+            position: values.position
+          }
+        ])
+        .select()
+        .single();
+
+      if (playerError) throw playerError;
 
       toast({
         title: "השחקן נוצר בהצלחה!",

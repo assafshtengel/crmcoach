@@ -7,6 +7,7 @@ import SessionSummaries from './pages/SessionSummaries';
 import PlayersList from './pages/PlayersList';
 import ProfileCoach from './pages/ProfileCoach';
 import NewSessionForm from './pages/NewSessionForm';
+import NewPlayerForm from './pages/NewPlayerForm';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/players-list" element={<PlayersList />} />
         <Route path="/profile-coach" element={<ProfileCoach />} />
         <Route path="/new-session" element={<NewSessionForm />} />
+        <Route path="/new-player" element={<NewPlayerForm />} />
       </Routes>
     </Router>
   );
