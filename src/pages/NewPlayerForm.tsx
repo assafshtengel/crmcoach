@@ -128,8 +128,8 @@ const NewPlayerForm = () => {
       setShowSuccessDialog(true);
       setTimeout(() => {
         setShowSuccessDialog(false);
-        navigate('/players-list');
-      }, 1500);
+        navigate('/'); // שינוי הניווט לדף הראשי
+      }, 1000); // שינוי הזמן ל-1 שנייה
 
     } catch (error: any) {
       toast({
