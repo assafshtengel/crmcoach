@@ -9,6 +9,7 @@ import ProfileCoach from './pages/ProfileCoach';
 import NewSessionForm from './pages/NewSessionForm';
 import NewPlayerForm from './pages/NewPlayerForm';
 import PlayerProfile from './pages/PlayerProfile';
+import EditPlayerForm from './pages/EditPlayerForm';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/new-session" element={<NewSessionForm />} />
         <Route path="/new-player" element={<NewPlayerForm />} />
         <Route path="/player-profile/:playerId" element={<PlayerProfile />} />
+        <Route path="/edit-player" element={<EditPlayerForm />} />
       </Routes>
     </Router>
   );
