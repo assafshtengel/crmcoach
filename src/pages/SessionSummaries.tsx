@@ -7,7 +7,8 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText } from 'lucide-react';
+import { ArrowRight, FileText, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 
 interface SessionSummary {
   id: string;
@@ -86,6 +87,56 @@ const SessionSummaries = () => {
     fetchSummaries();
   }, [selectedPlayer]);
 
+  const renderSummaryDetails = (summary: SessionSummary) => {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">סיכום המפגש</h3>
+          <p className="text-gray-700 whitespace-pre-wrap">{summary.summary_text}</p>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-2">מטרות שהושגו</h3>
+          <ul className="list-disc list-inside space-y-1">
+            {summary.achieved_goals.map((goal, index) => (
+              <li key={index} className="text-gray-700">{goal}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-2">מטרות להמשך</h3>
+          <ul className="list-disc list-inside space-y-1">
+            {summary.future_goals.map((goal, index) => (
+              <li key={index} className="text-gray-700">{goal}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-2">פוקוס למפגש הבא</h3>
+          <p className="text-gray-700">{summary.next_session_focus}</p>
+        </div>
+
+        {summary.additional_notes && (
+          <div>
+            <h3 className="text-lg font-semibold mb-2">הערות נוספות</h3>
+            <p className="text-gray-700 whitespace-pre-wrap">{summary.additional_notes}</p>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-4 border-t">
+          <div className="text-gray-600">
+            דירוג התקדמות: <span className="font-semibold">{summary.progress_rating}/5</span>
+          </div>
+          <DialogClose asChild>
+            <Button variant="outline">סגור</Button>
+          </DialogClose>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -128,7 +179,27 @@ const SessionSummaries = () => {
                       {format(new Date(summary.session.session_date), 'dd/MM/yyyy', { locale: he })}
                     </p>
                   </div>
-                  <FileText className="h-5 w-5 text-gray-400" />
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-gray-400" />
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Eye className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-3xl">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center justify-between">
+                            <span>סיכום מפגש - {summary.session.player.full_name}</span>
+                            <span className="text-sm font-normal text-gray-500">
+                              {format(new Date(summary.session.session_date), 'dd/MM/yyyy', { locale: he })}
+                            </span>
+                          </DialogTitle>
+                        </DialogHeader>
+                        {renderSummaryDetails(summary)}
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
