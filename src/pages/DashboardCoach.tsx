@@ -80,6 +80,9 @@ const DashboardCoach = () => {
   const fetchData = async (userId: string) => {
     try {
       const today = new Date();
+      const nextWeek = new Date(today);
+      nextWeek.setDate(today.getDate() + 7);
+      
       const firstDayOfMonth = startOfMonth(today);
       const lastDayOfMonth = endOfMonth(today);
       const lastMonth = subMonths(today, 1);
@@ -112,7 +115,33 @@ const DashboardCoach = () => {
         isAfter(new Date(session.session_date), startOfMonth(twoMonthsAgo))
       )?.length || 0;
 
-      const [playersCountResult, remindersResult, upcomingSessionsResult] = await Promise.all([
+      const { data: upcomingSessions, error: upcomingError } = await supabase
+        .from('sessions')
+        .select(`
+          id,
+          session_date,
+          session_time,
+          notes,
+          location,
+          reminder_sent,
+          player:players (
+            full_name
+          ),
+          session_summaries (
+            id
+          )
+        `)
+        .eq('coach_id', userId)
+        .gte('session_date', today.toISOString().split('T')[0])
+        .lte('session_date', nextWeek.toISOString().split('T')[0])
+        .order('session_date', { ascending: true })
+        .order('session_time', { ascending: true });
+
+      if (upcomingError) throw upcomingError;
+
+      const upcomingSessionsCount = upcomingSessions?.length || 0;
+
+      const [playersCountResult, remindersResult] = await Promise.all([
         supabase
           .from('players')
           .select('id')
@@ -121,32 +150,11 @@ const DashboardCoach = () => {
           .from('notifications_log')
           .select('id')
           .eq('coach_id', userId)
-          .eq('status', 'Sent'),
-        supabase
-          .from('sessions')
-          .select(`
-            id,
-            session_date,
-            session_time,
-            notes,
-            location,
-            reminder_sent,
-            player:players (
-              full_name
-            ),
-            session_summaries (
-              id
-            )
-          `)
-          .eq('coach_id', userId)
-          .gte('session_date', new Date().toISOString().split('T')[0])
-          .order('session_date', { ascending: true })
-          .order('session_time', { ascending: true })
-          .limit(10)
+          .eq('status', 'Sent')
       ]);
 
-      if (upcomingSessionsResult.data) {
-        const formattedSessions: UpcomingSession[] = upcomingSessionsResult.data.map((session: any) => ({
+      if (upcomingSessions) {
+        const formattedSessions: UpcomingSession[] = upcomingSessions.map((session: any) => ({
           id: session.id,
           session_date: session.session_date,
           session_time: session.session_time,
@@ -163,7 +171,7 @@ const DashboardCoach = () => {
 
       setStats({
         totalPlayers: playersCountResult.data?.length || 0,
-        upcomingSessions: currentMonthFutureSessions,
+        upcomingSessions: upcomingSessionsCount,
         currentMonthPastSessions,
         currentMonthFutureSessions,
         lastMonthSessions,
@@ -569,7 +577,7 @@ const DashboardCoach = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-[#2C3E50]">{stats.upcomingSessions}</div>
-              <p className="text-sm text-gray-500">בשבוע הקרוב</p>
+              <p className="text-sm text-gray-500">בשבוע הקרוב ({stats.upcomingSessions} מפגשים)</p>
             </CardContent>
           </Card>
 
