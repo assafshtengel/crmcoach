@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText } from 'lucide-react';
@@ -63,6 +63,7 @@ const DashboardCoach = () => {
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [coachName, setCoachName] = useState('');
   const [stats, setStats] = useState<DashboardStats>({
     totalPlayers: 0,
     upcomingSessions: 0,
@@ -439,6 +440,16 @@ const DashboardCoach = () => {
     const initializeDashboard = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        const { data: coachData } = await supabase
+          .from('coaches')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (coachData) {
+          setCoachName(coachData.full_name);
+        }
+
         await fetchData(user.id);
         await fetchNotifications(user.id);
         const channel = supabase.channel('dashboard-changes').on('postgres_changes', {
@@ -500,7 +511,15 @@ const DashboardCoach = () => {
                 <Users className="h-6 w-6 text-white/90" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">ברוך הבא, מאמן</h1>
+                <h1 className="text-2xl font-bold animate-fade-in">
+                  {coachName ? (
+                    <span className="bg-gradient-to-r from-white to-white/80 bg-clip-text">
+                      ברוך הבא, {coachName}
+                    </span>
+                  ) : (
+                    'ברוך הבא'
+                  )}
+                </h1>
                 <p className="text-white/70 text-sm">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: he })}</p>
               </div>
             </div>
