@@ -4,7 +4,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { he } from 'date-fns/locale';
@@ -20,6 +20,7 @@ interface CalendarEvent {
     playerName: string;
     location?: string;
     reminderSent: boolean;
+    notes?: string;
   };
 }
 
@@ -30,14 +31,29 @@ interface CalendarProps {
 
 export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedView, setSelectedView] = useState<'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'>('dayGridMonth');
 
   const handleEventClick = (info: any) => {
-    onEventClick(info.event.id);
+    const event = events.find(e => e.id === info.event.id);
+    if (event) {
+      setSelectedEvent(event);
+    }
+  };
+
+  const closeDialog = () => {
+    setSelectedEvent(null);
+  };
+
+  const handleEditClick = () => {
+    if (selectedEvent) {
+      onEventClick(selectedEvent.id);
+      setSelectedEvent(null);
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <>
       <Button 
         variant="ghost" 
         className="flex items-center gap-2 text-white hover:bg-white/10"
@@ -47,82 +63,124 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
         <span>לוח מפגשים</span>
       </Button>
 
-      <DialogContent className="max-w-6xl h-[80vh]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">לוח מפגשים</DialogTitle>
-        </DialogHeader>
-        
-        <div className="flex gap-2 mb-4">
-          <Button
-            variant={selectedView === 'timeGridDay' ? 'default' : 'outline'}
-            onClick={() => setSelectedView('timeGridDay')}
-          >
-            יומי
-          </Button>
-          <Button
-            variant={selectedView === 'timeGridWeek' ? 'default' : 'outline'}
-            onClick={() => setSelectedView('timeGridWeek')}
-          >
-            שבועי
-          </Button>
-          <Button
-            variant={selectedView === 'dayGridMonth' ? 'default' : 'outline'}
-            onClick={() => setSelectedView('dayGridMonth')}
-          >
-            חודשי
-          </Button>
-        </div>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-6xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">לוח מפגשים</DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant={selectedView === 'timeGridDay' ? 'default' : 'outline'}
+              onClick={() => setSelectedView('timeGridDay')}
+            >
+              יומי
+            </Button>
+            <Button
+              variant={selectedView === 'timeGridWeek' ? 'default' : 'outline'}
+              onClick={() => setSelectedView('timeGridWeek')}
+            >
+              שבועי
+            </Button>
+            <Button
+              variant={selectedView === 'dayGridMonth' ? 'default' : 'outline'}
+              onClick={() => setSelectedView('dayGridMonth')}
+            >
+              חודשי
+            </Button>
+          </div>
 
-        <div className="flex-1 overflow-auto">
-          <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView={selectedView}
-            headerToolbar={{
-              start: 'prev,next today',
-              center: 'title',
-              end: '',
-            }}
-            views={{
-              timeGridDay: {
-                titleFormat: { year: 'numeric', month: 'long', day: 'numeric' }
-              },
-              timeGridWeek: {
-                titleFormat: { year: 'numeric', month: 'long' }
-              },
-              dayGridMonth: {
-                titleFormat: { year: 'numeric', month: 'long' }
-              }
-            }}
-            events={events}
-            eventClick={handleEventClick}
-            locale="he"
-            direction="rtl"
-            firstDay={0}
-            allDaySlot={false}
-            slotMinTime="07:00:00"
-            slotMaxTime="22:00:00"
-            eventTimeFormat={{
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false
-            }}
-            slotLabelFormat={{
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false
-            }}
-            eventContent={(eventInfo) => (
-              <div className="p-1 text-sm">
-                <div className="font-bold">{eventInfo.timeText}</div>
-                <div>{eventInfo.event.extendedProps.playerName}</div>
-                {eventInfo.event.extendedProps.location && (
-                  <div className="text-xs text-gray-600">{eventInfo.event.extendedProps.location}</div>
-                )}
+          <div className="flex-1 overflow-auto">
+            <FullCalendar
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView={selectedView}
+              headerToolbar={{
+                start: 'prev,next today',
+                center: 'title',
+                end: '',
+              }}
+              views={{
+                timeGridDay: {
+                  titleFormat: { year: 'numeric', month: 'long', day: 'numeric' }
+                },
+                timeGridWeek: {
+                  titleFormat: { year: 'numeric', month: 'long' }
+                },
+                dayGridMonth: {
+                  titleFormat: { year: 'numeric', month: 'long' }
+                }
+              }}
+              events={events}
+              eventClick={handleEventClick}
+              locale="he"
+              direction="rtl"
+              firstDay={0}
+              allDaySlot={false}
+              slotMinTime="07:00:00"
+              slotMaxTime="22:00:00"
+              eventTimeFormat={{
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }}
+              slotLabelFormat={{
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }}
+              eventContent={(eventInfo) => (
+                <div className="p-1 text-sm">
+                  <div className="font-bold">{eventInfo.timeText}</div>
+                  <div>{eventInfo.event.extendedProps.playerName}</div>
+                  {eventInfo.event.extendedProps.location && (
+                    <div className="text-xs text-gray-600">{eventInfo.event.extendedProps.location}</div>
+                  )}
+                </div>
+              )}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {selectedEvent && (
+        <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>פרטי מפגש</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-bold mb-1">שם השחקן</h3>
+                <p>{selectedEvent.extendedProps.playerName}</p>
               </div>
-            )}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+              <div>
+                <h3 className="font-bold mb-1">תאריך ושעה</h3>
+                <p>{format(new Date(selectedEvent.start), 'dd/MM/yyyy HH:mm')}</p>
+              </div>
+              {selectedEvent.extendedProps.location && (
+                <div>
+                  <h3 className="font-bold mb-1">מיקום</h3>
+                  <p>{selectedEvent.extendedProps.location}</p>
+                </div>
+              )}
+              {selectedEvent.extendedProps.notes && (
+                <div>
+                  <h3 className="font-bold mb-1">הערות</h3>
+                  <p>{selectedEvent.extendedProps.notes}</p>
+                </div>
+              )}
+              <div>
+                <h3 className="font-bold mb-1">סטטוס תזכורת</h3>
+                <p>{selectedEvent.extendedProps.reminderSent ? 'נשלחה תזכורת' : 'טרם נשלחה תזכורת'}</p>
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="outline" onClick={closeDialog}>סגור</Button>
+                <Button onClick={handleEditClick}>ערוך מפגש</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };
