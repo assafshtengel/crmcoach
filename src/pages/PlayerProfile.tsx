@@ -45,7 +45,12 @@ const PlayerProfile = () => {
 
   const fetchPlayerProfile = async () => {
     try {
-      if (!playerId) return;
+      if (!playerId) {
+        toast.error('מזהה שחקן חסר');
+        return;
+      }
+
+      console.log('Fetching player with ID:', playerId);
 
       const { data, error } = await supabase
         .from('players')
@@ -54,11 +59,16 @@ const PlayerProfile = () => {
         .single();
 
       if (error) {
+        console.error('Error details:', error);
         throw error;
       }
 
       if (data) {
+        console.log('Player data received:', data);
         setPlayer(data as PlayerProfile);
+      } else {
+        console.log('No player data found');
+        toast.error('לא נמצאו נתוני שחקן');
       }
     } catch (error) {
       console.error('Error fetching player profile:', error);
