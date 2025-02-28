@@ -69,6 +69,7 @@ const PublicRegistrationForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [linkData, setLinkData] = useState<LinkData | null>(null);
@@ -139,13 +140,21 @@ const PublicRegistrationForm = () => {
   }, [linkId]);
 
   const onSubmit = async (values: FormValues) => {
+    if (submitting) return; // Prevent multiple submissions
+    
     try {
-      setLoading(true);
+      setSubmitting(true);
+      console.log("Submitting form with values:", values);
+
+      if (!linkId) {
+        throw new Error('מזהה קישור חסר');
+      }
 
       if (!linkData || !linkData.coach) {
         throw new Error('מידע המאמן חסר');
       }
 
+      console.log("Inserting player data for coach ID:", linkData.coach.id);
       const { data, error } = await supabase
         .from('players')
         .insert([
@@ -169,10 +178,17 @@ const PublicRegistrationForm = () => {
         ])
         .select();
 
-      if (error) throw error;
+      console.log("Player insert response:", data, "Error:", error);
+      
+      if (error) {
+        console.error("Error details:", error);
+        throw error;
+      }
 
+      console.log("Successfully inserted player, creating notification");
+      
       // Send notification to coach
-      await supabase
+      const { error: notificationError } = await supabase
         .from('notifications')
         .insert([{
           coach_id: linkData.coach.id,
@@ -180,8 +196,20 @@ const PublicRegistrationForm = () => {
           message: `נרשם שחקן חדש: ${values.firstName} ${values.lastName}`
         }]);
 
+      if (notificationError) {
+        console.error("Error creating notification:", notificationError);
+        // Log but continue, notification failure shouldn't affect registration
+      } else {
+        console.log("Notification successfully created");
+      }
+
+      // Show success message and set registration complete state
+      toast({
+        title: "ההרשמה בוצעה בהצלחה!",
+        description: "פרטיך נשמרו במערכת. המאמן יצור איתך קשר בהקדם.",
+      });
+
       setRegistrationComplete(true);
-      setLoading(false);
 
     } catch (error: any) {
       console.error('Error submitting registration:', error);
@@ -190,7 +218,8 @@ const PublicRegistrationForm = () => {
         title: "שגיאה בהרשמה",
         description: error.message || "אירעה שגיאה בעת שמירת הנתונים. אנא נסה שוב."
       });
-      setLoading(false);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -480,8 +509,8 @@ const PublicRegistrationForm = () => {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
-                    {loading ? (
+                  <Button type="submit" className="w-full sm:w-auto" disabled={submitting}>
+                    {submitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         שומר נתונים...
