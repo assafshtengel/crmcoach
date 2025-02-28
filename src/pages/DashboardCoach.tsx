@@ -651,7 +651,11 @@ const DashboardCoach = () => {
             </div>
             <div className="flex items-center gap-4">
               <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} onEventAdd={handleAddEvent} />
-              <Button variant="ghost" className="text-white hover:bg-white/10">
+              <Button 
+                variant="ghost" 
+                className="text-white hover:bg-white/10"
+                onClick={() => navigate('/registration-links')}
+              >
                 <Share2 className="h-5 w-5 mr-2" />
                 <span className="hidden sm:inline">לינקי הרשמה</span>
               </Button>
