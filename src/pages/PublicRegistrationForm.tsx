@@ -1,19 +1,30 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
-import { Loader2, CheckCircle } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useForm } from "react-hook-form";
+import { supabase } from '@/lib/supabase';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { positions } from '@/components/new-player/PlayerFormSchema';
 
 const formSchema = z.object({
   firstName: z.string().min(2, "שם פרטי חייב להכיל לפחות 2 תווים"),
@@ -42,119 +53,101 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface LinkData {
-  id: string;
-  coach_id: string;
-  created_at: string;
-  custom_message: string | null;
-  expires_at: string | null;
-  is_active: boolean;
-  coach: {
-    id: string;
-    full_name: string;
-  };
-}
-
-const positions = [
-  { value: "goalkeeper", label: "שוער" },
-  { value: "defender", label: "בלם" },
-  { value: "fullback", label: "מגן" },
-  { value: "midfielder", label: "קשר" },
-  { value: "winger", label: "כנף" },
-  { value: "striker", label: "חלוץ" }
-];
-
 const PublicRegistrationForm = () => {
-  const { linkId } = useParams<{ linkId: string }>();
   const navigate = useNavigate();
+  const { linkId } = useParams();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [registrationComplete, setRegistrationComplete] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [linkData, setLinkData] = useState<LinkData | null>(null);
+  const [linkData, setLinkData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      birthDate: '',
-      city: '',
-      club: '',
-      yearGroup: '',
-      injuries: '',
-      parentName: '',
-      parentPhone: '',
-      parentEmail: '',
-      notes: '',
-      position: ''
-    }
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      birthDate: "",
+      city: "",
+      club: "",
+      yearGroup: "",
+      injuries: "",
+      parentName: "",
+      parentPhone: "",
+      parentEmail: "",
+      notes: "",
+      position: ""
+    },
   });
 
   useEffect(() => {
-    console.log("PublicRegistrationForm mounted, linkId:", linkId);
-    const verifyLink = async () => {
+    const fetchLinkData = async () => {
       if (!linkId) {
-        setErrorMessage('קישור לא חוקי');
-        setLoading(false);
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "קישור לא תקין",
+        });
+        navigate('/');
         return;
       }
 
       try {
-        console.log("Verifying link with ID:", linkId);
-        const { data, error } = await supabase
+        console.log("Fetching link data for ID:", linkId);
+        // Fetch the registration link data
+        const { data: linkData, error: linkError } = await supabase
           .from('registration_links')
-          .select('*, coach:coaches(id, full_name)')
+          .select(`
+            *,
+            coach:coaches(id, full_name, email)
+          `)
           .eq('id', linkId)
+          .eq('is_active', true)
           .single();
 
-        console.log("Link data response:", data, "Error:", error);
-
-        if (error || !data) {
-          throw new Error('קישור לא נמצא או שהוא לא תקף');
+        if (linkError || !linkData) {
+          console.error("Error fetching link:", linkError);
+          throw new Error('הקישור לא נמצא או שאינו פעיל');
         }
 
-        // Check if link is active
-        if (!data.is_active) {
-          throw new Error('קישור זה אינו פעיל יותר');
+        // Check if the link has expired
+        if (linkData.expires_at && new Date(linkData.expires_at) < new Date()) {
+          throw new Error('הקישור פג תוקף');
         }
 
-        // Check if link has expired
-        if (data.expires_at && new Date(data.expires_at) < new Date()) {
-          throw new Error('תוקף הקישור פג');
-        }
-        
-        setLinkData(data as LinkData);
-        setLoading(false);
-      } catch (error: any) {
-        console.error('Error verifying registration link:', error);
-        setErrorMessage(error.message || 'קישור לא תקף');
-        setLoading(false);
+        console.log("Link data loaded:", linkData);
+        setLinkData(linkData);
+      } catch (error) {
+        console.error("Error in useEffect:", error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: error.message || "אירעה שגיאה בטעינת הטופס",
+        });
+        navigate('/');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    verifyLink();
-  }, [linkId]);
+    fetchLinkData();
+  }, [linkId, navigate, toast]);
 
   const onSubmit = async (values: FormValues) => {
-    if (submitting) return; // Prevent multiple submissions
-    
+    if (isSubmitting) return;
+
     try {
-      setSubmitting(true);
-      console.log("Submitting form with values:", values);
+      setIsSubmitting(true);
+      console.log("Form submitted with values:", values);
 
-      if (!linkId) {
-        throw new Error('מזהה קישור חסר');
-      }
-
-      if (!linkData || !linkData.coach) {
+      if (!linkData || !linkData.coach || !linkData.coach.id) {
+        console.error("Missing coach data:", linkData);
         throw new Error('מידע המאמן חסר');
       }
 
-      // Create player data object - without the registration_link_id field
+      // Create player data object - כולל שדה registration_link_id
       const playerData = {
         coach_id: linkData.coach.id,
         full_name: `${values.firstName} ${values.lastName}`,
@@ -169,7 +162,8 @@ const PublicRegistrationForm = () => {
         parent_phone: values.parentPhone,
         parent_email: values.parentEmail,
         notes: values.notes,
-        position: values.position
+        position: values.position,
+        registration_link_id: linkId
       };
 
       console.log("Inserting player data for coach ID:", linkData.coach.id);
@@ -179,352 +173,278 @@ const PublicRegistrationForm = () => {
         .select();
 
       console.log("Player insert response:", data, "Error:", error);
-      
+
       if (error) {
-        console.error("Error details:", error);
         throw error;
       }
 
-      console.log("Successfully inserted player, creating notification");
-      
-      // Send notification to coach
-      const { error: notificationError } = await supabase
+      // הוספת התראה למאמן
+      const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
+      await supabase
         .from('notifications')
-        .insert([{
-          coach_id: linkData.coach.id,
-          type: 'new_player',
-          message: `נרשם שחקן חדש: ${values.firstName} ${values.lastName}`
-        }]);
+        .insert([
+          {
+            coach_id: linkData.coach.id,
+            message: notificationMessage,
+            type: 'new_player'
+          }
+        ]);
 
-      if (notificationError) {
-        console.error("Error creating notification:", notificationError);
-        // Log but continue, notification failure shouldn't affect registration
-      } else {
-        console.log("Notification successfully created");
-      }
-
-      // Show success message and set registration complete state
       toast({
-        title: "ההרשמה בוצעה בהצלחה!",
-        description: "פרטיך נשמרו במערכת. המאמן יצור איתך קשר בהקדם.",
+        title: "נרשמת בהצלחה!",
+        description: "פרטיך נשלחו למאמן בהצלחה.",
       });
 
-      setRegistrationComplete(true);
+      setShowSuccessDialog(true);
 
-    } catch (error: any) {
-      console.error('Error submitting registration:', error);
+    } catch (error) {
+      console.error('Error in form submission:', error);
       toast({
         variant: "destructive",
-        title: "שגיאה בהרשמה",
-        description: error.message || "אירעה שגיאה בעת שמירת הנתונים. אנא נסה שוב."
+        title: "שגיאה ברישום",
+        description: error.error_description || error.message || "אירעה שגיאה ברישום. אנא נסה שוב.",
       });
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
-  if (errorMessage) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-center text-red-600">שגיאה</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="mb-4">{errorMessage}</p>
-            <Button onClick={() => window.location.href = '/'}>חזרה לדף הבית</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-gray-600">טוען טופס הרשמה...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (registrationComplete) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-lg">
-          <CardHeader>
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-              <CheckCircle className="h-10 w-10 text-green-600" />
-            </div>
-            <CardTitle className="text-center text-2xl">ההרשמה הושלמה בהצלחה!</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="mb-6">תודה שנרשמת! פרטיך נשמרו במערכת והמאמן יצור איתך קשר בהקדם.</p>
-            <Button onClick={() => window.location.href = '/'}>חזרה לדף הבית</Button>
-          </CardContent>
-        </Card>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4 py-10">
-      <div className="max-w-4xl mx-auto">
-        <Card className="shadow-lg">
-          <CardHeader className="text-center border-b pb-6">
-            <CardTitle className="text-2xl">טופס הרשמת שחקן חדש</CardTitle>
-            <CardDescription>
-              {linkData?.coach?.full_name && (
-                <p className="mt-2">הרשמה למאמן: {linkData.coach.full_name}</p>
-              )}
-              {linkData?.custom_message && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg text-blue-800 border border-blue-100">
-                  {linkData.custom_message}
-                </div>
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                  <h3 className="font-medium text-lg mb-4">פרטים אישיים</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="firstName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>שם פרטי *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="ישראל" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="py-6 px-4 sm:px-10 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+          <h1 className="text-xl sm:text-2xl font-semibold">
+            רישום לאימון עם {linkData?.coach?.full_name}
+          </h1>
+          {linkData?.custom_message && (
+            <p className="mt-2 text-white/90">{linkData.custom_message}</p>
+          )}
+        </div>
+        <div className="px-4 py-6 sm:p-10">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900">פרטים אישיים</h2>
+                  <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                    <div>
+                      <Label htmlFor="firstName">שם פרטי</Label>
+                      <Input 
+                        id="firstName" 
+                        className="mt-1" 
+                        {...form.register("firstName")} 
+                      />
+                      {form.formState.errors.firstName && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.firstName.message}</p>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>שם משפחה *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="ישראלי" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">שם משפחה</Label>
+                      <Input 
+                        id="lastName" 
+                        className="mt-1" 
+                        {...form.register("lastName")} 
+                      />
+                      {form.formState.errors.lastName && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.lastName.message}</p>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>אימייל *</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="example@gmail.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    </div>
+                    <div>
+                      <Label htmlFor="email">אימייל</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        className="mt-1" 
+                        {...form.register("email")} 
+                      />
+                      {form.formState.errors.email && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message}</p>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>טלפון *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="050-0000000" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">טלפון</Label>
+                      <Input 
+                        id="phone" 
+                        className="mt-1" 
+                        {...form.register("phone")} 
+                      />
+                      {form.formState.errors.phone && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.phone.message}</p>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="birthDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>תאריך לידה *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="DD/MM/YYYY" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    </div>
+                    <div>
+                      <Label htmlFor="birthDate">תאריך לידה</Label>
+                      <Input 
+                        id="birthDate" 
+                        placeholder="DD/MM/YYYY" 
+                        className="mt-1" 
+                        {...form.register("birthDate")} 
+                      />
+                      {form.formState.errors.birthDate && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.birthDate.message}</p>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="city"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>עיר *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="תל אביב" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    </div>
+                    <div>
+                      <Label htmlFor="city">עיר מגורים</Label>
+                      <Input 
+                        id="city" 
+                        className="mt-1" 
+                        {...form.register("city")} 
+                      />
+                      {form.formState.errors.city && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.city.message}</p>
                       )}
-                    />
+                    </div>
                   </div>
                 </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                  <h3 className="font-medium text-lg mb-4">פרטי כדורגל</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="club"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>מועדון *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="שם המועדון" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900">פרטי כדורגל</h2>
+                  <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                    <div>
+                      <Label htmlFor="position">עמדה במגרש</Label>
+                      <Select 
+                        onValueChange={(value) => form.setValue("position", value)}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="בחר עמדה" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {positions.map((position) => (
+                            <SelectItem key={position.value} value={position.value}>
+                              {position.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {form.formState.errors.position && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.position.message}</p>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="yearGroup"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>שנתון *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="לדוגמה: 2010" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    </div>
+                    <div>
+                      <Label htmlFor="club">מועדון/קבוצה</Label>
+                      <Input 
+                        id="club" 
+                        className="mt-1" 
+                        {...form.register("club")} 
+                      />
+                      {form.formState.errors.club && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.club.message}</p>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="position"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>עמדה *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="בחר עמדה" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {positions.map((position) => (
-                                <SelectItem key={position.value} value={position.value}>
-                                  {position.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
+                    </div>
+                    <div>
+                      <Label htmlFor="yearGroup">שנתון</Label>
+                      <Input 
+                        id="yearGroup" 
+                        className="mt-1" 
+                        {...form.register("yearGroup")} 
+                      />
+                      {form.formState.errors.yearGroup && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.yearGroup.message}</p>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="injuries"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>פציעות (אם יש)</FormLabel>
-                          <FormControl>
-                            <Textarea placeholder="פרט אם יש פציעות קודמות או נוכחיות" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label htmlFor="injuries">פציעות קודמות (אופציונלי)</Label>
+                      <Textarea 
+                        id="injuries" 
+                        className="mt-1" 
+                        {...form.register("injuries")} 
+                      />
+                    </div>
                   </div>
                 </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                  <h3 className="font-medium text-lg mb-4">פרטי הורה</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="parentName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>שם ההורה *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="שם מלא" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900">פרטי הורה (לשחקנים מתחת לגיל 18)</h2>
+                  <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                    <div>
+                      <Label htmlFor="parentName">שם מלא</Label>
+                      <Input 
+                        id="parentName" 
+                        className="mt-1" 
+                        {...form.register("parentName")} 
+                      />
+                      {form.formState.errors.parentName && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentName.message}</p>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="parentPhone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>טלפון הורה *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="050-0000000" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    </div>
+                    <div>
+                      <Label htmlFor="parentPhone">טלפון</Label>
+                      <Input 
+                        id="parentPhone" 
+                        className="mt-1" 
+                        {...form.register("parentPhone")} 
+                      />
+                      {form.formState.errors.parentPhone && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentPhone.message}</p>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="parentEmail"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>אימייל הורה *</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="parent@example.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    </div>
+                    <div>
+                      <Label htmlFor="parentEmail">אימייל</Label>
+                      <Input 
+                        id="parentEmail" 
+                        type="email" 
+                        className="mt-1" 
+                        {...form.register("parentEmail")} 
+                      />
+                      {form.formState.errors.parentEmail && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentEmail.message}</p>
                       )}
-                    />
+                    </div>
                   </div>
                 </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                  <h3 className="font-medium text-lg mb-4">פרטים נוספים</h3>
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>הערות נוספות</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="כל מידע נוסף שתרצו לשתף עם המאמן" 
-                            {...field} 
-                            className="min-h-[100px]"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                
+                <div>
+                  <Label htmlFor="notes">הערות נוספות (אופציונלי)</Label>
+                  <Textarea 
+                    id="notes" 
+                    className="mt-1" 
+                    {...form.register("notes")} 
                   />
                 </div>
-
-                <div className="flex justify-end">
-                  <Button type="submit" className="w-full sm:w-auto" disabled={submitting}>
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        שומר נתונים...
-                      </>
-                    ) : (
-                      'שלח טופס'
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+              </div>
+              
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "רושם..." : "שלח פרטים"}
+              </Button>
+            </form>
+          </Form>
+        </div>
       </div>
+
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">הרישום הושלם בהצלחה!</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-4">
+            <p className="mb-4">
+              תודה שנרשמת לאימון. המאמן {linkData?.coach?.full_name} יצור איתך קשר בקרוב.
+            </p>
+            <Button
+              onClick={() => {
+                setShowSuccessDialog(false);
+                navigate('/');
+              }}
+              className="mt-2"
+            >
+              חזרה לעמוד הבית
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

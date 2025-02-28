@@ -610,6 +610,7 @@ export type Database = {
           phone: string | null
           position: string | null
           profile_image: string | null
+          registration_link_id: string | null
           year_group: string | null
         }
         Insert: {
@@ -629,6 +630,7 @@ export type Database = {
           phone?: string | null
           position?: string | null
           profile_image?: string | null
+          registration_link_id?: string | null
           year_group?: string | null
         }
         Update: {
@@ -648,6 +650,7 @@ export type Database = {
           phone?: string | null
           position?: string | null
           profile_image?: string | null
+          registration_link_id?: string | null
           year_group?: string | null
         }
         Relationships: [
@@ -656,6 +659,13 @@ export type Database = {
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_registration_link_id_fkey"
+            columns: ["registration_link_id"]
+            isOneToOne: false
+            referencedRelation: "registration_links"
             referencedColumns: ["id"]
           },
         ]
