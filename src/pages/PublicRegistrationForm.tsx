@@ -154,28 +154,28 @@ const PublicRegistrationForm = () => {
         throw new Error('מידע המאמן חסר');
       }
 
+      // Create player data object - without the registration_link_id field
+      const playerData = {
+        coach_id: linkData.coach.id,
+        full_name: `${values.firstName} ${values.lastName}`,
+        email: values.email,
+        phone: values.phone,
+        birthdate: values.birthDate,
+        city: values.city,
+        club: values.club,
+        year_group: values.yearGroup,
+        injuries: values.injuries,
+        parent_name: values.parentName,
+        parent_phone: values.parentPhone,
+        parent_email: values.parentEmail,
+        notes: values.notes,
+        position: values.position
+      };
+
       console.log("Inserting player data for coach ID:", linkData.coach.id);
       const { data, error } = await supabase
         .from('players')
-        .insert([
-          {
-            coach_id: linkData.coach.id,
-            full_name: `${values.firstName} ${values.lastName}`,
-            email: values.email,
-            phone: values.phone,
-            birthdate: values.birthDate,
-            city: values.city,
-            club: values.club,
-            year_group: values.yearGroup,
-            injuries: values.injuries,
-            parent_name: values.parentName,
-            parent_phone: values.parentPhone,
-            parent_email: values.parentEmail,
-            notes: values.notes,
-            position: values.position,
-            registration_link_id: linkId
-          }
-        ])
+        .insert([playerData])
         .select();
 
       console.log("Player insert response:", data, "Error:", error);
