@@ -35,7 +35,7 @@ import NewPlayerForm from "./pages/NewPlayerForm";
 import EditPlayerForm from "./pages/EditPlayerForm";
 import RegistrationLinks from "./pages/RegistrationLinks";
 import PublicRegistrationForm from "./pages/PublicRegistrationForm";
-import AuthGuard from "./components/auth/AuthGuard";
+import { AuthGuard } from "./components/auth/AuthGuard";
 
 import "./App.css";
 

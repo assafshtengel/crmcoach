@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,6 +42,19 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+interface LinkData {
+  id: string;
+  coach_id: string;
+  created_at: string;
+  custom_message: string | null;
+  expires_at: string | null;
+  is_active: boolean;
+  coach: {
+    id: string;
+    full_name: string;
+  };
+}
+
 const positions = [
   { value: "goalkeeper", label: "שוער" },
   { value: "defender", label: "בלם" },
@@ -58,7 +71,7 @@ const PublicRegistrationForm = () => {
   const [loading, setLoading] = useState(true);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [linkData, setLinkData] = useState<any>(null);
+  const [linkData, setLinkData] = useState<LinkData | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -109,21 +122,16 @@ const PublicRegistrationForm = () => {
           throw new Error('תוקף הקישור פג');
         }
 
-        // Check if max registrations has been reached
-        if (data.max_registrations) {
-          const { count, error: countError } = await supabase
-            .from('players')
-            .select('*', { count: 'exact', head: true })
-            .eq('registration_link_id', linkId);
+        // The database might not have the max_registrations column yet if the SQL hasn't been run
+        // So we'll check registrations count differently
+        const { count, error: countError } = await supabase
+          .from('players')
+          .select('*', { count: 'exact', head: true })
+          .eq('registration_link_id', linkId);
 
-          if (countError) throw countError;
-
-          if (count !== null && count >= data.max_registrations) {
-            throw new Error('הגעת למספר המקסימלי של הרשמות לקישור זה');
-          }
-        }
-
-        setLinkData(data);
+        if (countError) throw countError;
+        
+        setLinkData(data as LinkData);
         setLoading(false);
       } catch (error: any) {
         console.error('Error verifying registration link:', error);

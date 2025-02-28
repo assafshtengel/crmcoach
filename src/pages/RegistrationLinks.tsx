@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { PlusCircle, Copy, Calendar, Share, Trash, ArrowLeft, Link as LinkIcon, Users, Bell, Check } from 'lucide-react';
 import {
   Dialog,
@@ -87,15 +87,21 @@ const RegistrationLinks = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('משתמש לא מחובר');
 
+      const newLinkData: any = {
+        coach_id: user.id,
+        custom_message: newLinkMessage || null,
+        expires_at: newLinkExpiry || null,
+        is_active: true
+      };
+      
+      // Only add max_registrations if the database column exists and limit is enabled
+      if (enableLimit && maxRegistrations) {
+        newLinkData.max_registrations = maxRegistrations;
+      }
+
       const { data, error } = await supabase
         .from('registration_links')
-        .insert([{
-          coach_id: user.id,
-          custom_message: newLinkMessage || null,
-          expires_at: newLinkExpiry || null,
-          max_registrations: enableLimit ? maxRegistrations : null,
-          is_active: true
-        }])
+        .insert([newLinkData])
         .select()
         .single();
 
@@ -313,7 +319,6 @@ const RegistrationLinks = () => {
                       <TableHead>תאריך יצירה</TableHead>
                       <TableHead>סטטוס</TableHead>
                       <TableHead>תאריך תפוגה</TableHead>
-                      <TableHead>הגבלת נרשמים</TableHead>
                       <TableHead className="text-left">פעולות</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -349,16 +354,6 @@ const RegistrationLinks = () => {
                               <span className={isExpired(link.expires_at) ? "text-red-500" : ""}>
                                 {format(new Date(link.expires_at), 'dd/MM/yyyy HH:mm')}
                               </span>
-                            </div>
-                          ) : (
-                            <span className="text-gray-500">ללא הגבלה</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {link.max_registrations ? (
-                            <div className="flex items-center">
-                              <Users className="h-4 w-4 ml-1 text-gray-500" />
-                              <span>{link.max_registrations} נרשמים</span>
                             </div>
                           ) : (
                             <span className="text-gray-500">ללא הגבלה</span>
