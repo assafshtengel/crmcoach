@@ -94,6 +94,7 @@ const PublicRegistrationForm = () => {
   });
 
   useEffect(() => {
+    console.log("PublicRegistrationForm mounted, linkId:", linkId);
     const verifyLink = async () => {
       if (!linkId) {
         setErrorMessage('קישור לא חוקי');
@@ -102,11 +103,14 @@ const PublicRegistrationForm = () => {
       }
 
       try {
+        console.log("Verifying link with ID:", linkId);
         const { data, error } = await supabase
           .from('registration_links')
           .select('*, coach:coaches(id, full_name)')
           .eq('id', linkId)
           .single();
+
+        console.log("Link data response:", data, "Error:", error);
 
         if (error || !data) {
           throw new Error('קישור לא נמצא או שהוא לא תקף');
@@ -121,15 +125,6 @@ const PublicRegistrationForm = () => {
         if (data.expires_at && new Date(data.expires_at) < new Date()) {
           throw new Error('תוקף הקישור פג');
         }
-
-        // The database might not have the max_registrations column yet if the SQL hasn't been run
-        // So we'll check registrations count differently
-        const { count, error: countError } = await supabase
-          .from('players')
-          .select('*', { count: 'exact', head: true })
-          .eq('registration_link_id', linkId);
-
-        if (countError) throw countError;
         
         setLinkData(data as LinkData);
         setLoading(false);
@@ -208,7 +203,7 @@ const PublicRegistrationForm = () => {
           </CardHeader>
           <CardContent className="text-center">
             <p className="mb-4">{errorMessage}</p>
-            <Button onClick={() => navigate('/')}>חזרה לדף הבית</Button>
+            <Button onClick={() => window.location.href = '/'}>חזרה לדף הבית</Button>
           </CardContent>
         </Card>
       </div>
@@ -238,7 +233,7 @@ const PublicRegistrationForm = () => {
           </CardHeader>
           <CardContent className="text-center">
             <p className="mb-6">תודה שנרשמת! פרטיך נשמרו במערכת והמאמן יצור איתך קשר בהקדם.</p>
-            <Button onClick={() => navigate('/')}>חזרה לדף הבית</Button>
+            <Button onClick={() => window.location.href = '/'}>חזרה לדף הבית</Button>
           </CardContent>
         </Card>
       </div>
