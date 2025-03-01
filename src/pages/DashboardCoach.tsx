@@ -16,6 +16,8 @@ import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
 import { Calendar as CalendarComponent } from '@/components/calendar/Calendar';
 import { Link } from 'react-router-dom';
 import { Wrench } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tool } from '@/types/tool';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -102,6 +104,9 @@ const DashboardCoach = () => {
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isSessionsExpanded, setIsSessionsExpanded] = useState(false);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [pastSessionsToSummarize, setPastSessionsToSummarize] = useState<UpcomingSession[]>([]);
+  const [summarizedSessions, setSummarizedSessions] = useState<UpcomingSession[]>([]);
+  const [activeTab, setActiveTab] = useState("upcoming");
 
   useEffect(() => {
     const initUser = async () => {
@@ -212,6 +217,60 @@ const DashboardCoach = () => {
         twoMonthsAgoSessions,
         totalReminders: remindersResult.data?.length || 0
       });
+
+      // Fetch past sessions that need summarizing
+      const { data: pastSessions, error: pastSessionsError } = await supabase
+        .from('sessions')
+        .select(`
+          id,
+          session_date,
+          session_time,
+          notes,
+          location,
+          reminder_sent,
+          player:players (
+            full_name
+          ),
+          session_summaries (
+            id
+          )
+        `)
+        .eq('coach_id', userId)
+        .lt('session_date', today.toISOString().split('T')[0])
+        .order('session_date', { ascending: false })
+        .limit(10);
+
+      if (pastSessionsError) throw pastSessionsError;
+
+      if (pastSessions) {
+        const sessionsToSummarize: UpcomingSession[] = [];
+        const summarizedSessions: UpcomingSession[] = [];
+
+        pastSessions.forEach((session: any) => {
+          const hasSummary = Array.isArray(session.session_summaries) && session.session_summaries.length > 0;
+          const formattedSession: UpcomingSession = {
+            id: session.id,
+            session_date: session.session_date,
+            session_time: session.session_time,
+            notes: session.notes || '',
+            location: session.location || '',
+            reminder_sent: session.reminder_sent || false,
+            player: {
+              full_name: session.player?.full_name || 'לא נמצא שחקן'
+            },
+            has_summary: hasSummary
+          };
+
+          if (hasSummary) {
+            summarizedSessions.push(formattedSession);
+          } else {
+            sessionsToSummarize.push(formattedSession);
+          }
+        });
+
+        setPastSessionsToSummarize(sessionsToSummarize);
+        setSummarizedSessions(summarizedSessions);
+      }
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -376,13 +435,13 @@ const DashboardCoach = () => {
     }
   };
 
-  const renderSessionCard = (session: UpcomingSession) => {
+  const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
     const sessionDate = new Date(session.session_date);
     const isToday = isSameDay(sessionDate, new Date());
     const isPastSession = isPast(sessionDate);
     const hasNoSummary = isPastSession && !session.has_summary;
 
-    if (isPastSession && session.has_summary) {
+    if (isPastSession && session.has_summary && !showSummaryButton) {
       return null;
     }
 
@@ -392,6 +451,7 @@ const DashboardCoach = () => {
         className={`bg-gray-50 hover:bg-white transition-all duration-300 ${
           isToday ? 'border-l-4 border-l-blue-500 shadow-blue-200' :
           hasNoSummary ? 'border-l-4 border-l-red-500 shadow-red-200' :
+          session.has_summary ? 'border-l-4 border-l-green-500 shadow-green-200' :
           'border'
         }`}
       >
@@ -416,6 +476,12 @@ const DashboardCoach = () => {
                   חסר סיכום
                 </div>
               )}
+              {session.has_summary && (
+                <div className="flex items-center text-green-600 text-sm font-medium">
+                  <Check className="h-4 w-4 mr-1" />
+                  סוכם
+                </div>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -423,7 +489,7 @@ const DashboardCoach = () => {
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-500">{session.location || 'לא צוין מיקום'}</span>
             <div className="flex gap-2">
-              {!session.reminder_sent ? (
+              {!session.reminder_sent && !isPastSession ? (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -433,17 +499,18 @@ const DashboardCoach = () => {
                   <Send className="h-4 w-4 mr-1" />
                   שלח תזכורת
                 </Button>
-              ) : (
+              ) : !isPastSession ? (
                 <span className="text-sm text-[#27AE60] flex items-center">
                   <Check className="h-4 w-4 mr-1" />
                   נשלחה תזכורת
                 </span>
-              )}
-              {!session.has_summary && (
+              ) : null}
+              {showSummaryButton && !session.has_summary && (
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <FileEdit className="h-4 w-4" />
+                    <Button variant="ghost" size="sm" className="flex items-center">
+                      <FileEdit className="h-4 w-4 mr-1" />
+                      סכם מפגש
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
@@ -461,6 +528,14 @@ const DashboardCoach = () => {
                     </div>
                   </DialogContent>
                 </Dialog>
+              )}
+              {session.has_summary && (
+                <Link to={`/session-summaries/${session.id}`}>
+                  <Button variant="ghost" size="sm" className="flex items-center">
+                    <FileText className="h-4 w-4 mr-1" />
+                    צפה בסיכום
+                  </Button>
+                </Link>
               )}
             </div>
           </div>
@@ -773,6 +848,67 @@ const DashboardCoach = () => {
               </div>
             </CardContent>
           )}
+        </Card>
+
+        <Card className="bg-white/90 shadow-lg">
+          <CardHeader className="border-b pb-4">
+            <CardTitle className="text-xl font-semibold text-[#2C3E50]">מפגשים</CardTitle>
+            <Button variant="outline" onClick={() => navigate('/new-session')}>
+              <CalendarPlus className="h-4 w-4 mr-2" />
+              קביעת מפגש חדש
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-4 w-full">
+                <TabsTrigger value="upcoming" className="flex-1">מפגשים קרובים</TabsTrigger>
+                <TabsTrigger value="to-summarize" className="flex-1">
+                  ממתינים לסיכום {pastSessionsToSummarize.length > 0 && 
+                    <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 inline-flex items-center justify-center mr-2">
+                      {pastSessionsToSummarize.length}
+                    </span>
+                  }
+                </TabsTrigger>
+                <TabsTrigger value="summarized" className="flex-1">מפגשים שסוכמו</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="upcoming" className="mt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {upcomingSessions.length > 0 ? 
+                    upcomingSessions.map(session => renderSessionCard(session, false)).filter(Boolean) 
+                    : 
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      אין מפגשים קרובים
+                    </div>
+                  }
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="to-summarize" className="mt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {pastSessionsToSummarize.length > 0 ? 
+                    pastSessionsToSummarize.map(session => renderSessionCard(session, true)).filter(Boolean) 
+                    : 
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      אין מפגשים הממתינים לסיכום
+                    </div>
+                  }
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="summarized" className="mt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {summarizedSessions.length > 0 ? 
+                    summarizedSessions.map(session => renderSessionCard(session, true)).filter(Boolean) 
+                    : 
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      אין מפגשים שסוכמו עדיין
+                    </div>
+                  }
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
