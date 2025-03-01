@@ -4,12 +4,19 @@ import { Input } from "@/components/ui/input";
 import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "./types";
 import { Clock } from "lucide-react";
+import { format } from "date-fns";
 
 interface RegistrationTimeSectionProps {
   form: UseFormReturn<FormValues>;
 }
 
 export const RegistrationTimeSection = ({ form }: RegistrationTimeSectionProps) => {
+  // Set the current timestamp when component mounts
+  React.useEffect(() => {
+    const currentDateTime = format(new Date(), 'dd/MM/yyyy HH:mm');
+    form.setValue("registrationTimestamp", currentDateTime);
+  }, [form]);
+
   return (
     <div className="mb-2">
       <FormField
