@@ -288,7 +288,10 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
         <Button variant="outline" type="button" onClick={onCancel}>
           ביטול
         </Button>
-        <Button type="submit" onClick={form.handleSubmit(handleSubmit)}>
+        <Button 
+          type="button" 
+          onClick={form.handleSubmit(handleSubmit)}
+        >
           שמירת סיכום
         </Button>
       </div>
