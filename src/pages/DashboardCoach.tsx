@@ -341,7 +341,7 @@ const DashboardCoach = () => {
       } = await supabase.from('notifications_log').insert([{
         session_id: sessionId,
         status: 'Sent',
-        message_content: 'תזכורת למפגש',
+        message_content: 'תזכורת למפ��ש',
         coach_id: user.id
       }]);
       if (error) {
@@ -922,6 +922,12 @@ const DashboardCoach = () => {
             <Button className="w-full h-full min-h-[100px] flex flex-col p-6" variant="outline">
               <UserPlus className="h-8 w-8 mb-2" />
               <span>הוספת שחקן חדש</span>
+            </Button>
+          </Link>
+          <Link to="/players-list">
+            <Button className="w-full h-full min-h-[100px] flex flex-col p-6" variant="outline">
+              <Users className="h-8 w-8 mb-2" />
+              <span>רשימת כל השחקנים</span>
             </Button>
           </Link>
           <Link to="/tool-management">
