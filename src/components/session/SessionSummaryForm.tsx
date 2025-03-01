@@ -80,7 +80,11 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
     await onSubmit({ ...data, tools_used: selectedTools });
   };
 
-  const toggleTool = (toolId: string) => {
+  const toggleTool = (toolId: string, event: React.MouseEvent) => {
+    // Prevent any default behavior or event propagation
+    event.preventDefault();
+    event.stopPropagation();
+    
     setSelectedTools(prev => 
       prev.includes(toolId)
         ? prev.filter(id => id !== toolId)
@@ -206,9 +210,13 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
                       <Button 
                         variant="link" 
                         className="px-1 h-auto" 
-                        asChild
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.open('/tool-management', '_blank');
+                        }}
                       >
-                        <a href="/tool-management" target="_blank">ניהול כלים</a>
+                        ניהול כלים
                       </Button>
                     </p>
                   </div>
@@ -218,8 +226,13 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
                   ) : tools.length === 0 ? (
                     <div className="text-center py-10 border rounded-md">
                       <p className="text-muted-foreground mb-2">טרם הוגדרו כלים במערכת</p>
-                      <Button asChild>
-                        <a href="/tool-management" target="_blank">הוסף כלים</a>
+                      <Button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.open('/tool-management', '_blank');
+                        }}
+                      >
+                        הוסף כלים
                       </Button>
                     </div>
                   ) : (
@@ -232,19 +245,27 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
                               ? 'bg-primary/10 border-primary' 
                               : 'hover:bg-muted/50'
                           }`}
-                          onClick={() => toggleTool(tool.id)}
+                          onClick={(e) => toggleTool(tool.id, e)}
                         >
                           <div className="flex items-start">
                             <Checkbox
                               checked={selectedTools.includes(tool.id)}
-                              onCheckedChange={() => toggleTool(tool.id)}
+                              onCheckedChange={() => {
+                                setSelectedTools(prev => 
+                                  prev.includes(tool.id)
+                                    ? prev.filter(id => id !== tool.id)
+                                    : [...prev, tool.id]
+                                );
+                              }}
                               className="mr-2 mt-1"
                               id={`tool-${tool.id}`}
+                              onClick={(e) => e.stopPropagation()}
                             />
                             <div className="flex-1">
                               <label 
                                 htmlFor={`tool-${tool.id}`} 
                                 className="font-medium cursor-pointer flex-1"
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 {tool.name}
                               </label>
