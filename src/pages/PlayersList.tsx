@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle, Filter, CheckCircle, AlertCircle } from 'lucide-react';
+import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle, Filter, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +43,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { format } from 'date-fns';
 
 interface Player {
   id: string;
@@ -53,6 +54,8 @@ interface Player {
   notes?: string;
   registration_link_id?: string | null;
   contact_status?: 'contacted' | 'pending' | null;
+  created_at: string;
+  session_count?: number;
 }
 
 const PlayersList = () => {
@@ -115,7 +118,8 @@ const PlayersList = () => {
 
       console.log('Fetching players for coach:', user.id);
 
-      const { data, error } = await supabase
+      // First, fetch players
+      const { data: playersData, error: playersError } = await supabase
         .from('players')
         .select(`
           id,
@@ -126,29 +130,43 @@ const PlayersList = () => {
           notes,
           registration_link_id,
           contact_status,
-          coach_id
+          coach_id,
+          created_at
         `)
         .eq('coach_id', user.id);
 
-      if (error) {
-        console.error('Error fetching players:', error);
-        setError(error.message);
-        toast.error('שגיאה בטעינת רשימת השחקנים: ' + error.message);
-        throw error;
+      if (playersError) {
+        console.error('Error fetching players:', playersError);
+        setError(playersError.message);
+        toast.error('שגיאה בטעינת רשימת השחקנים: ' + playersError.message);
+        throw playersError;
       }
 
-      console.log('Players fetched successfully:', data);
+      // Then for each player, count their sessions
+      const playersWithCounts = await Promise.all(
+        (playersData || []).map(async (player) => {
+          const { count, error: countError } = await supabase
+            .from('sessions')
+            .select('id', { count: 'exact', head: true })
+            .eq('player_id', player.id);
+          
+          if (countError) {
+            console.error('Error counting sessions for player:', player.id, countError);
+            return { ...player, session_count: 0 };
+          }
+          
+          return { ...player, session_count: count || 0 };
+        })
+      );
       
-      if (!data || data.length === 0) {
-        console.log('No players found for coach:', user.id);
-      }
-
+      console.log('Players with session counts:', playersWithCounts);
+      
       // Extract unique sport fields for filtering
-      const sportFields = [...new Set(data?.map(player => player.sport_field || 'לא צוין').filter(Boolean))];
+      const sportFields = [...new Set(playersWithCounts?.map(player => player.sport_field || 'לא צוין').filter(Boolean))];
       setUniqueSportFields(sportFields);
       
-      setPlayers(data || []);
-      setFilteredPlayers(data || []);
+      setPlayers(playersWithCounts || []);
+      setFilteredPlayers(playersWithCounts || []);
     } catch (error: any) {
       console.error('Error in fetchPlayers:', error);
       setError(error.message);
@@ -222,6 +240,15 @@ const PlayersList = () => {
     setContactStatusFilter('all');
   };
 
+  const formatDateTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return format(date, 'dd/MM/yyyy HH:mm');
+    } catch (error) {
+      return dateString || 'לא ידוע';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
@@ -234,13 +261,13 @@ const PlayersList = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Header */}
       <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
-        <div className="max-w-7xl mx-auto px-8">
+        <div className="container mx-auto px-4">
           <h1 className="text-3xl font-bold">רשימת שחקנים</h1>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-8">
+      <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
             <Button
@@ -287,10 +314,10 @@ const PlayersList = () => {
             <div className="flex items-center gap-2">
               <span>ענף ספורט:</span>
               <Select value={sportFieldFilter} onValueChange={setSportFieldFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] text-right">
                   <SelectValue placeholder="כל הענפים" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="text-right">
                   <SelectItem value="all">כל הענפים</SelectItem>
                   {uniqueSportFields.map(field => (
                     <SelectItem key={field} value={field}>{field}</SelectItem>
@@ -302,10 +329,10 @@ const PlayersList = () => {
             <div className="flex items-center gap-2">
               <span>אופן רישום:</span>
               <Select value={registrationTypeFilter} onValueChange={setRegistrationTypeFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] text-right">
                   <SelectValue placeholder="כל השחקנים" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="text-right">
                   <SelectItem value="all">כל השחקנים</SelectItem>
                   <SelectItem value="self">רישום עצמאי</SelectItem>
                   <SelectItem value="coach">נרשמו ע״י המאמן</SelectItem>
@@ -316,10 +343,10 @@ const PlayersList = () => {
             <div className="flex items-center gap-2">
               <span>סטטוס יצירת קשר:</span>
               <Select value={contactStatusFilter} onValueChange={setContactStatusFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] text-right">
                   <SelectValue placeholder="כל השחקנים" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="text-right">
                   <SelectItem value="all">כל השחקנים</SelectItem>
                   <SelectItem value="contacted">יצרנו קשר</SelectItem>
                   <SelectItem value="pending">ממתין ליצירת קשר</SelectItem>
@@ -345,7 +372,7 @@ const PlayersList = () => {
             }
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-white rounded-lg shadow overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -353,6 +380,8 @@ const PlayersList = () => {
                   <TableHead>ענף ספורט</TableHead>
                   <TableHead>אופן רישום</TableHead>
                   <TableHead>סטטוס יצירת קשר</TableHead>
+                  <TableHead>תאריך רישום</TableHead>
+                  <TableHead>מס' מפגשים</TableHead>
                   <TableHead>אימייל</TableHead>
                   <TableHead>טלפון</TableHead>
                   <TableHead>פעולות</TableHead>
@@ -393,10 +422,10 @@ const PlayersList = () => {
                         value={player.contact_status || 'pending'}
                         onValueChange={(value) => updateContactStatus(player.id, value as 'contacted' | 'pending')}
                       >
-                        <SelectTrigger className="w-[140px]">
+                        <SelectTrigger className="w-[140px] text-right">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="text-right">
                           <SelectItem value="contacted">
                             <div className="flex items-center">
                               <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
@@ -411,6 +440,17 @@ const PlayersList = () => {
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Clock className="h-3 w-3" />
+                        {formatDateTime(player.created_at)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className="font-medium">
+                        {player.session_count || 0}
+                      </Badge>
                     </TableCell>
                     <TableCell dir="ltr">{player.email}</TableCell>
                     <TableCell dir="ltr">{player.phone || "-"}</TableCell>
