@@ -25,7 +25,18 @@ export const formSchema = z.object({
   notes: z.string().optional(),
   sportField: z.string().min(1, "אנא בחר ענף ספורט"),
   otherSportField: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    if (data.sportField === 'other') {
+      return data.otherSportField && data.otherSportField.length >= 2;
+    }
+    return true;
+  },
+  {
+    message: "אנא הזן ענף ספורט",
+    path: ["otherSportField"],
+  }
+);
 
 export type PlayerFormValues = z.infer<typeof formSchema>;
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Form } from "@/components/ui/form";
@@ -58,22 +57,18 @@ const formSchema = z.object({
   notes: z.string().optional(),
   sportField: z.string().min(1, "אנא בחר ענף ספורט"),
   otherSportField: z.string().optional(),
-});
-
-// Fix the validation for otherSportField - use a refinement that doesn't depend on a 2nd argument
-formSchema.shape.otherSportField = z.string().optional()
-  .superRefine((val, ctx) => {
-    if (ctx.parent.sportField === 'other') {
-      if (!val || val.length < 2) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "אנא הזן ענף ספורט",
-        });
-        return false;
-      }
+}).refine(
+  (data) => {
+    if (data.sportField === 'other') {
+      return data.otherSportField && data.otherSportField.length >= 2;
     }
     return true;
-  });
+  },
+  {
+    message: "אנא הזן ענף ספורט",
+    path: ["otherSportField"],
+  }
+);
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -171,7 +166,6 @@ const PublicRegistrationForm = () => {
         throw new Error('מידע המאמן חסר');
       }
 
-      // Determine the final sport field value
       const finalSportField = values.sportField === 'other' && values.otherSportField
         ? values.otherSportField
         : values.sportField === 'other'
@@ -297,7 +291,7 @@ const PublicRegistrationForm = () => {
                         </SelectContent>
                       </Select>
                       {form.formState.errors.sportField && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.sportField.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.sportField.message}</p>
                       )}
                     </div>
 
@@ -311,7 +305,7 @@ const PublicRegistrationForm = () => {
                           {...form.register("otherSportField")} 
                         />
                         {form.formState.errors.otherSportField && (
-                          <p className="text-red-500 text-sm mt-1">{form.formState.errors.otherSportField.message as React.ReactNode}</p>
+                          <p className="text-red-500 text-sm mt-1">{form.formState.errors.otherSportField.message}</p>
                         )}
                       </div>
                     )}
@@ -325,7 +319,7 @@ const PublicRegistrationForm = () => {
                         {...form.register("firstName")} 
                       />
                       {form.formState.errors.firstName && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.firstName.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.firstName.message}</p>
                       )}
                     </div>
                     <div>
@@ -337,9 +331,10 @@ const PublicRegistrationForm = () => {
                         {...form.register("lastName")} 
                       />
                       {form.formState.errors.lastName && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.lastName.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.lastName.message}</p>
                       )}
                     </div>
+                    
                     <div>
                       <Label htmlFor="email">אימייל</Label>
                       <Input 
@@ -350,7 +345,7 @@ const PublicRegistrationForm = () => {
                         {...form.register("email")} 
                       />
                       {form.formState.errors.email && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message}</p>
                       )}
                     </div>
                     <div>
@@ -362,7 +357,7 @@ const PublicRegistrationForm = () => {
                         {...form.register("phone")} 
                       />
                       {form.formState.errors.phone && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.phone.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.phone.message}</p>
                       )}
                     </div>
                     <div>
@@ -374,7 +369,7 @@ const PublicRegistrationForm = () => {
                         {...form.register("birthDate")} 
                       />
                       {form.formState.errors.birthDate && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.birthDate.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.birthDate.message}</p>
                       )}
                     </div>
                     <div>
@@ -386,7 +381,7 @@ const PublicRegistrationForm = () => {
                         {...form.register("city")} 
                       />
                       {form.formState.errors.city && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.city.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.city.message}</p>
                       )}
                     </div>
                   </div>
@@ -404,7 +399,7 @@ const PublicRegistrationForm = () => {
                         {...form.register("club")} 
                       />
                       {form.formState.errors.club && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.club.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.club.message}</p>
                       )}
                     </div>
                     <div>
@@ -416,7 +411,7 @@ const PublicRegistrationForm = () => {
                         {...form.register("yearGroup")} 
                       />
                       {form.formState.errors.yearGroup && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.yearGroup.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.yearGroup.message}</p>
                       )}
                     </div>
                     <div className="sm:col-span-2">
@@ -443,7 +438,7 @@ const PublicRegistrationForm = () => {
                         {...form.register("parentName")} 
                       />
                       {form.formState.errors.parentName && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentName.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentName.message}</p>
                       )}
                     </div>
                     <div>
@@ -455,7 +450,7 @@ const PublicRegistrationForm = () => {
                         {...form.register("parentPhone")} 
                       />
                       {form.formState.errors.parentPhone && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentPhone.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentPhone.message}</p>
                       )}
                     </div>
                     <div>
@@ -468,7 +463,7 @@ const PublicRegistrationForm = () => {
                         {...form.register("parentEmail")} 
                       />
                       {form.formState.errors.parentEmail && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentEmail.message as React.ReactNode}</p>
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentEmail.message}</p>
                       )}
                     </div>
                   </div>
