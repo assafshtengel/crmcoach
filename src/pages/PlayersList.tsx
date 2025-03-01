@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle } from 'lucide-react';
+import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle, Filter } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,36 +21,70 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 
 interface Player {
   id: string;
   full_name: string;
   email: string;
   phone: string;
-  position: string;
+  sport_field?: string;
   notes?: string;
+  registration_link_id?: string | null;
 }
-
-const positionLabels: Record<string, string> = {
-  goalkeeper: "שוער",
-  defender: "בלם",
-  fullback: "מגן",
-  midfielder: "קשר",
-  winger: "כנף",
-  striker: "חלוץ"
-};
 
 const PlayersList = () => {
   const [players, setPlayers] = useState<Player[]>([]);
+  const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   const [playerToDelete, setPlayerToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [sportFieldFilter, setSportFieldFilter] = useState<string>('all');
+  const [registrationTypeFilter, setRegistrationTypeFilter] = useState<string>('all');
+  const [uniqueSportFields, setUniqueSportFields] = useState<string[]>([]);
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPlayers();
   }, []);
+
+  useEffect(() => {
+    // Apply filters whenever filter state or players change
+    applyFilters();
+  }, [sportFieldFilter, registrationTypeFilter, players]);
+
+  const applyFilters = () => {
+    let result = [...players];
+    
+    // Apply sport field filter
+    if (sportFieldFilter !== 'all') {
+      result = result.filter(player => player.sport_field === sportFieldFilter);
+    }
+    
+    // Apply registration type filter
+    if (registrationTypeFilter === 'self') {
+      result = result.filter(player => player.registration_link_id !== null);
+    } else if (registrationTypeFilter === 'coach') {
+      result = result.filter(player => player.registration_link_id === null);
+    }
+    
+    setFilteredPlayers(result);
+  };
 
   const fetchPlayers = async () => {
     try {
@@ -71,8 +105,9 @@ const PlayersList = () => {
           full_name,
           email,
           phone,
-          position,
+          sport_field,
           notes,
+          registration_link_id,
           coach_id
         `)
         .eq('coach_id', user.id);
@@ -88,7 +123,12 @@ const PlayersList = () => {
         console.log('No players found for coach:', user.id);
       }
 
+      // Extract unique sport fields for filtering
+      const sportFields = [...new Set(data?.map(player => player.sport_field || 'לא צוין').filter(Boolean))];
+      setUniqueSportFields(sportFields);
+      
       setPlayers(data || []);
+      setFilteredPlayers(data || []);
     } catch (error: any) {
       console.error('Error in fetchPlayers:', error);
       toast.error('שגיאה בטעינת רשימת השחקנים');
@@ -134,6 +174,11 @@ const PlayersList = () => {
     }
   };
 
+  const clearFilters = () => {
+    setSportFieldFilter('all');
+    setRegistrationTypeFilter('all');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
@@ -172,9 +217,59 @@ const PlayersList = () => {
           </Button>
         </div>
 
-        {players.length === 0 ? (
+        {/* Filters */}
+        <Card className="p-4 mb-6">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex items-center">
+              <Filter className="h-4 w-4 mr-2" />
+              <span className="font-medium">סינון:</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span>ענף ספורט:</span>
+              <Select value={sportFieldFilter} onValueChange={setSportFieldFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="כל הענפים" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל הענפים</SelectItem>
+                  {uniqueSportFields.map(field => (
+                    <SelectItem key={field} value={field}>{field}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span>אופן רישום:</span>
+              <Select value={registrationTypeFilter} onValueChange={setRegistrationTypeFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="כל השחקנים" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל השחקנים</SelectItem>
+                  <SelectItem value="self">רישום עצמאי</SelectItem>
+                  <SelectItem value="coach">נרשמו ע״י המאמן</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              onClick={clearFilters}
+              size="sm"
+            >
+              נקה סינון
+            </Button>
+          </div>
+        </Card>
+
+        {filteredPlayers.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            לא נמצאו שחקנים במערכת
+            {players.length === 0 ? 
+              "לא נמצאו שחקנים במערכת" : 
+              "לא נמצאו שחקנים התואמים את הסינון הנוכחי"
+            }
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -182,19 +277,36 @@ const PlayersList = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>שם השחקן</TableHead>
-                  <TableHead>עמדה</TableHead>
+                  <TableHead>ענף ספורט</TableHead>
+                  <TableHead>אופן רישום</TableHead>
                   <TableHead>אימייל</TableHead>
                   <TableHead>טלפון</TableHead>
                   <TableHead>פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {players.map((player) => (
-                  <TableRow key={player.id}>
-                    <TableCell className="font-medium">{player.full_name}</TableCell>
-                    <TableCell>{positionLabels[player.position] || player.position}</TableCell>
+                {filteredPlayers.map((player) => (
+                  <TableRow 
+                    key={player.id}
+                    className={player.registration_link_id ? "bg-blue-50" : ""}
+                  >
+                    <TableCell className="font-medium">
+                      {player.full_name}
+                      {player.registration_link_id && (
+                        <Badge variant="outline" className="mr-2 text-blue-600 border-blue-600">
+                          ⚠ רישום עצמאי
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>{player.sport_field || "לא צוין"}</TableCell>
+                    <TableCell>
+                      {player.registration_link_id ? 
+                        <Badge variant="secondary">רישום עצמאי</Badge> : 
+                        <Badge variant="outline">נרשם ע״י המאמן</Badge>
+                      }
+                    </TableCell>
                     <TableCell dir="ltr">{player.email}</TableCell>
-                    <TableCell dir="ltr">{player.phone}</TableCell>
+                    <TableCell dir="ltr">{player.phone || "-"}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button
