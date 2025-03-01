@@ -611,6 +611,7 @@ export type Database = {
           phone: string | null
           profile_image: string | null
           registration_link_id: string | null
+          registration_timestamp: string | null
           sport_field: string | null
           year_group: string | null
         }
@@ -632,6 +633,7 @@ export type Database = {
           phone?: string | null
           profile_image?: string | null
           registration_link_id?: string | null
+          registration_timestamp?: string | null
           sport_field?: string | null
           year_group?: string | null
         }
@@ -653,6 +655,7 @@ export type Database = {
           phone?: string | null
           profile_image?: string | null
           registration_link_id?: string | null
+          registration_timestamp?: string | null
           sport_field?: string | null
           year_group?: string | null
         }

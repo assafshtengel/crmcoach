@@ -17,6 +17,7 @@ import { SuccessDialog } from "@/components/public-registration/SuccessDialog";
 import { FormHeader } from "@/components/public-registration/FormHeader";
 import { LoadingSpinner } from "@/components/public-registration/LoadingSpinner";
 import { FeedbackDialog } from "@/components/public-registration/FeedbackDialog";
+import { RegistrationTimeSection } from "@/components/public-registration/RegistrationTimeSection";
 
 const PublicRegistrationForm = () => {
   const navigate = useNavigate();
@@ -276,6 +277,8 @@ const PublicRegistrationForm = () => {
                 <ParentInfo form={form} />
                 
                 <NotesSection form={form} />
+                
+                <RegistrationTimeSection form={form} />
               </div>
               
               <Button
