@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import {
   BrowserRouter as Router,
@@ -179,10 +180,16 @@ const App = () => {
             )
           }
         />
-        {
-          path: "/mental-tools",
-          element: <MentalTools />,
-        },
+        <Route
+          path="/mental-tools"
+          element={
+            user ? (
+              <MentalTools />
+            ) : (
+              <Navigate to="/auth" />
+            )
+          }
+        />
       </Routes>
     </Router>
   );
