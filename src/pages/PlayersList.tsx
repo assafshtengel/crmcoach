@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle, Filter } from 'lucide-react';
+import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle, Filter, CheckCircle, AlertCircle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +46,7 @@ interface Player {
   sport_field?: string;
   notes?: string;
   registration_link_id?: string | null;
+  contact_status?: 'contacted' | 'pending' | null;
 }
 
 const PlayersList = () => {
@@ -55,6 +56,7 @@ const PlayersList = () => {
   const [playerToDelete, setPlayerToDelete] = useState<{ id: string; name: string } | null>(null);
   const [sportFieldFilter, setSportFieldFilter] = useState<string>('all');
   const [registrationTypeFilter, setRegistrationTypeFilter] = useState<string>('all');
+  const [contactStatusFilter, setContactStatusFilter] = useState<string>('all');
   const [uniqueSportFields, setUniqueSportFields] = useState<string[]>([]);
   
   const navigate = useNavigate();
@@ -66,7 +68,7 @@ const PlayersList = () => {
   useEffect(() => {
     // Apply filters whenever filter state or players change
     applyFilters();
-  }, [sportFieldFilter, registrationTypeFilter, players]);
+  }, [sportFieldFilter, registrationTypeFilter, contactStatusFilter, players]);
 
   const applyFilters = () => {
     let result = [...players];
@@ -81,6 +83,13 @@ const PlayersList = () => {
       result = result.filter(player => player.registration_link_id !== null);
     } else if (registrationTypeFilter === 'coach') {
       result = result.filter(player => player.registration_link_id === null);
+    }
+    
+    // Apply contact status filter
+    if (contactStatusFilter === 'contacted') {
+      result = result.filter(player => player.contact_status === 'contacted');
+    } else if (contactStatusFilter === 'pending') {
+      result = result.filter(player => player.contact_status === 'pending');
     }
     
     setFilteredPlayers(result);
@@ -108,6 +117,7 @@ const PlayersList = () => {
           sport_field,
           notes,
           registration_link_id,
+          contact_status,
           coach_id
         `)
         .eq('coach_id', user.id);
@@ -134,6 +144,27 @@ const PlayersList = () => {
       toast.error('שגיאה בטעינת רשימת השחקנים');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateContactStatus = async (playerId: string, newStatus: 'contacted' | 'pending') => {
+    try {
+      const { error } = await supabase
+        .from('players')
+        .update({ contact_status: newStatus })
+        .eq('id', playerId);
+
+      if (error) throw error;
+
+      // Update local state
+      setPlayers(players.map(player => 
+        player.id === playerId ? { ...player, contact_status: newStatus } : player
+      ));
+
+      toast.success(`סטטוס יצירת קשר עודכן בהצלחה`);
+    } catch (error: any) {
+      toast.error('שגיאה בעדכון סטטוס יצירת קשר');
+      console.error('Error updating contact status:', error);
     }
   };
 
@@ -177,6 +208,7 @@ const PlayersList = () => {
   const clearFilters = () => {
     setSportFieldFilter('all');
     setRegistrationTypeFilter('all');
+    setContactStatusFilter('all');
   };
 
   if (loading) {
@@ -254,6 +286,20 @@ const PlayersList = () => {
               </Select>
             </div>
             
+            <div className="flex items-center gap-2">
+              <span>סטטוס יצירת קשר:</span>
+              <Select value={contactStatusFilter} onValueChange={setContactStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="כל השחקנים" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">כל השחקנים</SelectItem>
+                  <SelectItem value="contacted">יצרנו קשר</SelectItem>
+                  <SelectItem value="pending">ממתין ליצירת קשר</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             <Button 
               variant="outline" 
               onClick={clearFilters}
@@ -279,6 +325,7 @@ const PlayersList = () => {
                   <TableHead>שם השחקן</TableHead>
                   <TableHead>ענף ספורט</TableHead>
                   <TableHead>אופן רישום</TableHead>
+                  <TableHead>סטטוס יצירת קשר</TableHead>
                   <TableHead>אימייל</TableHead>
                   <TableHead>טלפון</TableHead>
                   <TableHead>פעולות</TableHead>
@@ -286,17 +333,17 @@ const PlayersList = () => {
               </TableHeader>
               <TableBody>
                 {filteredPlayers.map((player) => (
-                  <TableRow 
-                    key={player.id}
-                    className={player.registration_link_id ? "bg-blue-50" : ""}
-                  >
+                  <TableRow key={player.id}>
                     <TableCell className="font-medium">
-                      {player.full_name}
-                      {player.registration_link_id && (
-                        <Badge variant="outline" className="mr-2 text-blue-600 border-blue-600">
-                          ⚠ רישום עצמאי
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {player.full_name}
+                        
+                        {player.contact_status === 'contacted' ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" title="יצרנו קשר" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-yellow-500" title="ממתין ליצירת קשר" />
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>{player.sport_field || "לא צוין"}</TableCell>
                     <TableCell>
@@ -304,6 +351,30 @@ const PlayersList = () => {
                         <Badge variant="secondary">רישום עצמאי</Badge> : 
                         <Badge variant="outline">נרשם ע״י המאמן</Badge>
                       }
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={player.contact_status || 'pending'}
+                        onValueChange={(value) => updateContactStatus(player.id, value as 'contacted' | 'pending')}
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="contacted">
+                            <div className="flex items-center">
+                              <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
+                              יצרנו קשר
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="pending">
+                            <div className="flex items-center">
+                              <AlertCircle className="h-3 w-3 text-yellow-500 mr-2" />
+                              ממתין ליצירת קשר
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell dir="ltr">{player.email}</TableCell>
                     <TableCell dir="ltr">{player.phone || "-"}</TableCell>
