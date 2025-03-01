@@ -11,62 +11,64 @@ interface PlayerClubInfoProps {
 
 export const PlayerClubInfo: React.FC<PlayerClubInfoProps> = ({ form }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <FormField
-        control={form.control}
-        name="city"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>עיר מגורים</FormLabel>
-            <FormControl>
-              <Input placeholder="תל אביב" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="club"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>מועדון</FormLabel>
-            <FormControl>
-              <Input placeholder="הפועל/מכבי" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="yearGroup"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>שנתון/קבוצת גיל</FormLabel>
-            <FormControl>
-              <Input placeholder="נערים ב'" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
+    <div className="space-y-6">
       <FormField
         control={form.control}
         name="registrationTimestamp"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>מועד הרשמה</FormLabel>
+          <FormItem className="mb-2">
+            <FormLabel className="text-xs text-gray-500">מועד רישום</FormLabel>
             <FormControl>
-              <Input readOnly disabled className="bg-gray-50" {...field} />
+              <Input readOnly disabled className="bg-gray-50 text-xs text-gray-500" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField
+          control={form.control}
+          name="city"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>עיר מגורים</FormLabel>
+              <FormControl>
+                <Input placeholder="תל אביב" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="club"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>מועדון</FormLabel>
+              <FormControl>
+                <Input placeholder="הפועל/מכבי" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="yearGroup"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>שנתון/קבוצת גיל</FormLabel>
+              <FormControl>
+                <Input placeholder="נערים ב'" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
     </div>
   );
 };
