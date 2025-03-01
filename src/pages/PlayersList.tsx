@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle, Filter, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle, Filter, CheckCircle, AlertCircle, Clock, XCircle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,7 +43,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { format } from 'date-fns';
+import { format, parseISO, differenceInDays } from 'date-fns';
 
 interface Player {
   id: string;
@@ -55,7 +55,11 @@ interface Player {
   registration_link_id?: string | null;
   contact_status?: 'contacted' | 'pending' | null;
   created_at: string;
-  session_count?: number;
+  // New fields for session tracking
+  past_sessions_count: number;
+  last_session_date?: string;
+  next_session_date?: string;
+  next_session_time?: string;
 }
 
 const PlayersList = () => {
@@ -118,7 +122,7 @@ const PlayersList = () => {
 
       console.log('Fetching players for coach:', user.id);
 
-      // First, fetch players
+      // First get the players basic information
       const { data: playersData, error: playersError } = await supabase
         .from('players')
         .select(`
@@ -142,31 +146,66 @@ const PlayersList = () => {
         throw playersError;
       }
 
-      // Then for each player, count their sessions
-      const playersWithCounts = await Promise.all(
+      // Process each player to get session information
+      const today = new Date().toISOString().split('T')[0]; // Current date in YYYY-MM-DD format
+      
+      const playersWithSessionData = await Promise.all(
         (playersData || []).map(async (player) => {
-          const { count, error: countError } = await supabase
+          // Get count of past sessions
+          const { count: pastSessionsCount, error: pastCountError } = await supabase
             .from('sessions')
             .select('id', { count: 'exact', head: true })
-            .eq('player_id', player.id);
+            .eq('player_id', player.id)
+            .lt('session_date', today);
           
-          if (countError) {
-            console.error('Error counting sessions for player:', player.id, countError);
-            return { ...player, session_count: 0 };
+          if (pastCountError) {
+            console.error('Error counting past sessions for player:', player.id, pastCountError);
           }
           
-          return { ...player, session_count: count || 0 };
+          // Get the date of the last session
+          const { data: lastSession, error: lastSessionError } = await supabase
+            .from('sessions')
+            .select('session_date, session_time')
+            .eq('player_id', player.id)
+            .lt('session_date', today)
+            .order('session_date', { ascending: false })
+            .limit(1);
+          
+          if (lastSessionError) {
+            console.error('Error getting last session for player:', player.id, lastSessionError);
+          }
+          
+          // Get the next upcoming session
+          const { data: nextSession, error: nextSessionError } = await supabase
+            .from('sessions')
+            .select('session_date, session_time')
+            .eq('player_id', player.id)
+            .gte('session_date', today)
+            .order('session_date', { ascending: true })
+            .limit(1);
+          
+          if (nextSessionError) {
+            console.error('Error getting next session for player:', player.id, nextSessionError);
+          }
+          
+          return { 
+            ...player, 
+            past_sessions_count: pastSessionsCount || 0,
+            last_session_date: lastSession && lastSession.length > 0 ? lastSession[0].session_date : undefined,
+            next_session_date: nextSession && nextSession.length > 0 ? nextSession[0].session_date : undefined,
+            next_session_time: nextSession && nextSession.length > 0 ? nextSession[0].session_time : undefined
+          };
         })
       );
       
-      console.log('Players with session counts:', playersWithCounts);
+      console.log('Players with session data:', playersWithSessionData);
       
       // Extract unique sport fields for filtering
-      const sportFields = [...new Set(playersWithCounts?.map(player => player.sport_field || 'לא צוין').filter(Boolean))];
+      const sportFields = [...new Set(playersWithSessionData?.map(player => player.sport_field || 'לא צוין').filter(Boolean))];
       setUniqueSportFields(sportFields);
       
-      setPlayers(playersWithCounts || []);
-      setFilteredPlayers(playersWithCounts || []);
+      setPlayers(playersWithSessionData || []);
+      setFilteredPlayers(playersWithSessionData || []);
     } catch (error: any) {
       console.error('Error in fetchPlayers:', error);
       setError(error.message);
@@ -246,6 +285,74 @@ const PlayersList = () => {
       return format(date, 'dd/MM/yyyy HH:mm');
     } catch (error) {
       return dateString || 'לא ידוע';
+    }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    try {
+      return format(parseISO(dateString), 'dd/MM/yyyy');
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  const formatTime = (timeString?: string) => {
+    if (!timeString) return '';
+    return timeString.substring(0, 5); // Format as HH:MM
+  };
+
+  // Check if the player has been inactive for more than 2 weeks
+  const isInactive = (player: Player) => {
+    if (!player.last_session_date && !player.next_session_date) {
+      return true; // No activity at all
+    }
+    
+    if (player.next_session_date) {
+      return false; // Has a future session, not inactive
+    }
+    
+    if (player.last_session_date) {
+      const lastSessionDate = parseISO(player.last_session_date);
+      const today = new Date();
+      return differenceInDays(today, lastSessionDate) > 14; // More than 2 weeks since last session
+    }
+    
+    return false;
+  };
+
+  // Get the session status for display
+  const getSessionStatus = (player: Player) => {
+    if (player.next_session_date) {
+      return {
+        type: 'upcoming',
+        icon: <CheckCircle className="h-4 w-4 text-green-600" />,
+        message: 'מפגש קרוב מתוכנן',
+        color: 'text-green-600'
+      };
+    } else if (isInactive(player)) {
+      if (player.past_sessions_count === 0) {
+        return {
+          type: 'no_activity',
+          icon: <XCircle className="h-4 w-4 text-red-600" />,
+          message: 'ללא פעילות',
+          color: 'text-red-600'
+        };
+      } else {
+        return {
+          type: 'inactive',
+          icon: <AlertCircle className="h-4 w-4 text-amber-500" />,
+          message: 'יש לקבוע מפגש (לא פעיל יותר משבועיים)',
+          color: 'text-amber-500'
+        };
+      }
+    } else {
+      return {
+        type: 'active',
+        icon: <CheckCircle className="h-4 w-4 text-blue-600" />,
+        message: 'פעיל',
+        color: 'text-blue-600'
+      };
     }
   };
 
@@ -381,124 +488,157 @@ const PlayersList = () => {
                   <TableHead>אופן רישום</TableHead>
                   <TableHead>סטטוס יצירת קשר</TableHead>
                   <TableHead>תאריך רישום</TableHead>
-                  <TableHead>מס' מפגשים</TableHead>
+                  <TableHead>מפגשים שהתקיימו</TableHead>
+                  <TableHead>מפגש עתידי</TableHead>
                   <TableHead>אימייל</TableHead>
                   <TableHead>טלפון</TableHead>
                   <TableHead>פעולות</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPlayers.map((player) => (
-                  <TableRow key={player.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {player.full_name}
-                        
+                {filteredPlayers.map((player) => {
+                  const sessionStatus = getSessionStatus(player);
+                  
+                  return (
+                    <TableRow key={player.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {player.full_name}
+                          
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                {player.contact_status === 'contacted' ? (
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <AlertCircle className="h-4 w-4 text-yellow-500" />
+                                )}
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {player.contact_status === 'contacted' ? 'יצרנו קשר' : 'ממתין ליצירת קשר'}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </TableCell>
+                      <TableCell>{player.sport_field || "לא צוין"}</TableCell>
+                      <TableCell>
+                        {player.registration_link_id ? 
+                          <Badge variant="secondary">רישום עצמאי</Badge> : 
+                          <Badge variant="outline">נרשם ע״י המאמן</Badge>
+                        }
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={player.contact_status || 'pending'}
+                          onValueChange={(value) => updateContactStatus(player.id, value as 'contacted' | 'pending')}
+                        >
+                          <SelectTrigger className="w-[140px] text-right">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="text-right">
+                            <SelectItem value="contacted">
+                              <div className="flex items-center">
+                                <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
+                                יצרנו קשר
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="pending">
+                              <div className="flex items-center">
+                                <AlertCircle className="h-3 w-3 text-yellow-500 mr-2" />
+                                ממתין ליצירת קשר
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Clock className="h-3 w-3" />
+                          {formatDateTime(player.created_at)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className="font-medium">
+                          {player.past_sessions_count || 0}
+                        </Badge>
+                        {player.last_session_date && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            אחרון: {formatDate(player.last_session_date)}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              {player.contact_status === 'contacted' ? (
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <AlertCircle className="h-4 w-4 text-yellow-500" />
-                              )}
+                              <div className={`flex items-center gap-1.5 ${sessionStatus.color}`}>
+                                {sessionStatus.icon}
+                                {player.next_session_date ? (
+                                  <span className="text-sm">
+                                    {formatDate(player.next_session_date)} {formatTime(player.next_session_time)}
+                                  </span>
+                                ) : (
+                                  <span className="text-sm">
+                                    {sessionStatus.type === 'no_activity' ? 'ללא פעילות' : 'לא נקבע'}
+                                  </span>
+                                )}
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent>
-                              {player.contact_status === 'contacted' ? 'יצרנו קשר' : 'ממתין ליצירת קשר'}
+                              {sessionStatus.message}
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
-                      </div>
-                    </TableCell>
-                    <TableCell>{player.sport_field || "לא צוין"}</TableCell>
-                    <TableCell>
-                      {player.registration_link_id ? 
-                        <Badge variant="secondary">רישום עצמאי</Badge> : 
-                        <Badge variant="outline">נרשם ע״י המאמן</Badge>
-                      }
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={player.contact_status || 'pending'}
-                        onValueChange={(value) => updateContactStatus(player.id, value as 'contacted' | 'pending')}
-                      >
-                        <SelectTrigger className="w-[140px] text-right">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="text-right">
-                          <SelectItem value="contacted">
-                            <div className="flex items-center">
-                              <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
-                              יצרנו קשר
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="pending">
-                            <div className="flex items-center">
-                              <AlertCircle className="h-3 w-3 text-yellow-500 mr-2" />
-                              ממתין ליצירת קשר
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Clock className="h-3 w-3" />
-                        {formatDateTime(player.created_at)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="font-medium">
-                        {player.session_count || 0}
-                      </Badge>
-                    </TableCell>
-                    <TableCell dir="ltr">{player.email}</TableCell>
-                    <TableCell dir="ltr">{player.phone || "-"}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewProfile(player.id)}
-                              >
-                                <UserCircle className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>צפה בפרופיל</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditPlayer(player.id)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleScheduleSession(player.id, player.full_name)}
-                          className="gap-2"
-                        >
-                          <Calendar className="h-4 w-4" />
-                          קבע מפגש
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPlayerToDelete({ id: player.id, name: player.full_name })}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell dir="ltr">{player.email}</TableCell>
+                      <TableCell dir="ltr">{player.phone || "-"}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleViewProfile(player.id)}
+                                >
+                                  <UserCircle className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>צפה בפרופיל</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditPlayer(player.id)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleScheduleSession(player.id, player.full_name)}
+                            className="gap-2"
+                          >
+                            <Calendar className="h-4 w-4" />
+                            קבע מפגש
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPlayerToDelete({ id: player.id, name: player.full_name })}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
