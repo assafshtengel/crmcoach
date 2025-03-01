@@ -54,11 +54,7 @@ const PublicRegistrationForm = () => {
         setShowSuccessDialog={setShowSuccessDialog}
         coachName={linkData?.coach?.full_name}
         handleCloseWindow={handleCloseWindow}
-        onFeedbackClose={() => {
-          if (!feedbackMessage.isError) {
-            setShowSuccessDialog(true);
-          }
-        }}
+        onFeedbackClose={() => setShowSuccessDialog(true)}
       />
     </div>
   );

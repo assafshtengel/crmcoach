@@ -28,6 +28,16 @@ export const RegistrationDialogs = ({
   handleCloseWindow,
   onFeedbackClose
 }: RegistrationDialogsProps) => {
+  // Handle feedback dialog close
+  const handleFeedbackClose = () => {
+    setShowFeedbackDialog(false);
+    
+    // Only show success dialog if this was not an error message
+    if (onFeedbackClose && !feedbackMessage.isError) {
+      onFeedbackClose();
+    }
+  };
+  
   return (
     <>
       <FeedbackDialog 
@@ -36,7 +46,7 @@ export const RegistrationDialogs = ({
         title={feedbackMessage.title}
         message={feedbackMessage.message}
         isError={feedbackMessage.isError}
-        onClose={onFeedbackClose}
+        onClose={handleFeedbackClose}
       />
 
       <SuccessDialog 

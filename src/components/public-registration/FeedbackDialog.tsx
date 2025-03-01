@@ -28,15 +28,24 @@ export const FeedbackDialog = ({
   isError,
   onClose,
 }: FeedbackDialogProps) => {
+  // Handle both the dialog's built-in close and the button click
   const handleClose = () => {
     setOpen(false);
     if (onClose) {
-      onClose();
+      setTimeout(() => {
+        onClose();
+      }, 100); // Short delay to ensure dialog is fully closed
     }
   };
   
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen && onClose) {
+        handleClose();
+      } else {
+        setOpen(isOpen);
+      }
+    }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
