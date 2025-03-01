@@ -45,7 +45,8 @@ const NewPlayerForm = () => {
       parentPhone: "",
       parentEmail: "",
       notes: "",
-      position: ""
+      sportField: "",
+      otherSportField: "",
     },
   });
 
@@ -87,6 +88,13 @@ const NewPlayerForm = () => {
   const createPlayer = async (userId: string, values: PlayerFormValues, imageUrl: string = '') => {
     console.log('Creating player with values:', values); // Debug log
     
+    // Determine the final sport field value
+    const finalSportField = values.sportField === 'other' && values.otherSportField
+      ? values.otherSportField
+      : values.sportField === 'other'
+        ? 'אחר'
+        : values.sportField;
+    
     const { data: playerData, error: playerError } = await supabase
       .from('players')
       .insert([
@@ -95,7 +103,7 @@ const NewPlayerForm = () => {
           full_name: `${values.firstName} ${values.lastName}`,
           email: values.playerEmail,
           phone: values.playerPhone,
-          birthdate: values.birthDate, // שינוי שם השדה ל-birthdate
+          birthdate: values.birthDate,
           city: values.city,
           club: values.club,
           year_group: values.yearGroup,
@@ -104,7 +112,7 @@ const NewPlayerForm = () => {
           parent_phone: values.parentPhone,
           parent_email: values.parentEmail,
           notes: values.notes,
-          position: values.position,
+          sport_field: finalSportField,
           profile_image: imageUrl
         }
       ])
@@ -220,6 +228,7 @@ const NewPlayerForm = () => {
             </div>
 
             <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
+              <h2 className="text-lg font-semibold mb-4">פרטים אישיים</h2>
               <PlayerPersonalInfo form={form} />
             </div>
 

@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { positions } from './PlayerFormSchema';
+import { sportFields } from './PlayerFormSchema';
 import { UseFormReturn } from 'react-hook-form';
 import { PlayerFormValues } from './PlayerFormSchema';
 
@@ -12,8 +12,62 @@ interface PlayerPersonalInfoProps {
 }
 
 export const PlayerPersonalInfo: React.FC<PlayerPersonalInfoProps> = ({ form }) => {
+  const [showOtherSportField, setShowOtherSportField] = useState(form.getValues().sportField === 'other');
+
+  const handleSportFieldChange = (value: string) => {
+    form.setValue('sportField', value);
+    setShowOtherSportField(value === 'other');
+    if (value !== 'other') {
+      form.setValue('otherSportField', '');
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <FormField
+        control={form.control}
+        name="sportField"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>ענף ספורט</FormLabel>
+            <Select 
+              onValueChange={handleSportFieldChange} 
+              defaultValue={field.value}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר ענף ספורט" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {sportFields.map((sport) => (
+                  <SelectItem key={sport.value} value={sport.value}>
+                    {sport.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {showOtherSportField && (
+        <FormField
+          control={form.control}
+          name="otherSportField"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>פרט ענף ספורט</FormLabel>
+              <FormControl>
+                <Input placeholder="הקלד ענף ספורט" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
+
       <FormField
         control={form.control}
         name="firstName"
@@ -63,36 +117,8 @@ export const PlayerPersonalInfo: React.FC<PlayerPersonalInfoProps> = ({ form }) 
           <FormItem>
             <FormLabel>טלפון שחקן</FormLabel>
             <FormControl>
-              <Input placeholder="(000) 000-0000" {...field} />
+              <Input placeholder="050-0000000" {...field} />
             </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="position"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>עמדה</FormLabel>
-            <Select 
-              onValueChange={field.onChange} 
-              defaultValue={field.value}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="בחר עמדה" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {positions.map((position) => (
-                  <SelectItem key={position.value} value={position.value}>
-                    {position.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <FormMessage />
           </FormItem>
         )}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Form } from "@/components/ui/form";
@@ -23,7 +24,15 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { positions } from '@/components/new-player/PlayerFormSchema';
+
+const sportFields = [
+  { value: "football", label: "כדורגל" },
+  { value: "basketball", label: "כדורסל" },
+  { value: "tennis", label: "טניס" },
+  { value: "swimming", label: "שחייה" },
+  { value: "athletics", label: "אתלטיקה" },
+  { value: "other", label: "אחר" }
+];
 
 const formSchema = z.object({
   firstName: z.string().min(2, "שם פרטי חייב להכיל לפחות 2 תווים"),
@@ -47,7 +56,17 @@ const formSchema = z.object({
     }, "אנא הכנס מספר טלפון בן 10 ספרות"),
   parentEmail: z.string().email("אנא הכנס כתובת אימייל תקינה"),
   notes: z.string().optional(),
-  position: z.string().min(1, "אנא בחר עמדה")
+  sportField: z.string().min(1, "אנא בחר ענף ספורט"),
+  otherSportField: z.string().optional()
+    .refine(
+      (val, ctx) => {
+        if (ctx.parent.sportField === 'other') {
+          return !!val && val.length >= 2;
+        }
+        return true;
+      }, 
+      { message: "אנא הזן ענף ספורט" }
+    ),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -60,6 +79,7 @@ const PublicRegistrationForm = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showOtherSportField, setShowOtherSportField] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -77,7 +97,8 @@ const PublicRegistrationForm = () => {
       parentPhone: "",
       parentEmail: "",
       notes: "",
-      position: ""
+      sportField: "",
+      otherSportField: ""
     },
   });
 
@@ -144,6 +165,13 @@ const PublicRegistrationForm = () => {
         throw new Error('מידע המאמן חסר');
       }
 
+      // Determine the final sport field value
+      const finalSportField = values.sportField === 'other' && values.otherSportField
+        ? values.otherSportField
+        : values.sportField === 'other'
+          ? 'אחר'
+          : values.sportField;
+
       const playerData = {
         coach_id: linkData.coach.id,
         full_name: `${values.firstName} ${values.lastName}`,
@@ -158,7 +186,7 @@ const PublicRegistrationForm = () => {
         parent_phone: values.parentPhone,
         parent_email: values.parentEmail,
         notes: values.notes,
-        position: values.position,
+        sport_field: finalSportField,
         registration_link_id: linkId
       };
 
@@ -212,6 +240,14 @@ const PublicRegistrationForm = () => {
     }
   };
 
+  const handleSportFieldChange = (value: string) => {
+    form.setValue('sportField', value);
+    setShowOtherSportField(value === 'other');
+    if (value !== 'other') {
+      form.setValue('otherSportField', '');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
@@ -238,11 +274,48 @@ const PublicRegistrationForm = () => {
                 <div>
                   <h2 className="text-lg font-medium text-gray-900">פרטים אישיים</h2>
                   <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                    <div className="sm:col-span-2">
+                      <Label htmlFor="sportField">ענף ספורט</Label>
+                      <Select 
+                        onValueChange={handleSportFieldChange}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="בחר ענף ספורט" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sportFields.map((sport) => (
+                            <SelectItem key={sport.value} value={sport.value}>
+                              {sport.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {form.formState.errors.sportField && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.sportField.message}</p>
+                      )}
+                    </div>
+
+                    {showOtherSportField && (
+                      <div>
+                        <Label htmlFor="otherSportField">פרט ענף ספורט</Label>
+                        <Input 
+                          id="otherSportField" 
+                          className="mt-1"
+                          placeholder="הקלד ענף ספורט" 
+                          {...form.register("otherSportField")} 
+                        />
+                        {form.formState.errors.otherSportField && (
+                          <p className="text-red-500 text-sm mt-1">{form.formState.errors.otherSportField.message}</p>
+                        )}
+                      </div>
+                    )}
+                    
                     <div>
                       <Label htmlFor="firstName">שם פרטי</Label>
                       <Input 
                         id="firstName" 
-                        className="mt-1" 
+                        className="mt-1"
+                        placeholder="הכנס שם פרטי" 
                         {...form.register("firstName")} 
                       />
                       {form.formState.errors.firstName && (
@@ -253,7 +326,8 @@ const PublicRegistrationForm = () => {
                       <Label htmlFor="lastName">שם משפחה</Label>
                       <Input 
                         id="lastName" 
-                        className="mt-1" 
+                        className="mt-1"
+                        placeholder="הכנס שם משפחה" 
                         {...form.register("lastName")} 
                       />
                       {form.formState.errors.lastName && (
@@ -265,7 +339,8 @@ const PublicRegistrationForm = () => {
                       <Input 
                         id="email" 
                         type="email" 
-                        className="mt-1" 
+                        className="mt-1"
+                        placeholder="example@example.com" 
                         {...form.register("email")} 
                       />
                       {form.formState.errors.email && (
@@ -276,7 +351,8 @@ const PublicRegistrationForm = () => {
                       <Label htmlFor="phone">טלפון</Label>
                       <Input 
                         id="phone" 
-                        className="mt-1" 
+                        className="mt-1"
+                        placeholder="050-0000000" 
                         {...form.register("phone")} 
                       />
                       {form.formState.errors.phone && (
@@ -299,7 +375,8 @@ const PublicRegistrationForm = () => {
                       <Label htmlFor="city">עיר מגורים</Label>
                       <Input 
                         id="city" 
-                        className="mt-1" 
+                        className="mt-1"
+                        placeholder="הכנס עיר מגורים" 
                         {...form.register("city")} 
                       />
                       {form.formState.errors.city && (
@@ -310,33 +387,14 @@ const PublicRegistrationForm = () => {
                 </div>
                 
                 <div>
-                  <h2 className="text-lg font-medium text-gray-900">פרטי כדורגל</h2>
+                  <h2 className="text-lg font-medium text-gray-900">פרטי מועדון</h2>
                   <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
-                    <div>
-                      <Label htmlFor="position">עמדה במגרש</Label>
-                      <Select 
-                        onValueChange={(value) => form.setValue("position", value)}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="בחר עמדה" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {positions.map((position) => (
-                            <SelectItem key={position.value} value={position.value}>
-                              {position.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {form.formState.errors.position && (
-                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.position.message}</p>
-                      )}
-                    </div>
                     <div>
                       <Label htmlFor="club">מועדון/קבוצה</Label>
                       <Input 
                         id="club" 
-                        className="mt-1" 
+                        className="mt-1"
+                        placeholder="הכנס שם מועדון או קבוצה" 
                         {...form.register("club")} 
                       />
                       {form.formState.errors.club && (
@@ -347,7 +405,8 @@ const PublicRegistrationForm = () => {
                       <Label htmlFor="yearGroup">שנתון</Label>
                       <Input 
                         id="yearGroup" 
-                        className="mt-1" 
+                        className="mt-1"
+                        placeholder="הכנס שנתון" 
                         {...form.register("yearGroup")} 
                       />
                       {form.formState.errors.yearGroup && (
@@ -358,7 +417,8 @@ const PublicRegistrationForm = () => {
                       <Label htmlFor="injuries">פציעות קודמות (אופציונלי)</Label>
                       <Textarea 
                         id="injuries" 
-                        className="mt-1" 
+                        className="mt-1"
+                        placeholder="פרט פציעות קודמות אם ישנן" 
                         {...form.register("injuries")} 
                       />
                     </div>
@@ -372,7 +432,8 @@ const PublicRegistrationForm = () => {
                       <Label htmlFor="parentName">שם מלא</Label>
                       <Input 
                         id="parentName" 
-                        className="mt-1" 
+                        className="mt-1"
+                        placeholder="הכנס שם מלא של ההורה" 
                         {...form.register("parentName")} 
                       />
                       {form.formState.errors.parentName && (
@@ -383,7 +444,8 @@ const PublicRegistrationForm = () => {
                       <Label htmlFor="parentPhone">טלפון</Label>
                       <Input 
                         id="parentPhone" 
-                        className="mt-1" 
+                        className="mt-1"
+                        placeholder="050-0000000" 
                         {...form.register("parentPhone")} 
                       />
                       {form.formState.errors.parentPhone && (
@@ -395,7 +457,8 @@ const PublicRegistrationForm = () => {
                       <Input 
                         id="parentEmail" 
                         type="email" 
-                        className="mt-1" 
+                        className="mt-1"
+                        placeholder="example@example.com" 
                         {...form.register("parentEmail")} 
                       />
                       {form.formState.errors.parentEmail && (
@@ -409,7 +472,8 @@ const PublicRegistrationForm = () => {
                   <Label htmlFor="notes">הערות נוספות (אופציונלי)</Label>
                   <Textarea 
                     id="notes" 
-                    className="mt-1" 
+                    className="mt-1"
+                    placeholder="הוסף הערות נוספות אם יש" 
                     {...form.register("notes")} 
                   />
                 </div>

@@ -23,16 +23,17 @@ export const formSchema = z.object({
     }, "אנא הכנס מספר טלפון בן 10 ספרות"),
   parentEmail: z.string().email("אנא הכנס כתובת אימייל תקינה"),
   notes: z.string().optional(),
-  position: z.string().min(1, "אנא בחר עמדה")
+  sportField: z.string().min(1, "אנא בחר ענף ספורט"),
+  otherSportField: z.string().optional(),
 });
 
 export type PlayerFormValues = z.infer<typeof formSchema>;
 
-export const positions = [
-  { value: "goalkeeper", label: "שוער" },
-  { value: "defender", label: "בלם" },
-  { value: "fullback", label: "מגן" },
-  { value: "midfielder", label: "קשר" },
-  { value: "winger", label: "כנף" },
-  { value: "striker", label: "חלוץ" }
+export const sportFields = [
+  { value: "football", label: "כדורגל" },
+  { value: "basketball", label: "כדורסל" },
+  { value: "tennis", label: "טניס" },
+  { value: "swimming", label: "שחייה" },
+  { value: "athletics", label: "אתלטיקה" },
+  { value: "other", label: "אחר" }
 ];

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
@@ -8,7 +8,7 @@ import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { supabase } from '@/integrations/supabase/client';
-import { formSchema, PlayerFormValues } from '@/components/new-player/PlayerFormSchema';
+import { formSchema, PlayerFormValues, sportFields } from '@/components/new-player/PlayerFormSchema';
 import { PlayerPersonalInfo } from '@/components/new-player/PlayerPersonalInfo';
 import { PlayerClubInfo } from '@/components/new-player/PlayerClubInfo';
 import { PlayerParentInfo } from '@/components/new-player/PlayerParentInfo';
@@ -19,13 +19,15 @@ const EditPlayerForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [profileImage, setProfileImage] = React.useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = React.useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [initialSportField, setInitialSportField] = useState('');
+  const [initialOtherSportField, setInitialOtherSportField] = useState('');
 
   const playerData = location.state?.playerData;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!playerData) {
       toast({
         variant: "destructive",
@@ -35,9 +37,30 @@ const EditPlayerForm = () => {
       navigate('/players-list');
       return;
     }
+    
     if (playerData.profile_image) {
       setPreviewUrl(playerData.profile_image);
     }
+    
+    // Handle sport field initialization
+    const sportFieldValue = playerData?.sport_field || '';
+    const isKnownSport = sportFields.some(sport => sport.value === sportFieldValue || sport.label === sportFieldValue);
+    
+    if (isKnownSport) {
+      // If it's a known sport, set it directly
+      const matchingSport = sportFields.find(sport => 
+        sport.value === sportFieldValue || sport.label === sportFieldValue
+      );
+      setInitialSportField(matchingSport?.value || 'football');
+    } else if (sportFieldValue) {
+      // If it's not a known sport but has a value, set it as "other"
+      setInitialSportField('other');
+      setInitialOtherSportField(sportFieldValue);
+    } else {
+      // Default to empty
+      setInitialSportField('');
+    }
+    
   }, [playerData, navigate, toast]);
 
   const form = useForm<PlayerFormValues>({
@@ -56,9 +79,20 @@ const EditPlayerForm = () => {
       parentPhone: playerData?.parent_phone || '',
       parentEmail: playerData?.parent_email || '',
       notes: playerData?.notes || '',
-      position: playerData?.position || ''
+      sportField: initialSportField,
+      otherSportField: initialOtherSportField
     },
   });
+  
+  // Update form values when initialSportField changes
+  useEffect(() => {
+    if (initialSportField) {
+      form.setValue('sportField', initialSportField);
+    }
+    if (initialOtherSportField) {
+      form.setValue('otherSportField', initialOtherSportField);
+    }
+  }, [initialSportField, initialOtherSportField, form]);
 
   const handleImageUpload = (file: File) => {
     setProfileImage(file);
@@ -97,6 +131,13 @@ const EditPlayerForm = () => {
   const updatePlayer = async (values: PlayerFormValues, imageUrl?: string) => {
     if (!playerData?.id) return;
 
+    // Determine the final sport field value
+    const finalSportField = values.sportField === 'other' && values.otherSportField
+      ? values.otherSportField
+      : values.sportField === 'other'
+        ? 'אחר'
+        : values.sportField;
+
     const updateData = {
       full_name: `${values.firstName} ${values.lastName}`,
       email: values.playerEmail,
@@ -110,7 +151,8 @@ const EditPlayerForm = () => {
       parent_phone: values.parentPhone,
       parent_email: values.parentEmail,
       notes: values.notes,
-      position: values.position,
+      sport_field: finalSportField,
+      position: null, // Set position to null to clear it
       ...(imageUrl && { profile_image: imageUrl })
     };
 
@@ -199,6 +241,7 @@ const EditPlayerForm = () => {
             </div>
 
             <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
+              <h2 className="text-lg font-semibold mb-4">פרטים אישיים</h2>
               <PlayerPersonalInfo form={form} />
             </div>
 
