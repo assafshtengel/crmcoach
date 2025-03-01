@@ -4,17 +4,10 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { UseFormReturn } from "react-hook-form";
-import * as z from "zod";
+import { FormValues } from "./schemaValidation";
 
 interface SummaryTabProps {
-  form: UseFormReturn<{
-    summary_text: string;
-    achieved_goals: string;
-    future_goals: string;
-    additional_notes: string;
-    progress_rating: number;
-    next_session_focus: string;
-  }>;
+  form: UseFormReturn<FormValues>;
 }
 
 export function SummaryTab({ form }: SummaryTabProps) {
