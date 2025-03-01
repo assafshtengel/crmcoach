@@ -151,7 +151,7 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
         </button>
         <button
           type="button"
-          onClick={() => navigate('/coach-signup')}
+          onClick={() => navigate('/signup-coach')}
           className="text-primary hover:underline"
         >
           אין לך חשבון? הירשם עכשיו
