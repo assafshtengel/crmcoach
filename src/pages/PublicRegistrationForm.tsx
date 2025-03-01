@@ -114,12 +114,14 @@ const PublicRegistrationForm = () => {
         throw new Error('מידע המאמן חסר');
       }
 
+      // Make sure we have the correct sportField value
       const finalSportField = values.sportField === 'other' && values.otherSportField
         ? values.otherSportField
         : values.sportField === 'other'
           ? 'אחר'
           : values.sportField;
 
+      // Prepare the player data
       const playerData = {
         coach_id: linkData.coach.id,
         full_name: `${values.firstName} ${values.lastName}`,
@@ -141,27 +143,33 @@ const PublicRegistrationForm = () => {
 
       console.log("Inserting player data for coach ID:", linkData.coach.id);
       
-      // מוסיף ניסיון נוסף בשיטת UPSERT כדי להתמודד עם מצבים של כישלון שמירה
+      // Fix: Use insert instead of upsert to avoid potential conflicts
+      // and get the returned data to confirm insertion
       const { data, error } = await supabase
         .from('players')
-        .upsert([playerData], { 
-          onConflict: 'email,coach_id',
-          ignoreDuplicates: false 
-        })
+        .insert([playerData])
         .select();
 
       console.log("Player insert response:", data, "Error:", error);
 
       if (error) {
-        // לוג מפורט יותר של השגיאה
         console.error("Database error details:", JSON.stringify(error, null, 2));
-        throw error;
+        // Better error message based on the specific error
+        if (error.code === '23505') {
+          throw new Error("כתובת האימייל כבר קיימת במערכת");
+        } else if (error.code === '23503') {
+          throw new Error("שגיאה בקישור למאמן, אנא צור קשר עם המאמן");
+        } else {
+          throw error;
+        }
       }
 
-      // שולח התראה למאמן רק אם השמירה הצליחה
+      // Send notification to coach only if the data was successfully inserted
       if (data && data.length > 0) {
         const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
-        await supabase
+        
+        // Create notification for the coach
+        const { error: notificationError } = await supabase
           .from('notifications')
           .insert([
             {
@@ -170,6 +178,11 @@ const PublicRegistrationForm = () => {
               type: 'new_player'
             }
           ]);
+          
+        if (notificationError) {
+          console.error("Error creating notification:", notificationError);
+          // Continue even if notification fails
+        }
 
         toast({
           title: "נרשמת בהצלחה!",
@@ -183,14 +196,10 @@ const PublicRegistrationForm = () => {
     } catch (error: any) {
       console.error('Error in form submission:', error);
       
-      // טיפול בשגיאות ספציפיות
+      // Handle specific error messages
       let errorMessage = "אירעה שגיאה ברישום. אנא נסה שוב.";
       
-      if (error.code === '23505') {
-        errorMessage = "כתובת האימייל כבר קיימת במערכת";
-      } else if (error.code === '23503') {
-        errorMessage = "שגיאה בקישור למאמן, אנא צור קשר עם המאמן";
-      } else if (error.message) {
+      if (error.message) {
         errorMessage = error.message;
       }
       

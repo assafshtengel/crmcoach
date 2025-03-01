@@ -3,7 +3,6 @@ import { FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { sportFields } from "./constants";
 import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "./types";
@@ -36,114 +35,179 @@ export const PlayerForm = ({ form, showOtherSportField, handleSportFieldChange }
         </div>
         <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
           <div className="sm:col-span-2">
-            <Label htmlFor="sportField">ענף ספורט</Label>
-            <Select 
-              onValueChange={handleSportFieldChange}
-            >
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="בחר ענף ספורט" />
-              </SelectTrigger>
-              <SelectContent>
-                {sportFields.map((sport) => (
-                  <SelectItem key={sport.value} value={sport.value}>
-                    {sport.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {form.formState.errors.sportField && (
-              <p className="text-red-500 text-sm mt-1">{form.formState.errors.sportField.message}</p>
-            )}
+            <FormField
+              control={form.control}
+              name="sportField"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ענף ספורט</FormLabel>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleSportFieldChange(value);
+                    }}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="בחר ענף ספורט" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {sportFields.map((sport) => (
+                        <SelectItem key={sport.value} value={sport.value}>
+                          {sport.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
           {showOtherSportField && (
             <div>
-              <Label htmlFor="otherSportField">פרט ענף ספורט</Label>
-              <Input 
-                id="otherSportField" 
-                className="mt-1"
-                placeholder="הקלד ענף ספורט" 
-                {...form.register("otherSportField")} 
+              <FormField
+                control={form.control}
+                name="otherSportField"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>פרט ענף ספורט</FormLabel>
+                    <FormControl>
+                      <Input 
+                        className="mt-1"
+                        placeholder="הקלד ענף ספורט" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {form.formState.errors.otherSportField && (
-                <p className="text-red-500 text-sm mt-1">{form.formState.errors.otherSportField.message}</p>
-              )}
             </div>
           )}
           
           <div>
-            <Label htmlFor="firstName">שם פרטי</Label>
-            <Input 
-              id="firstName" 
-              className="mt-1"
-              placeholder="הכנס שם פרטי" 
-              {...form.register("firstName")} 
+            <FormField
+              control={form.control}
+              name="firstName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>שם פרטי</FormLabel>
+                  <FormControl>
+                    <Input 
+                      className="mt-1"
+                      placeholder="הכנס שם פרטי" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {form.formState.errors.firstName && (
-              <p className="text-red-500 text-sm mt-1">{form.formState.errors.firstName.message}</p>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="lastName">שם משפחה</Label>
-            <Input 
-              id="lastName" 
-              className="mt-1"
-              placeholder="הכנס שם משפחה" 
-              {...form.register("lastName")} 
-            />
-            {form.formState.errors.lastName && (
-              <p className="text-red-500 text-sm mt-1">{form.formState.errors.lastName.message}</p>
-            )}
           </div>
           
           <div>
-            <Label htmlFor="email">אימייל</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              className="mt-1"
-              placeholder="example@example.com" 
-              {...form.register("email")} 
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>שם משפחה</FormLabel>
+                  <FormControl>
+                    <Input 
+                      className="mt-1"
+                      placeholder="הכנס שם משפחה" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {form.formState.errors.email && (
-              <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message}</p>
-            )}
           </div>
+          
           <div>
-            <Label htmlFor="phone">טלפון</Label>
-            <Input 
-              id="phone" 
-              className="mt-1"
-              placeholder="050-0000000" 
-              {...form.register("phone")} 
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>אימייל</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="email" 
+                      className="mt-1"
+                      placeholder="example@example.com" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {form.formState.errors.phone && (
-              <p className="text-red-500 text-sm mt-1">{form.formState.errors.phone.message}</p>
-            )}
           </div>
+          
           <div>
-            <Label htmlFor="birthDate">תאריך לידה</Label>
-            <Input 
-              id="birthDate" 
-              placeholder="DD/MM/YYYY" 
-              className="mt-1" 
-              {...form.register("birthDate")} 
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>טלפון</FormLabel>
+                  <FormControl>
+                    <Input 
+                      className="mt-1"
+                      placeholder="050-0000000" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {form.formState.errors.birthDate && (
-              <p className="text-red-500 text-sm mt-1">{form.formState.errors.birthDate.message}</p>
-            )}
           </div>
+          
           <div>
-            <Label htmlFor="city">עיר מגורים</Label>
-            <Input 
-              id="city" 
-              className="mt-1"
-              placeholder="הכנס עיר מגורים" 
-              {...form.register("city")} 
+            <FormField
+              control={form.control}
+              name="birthDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>תאריך לידה</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="DD/MM/YYYY" 
+                      className="mt-1" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            {form.formState.errors.city && (
-              <p className="text-red-500 text-sm mt-1">{form.formState.errors.city.message}</p>
-            )}
+          </div>
+          
+          <div>
+            <FormField
+              control={form.control}
+              name="city"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>עיר מגורים</FormLabel>
+                  <FormControl>
+                    <Input 
+                      className="mt-1"
+                      placeholder="הכנס עיר מגורים" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
         </div>
       </div>
