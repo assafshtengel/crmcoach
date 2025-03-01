@@ -198,41 +198,64 @@ const PublicRegistrationForm = () => {
       };
 
       console.log("Inserting player data for coach ID:", linkData.coach.id);
+      
+      // מוסיף ניסיון נוסף בשיטת UPSERT כדי להתמודד עם מצבים של כישלון שמירה
       const { data, error } = await supabase
         .from('players')
-        .insert([playerData])
+        .upsert([playerData], { 
+          onConflict: 'email,coach_id',
+          ignoreDuplicates: false 
+        })
         .select();
 
       console.log("Player insert response:", data, "Error:", error);
 
       if (error) {
+        // לוג מפורט יותר של השגיאה
+        console.error("Database error details:", JSON.stringify(error, null, 2));
         throw error;
       }
 
-      const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
-      await supabase
-        .from('notifications')
-        .insert([
-          {
-            coach_id: linkData.coach.id,
-            message: notificationMessage,
-            type: 'new_player'
-          }
-        ]);
+      // שולח התראה למאמן רק אם השמירה הצליחה
+      if (data && data.length > 0) {
+        const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
+        await supabase
+          .from('notifications')
+          .insert([
+            {
+              coach_id: linkData.coach.id,
+              message: notificationMessage,
+              type: 'new_player'
+            }
+          ]);
 
-      toast({
-        title: "נרשמת בהצלחה!",
-        description: "פרטיך נשלחו למאמן בהצלחה.",
-      });
+        toast({
+          title: "נרשמת בהצלחה!",
+          description: "פרטיך נשלחו למאמן בהצלחה.",
+        });
 
-      setShowSuccessDialog(true);
-
+        setShowSuccessDialog(true);
+      } else {
+        throw new Error("הנתונים נשלחו אך לא התקבל אישור מהשרת");
+      }
     } catch (error) {
       console.error('Error in form submission:', error);
+      
+      // טיפול בשגיאות ספציפיות
+      let errorMessage = "אירעה שגיאה ברישום. אנא נסה שוב.";
+      
+      if (error.code === '23505') {
+        errorMessage = "כתובת האימייל כבר קיימת במערכת";
+      } else if (error.code === '23503') {
+        errorMessage = "שגיאה בקישור למאמן, אנא צור קשר עם המאמן";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         variant: "destructive",
         title: "שגיאה ברישום",
-        description: error.error_description || error.message || "אירעה שגיאה ברישום. אנא נסה שוב.",
+        description: errorMessage,
       });
     } finally {
       setIsSubmitting(false);

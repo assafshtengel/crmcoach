@@ -20,6 +20,8 @@ export default function CoachSignUp() {
     setLoading(true);
 
     try {
+      console.log("Starting coach signup process from CoachSignUp page");
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -31,20 +33,39 @@ export default function CoachSignUp() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Signup error:", error);
+        throw error;
+      }
 
       if (data.user) {
-        // יצירת רשומת מאמן
-        const { error: roleError } = await supabase
-          .from('user_roles')
+        console.log("User created successfully:", data.user);
+        
+        // יצירת רשומת מאמן מפורשת
+        const { error: coachError } = await supabase
+          .from('coaches')
           .insert([{ 
             id: data.user.id,
-            role: 'coach'
+            full_name: fullName,
+            email: email
           }]);
 
-        if (roleError) {
-          console.error("Error creating coach role:", roleError);
-          throw roleError;
+        if (coachError) {
+          console.error("Error creating coach record:", coachError);
+          
+          // אם יש שגיאה בשמירת המאמן, ננסה ליצור את רשומת התפקיד
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert([{ 
+              id: data.user.id,
+              role: 'coach'
+            }]);
+            
+          if (roleError) {
+            console.error("Error creating role record:", roleError);
+          }
+          
+          throw new Error("שגיאה בשמירת נתוני המאמן");
         }
 
         toast({
@@ -55,6 +76,8 @@ export default function CoachSignUp() {
         navigate('/auth');
       }
     } catch (error: any) {
+      console.error("Signup error details:", error);
+      
       toast({
         variant: "destructive",
         title: "שגיאה בהרשמה",

@@ -24,6 +24,8 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
     setLoading(true);
 
     try {
+      console.log("Starting coach signup process");
+      
       // הרשמת המשתמש עם metadata שכולל את תפקיד המאמן
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -37,7 +39,10 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Signup error:", error);
+        throw error;
+      }
 
       if (data.user) {
         console.log("User created successfully:", data.user);
@@ -54,6 +59,39 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
         } else {
           console.log("User role verified:", roleData);
         }
+        
+        // וידוא שהמאמן נרשם בטבלת המאמנים
+        const { data: coachData, error: coachError } = await supabase
+          .from('coaches')
+          .select('id')
+          .eq('id', data.user.id)
+          .maybeSingle();
+          
+        if (coachError) {
+          console.error("Error verifying coach entry:", coachError);
+        } else {
+          console.log("Coach entry verified:", coachData);
+          
+          // אם לא קיים, ניצור אותו באופן מפורש
+          if (!coachData) {
+            console.log("Creating coach entry explicitly");
+            
+            const { error: insertError } = await supabase
+              .from('coaches')
+              .insert({
+                id: data.user.id,
+                full_name: fullName,
+                email: email,
+                specialty: specialty
+              });
+              
+            if (insertError) {
+              console.error("Error creating coach entry:", insertError);
+            } else {
+              console.log("Coach entry created successfully");
+            }
+          }
+        }
       }
 
       toast({
@@ -64,6 +102,8 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
       
       onLoginClick();
     } catch (error: any) {
+      console.error("Signup error details:", error);
+      
       toast({
         variant: "destructive",
         title: "שגיאה בהרשמה",
