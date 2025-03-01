@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -32,6 +33,11 @@ body {
   direction: rtl;
 }
 
+/* Ensure text inputs and selections properly support RTL */
+input, textarea, select {
+  text-align: right;
+}
+
 .glass-card {
   @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg;
 }
@@ -41,7 +47,7 @@ body {
 }
 
 .input-field {
-  @apply w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200;
+  @apply w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 text-right;
 }
 
 .btn-primary {

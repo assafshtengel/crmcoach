@@ -154,6 +154,7 @@ const EditPlayerForm = () => {
       sport_field: finalSportField,
       position: null, // Set position to null to clear it
       ...(imageUrl && { profile_image: imageUrl })
+      // Remove registration_timestamp since it doesn't exist in the DB schema
     };
 
     const { error } = await supabase

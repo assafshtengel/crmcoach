@@ -119,7 +119,8 @@ const NewPlayerForm = () => {
           notes: values.notes,
           sport_field: finalSportField,
           profile_image: imageUrl,
-          registration_timestamp: values.registrationTimestamp
+          // Remove this line as it causes the error since the column doesn't exist
+          // registration_timestamp: values.registrationTimestamp
         }
       ])
       .select()
