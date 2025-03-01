@@ -16,6 +16,7 @@ import { NotesSection } from "@/components/public-registration/NotesSection";
 import { SuccessDialog } from "@/components/public-registration/SuccessDialog";
 import { FormHeader } from "@/components/public-registration/FormHeader";
 import { LoadingSpinner } from "@/components/public-registration/LoadingSpinner";
+import { FeedbackDialog } from "@/components/public-registration/FeedbackDialog";
 
 const PublicRegistrationForm = () => {
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ const PublicRegistrationForm = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState({ title: "", message: "", isError: false });
   const [showOtherSportField, setShowOtherSportField] = useState(false);
   
   const currentDateTime = format(new Date(), 'dd/MM/yyyy HH:mm');
@@ -54,11 +57,7 @@ const PublicRegistrationForm = () => {
   useEffect(() => {
     const fetchLinkData = async () => {
       if (!linkId) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "קישור לא תקין",
-        });
+        showFeedback("שגיאה", "קישור לא תקין", true);
         navigate('/');
         return;
       }
@@ -88,11 +87,7 @@ const PublicRegistrationForm = () => {
         setLinkData(linkData);
       } catch (error: any) {
         console.error("Error in useEffect:", error);
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: error.message || "אירעה שגיאה בטעינת הטופס",
-        });
+        showFeedback("שגיאה", error.message || "אירעה שגיאה בטעינת הטופס", true);
         navigate('/');
       } finally {
         setIsLoading(false);
@@ -101,6 +96,22 @@ const PublicRegistrationForm = () => {
 
     fetchLinkData();
   }, [linkId, navigate, toast]);
+
+  const showFeedback = (title: string, message: string, isError: boolean = false) => {
+    setFeedbackMessage({
+      title,
+      message,
+      isError
+    });
+    setShowFeedbackDialog(true);
+    
+    // Also show toast for immediate feedback
+    toast({
+      variant: isError ? "destructive" : "default",
+      title: title,
+      description: message,
+    });
+  };
 
   const onSubmit = async (values: FormValues) => {
     if (isSubmitting) return;
@@ -193,22 +204,27 @@ const PublicRegistrationForm = () => {
         // Continue even if notification creation fails
       }
 
-      // Show success toast and dialog
-      toast({
-        title: "נרשמת בהצלחה!",
-        description: "פרטיך נשלחו למאמן בהצלחה.",
-      });
+      // Show success feedback
+      showFeedback(
+        "נרשמת בהצלחה!",
+        `תודה על הרישום! פרטיך נשלחו למאמן ${linkData.coach.full_name} בהצלחה.`,
+        false
+      );
 
-      setShowSuccessDialog(true);
+      // After feedback is shown, we'll show the success dialog
+      setTimeout(() => {
+        setShowSuccessDialog(true);
+      }, 2000);
+      
     } catch (error: any) {
       console.error('Error in form submission:', error);
       
-      // Display error toast
-      toast({
-        variant: "destructive",
-        title: "שגיאה ברישום",
-        description: error.message || "אירעה שגיאה ברישום. אנא נסה שוב.",
-      });
+      // Display error feedback
+      showFeedback(
+        "שגיאה ברישום",
+        error.message || "אירעה שגיאה ברישום. אנא נסה שוב.",
+        true
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -273,6 +289,19 @@ const PublicRegistrationForm = () => {
           </Form>
         </div>
       </div>
+
+      <FeedbackDialog 
+        open={showFeedbackDialog}
+        setOpen={setShowFeedbackDialog}
+        title={feedbackMessage.title}
+        message={feedbackMessage.message}
+        isError={feedbackMessage.isError}
+        onClose={() => {
+          if (!feedbackMessage.isError) {
+            setShowSuccessDialog(true);
+          }
+        }}
+      />
 
       <SuccessDialog 
         showSuccessDialog={showSuccessDialog} 
