@@ -105,23 +105,23 @@ const PublicRegistrationForm = () => {
   const onSubmit = async (values: FormValues) => {
     if (isSubmitting) return;
 
-    try {
-      setIsSubmitting(true);
-      console.log("Form submitted with values:", values);
+    console.log("Submitting form with values:", values);
+    setIsSubmitting(true);
 
+    try {
       if (!linkData || !linkData.coach || !linkData.coach.id) {
         console.error("Missing coach data:", linkData);
         throw new Error('מידע המאמן חסר');
       }
 
-      // Make sure we have the correct sportField value
+      // דטרמיין את ערך ענף הספורט הסופי
       const finalSportField = values.sportField === 'other' && values.otherSportField
         ? values.otherSportField
         : values.sportField === 'other'
           ? 'אחר'
           : values.sportField;
 
-      // Prepare the player data
+      // הכן את נתוני השחקן
       const playerData = {
         coach_id: linkData.coach.id,
         full_name: `${values.firstName} ${values.lastName}`,
@@ -142,33 +142,34 @@ const PublicRegistrationForm = () => {
       };
 
       console.log("Inserting player data for coach ID:", linkData.coach.id);
+      console.log("Player data to insert:", playerData);
       
-      // Fix: Use insert instead of upsert to avoid potential conflicts
-      // and get the returned data to confirm insertion
+      // השתמש ב-insert במקום upsert כדי למנוע התנגשויות
       const { data, error } = await supabase
         .from('players')
         .insert([playerData])
         .select();
 
-      console.log("Player insert response:", data, "Error:", error);
+      console.log("Insert response:", data);
+      console.log("Insert error:", error);
 
       if (error) {
         console.error("Database error details:", JSON.stringify(error, null, 2));
-        // Better error message based on the specific error
+        // הודעות שגיאה ספציפיות יותר
         if (error.code === '23505') {
           throw new Error("כתובת האימייל כבר קיימת במערכת");
         } else if (error.code === '23503') {
           throw new Error("שגיאה בקישור למאמן, אנא צור קשר עם המאמן");
         } else {
-          throw error;
+          throw new Error(error.message || "שגיאה בשמירת הנתונים");
         }
       }
 
-      // Send notification to coach only if the data was successfully inserted
+      // שלח התראה למאמן רק אם הנתונים נשמרו בהצלחה
       if (data && data.length > 0) {
         const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
         
-        // Create notification for the coach
+        // צור התראה למאמן
         const { error: notificationError } = await supabase
           .from('notifications')
           .insert([
@@ -181,7 +182,7 @@ const PublicRegistrationForm = () => {
           
         if (notificationError) {
           console.error("Error creating notification:", notificationError);
-          // Continue even if notification fails
+          // המשך גם אם ההתראה נכשלה
         }
 
         toast({
@@ -196,17 +197,10 @@ const PublicRegistrationForm = () => {
     } catch (error: any) {
       console.error('Error in form submission:', error);
       
-      // Handle specific error messages
-      let errorMessage = "אירעה שגיאה ברישום. אנא נסה שוב.";
-      
-      if (error.message) {
-        errorMessage = error.message;
-      }
-      
       toast({
         variant: "destructive",
         title: "שגיאה ברישום",
-        description: errorMessage,
+        description: error.message || "אירעה שגיאה ברישום. אנא נסה שוב.",
       });
     } finally {
       setIsSubmitting(false);
