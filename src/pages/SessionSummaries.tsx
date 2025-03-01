@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -7,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Eye, Tool } from 'lucide-react';
+import { ArrowRight, FileText, Eye, Wrench } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -106,7 +105,7 @@ const SessionSummaries = () => {
           {tools.map((tool, idx) => (
             <div key={idx} className="bg-white/70 p-3 rounded-md shadow-sm">
               <div className="flex items-center gap-2">
-                <Tool className="h-4 w-4 text-[#6E59A5]" />
+                <Wrench className="h-4 w-4 text-[#6E59A5]" />
                 <h4 className="font-medium text-[#6E59A5]">{tool.name}</h4>
               </div>
               {tool.note && (

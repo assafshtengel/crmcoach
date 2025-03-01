@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { ChevronRight, Loader2, Pencil, ScrollText, User, Home, Calendar, Phone, Tool } from 'lucide-react';
+import { ChevronRight, Loader2, Pencil, ScrollText, User, Home, Calendar, Phone, Wrench } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -38,7 +38,6 @@ const PlayerProfile = () => {
   const [loading, setLoading] = useState(true);
   const [player, setPlayer] = useState<PlayerProfile | null>(null);
 
-  // Add a section to display session summaries with tools used
   const [sessionSummaries, setSessionSummaries] = useState([]);
 
   useEffect(() => {
@@ -299,7 +298,7 @@ const PlayerProfile = () => {
                     {summary.tools_used && summary.tools_used.length > 0 && (
                       <div className="mt-4">
                         <h4 className="text-sm font-medium text-indigo-900 mb-2 flex items-center gap-1">
-                          <Tool className="h-4 w-4" />
+                          <Wrench className="h-4 w-4" />
                           כלים מנטליים בשימוש:
                         </h4>
                         <div className="space-y-2">
