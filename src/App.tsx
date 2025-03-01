@@ -35,6 +35,7 @@ import NewPlayerForm from "./pages/NewPlayerForm";
 import EditPlayerForm from "./pages/EditPlayerForm";
 import RegistrationLinks from "./pages/RegistrationLinks";
 import PublicRegistrationForm from "./pages/PublicRegistrationForm";
+import ToolManagement from "./pages/ToolManagement";
 import { AuthGuard } from "./components/auth/AuthGuard";
 
 import "./App.css";
@@ -78,6 +79,7 @@ function App() {
         <Route path="/edit-player/:playerId" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
         <Route path="/registration-links" element={<AuthGuard><RegistrationLinks /></AuthGuard>} />
         <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
+        <Route path="/tool-management" element={<AuthGuard><ToolManagement /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

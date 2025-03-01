@@ -14,6 +14,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
 import { Calendar as CalendarComponent } from '@/components/calendar/Calendar';
+import { Link } from 'react-router-dom';
+import { Wrench } from 'lucide-react';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -773,56 +775,31 @@ const DashboardCoach = () => {
           )}
         </Card>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Button 
-            className="h-auto py-6 bg-[#2C3E50] hover:bg-[#2C3E50]/90"
-            onClick={() => navigate('/new-player')}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <UserPlus className="h-6 w-6" />
-              <span>הוספת שחקן חדש</span>
-            </div>
-          </Button>
-
-          <Button 
-            className="h-auto py-6 bg-[#27AE60] hover:bg-[#27AE60]/90"
-            onClick={() => navigate('/new-session')}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <CalendarPlus className="h-6 w-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+          <Link to="/new-session">
+            <Button className="w-full h-full min-h-[100px] flex flex-col p-6" variant="outline">
+              <Calendar className="h-8 w-8 mb-2" />
               <span>קביעת מפגש חדש</span>
-            </div>
-          </Button>
-
-          <Button 
-            className="h-auto py-6 bg-[#3498DB] hover:bg-[#3498DB]/90"
-            onClick={() => navigate('/players-list')}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <Users className="h-6 w-6" />
-              <span>רשימת שחקנים</span>
-            </div>
-          </Button>
-
-          <Button 
-            className="h-auto py-6 bg-[#F1C40F] hover:bg-[#F1C40F]/90"
-            onClick={() => navigate('/session-summaries')}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <FileText className="h-6 w-6" />
-              <span>סיכומי מפגשים</span>
-            </div>
-          </Button>
-
-          <Button 
-            className="h-auto py-6 bg-[#9B59B6] hover:bg-[#9B59B6]/90"
-            onClick={() => navigate('/analytics')}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <BarChart2 className="h-6 w-6" />
-              <span>דוחות וסטטיסטיקות</span>
-            </div>
-          </Button>
+            </Button>
+          </Link>
+          <Link to="/new-player">
+            <Button className="w-full h-full min-h-[100px] flex flex-col p-6" variant="outline">
+              <UserPlus className="h-8 w-8 mb-2" />
+              <span>הוספת שחקן חדש</span>
+            </Button>
+          </Link>
+          <Link to="/tool-management">
+            <Button className="w-full h-full min-h-[100px] flex flex-col p-6" variant="outline">
+              <Wrench className="h-8 w-8 mb-2" />
+              <span>ניהול כלים</span>
+            </Button>
+          </Link>
+          <Link to="/reports">
+            <Button className="w-full h-full min-h-[100px] flex flex-col p-6" variant="outline">
+              <BarChart className="h-8 w-8 mb-2" />
+              <span>דוחות והתקדמות</span>
+            </Button>
+          </Link>
         </div>
 
         <Card className="bg-white/90 shadow-lg">
