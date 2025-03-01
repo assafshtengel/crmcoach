@@ -1,52 +1,57 @@
+import { supabase } from "@/lib/supabase";
+import { PlayerFormValues } from "@/components/new-player/PlayerFormSchema";
 
-import { supabase } from '@/integrations/supabase/client';
-import { PlayerFormValues } from '@/components/new-player/PlayerFormSchema';
-
-export const createPlayer = async (values: PlayerFormValues, coachId: string) => {
+export const updatePlayer = async (
+  playerId: string,
+  {
+    firstName,
+    lastName,
+    playerEmail,
+    playerPhone,
+    birthDate,
+    city,
+    club,
+    yearGroup,
+    injuries,
+    parentName,
+    parentEmail,
+    parentPhone,
+    notes,
+    sportField,
+    otherSportField,
+  }: Partial<PlayerFormValues>
+) => {
   try {
-    // בדיקה אם השחקן כבר קיים במערכת
-    const { data: existingPlayer } = await supabase
+    const finalSportField = sportField === 'other' && otherSportField
+      ? otherSportField
+      : sportField === 'other'
+        ? 'אחר'
+        : sportField;
+        
+    const { data, error } = await supabase
       .from('players')
-      .select('id')
-      .eq('email', values.playerEmail.toLowerCase())
-      .single();
+      .update({
+        full_name: firstName && lastName ? `${firstName} ${lastName}` : undefined,
+        email: playerEmail,
+        phone: playerPhone,
+        birthdate: birthDate,
+        city,
+        club,
+        year_group: yearGroup,
+        injuries,
+        parent_name: parentName,
+        parent_phone: parentPhone,
+        parent_email: parentEmail,
+        notes,
+        sport_field: finalSportField,
+      })
+      .eq('id', playerId)
+      .select();
 
-    if (existingPlayer) {
-      throw new Error('שחקן עם כתובת האימייל הזו כבר קיים במערכת');
-    }
-
-    // שמירת השחקן בטבלת players
-    const { data: playerData, error: insertError } = await supabase
-      .from('players')
-      .insert([{
-        coach_id: coachId,
-        full_name: `${values.firstName} ${values.lastName}`,
-        email: values.playerEmail.toLowerCase(),
-        phone: values.playerPhone,
-        position: values.position,
-        notes: `
-          תאריך לידה: ${values.birthDate}
-          עיר: ${values.city}
-          מועדון: ${values.club}
-          שנתון: ${values.yearGroup}
-          פציעות: ${values.injuries || 'אין'}
-          פרטי הורה:
-          שם: ${values.parentName}
-          טלפון: ${values.parentPhone}
-          אימייל: ${values.parentEmail}
-          הערות נוספות: ${values.notes || 'אין'}
-        `
-      }])
-      .select()
-      .single();
-
-    if (insertError) {
-      throw insertError;
-    }
-
-    return { playerData };
-
-  } catch (error: any) {
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating player:', error);
     throw error;
   }
 };

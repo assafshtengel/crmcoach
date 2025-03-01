@@ -1,365 +1,511 @@
-
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { positions } from '@/components/new-player/PlayerFormSchema';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Form } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { sportFields } from '@/components/new-player/PlayerFormSchema';
 
-interface PlayerFormData {
-  full_name: string;
-  email: string;
-  phone: string;
-  birthdate: string;
-  city: string;
-  club: string;
-  year_group: string;
-  position: string;
-  injuries?: string;
-  parent_name: string;
-  parent_phone: string;
-  parent_email: string;
-  notes?: string;
-}
+const formSchema = z.object({
+  firstName: z.string().min(2, "שם פרטי חייב להכיל לפחות 2 תווים"),
+  lastName: z.string().min(2, "שם משפחה חייב להכיל לפחות 2 תווים"),
+  email: z.string().email("אנא הכנס כתובת אימייל תקינה"),
+  phone: z.string()
+    .refine((val) => {
+      const digitsOnly = val.replace(/-/g, '');
+      return /^\d{10}$/.test(digitsOnly);
+    }, "אנא הכנס מספר טלפון בן 10 ספרות"),
+  birthDate: z.string().regex(/^(0?[1-9]|[12][0-9]|3[01])[-/](0?[1-9]|1[012])[-/]\d{4}$/, "אנא הכנס תאריך בפורמט DD/MM/YYYY או DD-MM-YYYY"),
+  city: z.string().min(2, "עיר חייבת להכיל לפחות 2 תווים"),
+  club: z.string().min(2, "שם המועדון חייב להכיל לפחות 2 תווים"),
+  yearGroup: z.string().min(4, "אנא הכנס שנתון תקין"),
+  injuries: z.string().optional(),
+  parentName: z.string().min(2, "שם ההורה חייב להכיל לפחות 2 תווים"),
+  parentPhone: z.string()
+    .refine((val) => {
+      const digitsOnly = val.replace(/-/g, '');
+      return /^\d{10}$/.test(digitsOnly);
+    }, "אנא הכנס מספר טלפון בן 10 ספרות"),
+  parentEmail: z.string().email("אנא הכנס כתובת אימייל תקינה"),
+  notes: z.string().optional(),
+  sportField: z.string().min(1, "אנא בחר ענף ספורט"),
+  otherSportField: z.string().optional(),
+});
 
-interface RegistrationLinkData {
-  id: string;
-  custom_message: string | null;
-  coach_id: string;
-  coaches: {
-    id: string;
-    full_name: string;
-  };
-}
+// Fix the validation for otherSportField - use a refinement that doesn't depend on a 2nd argument
+formSchema.shape.otherSportField = z.string().optional()
+  .superRefine((val, ctx) => {
+    if (ctx.parent.sportField === 'other') {
+      if (!val || val.length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "אנא הזן ענף ספורט",
+        });
+        return false;
+      }
+    }
+    return true;
+  });
+
+type FormValues = z.infer<typeof formSchema>;
 
 const PublicRegistrationForm = () => {
-  const { linkId } = useParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [coachData, setCoachData] = useState<{ id: string; full_name: string; custom_message?: string } | null>(null);
-  const [formData, setFormData] = useState<PlayerFormData>({
-    full_name: '',
-    email: '',
-    phone: '',
-    birthdate: '',
-    city: '',
-    club: '',
-    year_group: '',
-    position: '',
-    injuries: '',
-    parent_name: '',
-    parent_phone: '',
-    parent_email: '',
-    notes: ''
+  const { linkId } = useParams();
+  const { toast } = useToast();
+  const [linkData, setLinkData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showOtherSportField, setShowOtherSportField] = useState(false);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      birthDate: "",
+      city: "",
+      club: "",
+      yearGroup: "",
+      injuries: "",
+      parentName: "",
+      parentPhone: "",
+      parentEmail: "",
+      notes: "",
+      sportField: "",
+      otherSportField: ""
+    },
   });
 
   useEffect(() => {
-    const verifyLink = async () => {
+    const fetchLinkData = async () => {
       if (!linkId) {
-        toast.error('לינק לא תקין');
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "קישור לא תקין",
+        });
+        navigate('/');
         return;
       }
 
       try {
+        console.log("Fetching link data for ID:", linkId);
         const { data: linkData, error: linkError } = await supabase
           .from('registration_links')
           .select(`
-            id,
-            custom_message,
-            coach_id,
-            coaches!inner(
-              id,
-              full_name
-            )
+            *,
+            coach:coaches(id, full_name, email)
           `)
           .eq('id', linkId)
-          .maybeSingle() as { data: RegistrationLinkData | null; error: any };
+          .eq('is_active', true)
+          .single();
 
         if (linkError || !linkData) {
-          console.error('Link error:', linkError);
-          toast.error('הלינק אינו תקין או שפג תוקפו');
-          return;
+          console.error("Error fetching link:", linkError);
+          throw new Error('הקישור לא נמצא או שאינו פעיל');
         }
 
-        setCoachData({
-          id: linkData.coach_id,
-          full_name: linkData.coaches.full_name,
-          custom_message: linkData.custom_message || undefined
+        if (linkData.expires_at && new Date(linkData.expires_at) < new Date()) {
+          throw new Error('הקישור פג תוקף');
+        }
+
+        console.log("Link data loaded:", linkData);
+        setLinkData(linkData);
+      } catch (error) {
+        console.error("Error in useEffect:", error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: error.message || "אירעה שגיאה בטעינת הטופס",
         });
-      } catch (error: any) {
-        console.error('Error verifying link:', error);
-        toast.error('אירעה שגיאה בטעינת הטופס');
+        navigate('/');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    verifyLink();
-  }, [linkId]);
+    fetchLinkData();
+  }, [linkId, navigate, toast]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!coachData) return;
+  const onSubmit = async (values: FormValues) => {
+    if (isSubmitting) return;
 
-    if (!formData.full_name || !formData.email || !formData.phone) {
-      toast.error('נא למלא את כל השדות החובה');
-      return;
-    }
-
-    setLoading(true);
     try {
+      setIsSubmitting(true);
+      console.log("Form submitted with values:", values);
+
+      if (!linkData || !linkData.coach || !linkData.coach.id) {
+        console.error("Missing coach data:", linkData);
+        throw new Error('מידע המאמן חסר');
+      }
+
+      // Determine the final sport field value
+      const finalSportField = values.sportField === 'other' && values.otherSportField
+        ? values.otherSportField
+        : values.sportField === 'other'
+          ? 'אחר'
+          : values.sportField;
+
+      const playerData = {
+        coach_id: linkData.coach.id,
+        full_name: `${values.firstName} ${values.lastName}`,
+        email: values.email,
+        phone: values.phone,
+        birthdate: values.birthDate,
+        city: values.city,
+        club: values.club,
+        year_group: values.yearGroup,
+        injuries: values.injuries,
+        parent_name: values.parentName,
+        parent_phone: values.parentPhone,
+        parent_email: values.parentEmail,
+        notes: values.notes,
+        sport_field: finalSportField,
+        registration_link_id: linkId
+      };
+
+      console.log("Inserting player data for coach ID:", linkData.coach.id);
       const { data, error } = await supabase
         .from('players')
-        .insert([{ ...formData, coach_id: coachData.id }])
-        .select()
-        .single();
+        .insert([playerData])
+        .select();
 
-      if (error) throw error;
+      console.log("Player insert response:", data, "Error:", error);
 
-      toast.success('הרישום בוצע בהצלחה!');
-      navigate('/registration-success');
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      toast.error('שגיאה בתהליך הרישום: ' + error.message);
+      if (error) {
+        throw error;
+      }
+
+      const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
+      await supabase
+        .from('notifications')
+        .insert([
+          {
+            coach_id: linkData.coach.id,
+            message: notificationMessage,
+            type: 'new_player'
+          }
+        ]);
+
+      toast({
+        title: "נרשמת בהצלחה!",
+        description: "פרטיך נשלחו למאמן בהצלחה.",
+      });
+
+      setShowSuccessDialog(true);
+
+    } catch (error) {
+      console.error('Error in form submission:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה ברישום",
+        description: error.error_description || error.message || "אירעה שגיאה ברישום. אנא נסה שוב.",
+      });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string,
-    field: keyof PlayerFormData
-  ) => {
-    if (typeof e === 'string') {
-      setFormData(prev => ({ ...prev, [field]: e }));
-    } else {
-      const { name, value } = e.target;
-      setFormData(prev => ({ ...prev, [name]: value }));
+  const handleCloseWindow = () => {
+    try {
+      window.close();
+    } catch (error) {
+      console.log("Could not close window automatically");
     }
   };
 
-  if (!coachData) {
+  const handleSportFieldChange = (value: string) => {
+    form.setValue('sportField', value);
+    setShowOtherSportField(value === 'other');
+    if (value !== 'other') {
+      form.setValue('otherSportField', '');
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8">
-        <div className="max-w-4xl mx-auto px-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex justify-center items-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                <span className="mr-2">טוען...</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl mb-2">הרשמה לאימונים אצל {coachData.full_name}</CardTitle>
-            {coachData.custom_message && (
-              <p className="mt-2 text-gray-600">{coachData.custom_message}</p>
-            )}
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <section>
-                <h3 className="text-lg font-semibold mb-4">פרטים אישיים</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="full_name">שם מלא *</Label>
-                    <Input
-                      id="full_name"
-                      name="full_name"
-                      value={formData.full_name}
-                      onChange={(e) => handleInputChange(e, 'full_name')}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="birthdate">תאריך לידה *</Label>
-                    <Input
-                      id="birthdate"
-                      name="birthdate"
-                      type="date"
-                      value={formData.birthdate}
-                      onChange={(e) => handleInputChange(e, 'birthdate')}
-                      required
-                      dir="ltr"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">אימייל *</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange(e, 'email')}
-                      dir="ltr"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">טלפון *</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange(e, 'phone')}
-                      dir="ltr"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="position">עמדה</Label>
-                    <Select
-                      value={formData.position}
-                      onValueChange={(value) => handleInputChange(value, 'position')}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="בחר עמדה" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {positions.map((position) => (
-                          <SelectItem key={position.value} value={position.value}>
-                            {position.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-lg font-semibold mb-4">פרטי מועדון</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <Label htmlFor="city">עיר</Label>
-                    <Input
-                      id="city"
-                      name="city"
-                      value={formData.city}
-                      onChange={(e) => handleInputChange(e, 'city')}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="club">מועדון</Label>
-                    <Input
-                      id="club"
-                      name="club"
-                      value={formData.club}
-                      onChange={(e) => handleInputChange(e, 'club')}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="year_group">שנתון</Label>
-                    <Input
-                      id="year_group"
-                      name="year_group"
-                      value={formData.year_group}
-                      onChange={(e) => handleInputChange(e, 'year_group')}
-                      required
-                    />
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-lg font-semibold mb-4">פרטי הורה</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="parent_name">שם ההורה *</Label>
-                    <Input
-                      id="parent_name"
-                      name="parent_name"
-                      value={formData.parent_name}
-                      onChange={(e) => handleInputChange(e, 'parent_name')}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="parent_phone">טלפון הורה *</Label>
-                    <Input
-                      id="parent_phone"
-                      name="parent_phone"
-                      value={formData.parent_phone}
-                      onChange={(e) => handleInputChange(e, 'parent_phone')}
-                      dir="ltr"
-                      required
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label htmlFor="parent_email">אימייל הורה *</Label>
-                    <Input
-                      id="parent_email"
-                      name="parent_email"
-                      type="email"
-                      value={formData.parent_email}
-                      onChange={(e) => handleInputChange(e, 'parent_email')}
-                      dir="ltr"
-                      required
-                    />
-                  </div>
-                </div>
-              </section>
-
-              <section>
-                <h3 className="text-lg font-semibold mb-4">מידע נוסף</h3>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="injuries">פציעות עבר</Label>
-                    <Textarea
-                      id="injuries"
-                      name="injuries"
-                      value={formData.injuries}
-                      onChange={(e) => handleInputChange(e, 'injuries')}
-                      className="min-h-[100px]"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="notes">הערות נוספות</Label>
-                    <Textarea
-                      id="notes"
-                      name="notes"
-                      value={formData.notes}
-                      onChange={(e) => handleInputChange(e, 'notes')}
-                      className="min-h-[100px]"
-                    />
-                  </div>
-                </div>
-              </section>
-
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="min-w-[150px]"
-                >
-                  {loading ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      שולח טופס...
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="py-6 px-4 sm:px-10 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+          <h1 className="text-xl sm:text-2xl font-semibold">
+            רישום לאימון עם {linkData?.coach?.full_name}
+          </h1>
+          {linkData?.custom_message && (
+            <p className="mt-2 text-white/90">{linkData.custom_message}</p>
+          )}
+        </div>
+        <div className="px-4 py-6 sm:p-10">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900">פרטים אישיים</h2>
+                  <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                    <div className="sm:col-span-2">
+                      <Label htmlFor="sportField">ענף ספורט</Label>
+                      <Select 
+                        onValueChange={handleSportFieldChange}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="בחר ענף ספורט" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sportFields.map((sport) => (
+                            <SelectItem key={sport.value} value={sport.value}>
+                              {sport.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {form.formState.errors.sportField && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.sportField.message as React.ReactNode}</p>
+                      )}
                     </div>
-                  ) : (
-                    'שלח טופס'
-                  )}
-                </Button>
+
+                    {showOtherSportField && (
+                      <div>
+                        <Label htmlFor="otherSportField">פרט ענף ספורט</Label>
+                        <Input 
+                          id="otherSportField" 
+                          className="mt-1"
+                          placeholder="הקלד ענף ספורט" 
+                          {...form.register("otherSportField")} 
+                        />
+                        {form.formState.errors.otherSportField && (
+                          <p className="text-red-500 text-sm mt-1">{form.formState.errors.otherSportField.message as React.ReactNode}</p>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div>
+                      <Label htmlFor="firstName">שם פרטי</Label>
+                      <Input 
+                        id="firstName" 
+                        className="mt-1"
+                        placeholder="הכנס שם פרטי" 
+                        {...form.register("firstName")} 
+                      />
+                      {form.formState.errors.firstName && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.firstName.message as React.ReactNode}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">שם משפחה</Label>
+                      <Input 
+                        id="lastName" 
+                        className="mt-1"
+                        placeholder="הכנס שם משפחה" 
+                        {...form.register("lastName")} 
+                      />
+                      {form.formState.errors.lastName && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.lastName.message as React.ReactNode}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="email">אימייל</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        className="mt-1"
+                        placeholder="example@example.com" 
+                        {...form.register("email")} 
+                      />
+                      {form.formState.errors.email && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message as React.ReactNode}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">טלפון</Label>
+                      <Input 
+                        id="phone" 
+                        className="mt-1"
+                        placeholder="050-0000000" 
+                        {...form.register("phone")} 
+                      />
+                      {form.formState.errors.phone && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.phone.message as React.ReactNode}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="birthDate">תאריך לידה</Label>
+                      <Input 
+                        id="birthDate" 
+                        placeholder="DD/MM/YYYY" 
+                        className="mt-1" 
+                        {...form.register("birthDate")} 
+                      />
+                      {form.formState.errors.birthDate && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.birthDate.message as React.ReactNode}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="city">עיר מגורים</Label>
+                      <Input 
+                        id="city" 
+                        className="mt-1"
+                        placeholder="הכנס עיר מגורים" 
+                        {...form.register("city")} 
+                      />
+                      {form.formState.errors.city && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.city.message as React.ReactNode}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900">פרטי מועדון</h2>
+                  <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                    <div>
+                      <Label htmlFor="club">מועדון/קבוצה</Label>
+                      <Input 
+                        id="club" 
+                        className="mt-1"
+                        placeholder="הכנס שם מועדון או קבוצה" 
+                        {...form.register("club")} 
+                      />
+                      {form.formState.errors.club && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.club.message as React.ReactNode}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="yearGroup">שנתון</Label>
+                      <Input 
+                        id="yearGroup" 
+                        className="mt-1"
+                        placeholder="הכנס שנתון" 
+                        {...form.register("yearGroup")} 
+                      />
+                      {form.formState.errors.yearGroup && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.yearGroup.message as React.ReactNode}</p>
+                      )}
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label htmlFor="injuries">פציעות קודמות (אופציונלי)</Label>
+                      <Textarea 
+                        id="injuries" 
+                        className="mt-1"
+                        placeholder="פרט פציעות קודמות אם ישנן" 
+                        {...form.register("injuries")} 
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900">פרטי הורה (לשחקנים מתחת לגיל 18)</h2>
+                  <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
+                    <div>
+                      <Label htmlFor="parentName">שם מלא</Label>
+                      <Input 
+                        id="parentName" 
+                        className="mt-1"
+                        placeholder="הכנס שם מלא של ההורה" 
+                        {...form.register("parentName")} 
+                      />
+                      {form.formState.errors.parentName && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentName.message as React.ReactNode}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="parentPhone">טלפון</Label>
+                      <Input 
+                        id="parentPhone" 
+                        className="mt-1"
+                        placeholder="050-0000000" 
+                        {...form.register("parentPhone")} 
+                      />
+                      {form.formState.errors.parentPhone && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentPhone.message as React.ReactNode}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="parentEmail">אימייל</Label>
+                      <Input 
+                        id="parentEmail" 
+                        type="email" 
+                        className="mt-1"
+                        placeholder="example@example.com" 
+                        {...form.register("parentEmail")} 
+                      />
+                      {form.formState.errors.parentEmail && (
+                        <p className="text-red-500 text-sm mt-1">{form.formState.errors.parentEmail.message as React.ReactNode}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="notes">הערות נוספות (אופציונלי)</Label>
+                  <Textarea 
+                    id="notes" 
+                    className="mt-1"
+                    placeholder="הוסף הערות נוספות אם יש" 
+                    {...form.register("notes")} 
+                  />
+                </div>
               </div>
+              
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "רושם..." : "שלח פרטים"}
+              </Button>
             </form>
-          </CardContent>
-        </Card>
+          </Form>
+        </div>
       </div>
+
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">הרישום הושלם בהצלחה!</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-4">
+            <p className="mb-4">
+              תודה שנרשמת לאימון. המאמן {linkData?.coach?.full_name} יצור איתך קשר בקרוב.
+            </p>
+            <Button
+              onClick={handleCloseWindow}
+              className="mt-2"
+            >
+              סגור חלון
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
