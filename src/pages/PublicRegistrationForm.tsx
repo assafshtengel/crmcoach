@@ -24,7 +24,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { format } from "date-fns";
-import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 
 const sportFields = [
   { value: "football", label: "כדורגל" },
@@ -85,7 +85,6 @@ const PublicRegistrationForm = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showOtherSportField, setShowOtherSportField] = useState(false);
   
-  // Set the current time when the form loads
   const currentDateTime = format(new Date(), 'dd/MM/yyyy HH:mm');
 
   const form = useForm<FormValues>({
