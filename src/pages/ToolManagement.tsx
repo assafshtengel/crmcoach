@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Sidebar } from "@/components/ui/sidebar";
-import { ToolsList } from "@/components/tools/ToolsList";
 import { Layout } from "@/components/layout/Layout";
+import { ToolsList } from "@/components/tools/ToolsList";
 
 export default function ToolManagement() {
   return (

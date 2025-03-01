@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tool } from "@/types/tool";
 
 const formSchema = z.object({
   summary_text: z.string().min(1, "נדרש למלא סיכום"),
@@ -30,12 +31,6 @@ interface SessionSummaryFormProps {
   sessionDate: string;
   onSubmit: (data: z.infer<typeof formSchema> & { tools_used: string[] }) => Promise<void>;
   onCancel: () => void;
-}
-
-interface Tool {
-  id: string;
-  name: string;
-  description: string;
 }
 
 export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmit, onCancel }: SessionSummaryFormProps) {
@@ -72,7 +67,7 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
       }
 
       if (data) {
-        setTools(data);
+        setTools(data as Tool[]);
       }
     } catch (error) {
       console.error('Error fetching tools:', error);

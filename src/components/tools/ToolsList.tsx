@@ -18,13 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface Tool {
-  id: string;
-  name: string;
-  description: string;
-  created_at: string;
-}
+import { Tool } from '@/types/tool';
 
 export function ToolsList() {
   const [tools, setTools] = useState<Tool[]>([]);
@@ -45,6 +39,9 @@ export function ToolsList() {
   async function fetchTools() {
     try {
       setLoading(true);
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
       const { data, error } = await supabase
         .from('coach_tools')
         .select('*')
@@ -55,7 +52,7 @@ export function ToolsList() {
       }
 
       if (data) {
-        setTools(data);
+        setTools(data as Tool[]);
       }
     } catch (error) {
       console.error('Error fetching tools:', error);
@@ -80,12 +77,23 @@ export function ToolsList() {
     }
 
     try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast({
+          title: "שגיאה בהוספת הכלי",
+          description: "יש להתחבר למערכת",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase
         .from('coach_tools')
         .insert([
           {
             name: newToolName,
             description: newToolDescription,
+            coach_id: session.session.user.id
           },
         ])
         .select();
@@ -95,7 +103,7 @@ export function ToolsList() {
       }
 
       if (data) {
-        setTools([...data, ...tools]);
+        setTools([...data as Tool[], ...tools]);
         setNewToolName('');
         setNewToolDescription('');
         toast({
@@ -138,7 +146,7 @@ export function ToolsList() {
       }
 
       if (data) {
-        setTools(tools.map(tool => tool.id === id ? data[0] : tool));
+        setTools(tools.map(tool => tool.id === id ? data[0] as Tool : tool));
         setEditMode(null);
         toast({
           title: "הכלי עודכן בהצלחה",
@@ -216,7 +224,12 @@ export function ToolsList() {
                   <p>טרם נוספו כלים למערכת</p>
                   <Button 
                     variant="link" 
-                    onClick={() => document.querySelector('[data-value="add"]')?.click()}
+                    onClick={() => {
+                      const tabTrigger = document.querySelector('[data-value="add"]');
+                      if (tabTrigger) {
+                        (tabTrigger as HTMLElement).click();
+                      }
+                    }}
                   >
                     הוסף כלי ראשון
                   </Button>
