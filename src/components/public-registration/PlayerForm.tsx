@@ -1,4 +1,3 @@
-
 import { FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -45,6 +44,7 @@ export const PlayerForm = ({ form, showOtherSportField, handleSportFieldChange }
                       field.onChange(value);
                       handleSportFieldChange(value);
                     }}
+                    value={field.value || ""}
                     defaultValue={field.value}
                   >
                     <FormControl>

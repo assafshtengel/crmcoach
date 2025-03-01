@@ -114,14 +114,19 @@ const PublicRegistrationForm = () => {
         throw new Error('מידע המאמן חסר');
       }
 
-      // דטרמיין את ערך ענף הספורט הסופי
+      // Validate sport field
+      if (!values.sportField) {
+        throw new Error('יש לבחור ענף ספורט');
+      }
+
+      // Determine final sport field value
       const finalSportField = values.sportField === 'other' && values.otherSportField
         ? values.otherSportField
         : values.sportField === 'other'
           ? 'אחר'
           : values.sportField;
 
-      // הכן את נתוני השחקן
+      // Prepare player data
       const playerData = {
         coach_id: linkData.coach.id,
         full_name: `${values.firstName} ${values.lastName}`,
@@ -144,7 +149,7 @@ const PublicRegistrationForm = () => {
       console.log("Inserting player data for coach ID:", linkData.coach.id);
       console.log("Player data to insert:", playerData);
       
-      // השתמש ב-insert במקום upsert כדי למנוע התנגשויות
+      // Use insert instead of upsert to avoid conflicts
       const { data, error } = await supabase
         .from('players')
         .insert([playerData])
@@ -155,7 +160,8 @@ const PublicRegistrationForm = () => {
 
       if (error) {
         console.error("Database error details:", JSON.stringify(error, null, 2));
-        // הודעות שגיאה ספציפיות יותר
+        
+        // Provide specific error messages based on error code
         if (error.code === '23505') {
           throw new Error("כתובת האימייל כבר קיימת במערכת");
         } else if (error.code === '23503') {
@@ -165,38 +171,39 @@ const PublicRegistrationForm = () => {
         }
       }
 
-      // שלח התראה למאמן רק אם הנתונים נשמרו בהצלחה
-      if (data && data.length > 0) {
-        const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
-        
-        // צור התראה למאמן
-        const { error: notificationError } = await supabase
-          .from('notifications')
-          .insert([
-            {
-              coach_id: linkData.coach.id,
-              message: notificationMessage,
-              type: 'new_player'
-            }
-          ]);
-          
-        if (notificationError) {
-          console.error("Error creating notification:", notificationError);
-          // המשך גם אם ההתראה נכשלה
-        }
-
-        toast({
-          title: "נרשמת בהצלחה!",
-          description: "פרטיך נשלחו למאמן בהצלחה.",
-        });
-
-        setShowSuccessDialog(true);
-      } else {
-        throw new Error("הנתונים נשלחו אך לא התקבל אישור מהשרת");
+      if (!data || data.length === 0) {
+        throw new Error("שגיאה בשמירת הנתונים - לא התקבל אישור מהשרת");
       }
+
+      // Send notification to coach
+      const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
+      
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert([
+          {
+            coach_id: linkData.coach.id,
+            message: notificationMessage,
+            type: 'new_player'
+          }
+        ]);
+        
+      if (notificationError) {
+        console.error("Error creating notification:", notificationError);
+        // Continue even if notification creation fails
+      }
+
+      // Show success toast and dialog
+      toast({
+        title: "נרשמת בהצלחה!",
+        description: "פרטיך נשלחו למאמן בהצלחה.",
+      });
+
+      setShowSuccessDialog(true);
     } catch (error: any) {
       console.error('Error in form submission:', error);
       
+      // Display error toast
       toast({
         variant: "destructive",
         title: "שגיאה ברישום",
@@ -216,8 +223,11 @@ const PublicRegistrationForm = () => {
   };
 
   const handleSportFieldChange = (value: string) => {
+    console.log("Sport field changed to:", value);
     form.setValue('sportField', value);
     setShowOtherSportField(value === 'other');
+    
+    // Clear otherSportField if not needed
     if (value !== 'other') {
       form.setValue('otherSportField', '');
     }
