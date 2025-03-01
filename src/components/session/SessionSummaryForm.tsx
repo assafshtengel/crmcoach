@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,15 @@ import { Slider } from "@/components/ui/slider";
 import { format } from "date-fns";
 import { he } from 'date-fns/locale';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+
+interface Tool {
+  id: string;
+  name: string;
+  description: string;
+}
 
 const formSchema = z.object({
   summary_text: z.string().min(1, "נדרש למלא סיכום"),
@@ -17,18 +26,24 @@ const formSchema = z.object({
   future_goals: z.string(),
   additional_notes: z.string().optional(),
   progress_rating: z.number().min(1).max(5),
-  next_session_focus: z.string()
+  next_session_focus: z.string(),
+  tools_notes: z.record(z.string(), z.string()).optional(),
 });
 
 interface SessionSummaryFormProps {
   sessionId: string;
   playerName: string;
   sessionDate: string;
-  onSubmit: (data: z.infer<typeof formSchema>) => Promise<void>;
+  onSubmit: (data: z.infer<typeof formSchema>, selectedTools: Array<{id: string, name: string, note: string}>) => Promise<void>;
   onCancel: () => void;
 }
 
 export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmit, onCancel }: SessionSummaryFormProps) {
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [selectedToolIds, setSelectedToolIds] = useState<Record<string, boolean>>({});
+  const [toolNotes, setToolNotes] = useState<Record<string, string>>({});
+  const [isLoadingTools, setIsLoadingTools] = useState(true);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -37,12 +52,69 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
       future_goals: "",
       additional_notes: "",
       progress_rating: 3,
-      next_session_focus: ""
+      next_session_focus: "",
+      tools_notes: {},
     }
   });
 
+  useEffect(() => {
+    const fetchTools = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('mental_tools')
+          .select('id, name, description');
+          
+        if (error) {
+          console.error('Error fetching tools:', error);
+          return;
+        }
+        
+        setTools(data || []);
+      } catch (error) {
+        console.error('Error fetching tools:', error);
+      } finally {
+        setIsLoadingTools(false);
+      }
+    };
+    
+    fetchTools();
+  }, []);
+
+  const handleToolSelection = (toolId: string, checked: boolean) => {
+    setSelectedToolIds(prev => ({
+      ...prev,
+      [toolId]: checked
+    }));
+    
+    // Clear notes for unselected tools
+    if (!checked && toolNotes[toolId]) {
+      const updatedNotes = { ...toolNotes };
+      delete updatedNotes[toolId];
+      setToolNotes(updatedNotes);
+    }
+  };
+
+  const handleToolNote = (toolId: string, note: string) => {
+    setToolNotes(prev => ({
+      ...prev,
+      [toolId]: note
+    }));
+  };
+
   const handleSubmit = async (data: z.infer<typeof formSchema>) => {
-    await onSubmit(data);
+    // Prepare the selected tools with their notes
+    const selectedTools = Object.entries(selectedToolIds)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([toolId]) => {
+        const tool = tools.find(t => t.id === toolId);
+        return {
+          id: toolId,
+          name: tool?.name || "",
+          note: toolNotes[toolId] || ""
+        };
+      });
+
+    await onSubmit(data, selectedTools);
   };
 
   const formattedDate = format(new Date(sessionDate), 'dd/MM/yyyy', { locale: he });
@@ -96,6 +168,60 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
               </FormItem>
             )}
           />
+
+          <div className="space-y-4">
+            <FormLabel>כלים מנטליים בשימוש</FormLabel>
+            {isLoadingTools ? (
+              <p className="text-sm text-gray-500">טוען כלים...</p>
+            ) : tools.length === 0 ? (
+              <div className="p-4 bg-gray-50 rounded-md text-center">
+                <p className="text-gray-500">לא נמצאו כלים מנטליים</p>
+                <Button 
+                  variant="link" 
+                  type="button" 
+                  onClick={() => window.open('/mental-tools', '_blank')}
+                  className="mt-2"
+                >
+                  הוסף כלים חדשים
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3 p-4 bg-gray-50 rounded-md">
+                {tools.map(tool => (
+                  <div key={tool.id} className="space-y-2">
+                    <div className="flex items-start">
+                      <Checkbox 
+                        id={`tool-${tool.id}`}
+                        checked={!!selectedToolIds[tool.id]}
+                        onCheckedChange={(checked) => handleToolSelection(tool.id, !!checked)}
+                        className="mt-1 ml-2"
+                      />
+                      <div className="space-y-1">
+                        <label 
+                          htmlFor={`tool-${tool.id}`}
+                          className="text-sm font-medium leading-none cursor-pointer"
+                        >
+                          {tool.name}
+                        </label>
+                        <p className="text-xs text-gray-500">{tool.description}</p>
+                      </div>
+                    </div>
+                    
+                    {selectedToolIds[tool.id] && (
+                      <div className="pr-6">
+                        <Input
+                          placeholder="הוסף הערה לכלי זה..."
+                          value={toolNotes[tool.id] || ''}
+                          onChange={(e) => handleToolNote(tool.id, e.target.value)}
+                          className="text-sm h-8"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <FormField
             control={form.control}

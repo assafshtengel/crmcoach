@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Tool } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
@@ -821,6 +821,16 @@ const DashboardCoach = () => {
             <div className="flex flex-col items-center gap-2">
               <BarChart2 className="h-6 w-6" />
               <span>דוחות וסטטיסטיקות</span>
+            </div>
+          </Button>
+
+          <Button 
+            className="h-auto py-6 bg-[#9B59B6] hover:bg-[#9B59B6]/90"
+            onClick={() => navigate('/mental-tools')}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <Tool className="h-5 w-5" />
+              <span>כלים מנטליים</span>
             </div>
           </Button>
         </div>

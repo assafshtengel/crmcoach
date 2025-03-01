@@ -7,9 +7,16 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Eye } from 'lucide-react';
+import { ArrowRight, FileText, Eye, Tool } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+
+interface ToolUsed {
+  id: string;
+  name: string;
+  note: string;
+}
 
 interface SessionSummary {
   id: string;
@@ -20,6 +27,7 @@ interface SessionSummary {
   progress_rating: number;
   next_session_focus: string;
   additional_notes?: string;
+  tools_used?: ToolUsed[];
   session: {
     session_date: string;
     player: {
@@ -88,6 +96,29 @@ const SessionSummaries = () => {
     fetchSummaries();
   }, [selectedPlayer]);
 
+  const renderToolsList = (tools?: ToolUsed[]) => {
+    if (!tools || tools.length === 0) return null;
+    
+    return (
+      <div className="mt-4">
+        <h3 className="text-lg font-semibold mb-2 text-[#8066B7]">כלים מנטליים</h3>
+        <div className="space-y-3">
+          {tools.map((tool, idx) => (
+            <div key={idx} className="bg-white/70 p-3 rounded-md shadow-sm">
+              <div className="flex items-center gap-2">
+                <Tool className="h-4 w-4 text-[#6E59A5]" />
+                <h4 className="font-medium text-[#6E59A5]">{tool.name}</h4>
+              </div>
+              {tool.note && (
+                <p className="mt-1 text-sm text-gray-600 pr-6">{tool.note}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const renderSummaryDetails = (summary: SessionSummary) => {
     return (
       <ScrollArea className="h-[calc(100vh-200px)] px-4">
@@ -114,6 +145,10 @@ const SessionSummaries = () => {
               ))}
             </ul>
           </div>
+
+          {summary.tools_used && summary.tools_used.length > 0 && (
+            renderToolsList(summary.tools_used)
+          )}
 
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#D6BCFA]">פוקוס למפגש הבא</h3>
@@ -210,6 +245,20 @@ const SessionSummaries = () => {
                     <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">סיכום המפגש</h3>
                     <p className="text-sm text-gray-600 line-clamp-3">{summary.summary_text}</p>
                   </div>
+                  
+                  {summary.tools_used && summary.tools_used.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">כלים בשימוש</h3>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {summary.tools_used.map((tool, idx) => (
+                          <Badge key={idx} variant="outline" className="bg-purple-50 text-[#6E59A5] border-[#D6BCFA]">
+                            {tool.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-500 text-xs">
                       {format(new Date(summary.created_at), 'HH:mm dd/MM/yyyy', { locale: he })}

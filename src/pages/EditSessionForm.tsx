@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -15,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SessionSummaryForm } from '@/components/session/SessionSummaryForm';
 
 interface Player {
   id: string;
@@ -42,7 +42,6 @@ const EditSessionForm = () => {
     notes: ''
   });
 
-  // Fetch players
   useEffect(() => {
     const fetchPlayers = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -67,7 +66,6 @@ const EditSessionForm = () => {
     fetchPlayers();
   }, [navigate]);
 
-  // Fetch session data
   useEffect(() => {
     const fetchSession = async () => {
       if (!sessionId) {
@@ -140,6 +138,44 @@ const EditSessionForm = () => {
 
   const handlePlayerSelect = (value: string) => {
     setFormData(prev => ({ ...prev, player_id: value }));
+  };
+
+  const handleSessionSummarySubmit = async (formData, selectedTools) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('יש להתחבר כדי לשמור סיכום');
+        return;
+      }
+
+      const achievedGoals = formData.achieved_goals
+        .split('\n')
+        .filter(goal => goal.trim() !== '');
+
+      const futureGoals = formData.future_goals
+        .split('\n')
+        .filter(goal => goal.trim() !== '');
+
+      const { error } = await supabase.from('session_summaries').insert({
+        coach_id: user.id,
+        session_id: sessionId,
+        summary_text: formData.summary_text,
+        achieved_goals: achievedGoals,
+        future_goals: futureGoals,
+        progress_rating: formData.progress_rating,
+        next_session_focus: formData.next_session_focus,
+        additional_notes: formData.additional_notes,
+        tools_used: selectedTools
+      });
+
+      if (error) throw error;
+
+      toast.success('הסיכום נשמר בהצלחה');
+      navigate('/sessions-list');
+    } catch (error) {
+      console.error('Error saving session summary:', error);
+      toast.error('אירעה שגיאה בשמירת הסיכום');
+    }
   };
 
   if (isLoading) {
