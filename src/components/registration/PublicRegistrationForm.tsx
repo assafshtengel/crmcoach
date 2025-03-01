@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { sportFields } from '@/components/new-player/PlayerFormSchema';
 
-const formSchema = z.object({
+export const formSchema = z.object({
   firstName: z.string().min(2, "שם פרטי חייב להכיל לפחות 2 תווים"),
   lastName: z.string().min(2, "שם משפחה חייב להכיל לפחות 2 תווים"),
   email: z.string().email("אנא הכנס כתובת אימייל תקינה"),
@@ -49,22 +49,18 @@ const formSchema = z.object({
   notes: z.string().optional(),
   sportField: z.string().min(1, "אנא בחר ענף ספורט"),
   otherSportField: z.string().optional(),
-});
-
-// Fix the validation for otherSportField - use a refinement that doesn't depend on a 2nd argument
-formSchema.shape.otherSportField = z.string().optional()
-  .superRefine((val, ctx) => {
-    if (ctx.parent.sportField === 'other') {
-      if (!val || val.length < 2) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "אנא הזן ענף ספורט",
-        });
-        return false;
-      }
+}).refine(
+  (data) => {
+    if (data.sportField === 'other') {
+      return data.otherSportField && data.otherSportField.length >= 2;
     }
     return true;
-  });
+  },
+  {
+    message: "אנא הזן ענף ספורט",
+    path: ["otherSportField"],
+  }
+);
 
 type FormValues = z.infer<typeof formSchema>;
 
