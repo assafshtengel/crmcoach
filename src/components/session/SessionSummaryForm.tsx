@@ -229,6 +229,7 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
                       <Button 
                         onClick={(e) => {
                           e.preventDefault();
+                          e.stopPropagation();
                           window.open('/tool-management', '_blank');
                         }}
                       >
@@ -250,12 +251,12 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
                           <div className="flex items-start">
                             <Checkbox
                               checked={selectedTools.includes(tool.id)}
-                              onCheckedChange={() => {
-                                setSelectedTools(prev => 
-                                  prev.includes(tool.id)
-                                    ? prev.filter(id => id !== tool.id)
-                                    : [...prev, tool.id]
-                                );
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedTools(prev => [...prev, tool.id]);
+                                } else {
+                                  setSelectedTools(prev => prev.filter(id => id !== tool.id));
+                                }
                               }}
                               className="mr-2 mt-1"
                               id={`tool-${tool.id}`}
