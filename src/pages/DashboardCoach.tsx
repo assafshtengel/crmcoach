@@ -530,7 +530,7 @@ const DashboardCoach = () => {
                 </Dialog>
               )}
               {session.has_summary && (
-                <Link to={`/session-summaries/${session.id}`}>
+                <Link to="/session-summaries">
                   <Button variant="ghost" size="sm" className="flex items-center">
                     <FileText className="h-4 w-4 mr-1" />
                     צפה בסיכום
