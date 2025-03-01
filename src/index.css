@@ -34,8 +34,12 @@ body {
 }
 
 /* Ensure text inputs and selections properly support RTL */
-input, textarea, select {
-  text-align: right;
+input, textarea, select, .select-trigger, .select-content {
+  text-align: right !important;
+}
+
+.rdp-caption_label, .rdp-head_cell, .rdp-cell {
+  text-align: right !important;
 }
 
 .glass-card {

@@ -18,10 +18,10 @@ export const GameGoalsStep = ({ formData, updateFormData }: GameGoalsStepProps) 
     <div className="form-step space-y-6">
       <div className="flex items-center gap-3 mb-6">
         <Target className="w-6 h-6 text-primary" />
-        <h2 className="text-2xl font-bold">מטרות משחק</h2>
+        <h2 className="text-2xl font-bold text-right">מטרות משחק</h2>
       </div>
       
-      <p className="text-gray-600 mb-4">
+      <p className="text-gray-600 mb-4 text-right">
         בחר את המטרות שלך למשחק הקרוב. ניתן להוסיף מדדים כמותיים למטרות מסוימות.
       </p>
 
@@ -63,7 +63,7 @@ export const GameGoalsStep = ({ formData, updateFormData }: GameGoalsStepProps) 
                     }`}
                   />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 text-right">
                   <Label className="text-base font-medium">{goal}</Label>
                   
                   {formData.selectedGoals.some(g => g.goal === goal) && 
@@ -86,7 +86,7 @@ export const GameGoalsStep = ({ formData, updateFormData }: GameGoalsStepProps) 
                           );
                         }}
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-white focus:ring-2 focus:ring-primary/30"
+                        className="bg-white focus:ring-2 focus:ring-primary/30 text-right"
                       />
                     </motion.div>
                   )}
@@ -103,7 +103,7 @@ export const GameGoalsStep = ({ formData, updateFormData }: GameGoalsStepProps) 
           animate={{ opacity: 1 }}
           className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/10"
         >
-          <p className="text-sm text-primary font-medium">
+          <p className="text-sm text-primary font-medium text-right">
             נבחרו {formData.selectedGoals.length} מטרות למשחק
           </p>
         </motion.div>

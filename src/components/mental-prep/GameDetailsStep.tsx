@@ -20,9 +20,9 @@ export const GameDetailsStep = ({ formData, updateFormData }: GameDetailsStepPro
 
   return (
     <div className="form-step space-y-4">
-      <h2 className="text-2xl font-bold mb-6">פרטי המשחק</h2>
+      <h2 className="text-2xl font-bold mb-6 text-right">פרטי המשחק</h2>
       <div>
-        <Label htmlFor="matchDate">תאריך המשחק</Label>
+        <Label htmlFor="matchDate" className="text-right block">תאריך המשחק</Label>
         <Input
           id="matchDate"
           type="date"
@@ -32,7 +32,7 @@ export const GameDetailsStep = ({ formData, updateFormData }: GameDetailsStepPro
         />
       </div>
       <div>
-        <Label htmlFor="opposingTeam">קבוצה יריבה</Label>
+        <Label htmlFor="opposingTeam" className="text-right block">קבוצה יריבה</Label>
         <Input
           id="opposingTeam"
           value={formData.opposingTeam}
@@ -41,7 +41,7 @@ export const GameDetailsStep = ({ formData, updateFormData }: GameDetailsStepPro
         />
       </div>
       <div className="space-y-2">
-        <Label>סוג משחק</Label>
+        <Label className="text-right block">סוג משחק</Label>
         <div className="grid grid-cols-2 gap-4 mt-2">
           {gameTypes.map((type) => (
             <div

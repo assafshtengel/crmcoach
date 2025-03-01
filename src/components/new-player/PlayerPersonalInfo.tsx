@@ -35,11 +35,11 @@ export const PlayerPersonalInfo: React.FC<PlayerPersonalInfoProps> = ({ form }) 
               defaultValue={field.value}
             >
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="text-right">
                   <SelectValue placeholder="בחר ענף ספורט" />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent>
+              <SelectContent className="text-right">
                 {sportFields.map((sport) => (
                   <SelectItem key={sport.value} value={sport.value}>
                     {sport.label}
