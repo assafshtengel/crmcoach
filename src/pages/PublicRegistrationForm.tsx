@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Form } from "@/components/ui/form";
@@ -96,7 +95,6 @@ const PublicRegistrationForm = () => {
 
       try {
         console.log("Fetching link data for ID:", linkId);
-        // Fetch the registration link data
         const { data: linkData, error: linkError } = await supabase
           .from('registration_links')
           .select(`
@@ -112,7 +110,6 @@ const PublicRegistrationForm = () => {
           throw new Error('הקישור לא נמצא או שאינו פעיל');
         }
 
-        // Check if the link has expired
         if (linkData.expires_at && new Date(linkData.expires_at) < new Date()) {
           throw new Error('הקישור פג תוקף');
         }
@@ -147,7 +144,6 @@ const PublicRegistrationForm = () => {
         throw new Error('מידע המאמן חסר');
       }
 
-      // Create player data object - כולל שדה registration_link_id
       const playerData = {
         coach_id: linkData.coach.id,
         full_name: `${values.firstName} ${values.lastName}`,
@@ -178,7 +174,6 @@ const PublicRegistrationForm = () => {
         throw error;
       }
 
-      // הוספת התראה למאמן
       const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
       await supabase
         .from('notifications')
@@ -206,6 +201,14 @@ const PublicRegistrationForm = () => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseWindow = () => {
+    try {
+      window.close();
+    } catch (error) {
+      console.log("Could not close window automatically");
     }
   };
 
@@ -434,13 +437,10 @@ const PublicRegistrationForm = () => {
               תודה שנרשמת לאימון. המאמן {linkData?.coach?.full_name} יצור איתך קשר בקרוב.
             </p>
             <Button
-              onClick={() => {
-                setShowSuccessDialog(false);
-                navigate('/');
-              }}
+              onClick={handleCloseWindow}
               className="mt-2"
             >
-              חזרה לעמוד הבית
+              סגור חלון
             </Button>
           </div>
         </DialogContent>
