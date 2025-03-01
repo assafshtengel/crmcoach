@@ -13,7 +13,7 @@ export const formSchema = z.object({
   birthDate: z.string().regex(/^(0?[1-9]|[12][0-9]|3[01])[-/](0?[1-9]|1[012])[-/]\d{4}$/, "אנא הכנס תאריך בפורמט DD/MM/YYYY או DD-MM-YYYY"),
   city: z.string().min(2, "עיר חייבת להכיל לפחות 2 תווים"),
   club: z.string().min(2, "שם המועדון חייב להכיל לפחות 2 תווים"),
-  yearGroup: z.string().min(4, "אנא הכנס שנתון תקין"),
+  yearGroup: z.string().min(2, "אנא הכנס שנתון או קבוצת גיל"),
   injuries: z.string().optional(),
   parentName: z.string().min(2, "שם ההורה חייב להכיל לפחות 2 תווים"),
   parentPhone: z.string()
@@ -25,6 +25,7 @@ export const formSchema = z.object({
   notes: z.string().optional(),
   sportField: z.string().min(1, "אנא בחר ענף ספורט"),
   otherSportField: z.string().optional(),
+  registrationTimestamp: z.string().optional(),
 }).refine(
   (data) => {
     if (data.sportField === 'other') {

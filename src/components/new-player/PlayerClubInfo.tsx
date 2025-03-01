@@ -45,9 +45,23 @@ export const PlayerClubInfo: React.FC<PlayerClubInfoProps> = ({ form }) => {
         name="yearGroup"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>שנתון</FormLabel>
+            <FormLabel>שנתון/קבוצת גיל</FormLabel>
             <FormControl>
-              <Input placeholder="2010" {...field} />
+              <Input placeholder="נערים ב'" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="registrationTimestamp"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>מועד הרשמה</FormLabel>
+            <FormControl>
+              <Input readOnly disabled className="bg-gray-50" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>

@@ -20,6 +20,7 @@ import { PlayerClubInfo } from '@/components/new-player/PlayerClubInfo';
 import { PlayerParentInfo } from '@/components/new-player/PlayerParentInfo';
 import { PlayerAdditionalInfo } from '@/components/new-player/PlayerAdditionalInfo';
 import { ImageUpload } from '@/components/new-player/ImageUpload';
+import { format } from 'date-fns';
 
 const NewPlayerForm = () => {
   const navigate = useNavigate();
@@ -28,6 +29,9 @@ const NewPlayerForm = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [profileImage, setProfileImage] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string>('');
+
+  // Format current date and time in a user-friendly format
+  const currentDateTime = format(new Date(), 'dd/MM/yyyy HH:mm');
 
   const form = useForm<PlayerFormValues>({
     resolver: zodResolver(formSchema),
@@ -39,7 +43,7 @@ const NewPlayerForm = () => {
       birthDate: "",
       city: "",
       club: "",
-      yearGroup: "",
+      yearGroup: "נערים ב'",
       injuries: "",
       parentName: "",
       parentPhone: "",
@@ -47,6 +51,7 @@ const NewPlayerForm = () => {
       notes: "",
       sportField: "",
       otherSportField: "",
+      registrationTimestamp: currentDateTime,
     },
   });
 
@@ -113,7 +118,8 @@ const NewPlayerForm = () => {
           parent_email: values.parentEmail,
           notes: values.notes,
           sport_field: finalSportField,
-          profile_image: imageUrl
+          profile_image: imageUrl,
+          registration_timestamp: values.registrationTimestamp
         }
       ])
       .select()
