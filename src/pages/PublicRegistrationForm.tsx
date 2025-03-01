@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { format } from "date-fns";
+import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
 
 const sportFields = [
   { value: "football", label: "כדורגל" },
@@ -57,6 +59,7 @@ const formSchema = z.object({
   notes: z.string().optional(),
   sportField: z.string().min(1, "אנא בחר ענף ספורט"),
   otherSportField: z.string().optional(),
+  registrationTimestamp: z.string().optional(),
 }).refine(
   (data) => {
     if (data.sportField === 'other') {
@@ -81,6 +84,9 @@ const PublicRegistrationForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showOtherSportField, setShowOtherSportField] = useState(false);
+  
+  // Set the current time when the form loads
+  const currentDateTime = format(new Date(), 'dd/MM/yyyy HH:mm');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -99,7 +105,8 @@ const PublicRegistrationForm = () => {
       parentEmail: "",
       notes: "",
       sportField: "",
-      otherSportField: ""
+      otherSportField: "",
+      registrationTimestamp: currentDateTime
     },
   });
 
@@ -187,7 +194,8 @@ const PublicRegistrationForm = () => {
         parent_email: values.parentEmail,
         notes: values.notes,
         sport_field: finalSportField,
-        registration_link_id: linkId
+        registration_link_id: linkId,
+        registration_timestamp: values.registrationTimestamp
       };
 
       console.log("Inserting player data for coach ID:", linkData.coach.id);
@@ -273,6 +281,21 @@ const PublicRegistrationForm = () => {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-lg font-medium text-gray-900">פרטים אישיים</h2>
+                  <div className="mb-2">
+                    <FormField
+                      control={form.control}
+                      name="registrationTimestamp"
+                      render={({ field }) => (
+                        <FormItem className="mb-2">
+                          <FormLabel className="text-xs text-gray-500">מועד רישום</FormLabel>
+                          <FormControl>
+                            <Input readOnly disabled className="bg-gray-50 text-xs text-gray-500" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <div className="mt-4 grid grid-cols-1 gap-y-6 sm:grid-cols-2 sm:gap-x-4">
                     <div className="sm:col-span-2">
                       <Label htmlFor="sportField">ענף ספורט</Label>
