@@ -608,9 +608,9 @@ export type Database = {
           parent_name: string | null
           parent_phone: string | null
           phone: string | null
-          position: string | null
           profile_image: string | null
           registration_link_id: string | null
+          sport_field: string | null
           year_group: string | null
         }
         Insert: {
@@ -628,9 +628,9 @@ export type Database = {
           parent_name?: string | null
           parent_phone?: string | null
           phone?: string | null
-          position?: string | null
           profile_image?: string | null
           registration_link_id?: string | null
+          sport_field?: string | null
           year_group?: string | null
         }
         Update: {
@@ -648,9 +648,9 @@ export type Database = {
           parent_name?: string | null
           parent_phone?: string | null
           phone?: string | null
-          position?: string | null
           profile_image?: string | null
           registration_link_id?: string | null
+          sport_field?: string | null
           year_group?: string | null
         }
         Relationships: [
