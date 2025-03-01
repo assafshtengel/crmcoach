@@ -33,6 +33,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
@@ -236,7 +242,7 @@ const PlayersList = () => {
               variant="outline"
               size="icon"
               onClick={() => navigate('/')}
-              title="חזרה לדף הראשי"
+              aria-label="חזרה לדף הראשי"
             >
               <Home className="h-4 w-4" />
             </Button>
@@ -338,11 +344,20 @@ const PlayersList = () => {
                       <div className="flex items-center gap-2">
                         {player.full_name}
                         
-                        {player.contact_status === 'contacted' ? (
-                          <CheckCircle className="h-4 w-4 text-green-600" title="יצרנו קשר" />
-                        ) : (
-                          <AlertCircle className="h-4 w-4 text-yellow-500" title="ממתין ליצירת קשר" />
-                        )}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              {player.contact_status === 'contacted' ? (
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-yellow-500" />
+                              )}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {player.contact_status === 'contacted' ? 'יצרנו קשר' : 'ממתין ליצירת קשר'}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </TableCell>
                     <TableCell>{player.sport_field || "לא צוין"}</TableCell>
@@ -380,14 +395,21 @@ const PlayersList = () => {
                     <TableCell dir="ltr">{player.phone || "-"}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewProfile(player.id)}
-                          title="צפה בפרופיל"
-                        >
-                          <UserCircle className="h-4 w-4" />
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewProfile(player.id)}
+                              >
+                                <UserCircle className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>צפה בפרופיל</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
                         <Button
                           variant="outline"
                           size="sm"
