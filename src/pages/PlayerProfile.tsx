@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { ChevronRight, Loader2, Pencil, ScrollText, User, Home, Calendar, Phone, Wrench } from 'lucide-react';
+import { ChevronRight, Loader2, Pencil, ScrollText, User, Home, Calendar, Phone } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -37,8 +38,6 @@ const PlayerProfile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [player, setPlayer] = useState<PlayerProfile | null>(null);
-
-  const [sessionSummaries, setSessionSummaries] = useState([]);
 
   useEffect(() => {
     fetchPlayerProfile();
@@ -79,34 +78,6 @@ const PlayerProfile = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchSessionSummaries = async () => {
-      if (!playerId) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('session_summaries')
-          .select(`
-        *,
-        session:sessions (
-          session_date
-        )
-      `)
-          .eq('sessions.player_id', playerId)
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        if (error) throw error;
-
-        setSessionSummaries(data || []);
-      } catch (error) {
-        console.error('Error fetching session summaries:', error);
-      }
-    };
-
-    fetchSessionSummaries();
-  }, [playerId]);
-
   const handleEdit = () => {
     navigate('/edit-player', { state: { playerId, playerData: player } });
   };
@@ -124,8 +95,8 @@ const PlayerProfile = () => {
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <p className="text-xl text-gray-600">לא נמצא שחקן</p>
-          <Button
-            variant="outline"
+          <Button 
+            variant="outline" 
             className="mt-4"
             onClick={() => navigate('/players-list')}
           >
@@ -274,49 +245,6 @@ const PlayerProfile = () => {
             </Card>
           )}
         </div>
-        {sessionSummaries.length > 0 && (
-          <Card className="lg:col-span-3 bg-white/80 backdrop-blur-sm border-indigo-100 mt-6">
-            <CardHeader className="border-b border-indigo-100">
-              <CardTitle className="text-xl flex items-center gap-2 text-indigo-950">
-                <ScrollText className="h-5 w-5 text-indigo-600" />
-                סיכומי מפגשים אחרונים
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-6">
-                {sessionSummaries.map(summary => (
-                  <div key={summary.id} className="border-b border-indigo-100 pb-6 last:border-0">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium text-indigo-900">
-                          {new Date(summary.session.session_date).toLocaleDateString('he-IL')}
-                        </h3>
-                      </div>
-                    </div>
-                    <p className="mt-2 text-gray-700">{summary.summary_text}</p>
-
-                    {summary.tools_used && summary.tools_used.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="text-sm font-medium text-indigo-900 mb-2 flex items-center gap-1">
-                          <Wrench className="h-4 w-4" />
-                          כלים מנטליים בשימוש:
-                        </h4>
-                        <div className="space-y-2">
-                          {summary.tools_used.map((tool, idx) => (
-                            <div key={idx} className="bg-indigo-50/70 p-3 rounded-md">
-                              <div className="font-medium text-indigo-800">{tool.name}</div>
-                              {tool.note && <p className="text-sm text-gray-600 mt-1">{tool.note}</p>}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );

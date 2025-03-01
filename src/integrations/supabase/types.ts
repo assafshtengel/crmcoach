@@ -747,7 +747,6 @@ export type Database = {
           progress_rating: number | null
           session_id: string
           summary_text: string
-          tools_used: Json | null
         }
         Insert: {
           achieved_goals?: string[] | null
@@ -760,7 +759,6 @@ export type Database = {
           progress_rating?: number | null
           session_id: string
           summary_text: string
-          tools_used?: Json | null
         }
         Update: {
           achieved_goals?: string[] | null
@@ -773,7 +771,6 @@ export type Database = {
           progress_rating?: number | null
           session_id?: string
           summary_text?: string
-          tools_used?: Json | null
         }
         Relationships: [
           {

@@ -1,5 +1,6 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Plus, Edit, Video, Save, X, Wrench } from "lucide-react";
+import { ArrowRight, Plus, Edit, Video, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -37,6 +38,7 @@ const MentalTools = () => {
     video_url: ""
   });
 
+  // Load tools from Supabase when component mounts
   useEffect(() => {
     fetchTools();
   }, []);
@@ -75,13 +77,14 @@ const MentalTools = () => {
       if (!session.session) {
         toast({
           title: "לא מחובר",
-          description: "יש להתחבר כדי לשמור הכלים",
+          description: "יש להתחבר כדי לשמור כלים",
           variant: "destructive"
         });
         return;
       }
 
       if (editingTool) {
+        // Update existing tool
         const { error } = await supabase
           .from('mental_tools')
           .update({
@@ -109,6 +112,7 @@ const MentalTools = () => {
           description: `הכלי ${editingTool.name} עודכן`
         });
       } else {
+        // Validate required fields
         if (!newTool.name || !newTool.description || !newTool.learned || !newTool.implementation) {
           toast({
             title: "שגיאה",
@@ -118,6 +122,7 @@ const MentalTools = () => {
           return;
         }
 
+        // Add new tool
         const { error } = await supabase
           .from('mental_tools')
           .insert({
@@ -146,8 +151,10 @@ const MentalTools = () => {
         });
       }
 
+      // Refresh tools list
       await fetchTools();
 
+      // Reset form and close dialog
       setIsDialogOpen(false);
       setEditingTool(null);
       setNewTool({

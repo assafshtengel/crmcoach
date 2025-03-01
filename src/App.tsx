@@ -1,198 +1,87 @@
 
-import React, { useEffect, useState } from 'react';
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  Navigate
-} from 'react-router-dom';
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { useUser, useSupabaseClient } from '@supabase/auth-helpers-react';
-import Account from './pages/Account';
-import DashboardCoach from './pages/DashboardCoach';
-import NewSessionForm from './pages/NewSessionForm';
-import EditSessionForm from './pages/EditSessionForm';
-import PlayersList from './pages/PlayersList';
-import NewPlayerForm from './pages/NewPlayerForm';
-import EditPlayerForm from './pages/EditPlayerForm';
-import PlayerProfile from './pages/PlayerProfile';
-import SessionSummaries from './pages/SessionSummaries';
-import MentalPrepForm from './pages/MentalPrepForm';
-import { AdminDashboard } from './components/admin/AdminDashboard';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NewIndex from "./pages/NewIndex";
+import Dashboard from "./pages/Dashboard";
+import NotFound from "./pages/NotFound";
+import Contract from "./pages/Contract";
+import MentalCommitment from "./pages/MentalCommitment";
+import Admin from "./pages/Admin";
 import MentalTools from "./pages/MentalTools";
+import ShortTermGoals from "./pages/ShortTermGoals";
+import DailyChallenge from "./pages/DailyChallenge";
+import Huze from "./pages/Huze";
+import PlayerForm from "./pages/PlayerForm";
+import SessionsList from "./pages/SessionsList";
+import PlayersList from "./pages/PlayersList";
+import NewSessionForm from "./pages/NewSessionForm";
+import EditSessionForm from "./pages/EditSessionForm";
+import PlayerProfile from "./pages/PlayerProfile";
+import DashboardCoach from "./pages/DashboardCoach";
+import GoalDetailsQuestions from "./pages/GoalDetailsQuestions";
+import ProfileCoach from "./pages/ProfileCoach";
+import CoachSignUp from "./pages/CoachSignUp";
+import Reports from "./pages/Reports";
+import Contact from "./pages/Contact";
+import Next from "./pages/Next";
+import PlayerEvaluation from "./pages/PlayerEvaluation";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+import GamePreparation from "./pages/GamePreparation";
+import NotificationsDashboard from "./pages/NotificationsDashboard";
+import AuthPage from "./pages/auth/AuthPage";
+import ActionPlan from "./pages/ActionPlan";
+import SessionSummaries from "./pages/SessionSummaries";
+import NewPlayerForm from "./pages/NewPlayerForm";
+import EditPlayerForm from "./pages/EditPlayerForm";
+import RegistrationLinks from "./pages/RegistrationLinks";
+import PublicRegistrationForm from "./pages/PublicRegistrationForm";
+import { AuthGuard } from "./components/auth/AuthGuard";
 
-const App = () => {
-  const [showAuth, setShowAuth] = useState(false);
-  const supabase = useSupabaseClient();
-  const user = useUser();
+import "./App.css";
 
-  useEffect(() => {
-    if (!user) {
-      setShowAuth(true);
-    } else {
-      setShowAuth(false);
-    }
-  }, [user]);
-
+function App() {
   return (
     <Router>
       <Routes>
-        <Route
-          path="/auth"
-          element={
-            showAuth ? (
-              <div className="flex justify-center items-center min-h-screen bg-gray-100">
-                <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-                  <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
-                    Sign In / Sign Up
-                  </h1>
-                  <Auth
-                    supabaseClient={supabase}
-                    appearance={{
-                      theme: ThemeSupa,
-                      variables: {
-                        default: {
-                          colors: {
-                            brand: '#4f46e5',
-                            brandAccent: '#a78bfa',
-                          },
-                        },
-                      },
-                    }}
-                    providers={['google', 'github']}
-                    redirectTo="http://localhost:5173/"
-                  />
-                </div>
-              </div>
-            ) : (
-              <Navigate to="/" />
-            )
-          }
-        />
-        <Route
-          path="/"
-          element={
-            user ? (
-              <DashboardCoach />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
-        <Route
-          path="/account"
-          element={
-            user ? (
-              <Account key={user.id} />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
-        <Route
-          path="/new-session"
-          element={
-            user ? (
-              <NewSessionForm />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
-        <Route
-          path="/edit-session"
-          element={
-            user ? (
-              <EditSessionForm />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
-        <Route
-          path="/players-list"
-          element={
-            user ? (
-              <PlayersList />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
-        <Route
-          path="/new-player"
-          element={
-            user ? (
-              <NewPlayerForm />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
-        <Route
-          path="/edit-player"
-          element={
-            user ? (
-              <EditPlayerForm />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
-        <Route
-          path="/player-profile/:playerId"
-          element={
-            user ? (
-              <PlayerProfile />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
-        <Route
-          path="/session-summaries"
-          element={
-            user ? (
-              <SessionSummaries />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
-        <Route
-          path="/mental-prep-form"
-          element={
-            user ? (
-              <MentalPrepForm />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
-        <Route
-          path="/admin-dashboard"
-          element={
-            user ? (
-              <AdminDashboard />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
-        <Route
-          path="/mental-tools"
-          element={
-            user ? (
-              <MentalTools />
-            ) : (
-              <Navigate to="/auth" />
-            )
-          }
-        />
+        <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
+        <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
+        <Route path="/new" element={<AuthGuard><NewIndex /></AuthGuard>} />
+        <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+        <Route path="/huze" element={<AuthGuard><Huze /></AuthGuard>} />
+        <Route path="/contract" element={<AuthGuard><Contract /></AuthGuard>} />
+        <Route path="/mental-commitment" element={<AuthGuard><MentalCommitment /></AuthGuard>} />
+        <Route path="/admin" element={<AuthGuard><Admin /></AuthGuard>} />
+        <Route path="/mental-tools" element={<AuthGuard><MentalTools /></AuthGuard>} />
+        <Route path="/short-term-goals" element={<AuthGuard><ShortTermGoals /></AuthGuard>} />
+        <Route path="/daily-challenge" element={<AuthGuard><DailyChallenge /></AuthGuard>} />
+        <Route path="/player-form" element={<AuthGuard><PlayerForm /></AuthGuard>} />
+        <Route path="/sessions-list" element={<AuthGuard><SessionsList /></AuthGuard>} />
+        <Route path="/players-list" element={<AuthGuard><PlayersList /></AuthGuard>} />
+        <Route path="/new-session" element={<AuthGuard><NewSessionForm /></AuthGuard>} />
+        <Route path="/edit-session" element={<AuthGuard><EditSessionForm /></AuthGuard>} />
+        <Route path="/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
+        <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
+        <Route path="/goal-details-questions" element={<AuthGuard><GoalDetailsQuestions /></AuthGuard>} />
+        <Route path="/profile-coach" element={<AuthGuard><ProfileCoach /></AuthGuard>} />
+        <Route path="/signup-coach" element={<CoachSignUp />} />
+        <Route path="/reports" element={<AuthGuard><Reports /></AuthGuard>} />
+        <Route path="/contact" element={<AuthGuard><Contact /></AuthGuard>} />
+        <Route path="/next" element={<AuthGuard><Next /></AuthGuard>} />
+        <Route path="/player-evaluation" element={<AuthGuard><PlayerEvaluation /></AuthGuard>} />
+        <Route path="/analytics" element={<AuthGuard><AnalyticsDashboard /></AuthGuard>} />
+        <Route path="/game-prep" element={<AuthGuard><GamePreparation /></AuthGuard>} />
+        <Route path="/notifications" element={<AuthGuard><NotificationsDashboard /></AuthGuard>} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/action-plan" element={<AuthGuard><ActionPlan /></AuthGuard>} />
+        <Route path="/session-summaries" element={<AuthGuard><SessionSummaries /></AuthGuard>} />
+        <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />
+        <Route path="/edit-player/:playerId" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
+        <Route path="/registration-links" element={<AuthGuard><RegistrationLinks /></AuthGuard>} />
+        <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );
-};
+}
 
 export default App;
