@@ -598,6 +598,7 @@ export type Database = {
           city: string | null
           club: string | null
           coach_id: string | null
+          contact_status: string | null
           created_at: string
           email: string
           full_name: string
@@ -618,6 +619,7 @@ export type Database = {
           city?: string | null
           club?: string | null
           coach_id?: string | null
+          contact_status?: string | null
           created_at?: string
           email: string
           full_name: string
@@ -638,6 +640,7 @@ export type Database = {
           city?: string | null
           club?: string | null
           coach_id?: string | null
+          contact_status?: string | null
           created_at?: string
           email?: string
           full_name?: string

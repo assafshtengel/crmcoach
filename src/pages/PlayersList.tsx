@@ -64,6 +64,7 @@ const PlayersList = () => {
   const [registrationTypeFilter, setRegistrationTypeFilter] = useState<string>('all');
   const [contactStatusFilter, setContactStatusFilter] = useState<string>('all');
   const [uniqueSportFields, setUniqueSportFields] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   
   const navigate = useNavigate();
 
@@ -103,6 +104,7 @@ const PlayersList = () => {
 
   const fetchPlayers = async () => {
     try {
+      setError(null);
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -130,6 +132,8 @@ const PlayersList = () => {
 
       if (error) {
         console.error('Error fetching players:', error);
+        setError(error.message);
+        toast.error('שגיאה בטעינת רשימת השחקנים: ' + error.message);
         throw error;
       }
 
@@ -147,6 +151,7 @@ const PlayersList = () => {
       setFilteredPlayers(data || []);
     } catch (error: any) {
       console.error('Error in fetchPlayers:', error);
+      setError(error.message);
       toast.error('שגיאה בטעינת רשימת השחקנים');
     } finally {
       setLoading(false);
@@ -253,6 +258,22 @@ const PlayersList = () => {
           >
             הוספת שחקן חדש
           </Button>
+        </div>
+
+        {/* Debug information */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <h3 className="font-bold">שגיאה בטעינת רשימת השחקנים:</h3>
+            <p>{error}</p>
+            <Button onClick={fetchPlayers} className="mt-2" variant="secondary">
+              נסה שוב
+            </Button>
+          </div>
+        )}
+
+        {/* Player count info */}
+        <div className="mb-4 text-gray-600">
+          סה"כ שחקנים: {players.length} | מוצגים: {filteredPlayers.length}
         </div>
 
         {/* Filters */}
