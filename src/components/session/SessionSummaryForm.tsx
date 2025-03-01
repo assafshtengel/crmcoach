@@ -60,14 +60,14 @@ export function SessionSummaryForm({ sessionId, playerName, sessionDate, onSubmi
       const { data, error } = await supabase
         .from('coach_tools')
         .select('*')
-        .order('name', { ascending: true });
+        .order('name', { ascending: true }) as { data: Tool[] | null; error: any };
 
       if (error) {
         throw error;
       }
 
       if (data) {
-        setTools(data as Tool[]);
+        setTools(data);
       }
     } catch (error) {
       console.error('Error fetching tools:', error);

@@ -7,7 +7,7 @@ import { Plus, Pencil, Trash2, Save } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -45,14 +45,14 @@ export function ToolsList() {
       const { data, error } = await supabase
         .from('coach_tools')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as { data: Tool[] | null; error: any };
 
       if (error) {
         throw error;
       }
 
       if (data) {
-        setTools(data as Tool[]);
+        setTools(data);
       }
     } catch (error) {
       console.error('Error fetching tools:', error);
@@ -96,14 +96,14 @@ export function ToolsList() {
             coach_id: session.session.user.id
           },
         ])
-        .select();
+        .select() as { data: Tool[] | null; error: any };
 
       if (error) {
         throw error;
       }
 
       if (data) {
-        setTools([...data as Tool[], ...tools]);
+        setTools([...data, ...tools]);
         setNewToolName('');
         setNewToolDescription('');
         toast({
@@ -139,14 +139,14 @@ export function ToolsList() {
           description: editDescription,
         })
         .eq('id', id)
-        .select();
+        .select() as { data: Tool[] | null; error: any };
 
       if (error) {
         throw error;
       }
 
       if (data) {
-        setTools(tools.map(tool => tool.id === id ? data[0] as Tool : tool));
+        setTools(tools.map(tool => tool.id === id ? data[0] : tool));
         setEditMode(null);
         toast({
           title: "הכלי עודכן בהצלחה",
@@ -167,7 +167,7 @@ export function ToolsList() {
       const { error } = await supabase
         .from('coach_tools')
         .delete()
-        .eq('id', id);
+        .eq('id', id) as { error: any };
 
       if (error) {
         throw error;
