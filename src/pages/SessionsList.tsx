@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Session {
   id: string;
@@ -50,6 +51,7 @@ const SessionsList = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [sessionToDelete, setSessionToDelete] = useState<{ id: string; playerName: string } | null>(null);
+  const [activeTab, setActiveTab] = useState("table");
 
   useEffect(() => {
     fetchSessions();
@@ -161,51 +163,101 @@ const SessionsList = () => {
             לא נמצאו מפגשים במערכת
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>תאריך</TableHead>
-                  <TableHead>שעה</TableHead>
-                  <TableHead>שם השחקן</TableHead>
-                  <TableHead>הערות</TableHead>
-                  <TableHead>פעולות</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full mb-6 grid grid-cols-2">
+              <TabsTrigger value="table">טבלה</TabsTrigger>
+              <TabsTrigger value="cards">כרטיסיות</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="table" className="w-full">
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>תאריך</TableHead>
+                      <TableHead>שעה</TableHead>
+                      <TableHead>שם השחקן</TableHead>
+                      <TableHead>הערות</TableHead>
+                      <TableHead>פעולות</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sessions.map((session) => (
+                      <TableRow key={session.id}>
+                        <TableCell dir="ltr">{session.session_date}</TableCell>
+                        <TableCell dir="ltr">{session.session_time}</TableCell>
+                        <TableCell>{session.player.full_name}</TableCell>
+                        <TableCell>{session.notes}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditSession(session.id)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSessionToDelete({ 
+                                id: session.id, 
+                                playerName: session.player.full_name 
+                              })}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="cards" className="w-full">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map((session) => (
-                  <TableRow key={session.id}>
-                    <TableCell dir="ltr">{session.session_date}</TableCell>
-                    <TableCell dir="ltr">{session.session_time}</TableCell>
-                    <TableCell>{session.player.full_name}</TableCell>
-                    <TableCell>{session.notes}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
+                  <div key={session.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="text-right">
+                        <h3 className="font-medium text-lg">{session.player.full_name}</h3>
+                        <p className="text-sm text-gray-500">{session.session_date} • {session.session_time}</p>
+                      </div>
+                      <div className="flex gap-1">
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
                           onClick={() => handleEditSession(session.id)}
+                          className="h-8 w-8 p-0"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
                           onClick={() => setSessionToDelete({ 
                             id: session.id, 
                             playerName: session.player.full_name 
                           })}
-                          className="text-red-600 hover:text-red-700"
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                    {session.notes && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <p className="line-clamp-2">{session.notes}</p>
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         )}
 
         <AlertDialog 
