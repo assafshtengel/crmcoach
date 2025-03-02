@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
@@ -39,6 +38,7 @@ interface UpcomingSession {
   location: string;
   player: {
     full_name: string;
+    id?: string;
   };
   has_summary?: boolean;
 }
@@ -220,7 +220,6 @@ const DashboardCoach = () => {
         totalReminders: remindersResult.data?.length || 0
       });
 
-      // Fetch past sessions that need summarizing
       const { data: pastSessions, error: pastSessionsError } = await supabase
         .from('sessions')
         .select(`
@@ -449,7 +448,6 @@ const DashboardCoach = () => {
         return;
       }
 
-      // Fetch the latest summary for this player
       const { data: summaries, error } = await supabase
         .from('session_summaries')
         .select(`
@@ -477,7 +475,6 @@ const DashboardCoach = () => {
       }
 
       if (summaries && summaries.length > 0) {
-        // Navigate directly to the specific summary
         navigate(`/session-summaries?id=${summaries[0].id}`);
       } else {
         toast({
@@ -596,11 +593,9 @@ const DashboardCoach = () => {
                   size="sm" 
                   className="flex items-center"
                   onClick={() => {
-                    const session_player_id = session.player.id;
-                    if (session_player_id) {
-                      handleViewSummary(session_player_id, session.player.full_name);
+                    if (session.player.id) {
+                      handleViewSummary(session.player.id, session.player.full_name);
                     } else {
-                      // If we don't have the player ID in the session object, navigate to the summaries page
                       navigate("/session-summaries");
                     }
                   }}
