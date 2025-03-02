@@ -1,4 +1,4 @@
-<lov-code>
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -591,12 +591,23 @@ const DashboardCoach = () => {
                 </Dialog>
               )}
               {session.has_summary && (
-                <Link to="/session-summaries">
-                  <Button variant="ghost" size="sm" className="flex items-center">
-                    <FileText className="h-4 w-4 mr-1" />
-                    צפה בסיכום
-                  </Button>
-                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex items-center"
+                  onClick={() => {
+                    const session_player_id = session.player.id;
+                    if (session_player_id) {
+                      handleViewSummary(session_player_id, session.player.full_name);
+                    } else {
+                      // If we don't have the player ID in the session object, navigate to the summaries page
+                      navigate("/session-summaries");
+                    }
+                  }}
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  צפה בסיכום
+                </Button>
               )}
             </div>
           </div>
@@ -868,4 +879,90 @@ const DashboardCoach = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#27AE60]">
-            <CardHeader className
+            <CardHeader className="flex flex-col space-y-1.5 p-6">
+              <CardTitle className="text-xl font-semibold">הוספת שחקן חדש</CardTitle>
+              <p className="text-sm text-gray-500">הוסף שחקן חדש למערכת</p>
+            </CardHeader>
+            <CardContent>
+              <Button
+                variant="outline"
+                className="w-full justify-center"
+                onClick={() => navigate('/new-player-form')}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                הוסף שחקן
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3B82F6]">
+            <CardHeader className="flex flex-col space-y-1.5 p-6">
+              <CardTitle className="text-xl font-semibold">ניהול שחקנים</CardTitle>
+              <p className="text-sm text-gray-500">עדכון פרטי שחקנים קיימים</p>
+            </CardHeader>
+            <CardContent>
+              {players.length > 0 ? (
+                <ul className="list-none space-y-2">
+                  {players.map((player) => (
+                    <li key={player.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-gray-500" />
+                        <span>{player.full_name}</span>
+                      </div>
+                      <Button
+                        variant="link"
+                        onClick={() => navigate(`/player/${player.id}`)}
+                      >
+                        בחר שחקן
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500">אין שחקנים כרגע.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#7E69AB]">
+            <CardHeader className="flex flex-col space-y-1.5 p-6">
+              <CardTitle className="text-xl font-semibold">סיכומי מפגשים</CardTitle>
+              <p className="text-sm text-gray-500">צפייה וניהול של סיכומי מפגשים</p>
+            </CardHeader>
+            <CardContent>
+              {players.map((player) => (
+                <div key={player.id} className="mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-gray-500" />
+                      <span>{player.full_name}</span>
+                    </div>
+                    <Button
+                      variant="link"
+                      className="flex items-center"
+                      onClick={() => handleViewSummary(player.id, player.full_name)}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      צפה בסיכום
+                    </Button>
+                  </div>
+                </div>
+              ))}
+
+              <Button
+                onClick={() => navigate('/session-summaries')}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-5 w-5" />
+                צפה בכל הסיכומים
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardCoach;
