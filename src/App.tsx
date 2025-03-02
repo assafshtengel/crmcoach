@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NewIndex from "./pages/NewIndex";
@@ -36,6 +35,7 @@ import EditPlayerForm from "./pages/EditPlayerForm";
 import RegistrationLinks from "./pages/RegistrationLinks";
 import PublicRegistrationForm from "./pages/PublicRegistrationForm";
 import ToolManagement from "./pages/ToolManagement";
+import AllMeetingSummaries from './pages/AllMeetingSummaries';
 import { AuthGuard } from "./components/auth/AuthGuard";
 
 import "./App.css";
@@ -80,6 +80,7 @@ function App() {
         <Route path="/registration-links" element={<AuthGuard><RegistrationLinks /></AuthGuard>} />
         <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
         <Route path="/tool-management" element={<AuthGuard><ToolManagement /></AuthGuard>} />
+        <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
