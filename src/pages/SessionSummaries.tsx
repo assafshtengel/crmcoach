@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
@@ -24,22 +24,15 @@ interface SessionSummary {
     session_date: string;
     player: {
       full_name: string;
-      id: string;
     };
   };
 }
 
 const SessionSummaries = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const playerFromUrl = queryParams.get('player');
-  
   const [summaries, setSummaries] = useState<SessionSummary[]>([]);
   const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
-  const [selectedPlayer, setSelectedPlayer] = useState<string>(playerFromUrl || 'all');
-  const [selectedSummary, setSelectedSummary] = useState<SessionSummary | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<string>('all');
 
   const fetchSummaries = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -52,8 +45,7 @@ const SessionSummaries = () => {
         session:sessions (
           session_date,
           player:players (
-            full_name,
-            id
+            full_name
           )
         )
       `)
@@ -70,12 +62,6 @@ const SessionSummaries = () => {
       return;
     }
     setSummaries(data);
-    
-    // If a player was specified in URL and we have summaries, show the first one automatically
-    if (playerFromUrl && data.length > 0 && !selectedSummary) {
-      setSelectedSummary(data[0]);
-      setDialogOpen(true);
-    }
   };
 
   const fetchPlayers = async () => {
@@ -101,17 +87,6 @@ const SessionSummaries = () => {
   useEffect(() => {
     fetchSummaries();
   }, [selectedPlayer]);
-
-  const handlePlayerChange = (value: string) => {
-    setSelectedPlayer(value);
-    
-    // Update URL but don't reload page
-    if (value === 'all') {
-      navigate('/session-summaries', { replace: true });
-    } else {
-      navigate(`/session-summaries?player=${value}`, { replace: true });
-    }
-  };
 
   const renderSummaryDetails = (summary: SessionSummary) => {
     return (
@@ -169,7 +144,7 @@ const SessionSummaries = () => {
           </div>
           <Select
             value={selectedPlayer}
-            onValueChange={handlePlayerChange}
+            onValueChange={(value) => setSelectedPlayer(value)}
           >
             <SelectTrigger className="w-[200px] text-right">
               <SelectValue placeholder="בחר שחקן" />
@@ -200,17 +175,32 @@ const SessionSummaries = () => {
                   </div>
                   <div className="flex items-center gap-2 mr-2">
                     <FileText className="h-5 w-5 text-[#9b87f5]" />
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 w-8 p-0"
-                      onClick={() => {
-                        setSelectedSummary(summary);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Eye className="h-4 w-4 text-[#7E69AB] hover:text-[#6E59A5]" />
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Eye className="h-4 w-4 text-[#7E69AB] hover:text-[#6E59A5]" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-3xl max-h-screen">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center justify-between mb-4 text-right">
+                            <span className="text-[#6E59A5]">סיכום מפגש - {summary.session.player.full_name}</span>
+                            <span className="text-sm font-normal text-gray-500">
+                              {format(new Date(summary.session.session_date), 'dd/MM/yyyy', { locale: he })}
+                            </span>
+                          </DialogTitle>
+                        </DialogHeader>
+                        {renderSummaryDetails(summary)}
+                        <div className="flex items-center justify-between pt-4 border-t mt-4">
+                          <div className="text-gray-600 text-right w-full">
+                            דירוג התקדמות: <span className="font-semibold text-[#6E59A5]">{summary.progress_rating}/5</span>
+                          </div>
+                          <DialogClose asChild>
+                            <Button variant="outline">סגור</Button>
+                          </DialogClose>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
               </CardHeader>
@@ -231,31 +221,6 @@ const SessionSummaries = () => {
             </Card>
           ))}
         </div>
-
-        {/* Use Dialog instead of DialogTrigger for programmatic control */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          {selectedSummary && (
-            <DialogContent className="max-w-3xl max-h-screen">
-              <DialogHeader>
-                <DialogTitle className="flex items-center justify-between mb-4 text-right">
-                  <span className="text-[#6E59A5]">סיכום מפגש - {selectedSummary.session.player.full_name}</span>
-                  <span className="text-sm font-normal text-gray-500">
-                    {format(new Date(selectedSummary.session.session_date), 'dd/MM/yyyy', { locale: he })}
-                  </span>
-                </DialogTitle>
-              </DialogHeader>
-              {renderSummaryDetails(selectedSummary)}
-              <div className="flex items-center justify-between pt-4 border-t mt-4">
-                <div className="text-gray-600 text-right w-full">
-                  דירוג התקדמות: <span className="font-semibold text-[#6E59A5]">{selectedSummary.progress_rating}/5</span>
-                </div>
-                <DialogClose asChild>
-                  <Button variant="outline">סגור</Button>
-                </DialogClose>
-              </div>
-            </DialogContent>
-          )}
-        </Dialog>
       </div>
     </div>
   );
