@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
@@ -12,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import NewPlayerForm from '@/components/player/NewPlayerForm';
+import NewPlayerForm from '@/pages/NewPlayerForm';
 import { supabase } from '@/lib/supabase';
 import { Link } from 'react-router-dom';
 
