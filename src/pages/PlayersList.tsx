@@ -37,6 +37,7 @@ import { Card } from '@/components/ui/card';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DataTable } from '@/components/admin/DataTable';
+import { ColumnDef } from '@tanstack/react-table';
 
 interface Player {
   id: string;
@@ -421,9 +422,9 @@ const PlayersList = () => {
     {
       accessorKey: "created_at",
       header: "תאריך רישום",
-      sortingFn: "datetime",
-      sortDescFirst: true,
       enableSorting: true,
+      sortDescFirst: true,
+      sortingFn: "datetime",
       cell: ({ row }) => {
         const player = row.original;
         return (
@@ -437,8 +438,8 @@ const PlayersList = () => {
     {
       accessorKey: "past_sessions_count",
       header: "מפגשים שהתקיימו",
-      sortingFn: "basic",
       enableSorting: true,
+      sortingFn: "basic",
       cell: ({ row }) => {
         const player = row.original;
         return (
@@ -547,7 +548,7 @@ const PlayersList = () => {
         );
       },
     },
-  ];
+  ] as ColumnDef<Player, unknown>[];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">

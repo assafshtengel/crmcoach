@@ -1,4 +1,5 @@
 
+import React, { useState } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -29,7 +30,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useReactTable({
     data,
