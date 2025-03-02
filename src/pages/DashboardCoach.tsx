@@ -1,8 +1,8 @@
-<lov-code>
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
@@ -40,6 +40,7 @@ interface UpcomingSession {
   location: string;
   player: {
     full_name: string;
+    id?: string;
   };
   has_summary?: boolean;
 }
@@ -109,6 +110,7 @@ const DashboardCoach = () => {
   const [pastSessionsToSummarize, setPastSessionsToSummarize] = useState<UpcomingSession[]>([]);
   const [summarizedSessions, setSummarizedSessions] = useState<UpcomingSession[]>([]);
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
 
   useEffect(() => {
     const initUser = async () => {
@@ -166,6 +168,7 @@ const DashboardCoach = () => {
           location,
           reminder_sent,
           player:players (
+            id,
             full_name
           ),
           session_summaries (
@@ -203,6 +206,7 @@ const DashboardCoach = () => {
           location: session.location || '',
           reminder_sent: session.reminder_sent || false,
           player: {
+            id: session.player?.id,
             full_name: session.player?.full_name || 'לא נמצא שחקן'
           },
           has_summary: Array.isArray(session.session_summaries) && session.session_summaries.length > 0
@@ -231,6 +235,7 @@ const DashboardCoach = () => {
           location,
           reminder_sent,
           player:players (
+            id,
             full_name
           ),
           session_summaries (
@@ -258,6 +263,7 @@ const DashboardCoach = () => {
             location: session.location || '',
             reminder_sent: session.reminder_sent || false,
             player: {
+              id: session.player?.id,
               full_name: session.player?.full_name || 'לא נמצא שחקן'
             },
             has_summary: hasSummary
@@ -437,6 +443,65 @@ const DashboardCoach = () => {
     }
   };
 
+  const handleViewSummary = async (playerId: string, playerName: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          variant: "destructive", 
+          title: "שגיאה",
+          description: "לא נמצא משתמש מחובר"
+        });
+        return;
+      }
+
+      // Fetch the latest summary for this player
+      const { data: summaries, error } = await supabase
+        .from('session_summaries')
+        .select(`
+          id,
+          session:sessions (
+            player:players!inner (
+              id,
+              full_name
+            )
+          )
+        `)
+        .eq('coach_id', user.id)
+        .eq('sessions.player_id', playerId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Error fetching summary:', error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה בטעינת הסיכום",
+          description: "לא ניתן לטעון את הסיכום כרגע, אנא נסה שוב מאוחר יותר"
+        });
+        return;
+      }
+
+      if (summaries && summaries.length > 0) {
+        // Navigate directly to the specific summary
+        navigate(`/session-summaries?id=${summaries[0].id}`);
+      } else {
+        toast({
+          title: "אין סיכומים זמינים",
+          description: `אין סיכומים זמינים עבור ${playerName}`,
+          duration: 3000
+        });
+      }
+    } catch (error) {
+      console.error('Error in handleViewSummary:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה",
+        description: "אירעה שגיאה בניסיון לצפות בסיכום"
+      });
+    }
+  };
+
   const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
     const sessionDate = new Date(session.session_date);
     const isToday = isSameDay(sessionDate, new Date());
@@ -532,12 +597,17 @@ const DashboardCoach = () => {
                 </Dialog>
               )}
               {session.has_summary && (
-                <Link to="/session-summaries">
-                  <Button variant="ghost" size="sm" className="flex items-center">
-                    <FileText className="h-4 w-4 mr-1" />
-                    צפה בסיכום
-                  </Button>
-                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex items-center"
+                  onClick={() => session.player.id 
+                    ? handleViewSummary(session.player.id, session.player.full_name) 
+                    : navigate('/session-summaries')}
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  צפה בסיכום
+                </Button>
               )}
             </div>
           </div>
@@ -700,6 +770,26 @@ const DashboardCoach = () => {
     }];
   };
 
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+  
+      const { data, error } = await supabase
+        .from('players')
+        .select('id, full_name')
+        .eq('coach_id', user.id);
+  
+      if (error) {
+        console.error('Error fetching players:', error);
+        return;
+      }
+      setPlayers(data);
+    };
+
+    fetchPlayers();
+  }, []);
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -708,6 +798,19 @@ const DashboardCoach = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
+      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>יציאה</AlertDialogTitle>
+            <AlertDialogDescription>האם אתה בטוח שברצונך להתנתק?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>יציאה</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <header className="w-full bg-[#2C3E50] text-white py-6 mb-8 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
@@ -822,9 +925,134 @@ const DashboardCoach = () => {
           </Card>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg lg:col-span-2">
+            <CardHeader 
+              className="flex flex-row items-center justify-between border-b pb-4 cursor-pointer"
+              onClick={() => setIsSessionsExpanded(!isSessionsExpanded)}
+            >
+              <CardTitle className="text-xl font-semibold text-[#2C3E50]">
+                מפגשים קרובים
+              </CardTitle>
+              <div className="flex items-center">
+                <Link to="/sessions-list">
+                  <Button variant="ghost" size="sm" className="flex items-center gap-1 text-[#3498DB]">
+                    <Eye className="h-4 w-4" />
+                    צפה בכל המפגשים
+                  </Button>
+                </Link>
+                <Button variant="ghost" className="p-0 h-7 w-7">
+                  {isSessionsExpanded ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className={`transition-all overflow-hidden duration-300 ${isSessionsExpanded ? 'max-h-[800px]' : 'max-h-[400px]'}`}>
+              <div className="space-y-4 my-4">
+                {upcomingSessions.length > 0 ? (
+                  upcomingSessions.map(session => renderSessionCard(session))
+                ) : (
+                  <div className="text-center p-6 bg-gray-50 rounded-lg">
+                    <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                    <h3 className="text-lg font-medium text-gray-800">אין מפגשים קרובים</h3>
+                    <p className="text-gray-500 mt-1">אין מפגשים מתוכננים לשבוע הקרוב</p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => navigate('/new-session')}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      הוסף מפגש חדש
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">סיכומי מפגשים</CardTitle>
+              <FileText className="h-5 w-5 text-[#9b87f5]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-4">צפה בסיכומי כל המפגשים, עם אפשרות סינון לפי שחקן</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#9b87f5] hover:bg-[#8a68f9]"
+                onClick={() => navigate('/all-meeting-summaries')}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                צפה בכל הסיכומים
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card className="bg-white/90 shadow-lg">
-          <CardHeader 
-            className="flex flex-row items-center justify-between border-b pb-4 cursor-pointer"
-            onClick={() => setIsSessionsExpanded(!isSessionsExpanded)}
-          >
-            <CardTitle className="text-xl font-semibold text-[#2C3E50]">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-semibold text-[#2C3E50]">מפגשים אחרונים</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="unsummarized" className="w-full" onValueChange={setActiveTab}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="unsummarized">ממתינים לסיכום ({pastSessionsToSummarize.length})</TabsTrigger>
+                <TabsTrigger value="summarized">מסוכמים ({summarizedSessions.length})</TabsTrigger>
+              </TabsList>
+              <TabsContent value="unsummarized" className="mt-0">
+                <div className="space-y-4">
+                  {pastSessionsToSummarize.length > 0 ? (
+                    pastSessionsToSummarize.map(session => renderSessionCard(session))
+                  ) : (
+                    <div className="text-center p-6 bg-gray-50 rounded-lg">
+                      <Check className="h-10 w-10 text-green-500 mx-auto mb-2" />
+                      <h3 className="text-lg font-medium text-gray-800">הכל מסוכם!</h3>
+                      <p className="text-gray-500 mt-1">כל המפגשים שלך מסוכמים</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="summarized" className="mt-0">
+                <div className="space-y-4">
+                  {summarizedSessions.length > 0 ? (
+                    summarizedSessions.map(session => renderSessionCard(session, true))
+                  ) : (
+                    <div className="text-center p-6 bg-gray-50 rounded-lg">
+                      <FileText className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                      <h3 className="text-lg font-medium text-gray-800">אין סיכומים</h3>
+                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים מסוכמים</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg lg:col-span-3">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">סיכום מפגשים חודשי</CardTitle>
+              <BarChart2 className="h-5 w-5 text-[#9b87f5]" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={getMonthlySessionsData()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="מפגשים" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardCoach;
