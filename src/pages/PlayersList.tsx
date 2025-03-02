@@ -13,14 +13,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -44,6 +36,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { DataTable } from '@/components/admin/DataTable';
 
 interface Player {
   id: string;
@@ -351,6 +344,211 @@ const PlayersList = () => {
     );
   }
 
+  const columns = [
+    {
+      accessorKey: "full_name",
+      header: "שם השחקן",
+      cell: ({ row }) => {
+        const player = row.original;
+        return (
+          <div className="flex items-center gap-2">
+            {player.full_name}
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {player.contact_status === 'contacted' ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-yellow-500" />
+                  )}
+                </TooltipTrigger>
+                <TooltipContent>
+                  {player.contact_status === 'contacted' ? 'יצרנו קשר' : 'ממתין ליצירת קשר'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "sport_field",
+      header: "ענף ספורט",
+      cell: ({ row }) => row.original.sport_field || "לא צוין",
+    },
+    {
+      accessorKey: "registration_link_id",
+      header: "אופן רישום",
+      cell: ({ row }) => {
+        const player = row.original;
+        return player.registration_link_id ? 
+          <Badge variant="secondary">רישום עצמאי</Badge> : 
+          <Badge variant="outline">נרשם ע״י המאמן</Badge>;
+      },
+    },
+    {
+      accessorKey: "contact_status",
+      header: "סטטוס יצירת קשר",
+      cell: ({ row }) => {
+        const player = row.original;
+        return (
+          <Select
+            value={player.contact_status || 'pending'}
+            onValueChange={(value) => updateContactStatus(player.id, value as 'contacted' | 'pending')}
+          >
+            <SelectTrigger className="w-[140px] text-right">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="text-right">
+              <SelectItem value="contacted">
+                <div className="flex items-center">
+                  <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
+                  יצרנו קשר
+                </div>
+              </SelectItem>
+              <SelectItem value="pending">
+                <div className="flex items-center">
+                  <AlertCircle className="h-3 w-3 text-yellow-500 mr-2" />
+                  ממתין ליצירת קשר
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        );
+      },
+    },
+    {
+      accessorKey: "created_at",
+      header: "תאריך רישום",
+      sortingFn: "datetime",
+      sortDescFirst: true,
+      enableSorting: true,
+      cell: ({ row }) => {
+        const player = row.original;
+        return (
+          <div className="flex items-center gap-1 text-sm">
+            <Clock className="h-3 w-3" />
+            {formatDateTime(player.created_at)}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "past_sessions_count",
+      header: "מפגשים שהתקיימו",
+      sortingFn: "basic",
+      enableSorting: true,
+      cell: ({ row }) => {
+        const player = row.original;
+        return (
+          <div className="text-center">
+            <Badge variant="outline" className="font-medium">
+              {player.past_sessions_count || 0}
+            </Badge>
+            {player.last_session_date && (
+              <div className="text-xs text-gray-500 mt-1">
+                אחרון: {formatDate(player.last_session_date)}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "next_session_date",
+      header: "מפגש עתידי",
+      cell: ({ row }) => {
+        const player = row.original;
+        const sessionStatus = getSessionStatus(player);
+        
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className={`flex items-center gap-1.5 ${sessionStatus.color}`}>
+                  {sessionStatus.icon}
+                  {player.next_session_date ? (
+                    <span className="text-sm">
+                      {formatDate(player.next_session_date)} {formatTime(player.next_session_time)}
+                    </span>
+                  ) : (
+                    <span className="text-sm">
+                      {sessionStatus.type === 'no_activity' ? 'ללא פעילות' : 'לא נקבע'}
+                    </span>
+                  )}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {sessionStatus.message}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      },
+    },
+    {
+      accessorKey: "email",
+      header: "אימייל",
+      cell: ({ row }) => <span dir="ltr">{row.original.email}</span>,
+    },
+    {
+      accessorKey: "phone",
+      header: "טלפון",
+      cell: ({ row }) => <span dir="ltr">{row.original.phone || "-"}</span>,
+    },
+    {
+      id: "actions",
+      header: "פעולות",
+      cell: ({ row }) => {
+        const player = row.original;
+        return (
+          <div className="flex gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleViewProfile(player.id)}
+                  >
+                    <UserCircle className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>צפה בפרופיל</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleEditPlayer(player.id)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleScheduleSession(player.id, player.full_name)}
+              className="gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              קבע מפגש
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPlayerToDelete({ id: player.id, name: player.full_name })}
+              className="text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
@@ -469,167 +667,7 @@ const PlayersList = () => {
             
             <TabsContent value="table" className="w-full">
               <div className="bg-white rounded-lg shadow overflow-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>שם השחקן</TableHead>
-                      <TableHead>ענף ספורט</TableHead>
-                      <TableHead>אופן רישום</TableHead>
-                      <TableHead>סטטוס יצירת קשר</TableHead>
-                      <TableHead>תאריך רישום</TableHead>
-                      <TableHead>מפגשים שהתקיימו</TableHead>
-                      <TableHead>מפגש עתידי</TableHead>
-                      <TableHead>אימייל</TableHead>
-                      <TableHead>טלפון</TableHead>
-                      <TableHead>פעולות</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPlayers.map((player) => {
-                      const sessionStatus = getSessionStatus(player);
-                      
-                      return (
-                        <TableRow key={player.id}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                              {player.full_name}
-                              
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    {player.contact_status === 'contacted' ? (
-                                      <CheckCircle className="h-4 w-4 text-green-600" />
-                                    ) : (
-                                      <AlertCircle className="h-4 w-4 text-yellow-500" />
-                                    )}
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    {player.contact_status === 'contacted' ? 'יצרנו קשר' : 'ממתין ליצירת קשר'}
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          </TableCell>
-                          <TableCell>{player.sport_field || "לא צוין"}</TableCell>
-                          <TableCell>
-                            {player.registration_link_id ? 
-                              <Badge variant="secondary">רישום עצמאי</Badge> : 
-                              <Badge variant="outline">נרשם ע״י המאמן</Badge>
-                            }
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={player.contact_status || 'pending'}
-                              onValueChange={(value) => updateContactStatus(player.id, value as 'contacted' | 'pending')}
-                            >
-                              <SelectTrigger className="w-[140px] text-right">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="text-right">
-                                <SelectItem value="contacted">
-                                  <div className="flex items-center">
-                                    <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
-                                    יצרנו קשר
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="pending">
-                                  <div className="flex items-center">
-                                    <AlertCircle className="h-3 w-3 text-yellow-500 mr-2" />
-                                    ממתין ליצירת קשר
-                                  </div>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1 text-sm">
-                              <Clock className="h-3 w-3" />
-                              {formatDateTime(player.created_at)}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="outline" className="font-medium">
-                              {player.past_sessions_count || 0}
-                            </Badge>
-                            {player.last_session_date && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                אחרון: {formatDate(player.last_session_date)}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className={`flex items-center gap-1.5 ${sessionStatus.color}`}>
-                                    {sessionStatus.icon}
-                                    {player.next_session_date ? (
-                                      <span className="text-sm">
-                                        {formatDate(player.next_session_date)} {formatTime(player.next_session_time)}
-                                      </span>
-                                    ) : (
-                                      <span className="text-sm">
-                                        {sessionStatus.type === 'no_activity' ? 'ללא פעילות' : 'לא נקבע'}
-                                      </span>
-                                    )}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  {sessionStatus.message}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </TableCell>
-                          <TableCell dir="ltr">{player.email}</TableCell>
-                          <TableCell dir="ltr">{player.phone || "-"}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleViewProfile(player.id)}
-                                    >
-                                      <UserCircle className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>צפה בפרופיל</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                              
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditPlayer(player.id)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleScheduleSession(player.id, player.full_name)}
-                                className="gap-2"
-                              >
-                                <Calendar className="h-4 w-4" />
-                                קבע מפגש
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPlayerToDelete({ id: player.id, name: player.full_name })}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                <DataTable columns={columns} data={filteredPlayers} />
               </div>
             </TabsContent>
             
