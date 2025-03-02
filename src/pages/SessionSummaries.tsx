@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, FileText, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from '@/hooks/use-toast';
 
 interface SessionSummary {
   id: string;
@@ -23,6 +24,7 @@ interface SessionSummary {
   session: {
     session_date: string;
     player: {
+      id: string;
       full_name: string;
     };
   };
@@ -30,9 +32,29 @@ interface SessionSummary {
 
 const SessionSummaries = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
   const [summaries, setSummaries] = useState<SessionSummary[]>([]);
   const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string>('all');
+  const [openSummaryId, setOpenSummaryId] = useState<string | null>(null);
+  const [currentSummary, setCurrentSummary] = useState<SessionSummary | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  useEffect(() => {
+    // Parse query parameters
+    const params = new URLSearchParams(location.search);
+    const summaryId = params.get('id');
+    const playerId = params.get('player');
+    
+    if (playerId) {
+      setSelectedPlayer(playerId);
+    }
+    
+    if (summaryId) {
+      setOpenSummaryId(summaryId);
+    }
+  }, [location]);
 
   const fetchSummaries = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -45,6 +67,7 @@ const SessionSummaries = () => {
         session:sessions (
           session_date,
           player:players (
+            id,
             full_name
           )
         )
@@ -59,9 +82,32 @@ const SessionSummaries = () => {
     const { data, error } = await query;
     if (error) {
       console.error('Error fetching summaries:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת הסיכומים",
+        description: "אנא נסה שוב מאוחר יותר"
+      });
       return;
     }
     setSummaries(data);
+
+    // If a specific summary ID was requested, open that summary
+    if (openSummaryId) {
+      const targetSummary = data.find(summary => summary.id === openSummaryId);
+      if (targetSummary) {
+        setCurrentSummary(targetSummary);
+        setIsDialogOpen(true);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "סיכום לא נמצא",
+          description: "הסיכום המבוקש לא נמצא"
+        });
+        // Clear the ID param from URL without full page refresh
+        const newUrl = window.location.pathname;
+        window.history.pushState({}, '', newUrl);
+      }
+    }
   };
 
   const fetchPlayers = async () => {
@@ -86,7 +132,23 @@ const SessionSummaries = () => {
 
   useEffect(() => {
     fetchSummaries();
-  }, [selectedPlayer]);
+  }, [selectedPlayer, openSummaryId]);
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setCurrentSummary(null);
+    // Clear the ID param from URL without full page refresh
+    const newUrl = window.location.pathname;
+    if (selectedPlayer !== 'all') {
+      newUrl + `?player=${selectedPlayer}`;
+    }
+    window.history.pushState({}, '', newUrl);
+  };
+
+  const openSummaryDialog = (summary: SessionSummary) => {
+    setCurrentSummary(summary);
+    setIsDialogOpen(true);
+  };
 
   const renderSummaryDetails = (summary: SessionSummary) => {
     return (
@@ -175,32 +237,14 @@ const SessionSummaries = () => {
                   </div>
                   <div className="flex items-center gap-2 mr-2">
                     <FileText className="h-5 w-5 text-[#9b87f5]" />
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Eye className="h-4 w-4 text-[#7E69AB] hover:text-[#6E59A5]" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-3xl max-h-screen">
-                        <DialogHeader>
-                          <DialogTitle className="flex items-center justify-between mb-4 text-right">
-                            <span className="text-[#6E59A5]">סיכום מפגש - {summary.session.player.full_name}</span>
-                            <span className="text-sm font-normal text-gray-500">
-                              {format(new Date(summary.session.session_date), 'dd/MM/yyyy', { locale: he })}
-                            </span>
-                          </DialogTitle>
-                        </DialogHeader>
-                        {renderSummaryDetails(summary)}
-                        <div className="flex items-center justify-between pt-4 border-t mt-4">
-                          <div className="text-gray-600 text-right w-full">
-                            דירוג התקדמות: <span className="font-semibold text-[#6E59A5]">{summary.progress_rating}/5</span>
-                          </div>
-                          <DialogClose asChild>
-                            <Button variant="outline">סגור</Button>
-                          </DialogClose>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0"
+                      onClick={() => openSummaryDialog(summary)}
+                    >
+                      <Eye className="h-4 w-4 text-[#7E69AB] hover:text-[#6E59A5]" />
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -221,6 +265,33 @@ const SessionSummaries = () => {
             </Card>
           ))}
         </div>
+
+        {/* Summary dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-screen">
+            {currentSummary && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center justify-between mb-4 text-right">
+                    <span className="text-[#6E59A5]">סיכום מפגש - {currentSummary.session.player.full_name}</span>
+                    <span className="text-sm font-normal text-gray-500">
+                      {format(new Date(currentSummary.session.session_date), 'dd/MM/yyyy', { locale: he })}
+                    </span>
+                  </DialogTitle>
+                </DialogHeader>
+                {renderSummaryDetails(currentSummary)}
+                <div className="flex items-center justify-between pt-4 border-t mt-4">
+                  <div className="text-gray-600 text-right w-full">
+                    דירוג התקדמות: <span className="font-semibold text-[#6E59A5]">{currentSummary.progress_rating}/5</span>
+                  </div>
+                  <DialogClose asChild onClick={handleDialogClose}>
+                    <Button variant="outline">סגור</Button>
+                  </DialogClose>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
