@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle, Filter, CheckCircle, AlertCircle, Clock, XCircle } from 'lucide-react';
+import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle, Filter, CheckCircle, AlertCircle, Clock, XCircle, Copy, Link, Eye } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +38,7 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DataTable } from '@/components/admin/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
+import { Input } from '@/components/ui/input';
 
 interface Player {
   id: string;
@@ -66,6 +67,7 @@ const PlayersList = () => {
   const [uniqueSportFields, setUniqueSportFields] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("table");
+  const [copiedPlayerId, setCopiedPlayerId] = useState<string | null>(null);
   
   const navigate = useNavigate();
 
@@ -197,6 +199,42 @@ const PlayersList = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyPlayerLink = (playerId: string) => {
+    const baseUrl = window.location.origin;
+    const profileUrl = `${baseUrl}/player-profile/${playerId}`;
+    
+    navigator.clipboard.writeText(profileUrl)
+      .then(() => {
+        setCopiedPlayerId(playerId);
+        toast.success('הקישור הועתק ללוח');
+        
+        setTimeout(() => {
+          setCopiedPlayerId(null);
+        }, 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy:', err);
+        toast.error('שגיאה בהעתקת הקישור');
+      });
+  };
+
+  const copyPlayerId = (playerId: string) => {
+    navigator.clipboard.writeText(playerId)
+      .then(() => {
+        toast.success('מזהה השחקן הועתק ללוח');
+      })
+      .catch(err => {
+        console.error('Failed to copy:', err);
+        toast.error('שגיאה בהעתקת מזהה השחקן');
+      });
+  };
+
+  const viewAsPlayer = (playerId: string) => {
+    toast('צפייה בתצוגת שחקן תהיה זמינה בקרוב', {
+      description: 'פיתוח תכונה זו בתהליך'
+    });
   };
 
   const updateContactStatus = async (playerId: string, newStatus: 'contacted' | 'pending') => {
@@ -499,6 +537,92 @@ const PlayersList = () => {
       cell: ({ row }) => <span dir="ltr">{row.original.phone || "-"}</span>,
     },
     {
+      accessorKey: "access",
+      header: "פרטי גישה",
+      cell: ({ row }) => {
+        const player = row.original;
+        const baseUrl = window.location.origin;
+        const profileUrl = `${baseUrl}/player-profile/${player.id}`;
+        
+        return (
+          <div className="flex gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Link className="h-3.5 w-3.5 mr-1" />
+                  פרטי גישה
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-3">
+                  <h4 className="font-medium mb-2">פרטי גישה עבור {player.full_name}</h4>
+                  
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500">מזהה שחקן</label>
+                    <div className="flex items-center gap-1">
+                      <Input value={player.id} readOnly className="text-xs font-mono h-8" />
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-8 w-8" 
+                        onClick={() => copyPlayerId(player.id)}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500">קישור לפרופיל</label>
+                    <div className="flex items-center gap-1">
+                      <Input value={profileUrl} readOnly className="text-xs font-mono h-8" dir="ltr" />
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-8 w-8" 
+                        onClick={() => copyPlayerLink(player.id)}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500">אימייל</label>
+                    <Input value={player.email} readOnly className="text-xs h-8" dir="ltr" />
+                  </div>
+                  
+                  <div className="pt-2 flex justify-between">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={() => viewAsPlayer(player.id)}
+                    >
+                      <Eye className="h-3.5 w-3.5 mr-1" />
+                      צפה כשחקן
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => copyPlayerLink(player.id)}
+              className="min-w-9 w-9 p-0"
+            >
+              {copiedPlayerId === player.id ? 
+                <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : 
+                <Copy className="h-3.5 w-3.5" />
+              }
+            </Button>
+          </div>
+        );
+      },
+    },
+    {
       id: "actions",
       header: "פעולות",
       cell: ({ row }) => {
@@ -676,6 +800,8 @@ const PlayersList = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPlayers.map((player) => {
                   const sessionStatus = getSessionStatus(player);
+                  const baseUrl = window.location.origin;
+                  const profileUrl = `${baseUrl}/player-profile/${player.id}`;
                   
                   return (
                     <div key={player.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
@@ -734,6 +860,27 @@ const PlayersList = () => {
                               </span>
                             )}
                           </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-2 mb-4 pt-2 border-t border-gray-100">
+                        <p className="text-gray-500 text-sm mb-1">פרטי גישה:</p>
+                        <div className="flex justify-between items-center">
+                          <div className="max-w-[70%] truncate">
+                            <p dir="ltr" className="text-xs text-gray-600 font-mono truncate">{profileUrl}</p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyPlayerLink(player.id)}
+                            className="h-7 gap-1"
+                          >
+                            {copiedPlayerId === player.id ? 
+                              <CheckCircle className="h-3 w-3 text-green-600" /> : 
+                              <Copy className="h-3 w-3" />
+                            }
+                            העתק קישור
+                          </Button>
                         </div>
                       </div>
                       

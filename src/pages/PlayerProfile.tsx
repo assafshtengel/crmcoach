@@ -4,9 +4,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { ChevronRight, Loader2, Pencil, ScrollText, User, Home, Calendar, Phone } from 'lucide-react';
+import { ChevronRight, Loader2, Pencil, ScrollText, User, Home, Phone, Copy, Link, CheckCircle, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
 
 interface PlayerProfile {
   full_name: string;
@@ -38,9 +40,15 @@ const PlayerProfile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [player, setPlayer] = useState<PlayerProfile | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [profileUrl, setProfileUrl] = useState('');
 
   useEffect(() => {
     fetchPlayerProfile();
+
+    // Generate profile URL based on current window location
+    const baseUrl = window.location.origin;
+    setProfileUrl(`${baseUrl}/player-profile/${playerId}`);
   }, [playerId]);
 
   const fetchPlayerProfile = async () => {
@@ -80,6 +88,31 @@ const PlayerProfile = () => {
 
   const handleEdit = () => {
     navigate('/edit-player', { state: { playerId, playerData: player } });
+  };
+
+  const copyToClipboard = (text: string, field: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        setCopiedField(field);
+        toast.success('הועתק ללוח');
+        
+        // Reset the copied state after 2 seconds
+        setTimeout(() => {
+          setCopiedField(null);
+        }, 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy:', err);
+        toast.error('שגיאה בהעתקה');
+      });
+  };
+
+  const viewAsPlayer = () => {
+    // This would normally navigate to a player-view version of the profile
+    // For now, we'll just show a toast notification
+    toast('צפייה בתצוגת שחקן תהיה זמינה בקרוב', {
+      description: 'פיתוח תכונה זו בתהליך'
+    });
   };
 
   if (loading) {
@@ -124,17 +157,91 @@ const PlayerProfile = () => {
               </Button>
               <h1 className="text-2xl font-bold text-indigo-950">{player.full_name}</h1>
             </div>
-            <Button
-              onClick={handleEdit}
-              className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Pencil className="h-4 w-4" />
-              ערוך פרטים
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={viewAsPlayer}
+                className="gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                צפה כשחקן
+              </Button>
+              <Button
+                onClick={handleEdit}
+                className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Pencil className="h-4 w-4" />
+                ערוך פרטים
+              </Button>
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* New Access Details Card */}
+          <Card className="bg-white/80 backdrop-blur-sm border-indigo-100">
+            <CardHeader className="border-b border-indigo-100">
+              <CardTitle className="text-xl flex items-center gap-2 text-indigo-950">
+                <Link className="h-5 w-5 text-indigo-600" />
+                פרטי גישה
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="font-medium text-indigo-900">מזהה שחקן</Label>
+                  <div className="flex items-center gap-2">
+                    <Input value={playerId} readOnly className="bg-gray-50 font-mono text-sm" />
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      onClick={() => copyToClipboard(playerId || '', 'playerId')}
+                      className="flex-shrink-0"
+                    >
+                      {copiedField === 'playerId' ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="font-medium text-indigo-900">קישור לפרופיל</Label>
+                  <div className="flex items-center gap-2">
+                    <Input value={profileUrl} readOnly className="bg-gray-50 font-mono text-xs" dir="ltr" />
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      onClick={() => copyToClipboard(profileUrl, 'profileUrl')}
+                      className="flex-shrink-0"
+                    >
+                      {copiedField === 'profileUrl' ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="font-medium text-indigo-900">אימייל</Label>
+                  <div className="flex items-center gap-2">
+                    <Input value={player.email} readOnly className="bg-gray-50 font-mono text-sm" dir="ltr" />
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      onClick={() => copyToClipboard(player.email, 'email')}
+                      className="flex-shrink-0"
+                    >
+                      {copiedField === 'email' ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <Alert className="bg-blue-50 border-blue-200 mt-4">
+                  <AlertDescription className="text-blue-800 text-sm">
+                    הערה: בעתיד השחקנים יוכלו להתחבר ולעדכן את הפרופיל שלהם באופן עצמאי.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="lg:col-span-2 bg-white/80 backdrop-blur-sm border-indigo-100">
             <CardHeader className="border-b border-indigo-100">
               <CardTitle className="text-xl flex items-center gap-2 text-indigo-950">

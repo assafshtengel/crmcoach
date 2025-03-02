@@ -77,6 +77,7 @@ function App() {
         <Route path="/action-plan" element={<AuthGuard><ActionPlan /></AuthGuard>} />
         <Route path="/session-summaries" element={<AuthGuard><SessionSummaries /></AuthGuard>} />
         <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />
+        <Route path="/edit-player" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
         <Route path="/edit-player/:playerId" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
         <Route path="/registration-links" element={<AuthGuard><RegistrationLinks /></AuthGuard>} />
         <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
