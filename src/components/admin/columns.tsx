@@ -6,16 +6,22 @@ import { Eye } from "lucide-react";
 
 export const columns: ColumnDef<FormData>[] = [
   {
-    accessorKey: "fullName",
-    header: "שם שחקן",
+    id: "actions",
+    cell: ({ row }) => {
+      return (
+        <Button variant="ghost" size="sm" onClick={() => console.log(row.original)}>
+          <Eye className="h-4 w-4" />
+        </Button>
+      );
+    },
   },
   {
-    accessorKey: "matchDate",
-    header: "תאריך משחק",
-  },
-  {
-    accessorKey: "opposingTeam",
-    header: "קבוצה יריבה",
+    accessorKey: "selectedStates",
+    header: "מצבים מנטליים",
+    cell: ({ row }) => {
+      const states = row.getValue("selectedStates") as string[];
+      return states.join(", ");
+    },
   },
   {
     accessorKey: "gameType",
@@ -31,21 +37,15 @@ export const columns: ColumnDef<FormData>[] = [
     },
   },
   {
-    accessorKey: "selectedStates",
-    header: "מצבים מנטליים",
-    cell: ({ row }) => {
-      const states = row.getValue("selectedStates") as string[];
-      return states.join(", ");
-    },
+    accessorKey: "opposingTeam",
+    header: "קבוצה יריבה",
   },
   {
-    id: "actions",
-    cell: ({ row }) => {
-      return (
-        <Button variant="ghost" size="sm" onClick={() => console.log(row.original)}>
-          <Eye className="h-4 w-4" />
-        </Button>
-      );
-    },
+    accessorKey: "matchDate",
+    header: "תאריך משחק",
   },
+  {
+    accessorKey: "fullName",
+    header: "שם שחקן",
+  }
 ];
