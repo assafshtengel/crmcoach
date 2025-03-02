@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -224,7 +223,6 @@ const DashboardCoach = () => {
         totalReminders: remindersResult.data?.length || 0
       });
 
-      // Fetch past sessions that need summarizing
       const { data: pastSessions, error: pastSessionsError } = await supabase
         .from('sessions')
         .select(`
@@ -455,7 +453,6 @@ const DashboardCoach = () => {
         return;
       }
 
-      // Fetch the latest summary for this player
       const { data: summaries, error } = await supabase
         .from('session_summaries')
         .select(`
@@ -483,7 +480,6 @@ const DashboardCoach = () => {
       }
 
       if (summaries && summaries.length > 0) {
-        // Navigate directly to the specific summary
         navigate(`/session-summaries?id=${summaries[0].id}`);
       } else {
         toast({
@@ -898,7 +894,15 @@ const DashboardCoach = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-[#2C3E50]">{stats.totalPlayers}</div>
-              <p className="text-sm text-gray-500">רשומים במערכת</p>
+              <p className="text-sm text-gray-500 mb-3">רשומים במערכת</p>
+              <Button 
+                variant="outline" 
+                className="w-full border-[#27AE60] text-[#27AE60] hover:bg-[#27AE60]/10"
+                onClick={() => navigate('/players-list')}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                צפה ברשימת השחקנים
+              </Button>
             </CardContent>
           </Card>
 
@@ -925,61 +929,60 @@ const DashboardCoach = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg lg:col-span-2">
-            <CardHeader 
-              className="flex flex-row items-center justify-between border-b pb-4 cursor-pointer"
-              onClick={() => setIsSessionsExpanded(!isSessionsExpanded)}
-            >
-              <CardTitle className="text-xl font-semibold text-[#2C3E50]">
-                מפגשים קרובים
-              </CardTitle>
-              <div className="flex items-center">
-                <Link to="/sessions-list">
-                  <Button variant="ghost" size="sm" className="flex items-center gap-1 text-[#3498DB]">
-                    <Eye className="h-4 w-4" />
-                    צפה בכל המפגשים
-                  </Button>
-                </Link>
-                <Button variant="ghost" className="p-0 h-7 w-7">
-                  {isSessionsExpanded ? <ChevronUp className="h-5 w-5 text-gray-500" /> : <ChevronDown className="h-5 w-5 text-gray-500" />}
-                </Button>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9b59b6] cursor-pointer"
+            onClick={() => navigate('/new-player')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">הוספת שחקן חדש</CardTitle>
+              <UserPlus className="h-5 w-5 text-[#9b59b6]" />
             </CardHeader>
-            <CardContent className={`transition-all overflow-hidden duration-300 ${isSessionsExpanded ? 'max-h-[800px]' : 'max-h-[400px]'}`}>
-              <div className="space-y-4 my-4">
-                {upcomingSessions.length > 0 ? (
-                  upcomingSessions.map(session => renderSessionCard(session))
-                ) : (
-                  <div className="text-center p-6 bg-gray-50 rounded-lg">
-                    <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                    <h3 className="text-lg font-medium text-gray-800">אין מפגשים קרובים</h3>
-                    <p className="text-gray-500 mt-1">אין מפגשים מתוכננים לשבוע הקרוב</p>
-                    <Button
-                      variant="outline"
-                      className="mt-4"
-                      onClick={() => navigate('/new-session')}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      הוסף מפגש חדש
-                    </Button>
-                  </div>
-                )}
-              </div>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">צור כרטיס שחקן חדש במערכת</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#9b59b6] hover:bg-[#8e44ad]"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                הוסף שחקן חדש
+              </Button>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg">
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#e74c3c] cursor-pointer"
+            onClick={() => navigate('/reports')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">דוחות וסטטיסטיקה</CardTitle>
+              <BarChart2 className="h-5 w-5 text-[#e74c3c]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">צפה בנתונים סטטיסטיים מפורטים</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#e74c3c] hover:bg-[#c0392b]"
+              >
+                <BarChart2 className="h-4 w-4 mr-2" />
+                צפה בדוחות
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9b87f5] cursor-pointer"
+            onClick={() => navigate('/all-meeting-summaries')}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">סיכומי מפגשים</CardTitle>
               <FileText className="h-5 w-5 text-[#9b87f5]" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500 mb-4">צפה בסיכומי כל המפגשים, עם אפשרות סינון לפי שחקן</p>
+              <p className="text-sm text-gray-500 mb-3">צפה בסיכומי כל המפגשים, עם אפשרות סינון לפי שחקן</p>
               <Button 
                 variant="default" 
                 className="w-full bg-[#9b87f5] hover:bg-[#8a68f9]"
-                onClick={() => navigate('/all-meeting-summaries')}
               >
                 <Eye className="h-4 w-4 mr-2" />
                 צפה בכל הסיכומים
