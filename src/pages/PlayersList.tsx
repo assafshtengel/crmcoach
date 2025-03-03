@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Calendar, Eye, Trash2, Search, Plus, ArrowRight, LayoutDashboard, Copy, User, Key, Link as LinkIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/lib/supabase";
-import { generatePassword } from "@/utils/passwordGenerator";
+import { generatePassword as generateRandomPassword } from "@/utils/passwordGenerator";
 
 interface Player {
   id: string;
@@ -25,17 +25,6 @@ interface Player {
   password?: string;
   has_account?: boolean;
 }
-
-const generatePassword = () => {
-  const length = 8;
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length);
-    password += charset[randomIndex];
-  }
-  return password;
-};
 
 const PlayersList = () => {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -70,7 +59,7 @@ const PlayersList = () => {
           return {
             ...player,
             has_account: authData && authData.users && authData.users.length > 0,
-            password: player.password || generatePassword()
+            password: player.password || generateRandomPassword()
           };
         })
       );
@@ -146,7 +135,7 @@ const PlayersList = () => {
         return;
       }
 
-      const password = player.password || generatePassword();
+      const password = player.password || generateRandomPassword();
       
       const { data, error } = await supabase.auth.admin.createUser({
         email: player.email,
