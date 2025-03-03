@@ -15,7 +15,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DataTable } from '@/components/admin/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
 import { Input } from '@/components/ui/input';
-
 interface Player {
   id: string;
   full_name: string;
@@ -32,7 +31,6 @@ interface Player {
   next_session_time?: string;
   password?: string | null; // Add password field to fix the TypeScript error
 }
-
 const PlayersList = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
@@ -48,17 +46,13 @@ const PlayersList = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("table");
   const [copiedPlayerId, setCopiedPlayerId] = useState<string | null>(null);
-
   const navigate = useNavigate();
-
   useEffect(() => {
     fetchPlayers();
   }, []);
-
   useEffect(() => {
     applyFilters();
   }, [sportFieldFilter, registrationTypeFilter, contactStatusFilter, players]);
-
   const applyFilters = () => {
     let result = [...players];
     if (sportFieldFilter !== 'all') {
@@ -76,7 +70,6 @@ const PlayersList = () => {
     }
     setFilteredPlayers(result);
   };
-
   const fetchPlayers = async () => {
     try {
       setError(null);
@@ -113,7 +106,6 @@ const PlayersList = () => {
         toast.error('שגיאה בטעינת רשימת השחקנים: ' + playersError.message);
         throw playersError;
       }
-      
       const today = new Date().toISOString().split('T')[0];
       const playersWithSessionData = await Promise.all((playersData || []).map(async player => {
         const {
@@ -165,7 +157,6 @@ const PlayersList = () => {
       setLoading(false);
     }
   };
-
   const copyPlayerLink = (playerId: string) => {
     const baseUrl = window.location.origin;
     const profileUrl = `${baseUrl}/player-profile/${playerId}`;
@@ -180,7 +171,6 @@ const PlayersList = () => {
       toast.error('שגיאה בהעתקת הקישור');
     });
   };
-
   const copyPlayerId = (playerId: string) => {
     navigator.clipboard.writeText(playerId).then(() => {
       toast.success('מזהה השחקן הועתק ללוח');
@@ -189,13 +179,11 @@ const PlayersList = () => {
       toast.error('שגיאה בהעתקת מזהה השחקן');
     });
   };
-
   const viewAsPlayer = (playerId: string) => {
     toast('צפייה בתצוגת שחקן תהיה זמינה בקרוב', {
       description: 'פיתוח תכונה זו בתהליך'
     });
   };
-
   const updateContactStatus = async (playerId: string, newStatus: 'contacted' | 'pending') => {
     try {
       const {
@@ -214,7 +202,6 @@ const PlayersList = () => {
       console.error('Error updating contact status:', error);
     }
   };
-
   const handleScheduleSession = (playerId: string, playerName: string) => {
     navigate('/new-session', {
       state: {
@@ -223,7 +210,6 @@ const PlayersList = () => {
       }
     });
   };
-
   const handleEditPlayer = (playerId: string) => {
     navigate('/edit-player', {
       state: {
@@ -231,11 +217,9 @@ const PlayersList = () => {
       }
     });
   };
-
   const handleViewProfile = (playerId: string) => {
     navigate(`/player-profile/${playerId}`);
   };
-
   const handleDeleteConfirm = async () => {
     if (!playerToDelete) return;
     try {
@@ -251,13 +235,11 @@ const PlayersList = () => {
       console.error('Error deleting player:', error);
     }
   };
-
   const clearFilters = () => {
     setSportFieldFilter('all');
     setRegistrationTypeFilter('all');
     setContactStatusFilter('all');
   };
-
   const formatDateTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -266,7 +248,6 @@ const PlayersList = () => {
       return dateString || 'לא ידוע';
     }
   };
-
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
     try {
@@ -275,12 +256,10 @@ const PlayersList = () => {
       return dateString;
     }
   };
-
   const formatTime = (timeString?: string) => {
     if (!timeString) return '';
     return timeString.substring(0, 5);
   };
-
   const isInactive = (player: Player) => {
     if (!player.last_session_date && !player.next_session_date) {
       return true;
@@ -295,7 +274,6 @@ const PlayersList = () => {
     }
     return false;
   };
-
   const getSessionStatus = (player: Player) => {
     if (player.next_session_date) {
       return {
@@ -329,22 +307,19 @@ const PlayersList = () => {
       };
     }
   };
-
   if (loading) {
     return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
       </div>;
   }
-
-  const columns = [
-    {
-      accessorKey: "full_name",
-      header: "שם השחקן",
-      cell: ({
-        row
-      }) => {
-        const player = row.original;
-        return <div className="flex items-center gap-2">
+  const columns = [{
+    accessorKey: "full_name",
+    header: "שם השחקן",
+    cell: ({
+      row
+    }) => {
+      const player = row.original;
+      return <div className="flex items-center gap-2">
             {player.full_name}
             
             <TooltipProvider>
@@ -358,33 +333,30 @@ const PlayersList = () => {
               </Tooltip>
             </TooltipProvider>
           </div>;
-      }
-    },
-    {
-      accessorKey: "sport_field",
-      header: "ענף ספורט",
-      cell: ({
-        row
-      }) => row.original.sport_field || "לא צוין"
-    },
-    {
-      accessorKey: "registration_link_id",
-      header: "אופן רישום",
-      cell: ({
-        row
-      }) => {
-        const player = row.original;
-        return player.registration_link_id ? <Badge variant="secondary">רישום עצמאי</Badge> : <Badge variant="outline">נרשם ע״י המאמן</Badge>;
-      }
-    },
-    {
-      accessorKey: "contact_status",
-      header: "סטטוס יצירת קשר",
-      cell: ({
-        row
-      }) => {
-        const player = row.original;
-        return <Select value={player.contact_status || 'pending'} onValueChange={value => updateContactStatus(player.id, value as 'contacted' | 'pending')}>
+    }
+  }, {
+    accessorKey: "sport_field",
+    header: "ענף ספורט",
+    cell: ({
+      row
+    }) => row.original.sport_field || "לא צוין"
+  }, {
+    accessorKey: "registration_link_id",
+    header: "אופן רישום",
+    cell: ({
+      row
+    }) => {
+      const player = row.original;
+      return player.registration_link_id ? <Badge variant="secondary">רישום עצמאי</Badge> : <Badge variant="outline">נרשם ע״י המאמן</Badge>;
+    }
+  }, {
+    accessorKey: "contact_status",
+    header: "סטטוס יצירת קשר",
+    cell: ({
+      row
+    }) => {
+      const player = row.original;
+      return <Select value={player.contact_status || 'pending'} onValueChange={value => updateContactStatus(player.id, value as 'contacted' | 'pending')}>
               <SelectTrigger className="w-[140px] text-right">
                 <SelectValue />
               </SelectTrigger>
@@ -403,34 +375,32 @@ const PlayersList = () => {
                 </SelectItem>
               </SelectContent>
             </Select>;
-      }
-    },
-    {
-      accessorKey: "created_at",
-      header: "תאריך רישום",
-      enableSorting: true,
-      sortDescFirst: true,
-      sortingFn: "datetime",
-      cell: ({
-        row
-      }) => {
-        const player = row.original;
-        return <div className="flex items-center gap-1 text-sm">
+    }
+  }, {
+    accessorKey: "created_at",
+    header: "תאריך רישום",
+    enableSorting: true,
+    sortDescFirst: true,
+    sortingFn: "datetime",
+    cell: ({
+      row
+    }) => {
+      const player = row.original;
+      return <div className="flex items-center gap-1 text-sm">
             <Clock className="h-3 w-3" />
             {formatDateTime(player.created_at)}
           </div>;
-      }
-    },
-    {
-      accessorKey: "past_sessions_count",
-      header: "מפגשים שהתקיימו",
-      enableSorting: true,
-      sortingFn: "basic",
-      cell: ({
-        row
-      }) => {
-        const player = row.original;
-        return <div className="text-center">
+    }
+  }, {
+    accessorKey: "past_sessions_count",
+    header: "מפגשים שהתקיימו",
+    enableSorting: true,
+    sortingFn: "basic",
+    cell: ({
+      row
+    }) => {
+      const player = row.original;
+      return <div className="text-center">
             <Badge variant="outline" className="font-medium">
               {player.past_sessions_count || 0}
             </Badge>
@@ -438,17 +408,16 @@ const PlayersList = () => {
                 אחרון: {formatDate(player.last_session_date)}
               </div>}
           </div>;
-      }
-    },
-    {
-      accessorKey: "next_session_date",
-      header: "מפגש עתידי",
-      cell: ({
-        row
-      }) => {
-        const player = row.original;
-        const sessionStatus = getSessionStatus(player);
-        return <TooltipProvider>
+    }
+  }, {
+    accessorKey: "next_session_date",
+    header: "מפגש עתידי",
+    cell: ({
+      row
+    }) => {
+      const player = row.original;
+      const sessionStatus = getSessionStatus(player);
+      return <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className={`flex items-center gap-1.5 ${sessionStatus.color}`}>
@@ -465,33 +434,30 @@ const PlayersList = () => {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>;
-      }
-    },
-    {
-      accessorKey: "email",
-      header: "אימייל",
-      cell: ({
-        row
-      }) => <span dir="ltr">{row.original.email}</span>
-    },
-    {
-      accessorKey: "phone",
-      header: "טלפון",
-      cell: ({
-        row
-      }) => <span dir="ltr">{row.original.phone || "-"}</span>
-    },
-    {
-      accessorKey: "access",
-      header: "פרטי גישה",
-      cell: ({
-        row
-      }) => {
-        const player = row.original;
-        const baseUrl = window.location.origin;
-        const profileUrl = `${baseUrl}/player-profile/${player.id}`;
-        const loginUrl = `${baseUrl}/player-auth`;
-        return <div className="flex gap-2">
+    }
+  }, {
+    accessorKey: "email",
+    header: "אימייל",
+    cell: ({
+      row
+    }) => <span dir="ltr">{row.original.email}</span>
+  }, {
+    accessorKey: "phone",
+    header: "טלפון",
+    cell: ({
+      row
+    }) => <span dir="ltr">{row.original.phone || "-"}</span>
+  }, {
+    accessorKey: "access",
+    header: "פרטי גישה",
+    cell: ({
+      row
+    }) => {
+      const player = row.original;
+      const baseUrl = window.location.origin;
+      const profileUrl = `${baseUrl}/player-profile/${player.id}`;
+      const loginUrl = `${baseUrl}/player-auth`;
+      return <div className="flex gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -499,7 +465,7 @@ const PlayersList = () => {
                   פרטי גישה
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80">
+              <PopoverContent className="w-80 bg-gray-50">
                 <div className="space-y-3">
                   <h4 className="font-medium mb-2">פרטי גישה עבור {player.full_name}</h4>
                   
@@ -514,20 +480,15 @@ const PlayersList = () => {
                   </div>
                   
                   <div className="space-y-1">
-                    <label className="text-xs text-gray-500">סיסמת כניסה</label>
+                    <label className="text-xs text-gray-500 bg-orange-50">סיסמת כניסה</label>
                     <div className="flex items-center gap-1">
-                      <Input value={player.password || "לא הוגדרה סיסמה"} readOnly 
-                        className="text-xs font-mono h-8" 
-                        type="text" />
-                      {player.password && (
-                        <Button variant="outline" size="icon" className="h-8 w-8" 
-                          onClick={() => {
-                            navigator.clipboard.writeText(player.password || "");
-                            toast.success("הסיסמה הועתקה ללוח");
-                          }}>
+                      <Input value={player.password || "לא הוגדרה סיסמה"} readOnly className="text-xs font-mono h-8" type="text" />
+                      {player.password && <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => {
+                    navigator.clipboard.writeText(player.password || "");
+                    toast.success("הסיסמה הועתקה ללוח");
+                  }}>
                           <Copy className="h-3 w-3" />
-                        </Button>
-                      )}
+                        </Button>}
                     </div>
                   </div>
                   
@@ -560,16 +521,15 @@ const PlayersList = () => {
               {copiedPlayerId === player.id ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
             </Button>
           </div>;
-      }
-    },
-    {
-      id: "actions",
-      header: "פעולות",
-      cell: ({
-        row
-      }) => {
-        const player = row.original;
-        return <div className="flex gap-2">
+    }
+  }, {
+    id: "actions",
+    header: "פעולות",
+    cell: ({
+      row
+    }) => {
+      const player = row.original;
+      return <div className="flex gap-2">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -595,12 +555,9 @@ const PlayersList = () => {
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>;
-      }
     }
-  ] as ColumnDef<Player, unknown>[];
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+  }] as ColumnDef<Player, unknown>[];
+  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
         <div className="container mx-auto px-4">
           <h1 className="text-3xl font-bold">רשימת שחקנים</h1>
@@ -623,15 +580,13 @@ const PlayersList = () => {
           </Button>
         </div>
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
             <h3 className="font-bold">שגיאה בטעינת רשימת השחקנים:</h3>
             <p>{error}</p>
             <Button onClick={fetchPlayers} className="mt-2" variant="secondary">
               נסה שוב
             </Button>
-          </div>
-        )}
+          </div>}
 
         <div className="mb-4 text-gray-600">
           סה"כ שחקנים: {players.length} | מוצגים: {filteredPlayers.length}
@@ -691,12 +646,9 @@ const PlayersList = () => {
           </div>
         </Card>
 
-        {filteredPlayers.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+        {filteredPlayers.length === 0 ? <div className="text-center py-8 text-gray-500">
             {players.length === 0 ? "לא נמצאו שחקנים במערכת" : "לא נמצאו שחקנים התואמים את הסינון הנוכחי"}
-          </div>
-        ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          </div> : <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full mb-6 grid grid-cols-2">
               <TabsTrigger value="table">טבלה</TabsTrigger>
               <TabsTrigger value="cards">כרטיסיות</TabsTrigger>
@@ -711,11 +663,10 @@ const PlayersList = () => {
             <TabsContent value="cards" className="w-full">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPlayers.map(player => {
-                  const sessionStatus = getSessionStatus(player);
-                  const baseUrl = window.location.origin;
-                  const profileUrl = `${baseUrl}/player-profile/${player.id}`;
-                  return (
-                    <div key={player.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
+              const sessionStatus = getSessionStatus(player);
+              const baseUrl = window.location.origin;
+              const profileUrl = `${baseUrl}/player-profile/${player.id}`;
+              return <div key={player.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
                       <div className="flex justify-between mb-3">
                         <div className="text-right flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -791,19 +742,17 @@ const PlayersList = () => {
                         </Button>
                         
                         <Button variant="outline" size="sm" onClick={() => setPlayerToDelete({
-                          id: player.id,
-                          name: player.full_name
-                        })} className="text-red-600 hover:text-red-700">
+                    id: player.id,
+                    name: player.full_name
+                  })} className="text-red-600 hover:text-red-700">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                  );
-                })}
+                    </div>;
+            })}
               </div>
             </TabsContent>
-          </Tabs>
-        )}
+          </Tabs>}
 
         <AlertDialog open={!!playerToDelete} onOpenChange={() => setPlayerToDelete(null)}>
           <AlertDialogContent>
@@ -824,8 +773,6 @@ const PlayersList = () => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default PlayersList;
