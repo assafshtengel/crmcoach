@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DataTable } from '@/components/admin/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
 import { Input } from '@/components/ui/input';
+
 interface Player {
   id: string;
   full_name: string;
@@ -30,6 +31,7 @@ interface Player {
   next_session_date?: string;
   next_session_time?: string;
 }
+
 const PlayersList = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
@@ -45,13 +47,17 @@ const PlayersList = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("table");
   const [copiedPlayerId, setCopiedPlayerId] = useState<string | null>(null);
+
   const navigate = useNavigate();
+
   useEffect(() => {
     fetchPlayers();
   }, []);
+
   useEffect(() => {
     applyFilters();
   }, [sportFieldFilter, registrationTypeFilter, contactStatusFilter, players]);
+
   const applyFilters = () => {
     let result = [...players];
     if (sportFieldFilter !== 'all') {
@@ -69,6 +75,7 @@ const PlayersList = () => {
     }
     setFilteredPlayers(result);
   };
+
   const fetchPlayers = async () => {
     try {
       setError(null);
@@ -155,6 +162,7 @@ const PlayersList = () => {
       setLoading(false);
     }
   };
+
   const copyPlayerLink = (playerId: string) => {
     const baseUrl = window.location.origin;
     const profileUrl = `${baseUrl}/player-profile/${playerId}`;
@@ -169,6 +177,7 @@ const PlayersList = () => {
       toast.error('שגיאה בהעתקת הקישור');
     });
   };
+
   const copyPlayerId = (playerId: string) => {
     navigator.clipboard.writeText(playerId).then(() => {
       toast.success('מזהה השחקן הועתק ללוח');
@@ -177,11 +186,13 @@ const PlayersList = () => {
       toast.error('שגיאה בהעתקת מזהה השחקן');
     });
   };
+
   const viewAsPlayer = (playerId: string) => {
     toast('צפייה בתצוגת שחקן תהיה זמינה בקרוב', {
       description: 'פיתוח תכונה זו בתהליך'
     });
   };
+
   const updateContactStatus = async (playerId: string, newStatus: 'contacted' | 'pending') => {
     try {
       const {
@@ -200,6 +211,7 @@ const PlayersList = () => {
       console.error('Error updating contact status:', error);
     }
   };
+
   const handleScheduleSession = (playerId: string, playerName: string) => {
     navigate('/new-session', {
       state: {
@@ -208,6 +220,7 @@ const PlayersList = () => {
       }
     });
   };
+
   const handleEditPlayer = (playerId: string) => {
     navigate('/edit-player', {
       state: {
@@ -215,9 +228,11 @@ const PlayersList = () => {
       }
     });
   };
+
   const handleViewProfile = (playerId: string) => {
     navigate(`/player-profile/${playerId}`);
   };
+
   const handleDeleteConfirm = async () => {
     if (!playerToDelete) return;
     try {
@@ -233,11 +248,13 @@ const PlayersList = () => {
       console.error('Error deleting player:', error);
     }
   };
+
   const clearFilters = () => {
     setSportFieldFilter('all');
     setRegistrationTypeFilter('all');
     setContactStatusFilter('all');
   };
+
   const formatDateTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -246,6 +263,7 @@ const PlayersList = () => {
       return dateString || 'לא ידוע';
     }
   };
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
     try {
@@ -254,10 +272,12 @@ const PlayersList = () => {
       return dateString;
     }
   };
+
   const formatTime = (timeString?: string) => {
     if (!timeString) return '';
     return timeString.substring(0, 5);
   };
+
   const isInactive = (player: Player) => {
     if (!player.last_session_date && !player.next_session_date) {
       return true;
@@ -272,6 +292,7 @@ const PlayersList = () => {
     }
     return false;
   };
+
   const getSessionStatus = (player: Player) => {
     if (player.next_session_date) {
       return {
@@ -305,19 +326,22 @@ const PlayersList = () => {
       };
     }
   };
+
   if (loading) {
     return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
       </div>;
   }
-  const columns = [{
-    accessorKey: "full_name",
-    header: "שם השחקן",
-    cell: ({
-      row
-    }) => {
-      const player = row.original;
-      return <div className="flex items-center gap-2">
+
+  const columns = [
+    {
+      accessorKey: "full_name",
+      header: "שם השחקן",
+      cell: ({
+        row
+      }) => {
+        const player = row.original;
+        return <div className="flex items-center gap-2">
             {player.full_name}
             
             <TooltipProvider>
@@ -331,74 +355,79 @@ const PlayersList = () => {
               </Tooltip>
             </TooltipProvider>
           </div>;
-    }
-  }, {
-    accessorKey: "sport_field",
-    header: "ענף ספורט",
-    cell: ({
-      row
-    }) => row.original.sport_field || "לא צוין"
-  }, {
-    accessorKey: "registration_link_id",
-    header: "אופן רישום",
-    cell: ({
-      row
-    }) => {
-      const player = row.original;
-      return player.registration_link_id ? <Badge variant="secondary">רישום עצמאי</Badge> : <Badge variant="outline">נרשם ע״י המאמן</Badge>;
-    }
-  }, {
-    accessorKey: "contact_status",
-    header: "סטטוס יצירת קשר",
-    cell: ({
-      row
-    }) => {
-      const player = row.original;
-      return <Select value={player.contact_status || 'pending'} onValueChange={value => updateContactStatus(player.id, value as 'contacted' | 'pending')}>
-            <SelectTrigger className="w-[140px] text-right">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="text-right">
-              <SelectItem value="contacted">
-                <div className="flex items-center">
-                  <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
-                  יצרנו קשר
-                </div>
-              </SelectItem>
-              <SelectItem value="pending">
-                <div className="flex items-center">
-                  <AlertCircle className="h-3 w-3 text-yellow-500 mr-2" />
-                  ממתין ליצירת קשר
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>;
-    }
-  }, {
-    accessorKey: "created_at",
-    header: "תאריך רישום",
-    enableSorting: true,
-    sortDescFirst: true,
-    sortingFn: "datetime",
-    cell: ({
-      row
-    }) => {
-      const player = row.original;
-      return <div className="flex items-center gap-1 text-sm">
+      }
+    },
+    {
+      accessorKey: "sport_field",
+      header: "ענף ספורט",
+      cell: ({
+        row
+      }) => row.original.sport_field || "לא צוין"
+    },
+    {
+      accessorKey: "registration_link_id",
+      header: "אופן רישום",
+      cell: ({
+        row
+      }) => {
+        const player = row.original;
+        return player.registration_link_id ? <Badge variant="secondary">רישום עצמאי</Badge> : <Badge variant="outline">נרשם ע״י המאמן</Badge>;
+      }
+    },
+    {
+      accessorKey: "contact_status",
+      header: "סטטוס יצירת קשר",
+      cell: ({
+        row
+      }) => {
+        const player = row.original;
+        return <Select value={player.contact_status || 'pending'} onValueChange={value => updateContactStatus(player.id, value as 'contacted' | 'pending')}>
+              <SelectTrigger className="w-[140px] text-right">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="text-right">
+                <SelectItem value="contacted">
+                  <div className="flex items-center">
+                    <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
+                    יצרנו קשר
+                  </div>
+                </SelectItem>
+                <SelectItem value="pending">
+                  <div className="flex items-center">
+                    <AlertCircle className="h-3 w-3 text-yellow-500 mr-2" />
+                    ממתין ליצירת קשר
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>;
+      }
+    },
+    {
+      accessorKey: "created_at",
+      header: "תאריך רישום",
+      enableSorting: true,
+      sortDescFirst: true,
+      sortingFn: "datetime",
+      cell: ({
+        row
+      }) => {
+        const player = row.original;
+        return <div className="flex items-center gap-1 text-sm">
             <Clock className="h-3 w-3" />
             {formatDateTime(player.created_at)}
           </div>;
-    }
-  }, {
-    accessorKey: "past_sessions_count",
-    header: "מפגשים שהתקיימו",
-    enableSorting: true,
-    sortingFn: "basic",
-    cell: ({
-      row
-    }) => {
-      const player = row.original;
-      return <div className="text-center">
+      }
+    },
+    {
+      accessorKey: "past_sessions_count",
+      header: "מפגשים שהתקיימו",
+      enableSorting: true,
+      sortingFn: "basic",
+      cell: ({
+        row
+      }) => {
+        const player = row.original;
+        return <div className="text-center">
             <Badge variant="outline" className="font-medium">
               {player.past_sessions_count || 0}
             </Badge>
@@ -406,55 +435,60 @@ const PlayersList = () => {
                 אחרון: {formatDate(player.last_session_date)}
               </div>}
           </div>;
-    }
-  }, {
-    accessorKey: "next_session_date",
-    header: "מפגש עתידי",
-    cell: ({
-      row
-    }) => {
-      const player = row.original;
-      const sessionStatus = getSessionStatus(player);
-      return <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className={`flex items-center gap-1.5 ${sessionStatus.color}`}>
-                  {sessionStatus.icon}
-                  {player.next_session_date ? <span className="text-sm">
-                      {formatDate(player.next_session_date)} {formatTime(player.next_session_time)}
-                    </span> : <span className="text-sm">
-                      {sessionStatus.type === 'no_activity' ? 'ללא פעילות' : 'לא נקבע'}
-                    </span>}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                {sessionStatus.message}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>;
-    }
-  }, {
-    accessorKey: "email",
-    header: "אימייל",
-    cell: ({
-      row
-    }) => <span dir="ltr">{row.original.email}</span>
-  }, {
-    accessorKey: "phone",
-    header: "טלפון",
-    cell: ({
-      row
-    }) => <span dir="ltr">{row.original.phone || "-"}</span>
-  }, {
-    accessorKey: "access",
-    header: "פרטי גישה",
-    cell: ({
-      row
-    }) => {
-      const player = row.original;
-      const baseUrl = window.location.origin;
-      const profileUrl = `${baseUrl}/player-profile/${player.id}`;
-      return <div className="flex gap-2">
+      }
+    },
+    {
+      accessorKey: "next_session_date",
+      header: "מפגש עתידי",
+      cell: ({
+        row
+      }) => {
+        const player = row.original;
+        const sessionStatus = getSessionStatus(player);
+        return <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className={`flex items-center gap-1.5 ${sessionStatus.color}`}>
+                    {sessionStatus.icon}
+                    {player.next_session_date ? <span className="text-sm">
+                        {formatDate(player.next_session_date)} {formatTime(player.next_session_time)}
+                      </span> : <span className="text-sm">
+                        {sessionStatus.type === 'no_activity' ? 'ללא פעילות' : 'לא נקבע'}
+                      </span>}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {sessionStatus.message}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>;
+      }
+    },
+    {
+      accessorKey: "email",
+      header: "אימייל",
+      cell: ({
+        row
+      }) => <span dir="ltr">{row.original.email}</span>
+    },
+    {
+      accessorKey: "phone",
+      header: "טלפון",
+      cell: ({
+        row
+      }) => <span dir="ltr">{row.original.phone || "-"}</span>
+    },
+    {
+      accessorKey: "access",
+      header: "פרטי גישה",
+      cell: ({
+        row
+      }) => {
+        const player = row.original;
+        const baseUrl = window.location.origin;
+        const profileUrl = `${baseUrl}/player-profile/${player.id}`;
+        const loginUrl = `${baseUrl}/player-auth`;
+        return <div className="flex gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -462,7 +496,7 @@ const PlayersList = () => {
                   פרטי גישה
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 bg-slate-200">
+              <PopoverContent className="w-80">
                 <div className="space-y-3">
                   <h4 className="font-medium mb-2">פרטי גישה עבור {player.full_name}</h4>
                   
@@ -473,6 +507,24 @@ const PlayersList = () => {
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => copyPlayerId(player.id)}>
                         <Copy className="h-3 w-3" />
                       </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500">סיסמת כניסה</label>
+                    <div className="flex items-center gap-1">
+                      <Input value={player.password || "לא הוגדרה סיסמה"} readOnly 
+                        className="text-xs font-mono h-8" 
+                        type="text" />
+                      {player.password && (
+                        <Button variant="outline" size="icon" className="h-8 w-8" 
+                          onClick={() => {
+                            navigator.clipboard.writeText(player.password || "");
+                            toast.success("הסיסמה הועתקה ללוח");
+                          }}>
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                   
@@ -505,15 +557,16 @@ const PlayersList = () => {
               {copiedPlayerId === player.id ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
             </Button>
           </div>;
-    }
-  }, {
-    id: "actions",
-    header: "פעולות",
-    cell: ({
-      row
-    }) => {
-      const player = row.original;
-      return <div className="flex gap-2">
+      }
+    },
+    {
+      id: "actions",
+      header: "פעולות",
+      cell: ({
+        row
+      }) => {
+        const player = row.original;
+        return <div className="flex gap-2">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -539,8 +592,10 @@ const PlayersList = () => {
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>;
+      }
     }
-  }] as ColumnDef<Player, unknown>[];
+  ] as ColumnDef<Player, unknown>[];
+
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
         <div className="container mx-auto px-4">
@@ -553,6 +608,10 @@ const PlayersList = () => {
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={() => navigate('/')} aria-label="חזרה לדף הראשי">
               <Home className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={() => window.open(`${window.location.origin}/player-auth`, '_blank')}>
+              <UserCircle className="h-4 w-4 mr-2" />
+              דף כניסה לשחקנים
             </Button>
           </div>
           <Button onClick={() => navigate('/new-player')} className="bg-primary hover:bg-primary/90">
@@ -755,4 +814,5 @@ const PlayersList = () => {
       </div>
     </div>;
 };
+
 export default PlayersList;
