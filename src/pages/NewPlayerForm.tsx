@@ -1,281 +1,450 @@
-
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ChevronRight, Home } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Form } from "@/components/ui/form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { supabase } from '@/integrations/supabase/client';
-import { formSchema, PlayerFormValues } from '@/components/new-player/PlayerFormSchema';
-import { PlayerPersonalInfo } from '@/components/new-player/PlayerPersonalInfo';
-import { PlayerClubInfo } from '@/components/new-player/PlayerClubInfo';
-import { PlayerParentInfo } from '@/components/new-player/PlayerParentInfo';
-import { PlayerAdditionalInfo } from '@/components/new-player/PlayerAdditionalInfo';
-import { ImageUpload } from '@/components/new-player/ImageUpload';
-import { format } from 'date-fns';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
-const NewPlayerForm = () => {
+const positions = [
+  { value: "goalkeeper", label: "שוער" },
+  { value: "defender", label: "בלם" },
+  { value: "fullback", label: "מגן" },
+  { value: "midfielder", label: "קשר" },
+  { value: "winger", label: "כנף" },
+  { value: "striker", label: "חלוץ" },
+];
+
+const leagues = [
+  { value: "premier", label: "פרמייר ליג" },
+  { value: "laliga", label: "לה ליגה" },
+  { value: "israel", label: "ליגת העל" },
+  { value: "bundesliga", label: "בונדסליגה" },
+  { value: "seriea", label: "סריה א" },
+  { value: "other", label: "אחר" },
+];
+
+const PlayerForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [showSuccessDialog, setShowSuccessDialog] = React.useState(false);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [profileImage, setProfileImage] = React.useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = React.useState<string>('');
-  const [createdPlayerId, setCreatedPlayerId] = React.useState<string>('');
-
-  // Format current date and time in a user-friendly format
-  const currentDateTime = format(new Date(), 'dd/MM/yyyy HH:mm');
-
-  const form = useForm<PlayerFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      playerEmail: "",
-      playerPhone: "",
-      birthDate: "",
-      city: "",
-      club: "",
-      yearGroup: "נערים ב'",
-      injuries: "",
-      parentName: "",
-      parentPhone: "",
-      parentEmail: "",
-      notes: "",
-      sportField: "",
-      otherSportField: "",
-      registrationTimestamp: currentDateTime,
-    },
+  const [formData, setFormData] = useState({
+    fullName: "",
+    position: "",
+    jerseyNumber: "",
+    team: "",
+    league: "",
+    customLeague: "",
+    followers: "",
+    contractValue: "",
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleImageUpload = (file: File) => {
-    setProfileImage(file);
-    setPreviewUrl(URL.createObjectURL(file));
+  const getPositionLabel = (value: string) => {
+    return positions.find(pos => pos.value === value)?.label || "";
   };
 
-  const handleImageRemove = () => {
-    setProfileImage(null);
-    setPreviewUrl('');
+  const getLeagueLabel = (value: string) => {
+    const league = leagues.find(league => league.value === value);
+    if (league?.value === 'other') {
+      return formData.customLeague;
+    }
+    return league?.label || "";
   };
 
-  const uploadProfileImage = async (userId: string, file: File): Promise<string> => {
-    try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${userId}/${crypto.randomUUID()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('player-avatars')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        throw uploadError;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('player-avatars')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error) {
-      console.error('Error in uploadProfileImage:', error);
-      throw new Error('Failed to upload profile image');
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  const createPlayer = async (userId: string, values: PlayerFormValues, imageUrl: string = '') => {
-    console.log('Creating player with values:', values); // Debug log
-    
-    // Determine the final sport field value
-    const finalSportField = values.sportField === 'other' && values.otherSportField
-      ? values.otherSportField
-      : values.sportField === 'other'
-        ? 'אחר'
-        : values.sportField;
-    
-    const { data: playerData, error: playerError } = await supabase
-      .from('players')
-      .insert([
-        {
-          coach_id: userId,
-          full_name: `${values.firstName} ${values.lastName}`,
-          email: values.playerEmail,
-          phone: values.playerPhone,
-          birthdate: values.birthDate,
-          city: values.city,
-          club: values.club,
-          year_group: values.yearGroup,
-          injuries: values.injuries,
-          parent_name: values.parentName,
-          parent_phone: values.parentPhone,
-          parent_email: values.parentEmail,
-          notes: values.notes,
-          sport_field: finalSportField,
-          profile_image: imageUrl,
-          // Remove this line as it causes the error since the column doesn't exist
-          // registration_timestamp: values.registrationTimestamp
-        }
-      ])
-      .select()
-      .single();
-
-    if (playerError) {
-      console.error('Error creating player:', playerError);
-      throw playerError;
+  // Generate a random password for the player
+  const generatePassword = (length = 8) => {
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      password += charset[randomIndex];
     }
-
-    return playerData;
+    return password;
   };
 
-  async function onSubmit(values: PlayerFormValues) {
-    console.log('Form submitted with values:', values); // Debug log
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUploading(true);
     
-    if (isSubmitting) return;
-
     try {
-      setIsSubmitting(true);
-
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         toast({
-          variant: "destructive",
           title: "שגיאה",
-          description: "לא נמצא משתמש מחובר. אנא התחבר מחדש.",
+          description: "יש להתחבר מחדש",
+          variant: "destructive",
         });
-        navigate('/auth');
+        navigate("/auth");
         return;
       }
 
-      let profileImageUrl = '';
-      if (profileImage) {
-        try {
-          profileImageUrl = await uploadProfileImage(user.id, profileImage);
-        } catch (error) {
-          console.error('Error uploading image:', error); // Debug log
-          toast({
-            variant: "destructive",
-            title: "שגיאה בהעלאת התמונה",
-            description: "לא הצלחנו להעלות את התמונה. השחקן יישמר ללא תמונת פרופיל.",
-          });
+      let profileImagePath = null;
+
+      if (selectedImage) {
+        const fileExt = selectedImage.name.split('.').pop();
+        const filePath = `${user.id}-${Math.random()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('player-avatars')
+          .upload(filePath, selectedImage);
+
+        if (uploadError) {
+          throw uploadError;
         }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('player-avatars')
+          .getPublicUrl(filePath);
+
+        profileImagePath = publicUrl;
       }
 
-      const playerData = await createPlayer(user.id, values, profileImageUrl);
-      console.log('Player created successfully:', playerData); // Debug log
+      const { data: existingRecord } = await supabase
+        .from("player_details")
+        .select()
+        .eq('id', user.id)
+        .single();
+
+      // Generate a random password for the player
+      const password = generatePassword(10);
+
+      const playerData = {
+        full_name: formData.fullName,
+        position: formData.position,
+        jersey_number: parseInt(formData.jerseyNumber),
+        team: formData.team,
+        league: formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league),
+        followers: parseInt(formData.followers),
+        contract_value: parseInt(formData.contractValue),
+        profile_image: profileImagePath,
+      };
+
+      let error;
       
-      // Store the player ID for redirection
-      setCreatedPlayerId(playerData.id);
+      if (existingRecord) {
+        const { error: updateError } = await supabase
+          .from("player_details")
+          .update(playerData)
+          .eq('id', user.id);
+        
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("player_details")
+          .insert({
+            id: user.id,
+            ...playerData
+          });
+        
+        error = insertError;
+      }
+
+      if (error) {
+        throw error;
+      }
 
       toast({
-        title: "השחקן נוצר בהצלחה!",
-        description: "השחקן נוסף לרשימת השחקנים שלך.",
+        title: "הפרטים נשמרו בהצלחה",
+        description: "בוא נמשיך להתחייבות המנטלית שלך",
       });
-
-      setShowSuccessDialog(true);
-      setTimeout(() => {
-        setShowSuccessDialog(false);
-        // Navigate to the player profile page instead of the dashboard
-        navigate(`/dashboard/player-profile/${playerData.id}`);
-      }, 1500);
-
+      navigate("/mental-commitment", { 
+        state: { 
+          playerName: formData.fullName 
+        } 
+      });
     } catch (error: any) {
-      console.error('Error in form submission:', error);
+      console.error('Error:', error);
       toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה בשמירת הפרטים",
         variant: "destructive",
-        title: "שגיאה ביצירת השחקן",
-        description: error.message || "אירעה שגיאה ביצירת השחקן. אנא נסה שוב.",
       });
     } finally {
-      setIsSubmitting(false);
+      setUploading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <div className="max-w-2xl mx-auto p-6 animate-in slide-in-from-bottom-4 duration-500">
-        <div className="flex items-center gap-2 mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate(-1)}
-            title="חזור לדף הקודם"
-            className="hover:scale-105 transition-transform"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate('/')}
-            title="חזור לדשבורד"
-            className="hover:scale-105 transition-transform"
-          >
-            <Home className="h-4 w-4" />
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        <Button
+          variant="outline"
+          size="icon"
+          className="mb-6"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <Card className="border-none shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-purple-600 to-orange-500 bg-clip-text text-transparent">
+                  הגיע הזמן לקבוע – איפה תעשה היסטוריה?
+                </CardTitle>
+                <CardDescription className="text-center text-gray-600">
+                  האם אתה שחקן ליגת האלופות? כוכב בפרמייר ליג? או החלוץ המוביל של נבחרת ישראל? בחר את המקום שבו תפרוץ בגדול!
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="flex flex-col items-center space-y-4">
+                    <Avatar className="w-32 h-32">
+                      <AvatarImage src={imagePreview || undefined} alt="תמונת פרופיל" />
+                      <AvatarFallback>
+                        {formData.fullName ? formData.fullName.charAt(0).toUpperCase() : 'P'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-center">
+                      <Label htmlFor="profile-image" className="cursor-pointer">
+                        <div className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
+                          {imagePreview ? 'החלף תמונה' : 'העלה תמונת פרופיל'}
+                        </div>
+                        <Input
+                          id="profile-image"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageChange}
+                        />
+                      </Label>
+                      {imagePreview && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="mt-2 text-sm text-destructive"
+                          onClick={() => {
+                            setSelectedImage(null);
+                            setImagePreview(null);
+                          }}
+                        >
+                          הסר תמונה
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">שם מלא</Label>
+                    <Input
+                      id="fullName"
+                      placeholder="השם שיופיע בחוזה שלך"
+                      value={formData.fullName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, fullName: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="position">עמדה במגרש</Label>
+                    <Select
+                      value={formData.position}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, position: value })
+                      }
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר את העמדה שלך" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                        {positions.map((position) => (
+                          <SelectItem key={position.value} value={position.value}>
+                            {position.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="jerseyNumber">מספר חולצה</Label>
+                    <Input
+                      id="jerseyNumber"
+                      type="number"
+                      min="1"
+                      max="99"
+                      placeholder="המספר שילווה את הקריירה שלך"
+                      value={formData.jerseyNumber}
+                      onChange={(e) =>
+                        setFormData({ ...formData, jerseyNumber: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="team">באיזו קבוצה אתה משחק בגיל 24?</Label>
+                    <Input
+                      id="team"
+                      placeholder="שם הקבוצה"
+                      value={formData.team}
+                      onChange={(e) =>
+                        setFormData({ ...formData, team: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="league">באיזו ליגה אתה משחק?</Label>
+                    <Select
+                      value={formData.league}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, league: value })
+                      }
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="בחר את הליגה" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border border-gray-200 shadow-lg">
+                        {leagues.map((league) => (
+                          <SelectItem key={league.value} value={league.value}>
+                            {league.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.league === 'other' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="customLeague">שם הליגה</Label>
+                      <Input
+                        id="customLeague"
+                        placeholder="הזן את שם הליגה"
+                        value={formData.customLeague}
+                        onChange={(e) =>
+                          setFormData({ ...formData, customLeague: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="followers">כמה אוהדים יש לך באינסטגרם?</Label>
+                    <Input
+                      id="followers"
+                      type="number"
+                      min="0"
+                      placeholder="מספר העוקבים"
+                      value={formData.followers}
+                      onChange={(e) =>
+                        setFormData({ ...formData, followers: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contractValue">מה החוזה הראשון שלך שווה? (ביורו)</Label>
+                    <Input
+                      id="contractValue"
+                      type="number"
+                      min="0"
+                      placeholder="שווי החוזה ביורו"
+                      value={formData.contractValue}
+                      onChange={(e) =>
+                        setFormData({ ...formData, contractValue: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    size="lg"
+                    disabled={uploading}
+                  >
+                    {uploading ? 'שומר...' : 'המשך להתחייבות המנטלית'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="hidden md:block">
+            <div className="bg-white p-8 rounded-xl shadow-xl border-2 border-gray-100 min-h-[600px] relative">
+              <div className="flex justify-center mb-8">
+                <div className="w-24 h-24 bg-gradient-to-r from-purple-600 to-orange-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-2xl font-bold">FC</span>
+                </div>
+              </div>
+
+              <h1 className="text-2xl font-bold text-center mb-8 text-gray-800">
+                {formData.fullName ? 
+                  `החוזה המקצועני הראשון של ${formData.fullName}` :
+                  "החוזה המקצועני הראשון"
+                }
+              </h1>
+
+              <div className="space-y-6 text-gray-700 leading-relaxed">
+                <p>
+                  {formData.fullName && formData.team && formData.league ? 
+                    `${formData.fullName} חתם על חוזה מקצועני בקבוצת ${formData.team}, המשחקת ב${
+                      formData.league === 'other' ? formData.customLeague : getLeagueLabel(formData.league)
+                    }.` :
+                    "_________ חתם על חוזה מקצועני בקבוצת _________, המשחקת ב_________."
+                  }
+                </p>
+                <p>
+                  {formData.position && formData.jerseyNumber ? 
+                    `השחקן ישחק בעמדת ${getPositionLabel(formData.position)}, עם מספר ${formData.jerseyNumber}, ויציג יכולות יוצאות דופן על המגרש.` :
+                    "השחקן ישחק בעמדת ______, עם מספר __, ויציג יכולות יוצאות דופן על המגרש."
+                  }
+                </p>
+                <p>
+                  {formData.contractValue && formData.followers ? 
+                    `השחקן חתם על חוזה בשווי ${formData.contractValue} יורו לעונה, וצבר קהל של ${formData.followers} אוהדים באינסטגרם.` :
+                    "השחקן חתם על חוזה בשווי ______ יורו לעונה, וצבר קהל של ______ אוהדים באינסטגרם."
+                  }
+                </p>
+                <p>עם יכולותיו המרשימות וכוחו המנטלי, הוא בדרכו להפוך לאחד הכוכבים הגדולים בעולם!</p>
+              </div>
+
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+                <div className="transform rotate-45 text-6xl font-bold text-gray-300">
+                  OFFICIAL
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div className="mb-6 animate-in fade-in-50 duration-500">
-          <h1 className="text-2xl font-bold text-gray-900">רישום שחקן חדש</h1>
-          <p className="text-gray-600">אנא מלא את כל הפרטים הנדרשים</p>
-        </div>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <h2 className="text-lg font-semibold mb-4">תמונת פרופיל</h2>
-              <ImageUpload
-                onImageUpload={handleImageUpload}
-                onImageRemove={handleImageRemove}
-                previewUrl={previewUrl}
-              />
-            </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <h2 className="text-lg font-semibold mb-4">פרטים אישיים</h2>
-              <PlayerPersonalInfo form={form} />
-            </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <PlayerClubInfo form={form} />
-            </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <PlayerAdditionalInfo form={form} />
-            </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <PlayerParentInfo form={form} />
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full font-medium text-base py-3"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'שומר...' : 'שמור פרטי שחקן'}
-            </Button>
-          </form>
-        </Form>
       </div>
-
-      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <DialogContent className="text-center">
-          <DialogHeader>
-            <DialogTitle>פרטי השחקן נשמרו בהצלחה!</DialogTitle>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
 
-export default NewPlayerForm;
+export default PlayerForm;
