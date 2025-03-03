@@ -151,6 +151,9 @@ const PlayerForm = () => {
       }
 
       const password = generatePassword(10);
+      if (!password || password.trim() === '') {
+        throw new Error('שגיאה ביצירת סיסמה לשחקן');
+      }
       setGeneratedPassword(password);
 
       const playerEmail = `${formData.fullName.replace(/\s+/g, '.')
@@ -185,6 +188,11 @@ const PlayerForm = () => {
       if (!playerResponse || playerResponse.length === 0) {
         throw new Error("שגיאה ביצירת השחקן - לא התקבל מזהה");
       }
+
+      console.log("Player created with response:", {
+        ...playerResponse[0],
+        password: "REDACTED"
+      });
 
       const playerId = playerResponse[0].id;
       console.log("Player created successfully with ID:", playerId);

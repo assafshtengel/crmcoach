@@ -37,7 +37,11 @@ const PlayerLoginForm = ({ playerId }: PlayerLoginFormProps) => {
         throw new Error('אימייל לא מתאים לשחקן המבוקש');
       }
 
-      // Verify password
+      // Verify password - ensure password exists and matches
+      if (!playerData.password) {
+        throw new Error('נדרשת הגדרת סיסמה לחשבון זה. אנא פנה למאמן');
+      }
+      
       if (playerData.password !== password) {
         throw new Error('סיסמה שגויה');
       }
