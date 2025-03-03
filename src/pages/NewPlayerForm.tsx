@@ -29,6 +29,7 @@ const NewPlayerForm = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [profileImage, setProfileImage] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string>('');
+  const [createdPlayerId, setCreatedPlayerId] = React.useState<string>('');
 
   // Format current date and time in a user-friendly format
   const currentDateTime = format(new Date(), 'dd/MM/yyyy HH:mm');
@@ -170,6 +171,9 @@ const NewPlayerForm = () => {
 
       const playerData = await createPlayer(user.id, values, profileImageUrl);
       console.log('Player created successfully:', playerData); // Debug log
+      
+      // Store the player ID for redirection
+      setCreatedPlayerId(playerData.id);
 
       toast({
         title: "השחקן נוצר בהצלחה!",
@@ -179,7 +183,8 @@ const NewPlayerForm = () => {
       setShowSuccessDialog(true);
       setTimeout(() => {
         setShowSuccessDialog(false);
-        navigate('/');
+        // Navigate to the player profile page instead of the dashboard
+        navigate(`/dashboard/player-profile/${playerData.id}`);
       }, 1500);
 
     } catch (error: any) {

@@ -49,6 +49,7 @@ function App() {
         <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
         <Route path="/new" element={<AuthGuard><NewIndex /></AuthGuard>} />
         <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+        <Route path="/dashboard/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
         <Route path="/huze" element={<AuthGuard><Huze /></AuthGuard>} />
         <Route path="/contract" element={<AuthGuard><Contract /></AuthGuard>} />
         <Route path="/mental-commitment" element={<AuthGuard><MentalCommitment /></AuthGuard>} />
