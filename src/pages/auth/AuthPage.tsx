@@ -13,16 +13,17 @@ const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const navigate = useNavigate();
 
-  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto">
-        <Card className="backdrop-blur-sm bg-white/90">
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8 px-4 sm:py-12 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="w-full max-w-md">
+        <Card className="backdrop-blur-sm bg-white/90 shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-emerald-900">
+            <CardTitle className="text-xl sm:text-2xl font-bold text-emerald-900">
               {mode === "login" && "התחברות כמאמן"}
               {mode === "signup" && "הרשמה כמאמן"}
               {mode === "reset-password" && "איפוס סיסמה"}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="mt-2 text-sm sm:text-base">
               {mode === "login" && "התחבר כדי להמשיך לאזור האישי שלך"}
               {mode === "signup" && "צור חשבון חדש כמאמן"}
               {mode === "reset-password" && "הזן את כתובת המייל שלך לאיפוס הסיסמה"}
@@ -45,7 +46,8 @@ const AuthPage = () => {
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default AuthPage;

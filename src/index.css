@@ -28,9 +28,17 @@
   --radius: 0.75rem;
 }
 
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
 body {
   @apply font-heebo bg-gray-50;
   direction: rtl;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* Ensure text inputs and selections properly support RTL */
@@ -38,30 +46,37 @@ input, textarea, select, .select-trigger, .select-content {
   text-align: right !important;
 }
 
+/* Fix date picker elements for RTL */
 .rdp-caption_label, .rdp-head_cell, .rdp-cell {
   text-align: right !important;
 }
 
+/* Glass card design */
 .glass-card {
   @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg;
 }
 
+/* Animation for form steps */
 .form-step {
   @apply animate-slideIn;
 }
 
+/* Form input styling */
 .input-field {
   @apply w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 text-right;
 }
 
+/* Primary button styling */
 .btn-primary {
   @apply px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
+/* Secondary button styling */
 .btn-secondary {
   @apply px-6 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-all duration-200;
 }
 
+/* Progress bar styling */
 .progress-bar {
   @apply h-2 bg-gray-200 rounded-full overflow-hidden;
 }
@@ -70,6 +85,7 @@ input, textarea, select, .select-trigger, .select-content {
   @apply h-full bg-primary transition-all duration-500 ease-out;
 }
 
+/* Mental state tag styling */
 .mental-state-tag {
   @apply px-3 py-1 rounded-full bg-secondary/50 text-secondary-foreground text-sm cursor-pointer hover:bg-secondary transition-all duration-200;
 }
@@ -78,11 +94,53 @@ input, textarea, select, .select-trigger, .select-content {
   @apply bg-primary text-white;
 }
 
+/* Signature canvas styling */
 .signature-canvas {
   touch-action: none;
   width: 100% !important;
 }
 
+/* Responsive table fixes */
+@media (max-width: 640px) {
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .responsive-card-grid {
+    @apply grid grid-cols-1 gap-4;
+  }
+}
+
+/* Responsive utility classes */
+.mobile-full-width {
+  @apply w-full md:w-auto;
+}
+
+.mobile-stack {
+  @apply flex-col md:flex-row;
+}
+
+.mobile-center {
+  @apply justify-center md:justify-start;
+}
+
+.mobile-text-center {
+  @apply text-center md:text-right;
+}
+
+/* Hide elements on mobile or desktop */
+.mobile-only {
+  @apply block md:hidden;
+}
+
+.desktop-only {
+  @apply hidden md:block;
+}
+
+/* Print styles */
 @media print {
   .print\\:hidden {
     display: none !important;

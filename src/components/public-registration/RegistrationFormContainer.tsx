@@ -27,8 +27,8 @@ export const RegistrationFormContainer = ({
 }: RegistrationFormContainerProps) => {
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
+        <div className="space-y-4 sm:space-y-6">
           <PlayerForm 
             form={form} 
             showOtherSportField={showOtherSportField} 
@@ -44,13 +44,15 @@ export const RegistrationFormContainer = ({
           <RegistrationTimeSection form={form} />
         </div>
         
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "רושם..." : "שלח פרטים"}
-        </Button>
+        <div className="pt-2">
+          <Button
+            type="submit"
+            className="w-full py-2 sm:py-3 text-base sm:text-lg"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "רושם..." : "שלח פרטים"}
+          </Button>
+        </div>
       </form>
     </Form>
   );

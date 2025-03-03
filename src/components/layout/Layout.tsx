@@ -1,8 +1,9 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Home, Calendar, Users, Wrench, FileText, Settings } from "lucide-react";
+import { ArrowRight, Home, Calendar, Users, Wrench, FileText, Settings, Menu, X } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,10 +11,20 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
+  const [open, setOpen] = useState(false);
   
   const isActive = (path: string) => {
     return location.pathname === path;
   };
+
+  const navItems = [
+    { path: "/dashboard-coach", label: "בית", icon: Home },
+    { path: "/sessions-list", label: "מפגשים", icon: Calendar },
+    { path: "/players-list", label: "שחקנים", icon: Users },
+    { path: "/tool-management", label: "ניהול כלים", icon: Wrench },
+    { path: "/session-summaries", label: "סיכומים", icon: FileText },
+    { path: "/profile-coach", label: "הגדרות", icon: Settings },
+  ];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -32,44 +43,57 @@ export function Layout({ children }: LayoutProps) {
             </Link>
           </div>
           <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-            <nav className="flex items-center space-x-2 rtl:space-x-reverse">
-              <Link to="/dashboard-coach">
-                <Button variant={isActive("/dashboard-coach") ? "default" : "ghost"}>
-                  <Home className="mr-2 h-4 w-4" />
-                  בית
-                </Button>
-              </Link>
-              <Link to="/sessions-list">
-                <Button variant={isActive("/sessions-list") ? "default" : "ghost"}>
-                  <Calendar className="mr-2 h-4 w-4" />
-                  מפגשים
-                </Button>
-              </Link>
-              <Link to="/players-list">
-                <Button variant={isActive("/players-list") ? "default" : "ghost"}>
-                  <Users className="mr-2 h-4 w-4" />
-                  שחקנים
-                </Button>
-              </Link>
-              <Link to="/tool-management">
-                <Button variant={isActive("/tool-management") ? "default" : "ghost"}>
-                  <Wrench className="mr-2 h-4 w-4" />
-                  ניהול כלים
-                </Button>
-              </Link>
-              <Link to="/session-summaries">
-                <Button variant={isActive("/session-summaries") ? "default" : "ghost"}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  סיכומים
-                </Button>
-              </Link>
-              <Link to="/profile-coach">
-                <Button variant={isActive("/profile-coach") ? "default" : "ghost"}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  הגדרות
-                </Button>
-              </Link>
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-2 rtl:space-x-reverse">
+              {navItems.map((item) => (
+                <Link key={item.path} to={item.path}>
+                  <Button variant={isActive(item.path) ? "default" : "ghost"}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.label}
+                  </Button>
+                </Link>
+              ))}
             </nav>
+            
+            {/* Mobile Navigation */}
+            <Sheet open={open} onOpenChange={setOpen}>
+              <SheetTrigger asChild className="md:hidden">
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[80%] sm:w-[350px] p-0">
+                <div className="flex flex-col h-full">
+                  <div className="p-4 border-b">
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-lg font-semibold">תפריט</h2>
+                      <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <nav className="flex-1 overflow-auto p-4">
+                    <div className="space-y-2">
+                      {navItems.map((item) => (
+                        <Link 
+                          key={item.path} 
+                          to={item.path}
+                          onClick={() => setOpen(false)}
+                        >
+                          <Button 
+                            variant={isActive(item.path) ? "default" : "ghost"}
+                            className="w-full justify-start"
+                          >
+                            <item.icon className="mr-2 h-5 w-5" />
+                            {item.label}
+                          </Button>
+                        </Link>
+                      ))}
+                    </div>
+                  </nav>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
