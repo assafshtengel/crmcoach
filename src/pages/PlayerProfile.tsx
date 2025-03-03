@@ -2,15 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { ChevronRight, Home, Pencil, Copy, CheckCircle, Eye, Link } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { ChevronRight, Loader2, Pencil, ScrollText, User, Home, Phone, Copy, Link, CheckCircle, Eye } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-interface PlayerProfile {
+interface Player {
+  id: string;
   full_name: string;
   email: string;
   phone: string;
@@ -18,98 +19,90 @@ interface PlayerProfile {
   city: string;
   club: string;
   year_group: string;
-  position: string;
-  injuries?: string;
+  injuries: string;
   parent_name: string;
   parent_phone: string;
   parent_email: string;
-  notes?: string;
+  notes: string;
+  sport_field: string;
+  profile_image: string;
+  created_at: string;
 }
 
-const positionLabels: Record<string, string> = {
-  goalkeeper: "שוער",
-  defender: "בלם",
-  fullback: "מגן",
-  midfielder: "קשר",
-  winger: "כנף",
-  striker: "חלוץ"
-};
-
 const PlayerProfile = () => {
-  const { playerId } = useParams();
+  const { playerId } = useParams<{ playerId: string }>();
   const navigate = useNavigate();
+  const [player, setPlayer] = useState<Player | null>(null);
   const [loading, setLoading] = useState(true);
-  const [player, setPlayer] = useState<PlayerProfile | null>(null);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [profileUrl, setProfileUrl] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
 
   useEffect(() => {
-    fetchPlayerProfile();
+    const fetchPlayer = async () => {
+      try {
+        setLoading(true);
+        
+        if (!playerId) {
+          throw new Error("No player ID provided");
+        }
 
-    // Generate profile URL based on current window location
-    const baseUrl = window.location.origin;
-    setProfileUrl(`${baseUrl}/player-profile/${playerId}`);
+        const { data, error } = await supabase
+          .from('players')
+          .select('*')
+          .eq('id', playerId)
+          .single();
+
+        if (error) throw error;
+        if (!data) throw new Error("Player not found");
+
+        setPlayer(data);
+      } catch (err: any) {
+        console.error("Error fetching player:", err);
+        setError(err.message);
+        toast.error("שגיאה בטעינת פרטי השחקן");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlayer();
   }, [playerId]);
 
-  const fetchPlayerProfile = async () => {
-    try {
-      if (!playerId) {
-        toast.error('מזהה שחקן חסר');
-        return;
-      }
-
-      console.log('Fetching player with ID:', playerId);
-
-      const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .eq('id', playerId)
-        .single();
-
-      if (error) {
-        console.error('Error details:', error);
-        throw error;
-      }
-
-      if (data) {
-        console.log('Player data received:', data);
-        setPlayer(data as PlayerProfile);
-      } else {
-        console.log('No player data found');
-        toast.error('לא נמצאו נתוני שחקן');
-      }
-    } catch (error) {
-      console.error('Error fetching player profile:', error);
-      toast.error('שגיאה בטעינת פרטי השחקן');
-    } finally {
-      setLoading(false);
-    }
+  const handleEditPlayer = () => {
+    navigate(`/edit-player/${playerId}`);
   };
 
-  const handleEdit = () => {
-    navigate('/edit-player', { state: { playerId, playerData: player } });
-  };
-
-  const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text)
+  const copyPlayerLink = () => {
+    const baseUrl = window.location.origin;
+    const profileUrl = `${baseUrl}/dashboard/player-profile/${playerId}`;
+    
+    navigator.clipboard.writeText(profileUrl)
       .then(() => {
-        setCopiedField(field);
-        toast.success('הועתק ללוח');
-        
-        // Reset the copied state after 2 seconds
-        setTimeout(() => {
-          setCopiedField(null);
-        }, 2000);
+        setCopiedLink(true);
+        toast.success("הקישור הועתק בהצלחה");
+        setTimeout(() => setCopiedLink(false), 3000);
       })
-      .catch(err => {
-        console.error('Failed to copy:', err);
-        toast.error('שגיאה בהעתקה');
+      .catch(() => {
+        toast.error("שגיאה בהעתקת הקישור");
+      });
+  };
+
+  const copyPlayerId = () => {
+    if (!playerId) return;
+    
+    navigator.clipboard.writeText(playerId)
+      .then(() => {
+        setCopiedId(true);
+        toast.success("מזהה השחקן הועתק בהצלחה");
+        setTimeout(() => setCopiedId(false), 3000);
+      })
+      .catch(() => {
+        toast.error("שגיאה בהעתקת מזהה השחקן");
       });
   };
 
   const viewAsPlayer = () => {
-    // This would normally navigate to a player-view version of the profile
-    // For now, we'll just show a toast notification
     toast('צפייה בתצוגת שחקן תהיה זמינה בקרוב', {
       description: 'פיתוח תכונה זו בתהליך'
     });
@@ -117,23 +110,23 @@ const PlayerProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
   }
 
-  if (!player) {
+  if (error || !player) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-xl text-gray-600">לא נמצא שחקן</p>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <p className="font-medium">שגיאה בטעינת פרטי השחקן</p>
+          <p>{error || "לא נמצאו פרטים"}</p>
           <Button 
-            variant="outline" 
-            className="mt-4"
             onClick={() => navigate('/players-list')}
+            className="mt-4"
+            variant="outline"
           >
-            <ChevronRight className="h-4 w-4 ml-2" />
             חזרה לרשימת השחקנים
           </Button>
         </div>
@@ -141,216 +134,288 @@ const PlayerProfile = () => {
     );
   }
 
+  const profileImageUrl = player.profile_image || 'https://via.placeholder.com/150';
+  const baseUrl = window.location.origin;
+  const profileUrl = `${baseUrl}/dashboard/player-profile/${playerId}`;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-sm p-6 mb-6 border border-indigo-100">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/players-list')}
-                className="shrink-0"
-              >
-                <ChevronRight className="h-4 w-4 ml-2" />
-                חזרה לרשימת השחקנים
-              </Button>
-              <h1 className="text-2xl font-bold text-indigo-950">{player.full_name}</h1>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={viewAsPlayer}
-                className="gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                צפה כשחקן
-              </Button>
-              <Button
-                onClick={handleEdit}
-                className="gap-2 bg-indigo-600 hover:bg-indigo-700"
-              >
-                <Pencil className="h-4 w-4" />
-                ערוך פרטים
-              </Button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+      <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl font-bold">פרופיל שחקן</h1>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 pb-12">
+        <div className="flex items-center gap-2 mb-6">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate(-1)}
+            aria-label="חזרה לדף הקודם"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate('/players-list')}
+            aria-label="חזרה לרשימת השחקנים"
+          >
+            <Home className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* New Access Details Card */}
-          <Card className="bg-white/80 backdrop-blur-sm border-indigo-100">
-            <CardHeader className="border-b border-indigo-100">
-              <CardTitle className="text-xl flex items-center gap-2 text-indigo-950">
-                <Link className="h-5 w-5 text-indigo-600" />
+          {/* Profile Header Card */}
+          <Card className="lg:col-span-3">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+                <div className="w-24 h-24 relative shrink-0 rounded-full overflow-hidden">
+                  <img 
+                    src={profileImageUrl} 
+                    alt={player.full_name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://via.placeholder.com/150?text=' + encodeURIComponent(player.full_name);
+                    }}
+                  />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold">{player.full_name}</h2>
+                  <p className="text-gray-500">{player.sport_field || "לא צוין ענף ספורטיבי"}</p>
+                  <p className="text-gray-700 mt-1">
+                    {player.club && player.year_group ? (
+                      <span>
+                        {player.club} • {player.year_group}
+                      </span>
+                    ) : player.club ? (
+                      <span>{player.club}</span>
+                    ) : player.year_group ? (
+                      <span>{player.year_group}</span>
+                    ) : (
+                      <span>לא צוין מועדון/קבוצת גיל</span>
+                    )}
+                  </p>
+                </div>
+                <Button onClick={handleEditPlayer} className="shrink-0">
+                  <Pencil className="h-4 w-4 mr-2" />
+                  ערוך פרטי שחקן
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Access Details Card - New Card for Player Access */}
+          <Card className="lg:col-span-3">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Link className="h-5 w-5" />
                 פרטי גישה
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="font-medium text-indigo-900">מזהה שחקן</Label>
+                  <label className="text-sm font-medium text-gray-700">מזהה שחקן</label>
                   <div className="flex items-center gap-2">
-                    <Input value={playerId} readOnly className="bg-gray-50 font-mono text-sm" />
-                    <Button 
-                      size="icon" 
-                      variant="outline" 
-                      onClick={() => copyToClipboard(playerId || '', 'playerId')}
-                      className="flex-shrink-0"
-                    >
-                      {copiedField === 'playerId' ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                    </Button>
+                    <Input 
+                      value={playerId || ""} 
+                      readOnly 
+                      dir="ltr"
+                      className="font-mono text-sm bg-gray-50"
+                    />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            onClick={copyPlayerId} 
+                            size="icon" 
+                            variant="outline"
+                            className="h-9 w-9"
+                          >
+                            {copiedId ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>העתק מזהה</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-medium text-indigo-900">קישור לפרופיל</Label>
+                  <label className="text-sm font-medium text-gray-700">כתובת אימייל</label>
                   <div className="flex items-center gap-2">
-                    <Input value={profileUrl} readOnly className="bg-gray-50 font-mono text-xs" dir="ltr" />
-                    <Button 
-                      size="icon" 
-                      variant="outline" 
-                      onClick={() => copyToClipboard(profileUrl, 'profileUrl')}
-                      className="flex-shrink-0"
-                    >
-                      {copiedField === 'profileUrl' ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                    </Button>
+                    <Input 
+                      value={player.email} 
+                      readOnly 
+                      dir="ltr"
+                      className="text-sm bg-gray-50"
+                    />
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label className="font-medium text-indigo-900">אימייל</Label>
+                
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-gray-700">קישור לפרופיל השחקן</label>
                   <div className="flex items-center gap-2">
-                    <Input value={player.email} readOnly className="bg-gray-50 font-mono text-sm" dir="ltr" />
-                    <Button 
-                      size="icon" 
-                      variant="outline" 
-                      onClick={() => copyToClipboard(player.email, 'email')}
-                      className="flex-shrink-0"
-                    >
-                      {copiedField === 'email' ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                    </Button>
+                    <Input 
+                      value={profileUrl} 
+                      readOnly 
+                      dir="ltr"
+                      className="font-mono text-sm bg-gray-50"
+                    />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            onClick={copyPlayerLink} 
+                            size="icon" 
+                            variant="outline"
+                            className="h-9 w-9"
+                          >
+                            {copiedLink ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>העתק קישור</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
-                </div>
-
-                <Alert className="bg-blue-50 border-blue-200 mt-4">
-                  <AlertDescription className="text-blue-800 text-sm">
-                    הערה: בעתיד השחקנים יוכלו להתחבר ולעדכן את הפרופיל שלהם באופן עצמאי.
-                  </AlertDescription>
-                </Alert>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="lg:col-span-2 bg-white/80 backdrop-blur-sm border-indigo-100">
-            <CardHeader className="border-b border-indigo-100">
-              <CardTitle className="text-xl flex items-center gap-2 text-indigo-950">
-                <User className="h-5 w-5 text-indigo-600" />
-                פרטים אישיים
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-indigo-50/50 rounded-lg mb-6">
-                <div>
-                  <Label className="font-medium text-indigo-900">שם מלא</Label>
-                  <p className="mt-1 text-lg">{player.full_name}</p>
-                </div>
-                <div>
-                  <Label className="font-medium text-indigo-900">אימייל</Label>
-                  <p className="mt-1 text-lg" dir="ltr">{player.email}</p>
-                </div>
-                <div>
-                  <Label className="font-medium text-indigo-900">טלפון</Label>
-                  <p className="mt-1 text-lg" dir="ltr">{player.phone}</p>
-                </div>
-                <div>
-                  <Label className="font-medium text-indigo-900">עמדה</Label>
-                  <p className="mt-1 text-lg">
-                    {positionLabels[player.position] || player.position}
+                  <p className="text-sm text-gray-500 mt-1">
+                    ניתן לשתף את הקישור עם השחקן לצפייה בפרופיל שלו
                   </p>
                 </div>
-                <div>
-                  <Label className="font-medium text-indigo-900">תאריך לידה</Label>
-                  <p className="mt-1 text-lg">{player.birthdate}</p>
-                </div>
-              </div>
 
-              <div className="border-t border-indigo-100 pt-6 mt-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-indigo-950">
-                  <Home className="h-5 w-5 text-indigo-600" />
-                  פרטי מועדון
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 bg-indigo-50/50 rounded-lg">
-                  <div>
-                    <Label className="font-medium text-indigo-900">עיר</Label>
-                    <p className="mt-1 text-lg">{player.city}</p>
-                  </div>
-                  <div>
-                    <Label className="font-medium text-indigo-900">מועדון</Label>
-                    <p className="mt-1 text-lg">{player.club}</p>
-                  </div>
-                  <div>
-                    <Label className="font-medium text-indigo-900">שנתון</Label>
-                    <p className="mt-1 text-lg">{player.year_group}</p>
-                  </div>
+                <div className="md:col-span-2 flex justify-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={viewAsPlayer}
+                    className="gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    צפה כשחקן
+                  </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-indigo-100">
-            <CardHeader className="border-b border-indigo-100">
-              <CardTitle className="text-xl flex items-center gap-2 text-indigo-950">
-                <Phone className="h-5 w-5 text-indigo-600" />
-                פרטי הורה
-              </CardTitle>
+          {/* Personal Info Card */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">פרטים אישיים</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4 p-4 bg-indigo-50/50 rounded-lg">
+            <CardContent className="p-6">
+              <dl className="grid grid-cols-1 gap-y-4">
                 <div>
-                  <Label className="font-medium text-indigo-900">שם ההורה</Label>
-                  <p className="mt-1 text-lg">{player.parent_name}</p>
+                  <dt className="text-sm font-medium text-gray-700">שם מלא</dt>
+                  <dd>{player.full_name}</dd>
                 </div>
+                
                 <div>
-                  <Label className="font-medium text-indigo-900">טלפון הורה</Label>
-                  <p className="mt-1 text-lg" dir="ltr">{player.parent_phone}</p>
+                  <dt className="text-sm font-medium text-gray-700">כתובת אימייל</dt>
+                  <dd dir="ltr" className="font-mono text-sm">{player.email}</dd>
                 </div>
+                
                 <div>
-                  <Label className="font-medium text-indigo-900">אימייל הורה</Label>
-                  <p className="mt-1 text-lg" dir="ltr">{player.parent_email}</p>
+                  <dt className="text-sm font-medium text-gray-700">מספר טלפון</dt>
+                  <dd dir="ltr" className="font-mono text-sm">{player.phone || "-"}</dd>
+                </div>
+                
+                <div>
+                  <dt className="text-sm font-medium text-gray-700">תאריך לידה</dt>
+                  <dd>{player.birthdate || "-"}</dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+          
+          {/* Club Info Card */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">פרטי מועדון</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <dl className="grid grid-cols-1 gap-y-4">
+                <div>
+                  <dt className="text-sm font-medium text-gray-700">עיר</dt>
+                  <dd>{player.city || "-"}</dd>
+                </div>
+                
+                <div>
+                  <dt className="text-sm font-medium text-gray-700">מועדון</dt>
+                  <dd>{player.club || "-"}</dd>
+                </div>
+                
+                <div>
+                  <dt className="text-sm font-medium text-gray-700">שכבת גיל</dt>
+                  <dd>{player.year_group || "-"}</dd>
+                </div>
+                
+                <div>
+                  <dt className="text-sm font-medium text-gray-700">ענף ספורט</dt>
+                  <dd>{player.sport_field || "-"}</dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+          
+          {/* Parent Info Card */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">פרטי הורים</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <dl className="grid grid-cols-1 gap-y-4">
+                <div>
+                  <dt className="text-sm font-medium text-gray-700">שם הורה</dt>
+                  <dd>{player.parent_name || "-"}</dd>
+                </div>
+                
+                <div>
+                  <dt className="text-sm font-medium text-gray-700">טלפון הורה</dt>
+                  <dd dir="ltr" className="font-mono text-sm">{player.parent_phone || "-"}</dd>
+                </div>
+                
+                <div>
+                  <dt className="text-sm font-medium text-gray-700">אימייל הורה</dt>
+                  <dd dir="ltr" className="font-mono text-sm">{player.parent_email || "-"}</dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
+          
+          {/* Additional Info Card */}
+          <Card className="lg:col-span-3">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">מידע נוסף</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">פציעות</h3>
+                  <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
+                    {player.injuries || "לא צוינו פציעות"}
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">הערות</h3>
+                  <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
+                    {player.notes || "אין הערות"}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          {(player.injuries || player.notes) && (
-            <Card className="lg:col-span-3 bg-white/80 backdrop-blur-sm border-indigo-100">
-              <CardHeader className="border-b border-indigo-100">
-                <CardTitle className="text-xl flex items-center gap-2 text-indigo-950">
-                  <ScrollText className="h-5 w-5 text-indigo-600" />
-                  מידע נוסף
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-6">
-                {player.injuries && (
-                  <div className="p-4 bg-indigo-50/50 rounded-lg">
-                    <Label className="font-medium text-indigo-900">פציעות עבר</Label>
-                    <p className="mt-2 text-lg">
-                      {player.injuries}
-                    </p>
-                  </div>
-                )}
-                {player.notes && (
-                  <div className="p-4 bg-indigo-50/50 rounded-lg">
-                    <Label className="font-medium text-indigo-900">הערות נוספות</Label>
-                    <p className="mt-2 text-lg">
-                      {player.notes}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>
