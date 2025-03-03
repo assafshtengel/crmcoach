@@ -113,6 +113,7 @@ const PlayersList = () => {
         toast.error('שגיאה בטעינת רשימת השחקנים: ' + playersError.message);
         throw playersError;
       }
+      
       const today = new Date().toISOString().split('T')[0];
       const playersWithSessionData = await Promise.all((playersData || []).map(async player => {
         const {
@@ -598,7 +599,8 @@ const PlayersList = () => {
     }
   ] as ColumnDef<Player, unknown>[];
 
-  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
         <div className="container mx-auto px-4">
           <h1 className="text-3xl font-bold">רשימת שחקנים</h1>
@@ -621,13 +623,15 @@ const PlayersList = () => {
           </Button>
         </div>
 
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
             <h3 className="font-bold">שגיאה בטעינת רשימת השחקנים:</h3>
             <p>{error}</p>
             <Button onClick={fetchPlayers} className="mt-2" variant="secondary">
               נסה שוב
             </Button>
-          </div>}
+          </div>
+        )}
 
         <div className="mb-4 text-gray-600">
           סה"כ שחקנים: {players.length} | מוצגים: {filteredPlayers.length}
@@ -687,9 +691,12 @@ const PlayersList = () => {
           </div>
         </Card>
 
-        {filteredPlayers.length === 0 ? <div className="text-center py-8 text-gray-500">
+        {filteredPlayers.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
             {players.length === 0 ? "לא נמצאו שחקנים במערכת" : "לא נמצאו שחקנים התואמים את הסינון הנוכחי"}
-          </div> : <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          </div>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full mb-6 grid grid-cols-2">
               <TabsTrigger value="table">טבלה</TabsTrigger>
               <TabsTrigger value="cards">כרטיסיות</TabsTrigger>
@@ -704,10 +711,11 @@ const PlayersList = () => {
             <TabsContent value="cards" className="w-full">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPlayers.map(player => {
-              const sessionStatus = getSessionStatus(player);
-              const baseUrl = window.location.origin;
-              const profileUrl = `${baseUrl}/player-profile/${player.id}`;
-              return <div key={player.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
+                  const sessionStatus = getSessionStatus(player);
+                  const baseUrl = window.location.origin;
+                  const profileUrl = `${baseUrl}/player-profile/${player.id}`;
+                  return (
+                    <div key={player.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
                       <div className="flex justify-between mb-3">
                         <div className="text-right flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -766,4 +774,58 @@ const PlayersList = () => {
                         </div>
                       </div>
                       
-                      <div className="mt-4 pt-4 border-t border-
+                      <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between">
+                        <Button variant="outline" size="sm" onClick={() => handleViewProfile(player.id)}>
+                          <UserCircle className="h-4 w-4 mr-1" />
+                          פרופיל
+                        </Button>
+                        
+                        <Button variant="outline" size="sm" onClick={() => handleEditPlayer(player.id)}>
+                          <Pencil className="h-4 w-4 mr-1" />
+                          עריכה
+                        </Button>
+                        
+                        <Button variant="outline" size="sm" onClick={() => handleScheduleSession(player.id, player.full_name)}>
+                          <Calendar className="h-4 w-4 mr-1" />
+                          קבע מפגש
+                        </Button>
+                        
+                        <Button variant="outline" size="sm" onClick={() => setPlayerToDelete({
+                          id: player.id,
+                          name: player.full_name
+                        })} className="text-red-600 hover:text-red-700">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
+
+        <AlertDialog open={!!playerToDelete} onOpenChange={() => setPlayerToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+              <AlertDialogDescription>
+                האם אתה בטוח שברצונך למחוק את השחקן {playerToDelete?.name}?
+                <br />
+                פעולה זו לא ניתנת לביטול.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+                מחק
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
+};
+
+export default PlayersList;
