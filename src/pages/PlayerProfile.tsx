@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Home, Pencil, Copy, CheckCircle, Eye, Link } from 'lucide-react';
+import { ChevronRight, Home, Pencil, Copy, CheckCircle, Eye, Link, KeyRound } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ interface Player {
   sport_field: string;
   profile_image: string;
   created_at: string;
+  password: string;
 }
 
 const PlayerProfile = () => {
@@ -37,6 +38,8 @@ const PlayerProfile = () => {
   const [error, setError] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const fetchPlayer = async () => {
@@ -102,6 +105,49 @@ const PlayerProfile = () => {
       });
   };
 
+  const copyPassword = () => {
+    if (!player || !player.password) {
+      toast.error("לא נמצאה סיסמה לשחקן זה");
+      return;
+    }
+    
+    navigator.clipboard.writeText(player.password)
+      .then(() => {
+        setCopiedPassword(true);
+        toast.success("הסיסמה הועתקה בהצלחה");
+        setTimeout(() => setCopiedPassword(false), 3000);
+      })
+      .catch(() => {
+        toast.error("שגיאה בהעתקת הסיסמה");
+      });
+  };
+
+  const resetPassword = async () => {
+    if (!player) return;
+    
+    try {
+      // Generate a new random password
+      const newPassword = Math.random().toString(36).slice(-10);
+      
+      // Update the player's password
+      const { error } = await supabase
+        .from('players')
+        .update({ password: newPassword })
+        .eq('id', player.id);
+        
+      if (error) throw error;
+      
+      // Update the local state
+      setPlayer({ ...player, password: newPassword });
+      setShowPassword(true);
+      
+      toast.success("הסיסמה אופסה בהצלחה");
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      toast.error("שגיאה באיפוס הסיסמה");
+    }
+  };
+
   const viewAsPlayer = () => {
     toast('צפייה בתצוגת שחקן תהיה זמינה בקרוב', {
       description: 'פיתוח תכונה זו בתהליך'
@@ -137,6 +183,7 @@ const PlayerProfile = () => {
   const profileImageUrl = player.profile_image || 'https://via.placeholder.com/150';
   const baseUrl = window.location.origin;
   const profileUrl = `${baseUrl}/dashboard/player-profile/${playerId}`;
+  const playerLoginUrl = `${baseUrl}/player-auth`;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -260,6 +307,107 @@ const PlayerProfile = () => {
                   </div>
                 </div>
                 
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">סיסמת גישה</label>
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      type={showPassword ? "text" : "password"}
+                      value={player.password || "אין סיסמה"} 
+                      readOnly 
+                      dir="ltr"
+                      className="font-mono text-sm bg-gray-50"
+                    />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            onClick={() => setShowPassword(!showPassword)} 
+                            size="icon" 
+                            variant="outline"
+                            className="h-9 w-9"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{showPassword ? "הסתר סיסמה" : "הצג סיסמה"}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            onClick={copyPassword} 
+                            size="icon" 
+                            variant="outline"
+                            className="h-9 w-9"
+                            disabled={!player.password}
+                          >
+                            {copiedPassword ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>העתק סיסמה</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            onClick={resetPassword} 
+                            size="icon" 
+                            variant="outline"
+                            className="h-9 w-9"
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>איפוס סיסמה</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  {!player.password && (
+                    <p className="text-sm text-amber-600">
+                      השחקן אינו יכול להתחבר כרגע. לחץ על סמל המפתח כדי לייצר סיסמה.
+                    </p>
+                  )}
+                </div>
+                
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-gray-700">קישור לדף הכניסה לשחקנים</label>
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      value={playerLoginUrl} 
+                      readOnly 
+                      dir="ltr"
+                      className="font-mono text-sm bg-gray-50"
+                    />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(playerLoginUrl);
+                              toast.success("קישור דף הכניסה הועתק בהצלחה");
+                            }} 
+                            size="icon" 
+                            variant="outline"
+                            className="h-9 w-9"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>העתק קישור לדף הכניסה</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    השחקן יכול להתחבר באמצעות כתובת האימייל והסיסמה שלו בדף הכניסה לשחקנים
+                  </p>
+                </div>
+
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-gray-700">קישור לפרופיל השחקן</label>
                   <div className="flex items-center gap-2">
@@ -290,7 +438,7 @@ const PlayerProfile = () => {
                     </TooltipProvider>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
-                    ניתן לשתף את הקישור עם השחקן לצפייה בפרופיל שלו
+                    קישור ישיר לפרופיל השחקן (דורש התחברות של המאמן או השחקן)
                   </p>
                 </div>
 
@@ -368,7 +516,6 @@ const PlayerProfile = () => {
             </CardContent>
           </Card>
           
-          {/* Parent Info Card */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">פרטי הורים</CardTitle>
@@ -393,7 +540,6 @@ const PlayerProfile = () => {
             </CardContent>
           </Card>
           
-          {/* Additional Info Card */}
           <Card className="lg:col-span-3">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">מידע נוסף</CardTitle>

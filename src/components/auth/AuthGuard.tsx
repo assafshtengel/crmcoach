@@ -1,6 +1,5 @@
-
 import { useState, useEffect, ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthGuardProps {
@@ -10,6 +9,7 @@ interface AuthGuardProps {
 export const AuthGuard = ({ children }: AuthGuardProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { playerId } = useParams<{ playerId: string }>();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -17,12 +17,30 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error || !user) {
-          console.log("No authenticated user found");
+          console.log("No authenticated Supabase user found");
+          
+          if (playerId && window.location.pathname.includes('/player-profile/')) {
+            const playerSession = localStorage.getItem('playerSession');
+            
+            if (playerSession) {
+              const playerData = JSON.parse(playerSession);
+              
+              if (playerData.id === playerId) {
+                setIsLoading(false);
+                return;
+              } else {
+                console.log("Player trying to access unauthorized profile");
+                localStorage.removeItem('playerSession');
+                navigate("/player-auth");
+                return;
+              }
+            }
+          }
+          
           navigate("/auth");
           return;
         }
 
-        // Check if the user is a coach
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
@@ -35,7 +53,6 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
           return;
         }
 
-        // If no role found or not a coach, redirect to login
         if (!roleData || roleData.role !== 'coach') {
           console.log("User is not a coach, redirecting to login");
           await supabase.auth.signOut();
@@ -51,7 +68,7 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, playerId]);
 
   if (isLoading) {
     return (
@@ -63,4 +80,3 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
 
   return <>{children}</>;
 };
-
