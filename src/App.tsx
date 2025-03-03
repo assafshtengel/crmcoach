@@ -38,6 +38,7 @@ import PublicRegistrationForm from "./pages/PublicRegistrationForm";
 import ToolManagement from "./pages/ToolManagement";
 import AllMeetingSummaries from './pages/AllMeetingSummaries';
 import PlayerAuth from './pages/PlayerAuth';
+import PlayerProfileView from './pages/player/PlayerProfileView';
 import { AuthGuard } from "./components/auth/AuthGuard";
 
 import "./App.css";
@@ -86,6 +87,10 @@ function App() {
         <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
         <Route path="/tool-management" element={<AuthGuard><ToolManagement /></AuthGuard>} />
         <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
+        
+        {/* New player-specific routes */}
+        <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
+        
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

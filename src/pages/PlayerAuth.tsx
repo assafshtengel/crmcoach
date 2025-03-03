@@ -69,8 +69,11 @@ const PlayerAuth = () => {
         description: "מיד תועבר לפרופיל השחקן",
       });
 
-      // Navigate to the player profile
-      navigate(`/player-profile/${playerData.id}`);
+      // Store player session data
+      localStorage.setItem('playerSession', JSON.stringify(playerData));
+
+      // Navigate to the new player profile view
+      navigate(`/player/profile`);
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

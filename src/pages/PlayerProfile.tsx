@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -126,10 +125,8 @@ const PlayerProfile = () => {
     if (!player) return;
     
     try {
-      // Generate a new random password
       const newPassword = Math.random().toString(36).slice(-10);
       
-      // Update the player's password
       const { error } = await supabase
         .from('players')
         .update({ password: newPassword })
@@ -137,7 +134,6 @@ const PlayerProfile = () => {
         
       if (error) throw error;
       
-      // Update the local state
       setPlayer({ ...player, password: newPassword });
       setShowPassword(true);
       
@@ -149,9 +145,17 @@ const PlayerProfile = () => {
   };
 
   const viewAsPlayer = () => {
-    toast('צפייה בתצוגת שחקן תהיה זמינה בקרוב', {
-      description: 'פיתוח תכונה זו בתהליך'
-    });
+    if (!player) return;
+    
+    const playerSession = {
+      id: player.id,
+      email: player.email,
+      password: player.password
+    };
+    
+    localStorage.setItem('playerSession', JSON.stringify(playerSession));
+    
+    window.open('/player/profile', '_blank');
   };
 
   if (loading) {
@@ -214,7 +218,6 @@ const PlayerProfile = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile Header Card */}
           <Card className="lg:col-span-3">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
@@ -254,7 +257,6 @@ const PlayerProfile = () => {
             </CardContent>
           </Card>
 
-          {/* Access Details Card - New Card for Player Access */}
           <Card className="lg:col-span-3">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -456,7 +458,6 @@ const PlayerProfile = () => {
             </CardContent>
           </Card>
 
-          {/* Personal Info Card */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">פרטים אישיים</CardTitle>
@@ -486,7 +487,6 @@ const PlayerProfile = () => {
             </CardContent>
           </Card>
           
-          {/* Club Info Card */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">פרטי מועדון</CardTitle>
