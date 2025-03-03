@@ -37,6 +37,7 @@ import RegistrationLinks from "./pages/RegistrationLinks";
 import PublicRegistrationForm from "./pages/PublicRegistrationForm";
 import ToolManagement from "./pages/ToolManagement";
 import AllMeetingSummaries from './pages/AllMeetingSummaries';
+import PlayerAuth from './pages/PlayerAuth';
 import { AuthGuard } from "./components/auth/AuthGuard";
 
 import "./App.css";
@@ -75,6 +76,7 @@ function App() {
         <Route path="/game-prep" element={<AuthGuard><GamePreparation /></AuthGuard>} />
         <Route path="/notifications" element={<AuthGuard><NotificationsDashboard /></AuthGuard>} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/player-auth" element={<PlayerAuth />} />
         <Route path="/action-plan" element={<AuthGuard><ActionPlan /></AuthGuard>} />
         <Route path="/session-summaries" element={<AuthGuard><SessionSummaries /></AuthGuard>} />
         <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />

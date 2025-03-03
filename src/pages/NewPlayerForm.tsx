@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Home } from 'lucide-react';
+import { ChevronRight, Home, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { formSchema, PlayerFormValues } from '@/components/new-player/PlayerFormSchema';
@@ -30,6 +31,7 @@ const NewPlayerForm = () => {
   const [profileImage, setProfileImage] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string>('');
   const [createdPlayerId, setCreatedPlayerId] = React.useState<string>('');
+  const [generatedPassword, setGeneratedPassword] = React.useState<string>('');
 
   // Format current date and time in a user-friendly format
   const currentDateTime = format(new Date(), 'dd/MM/yyyy HH:mm');
@@ -66,6 +68,23 @@ const NewPlayerForm = () => {
     setPreviewUrl('');
   };
 
+  const generatePassword = (length: number): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
+  const handleCopyPassword = () => {
+    navigator.clipboard.writeText(generatedPassword);
+    toast({
+      title: "הסיסמה הועתקה",
+      description: "הסיסמה הועתקה ללוח",
+    });
+  };
+
   const uploadProfileImage = async (userId: string, file: File): Promise<string> => {
     try {
       const fileExt = file.name.split('.').pop();
@@ -91,7 +110,7 @@ const NewPlayerForm = () => {
     }
   };
 
-  const createPlayer = async (userId: string, values: PlayerFormValues, imageUrl: string = '') => {
+  const createPlayer = async (userId: string, values: PlayerFormValues, imageUrl: string = '', password: string) => {
     console.log('Creating player with values:', values); // Debug log
     
     // Determine the final sport field value
@@ -120,8 +139,7 @@ const NewPlayerForm = () => {
           notes: values.notes,
           sport_field: finalSportField,
           profile_image: imageUrl,
-          // Remove this line as it causes the error since the column doesn't exist
-          // registration_timestamp: values.registrationTimestamp
+          password: password,
         }
       ])
       .select()
@@ -169,7 +187,11 @@ const NewPlayerForm = () => {
         }
       }
 
-      const playerData = await createPlayer(user.id, values, profileImageUrl);
+      // Generate a random password for the player
+      const password = generatePassword(10);
+      setGeneratedPassword(password);
+      
+      const playerData = await createPlayer(user.id, values, profileImageUrl, password);
       console.log('Player created successfully:', playerData); // Debug log
       
       // Store the player ID for redirection
@@ -181,11 +203,6 @@ const NewPlayerForm = () => {
       });
 
       setShowSuccessDialog(true);
-      setTimeout(() => {
-        setShowSuccessDialog(false);
-        // Navigate to the player profile page instead of the dashboard
-        navigate(`/dashboard/player-profile/${playerData.id}`);
-      }, 1500);
 
     } catch (error: any) {
       console.error('Error in form submission:', error);
@@ -272,6 +289,39 @@ const NewPlayerForm = () => {
           <DialogHeader>
             <DialogTitle>פרטי השחקן נשמרו בהצלחה!</DialogTitle>
           </DialogHeader>
+          <div className="my-4">
+            <p className="mb-2">סיסמת הגישה של השחקן:</p>
+            <div className="flex items-center justify-center gap-2 bg-gray-100 p-3 rounded">
+              <span className="font-mono font-semibold text-lg">{generatedPassword}</span>
+              <Button variant="outline" size="icon" onClick={handleCopyPassword} title="העתק סיסמה">
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="mt-4 text-sm text-gray-600">
+              שמור את הסיסמה הזו - השחקן יזדקק לה כדי להתחבר למערכת יחד עם האימייל שלו.
+            </p>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              onClick={() => {
+                setShowSuccessDialog(false);
+                navigate(`/player-profile/${createdPlayerId}`);
+              }}
+              className="flex-1"
+            >
+              מעבר לפרופיל השחקן
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                setShowSuccessDialog(false);
+                navigate('/players-list');
+              }}
+              className="flex-1"
+            >
+              לרשימת השחקנים
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,113 +1,66 @@
 
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/components/ui/use-toast";
-import { AuthChangeEvent } from "@supabase/supabase-js";
+import { useState, useEffect, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthGuardProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const AuthGuard = ({ children }: AuthGuardProps) => {
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { user }, error } = await supabase.auth.getUser();
         
-        if (error) {
-          console.error("Error checking session:", error);
+        if (error || !user) {
+          console.log("No authenticated user found");
           navigate("/auth");
           return;
         }
 
-        if (!session) {
-          navigate("/auth");
-          return;
-        }
-
-        // בדיקת תפקיד המשתמש
-        const { data: roleData } = await supabase
+        // Check if the user is a coach
+        const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('id', session.user.id)
-          .single();
+          .eq('id', user.id)
+          .maybeSingle();
 
-        if (!roleData || roleData.role !== 'coach') {
-          // נבדוק אם צריך ליצור את תפקיד המאמן
-          const { error: insertError } = await supabase
-            .from('user_roles')
-            .insert([{ 
-              id: session.user.id,
-              role: 'coach'
-            }])
-            .single();
-
-          if (insertError) {
-            console.error("Error creating coach role:", insertError);
-            toast({
-              variant: "destructive",
-              title: "שגיאה",
-              description: "לא ניתן ליצור הרשאת מאמן",
-            });
-            await supabase.auth.signOut();
-            navigate("/auth");
-            return;
-          }
-        }
-
-        // נרענן את הסשן
-        const { error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          console.error("Error refreshing session:", refreshError);
-          await supabase.auth.signOut();
-          toast({
-            title: "פג תוקף החיבור",
-            description: "אנא התחבר מחדש",
-            variant: "destructive",
-          });
+        if (roleError) {
+          console.error("Error fetching user role:", roleError);
           navigate("/auth");
           return;
         }
 
-        // אם המשתמש מחובר ונמצא בדף ההתחברות, נעביר אותו לדף הבית
-        if (location.pathname === '/auth') {
-          navigate('/');
+        // If no role found or not a coach, redirect to login
+        if (!roleData || roleData.role !== 'coach') {
+          console.log("User is not a coach, redirecting to login");
+          await supabase.auth.signOut();
+          navigate("/auth");
           return;
         }
 
+        setIsLoading(false);
       } catch (error) {
-        console.error("Fatal error checking auth status:", error);
+        console.error("Authentication check failed:", error);
         navigate("/auth");
-      } finally {
-        setLoading(false);
       }
     };
 
     checkAuth();
+  }, [navigate]);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session) => {
-      console.log("Auth state changed:", event);
-      if (event === 'SIGNED_OUT') {
-        navigate("/auth");
-      } else if (!session && event !== 'INITIAL_SESSION') {
-        navigate("/auth");
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate, toast, location]);
-
-  if (loading) {
-    return <div>טוען...</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      </div>
+    );
   }
 
   return <>{children}</>;
 };
+
