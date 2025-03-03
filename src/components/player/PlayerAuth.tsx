@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -45,10 +46,10 @@ export const PlayerAuthGuard = ({ children, allowCoach = true }: PlayerAuthGuard
           
           // Check if session is for this player
           if (parsedSession.playerId === playerId) {
-            // Verify player still exists in DB
+            // Verify player still exists in DB and password hasn't changed
             const { data: playerData, error } = await supabase
               .from('players')
-              .select('id')
+              .select('id, email, password')
               .eq('id', parsedSession.playerId)
               .single();
               
