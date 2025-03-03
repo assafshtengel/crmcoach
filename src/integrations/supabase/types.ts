@@ -632,7 +632,6 @@ export type Database = {
           parent_email: string | null
           parent_name: string | null
           parent_phone: string | null
-          password: string | null
           phone: string | null
           profile_image: string | null
           registration_link_id: string | null
@@ -655,7 +654,6 @@ export type Database = {
           parent_email?: string | null
           parent_name?: string | null
           parent_phone?: string | null
-          password?: string | null
           phone?: string | null
           profile_image?: string | null
           registration_link_id?: string | null
@@ -678,7 +676,6 @@ export type Database = {
           parent_email?: string | null
           parent_name?: string | null
           parent_phone?: string | null
-          password?: string | null
           phone?: string | null
           profile_image?: string | null
           registration_link_id?: string | null
