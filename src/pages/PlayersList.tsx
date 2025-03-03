@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -50,15 +51,16 @@ const PlayersList = () => {
 
       const playersWithAuthStatus = await Promise.all(
         (data || []).map(async (player) => {
-          const { data: authData } = await supabase.auth.admin.listUsers({
-            filter: {
-              email: player.email
-            }
-          });
-          
+          // Check if user exists in auth system by querying users with matching email
+          const { data: authData } = await supabase
+            .from('players')
+            .select('password')
+            .eq('id', player.id)
+            .single();
+            
           return {
             ...player,
-            has_account: authData && authData.users && authData.users.length > 0,
+            has_account: authData && authData.password ? true : false,
             password: player.password || generateRandomPassword()
           };
         })
@@ -137,7 +139,8 @@ const PlayersList = () => {
 
       const password = player.password || generateRandomPassword();
       
-      const { data, error } = await supabase.auth.admin.createUser({
+      // Create auth record for player
+      const { error: authError } = await supabase.auth.admin.createUser({
         email: player.email,
         password: password,
         email_confirm: true,
@@ -147,10 +150,11 @@ const PlayersList = () => {
         },
       });
 
-      if (error) {
-        throw error;
+      if (authError) {
+        throw authError;
       }
 
+      // Update player record with password
       const { error: updateError } = await supabase
         .from("players")
         .update({ password: password })
