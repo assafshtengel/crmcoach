@@ -1,955 +1,498 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { Home, Calendar, Pencil, Trash2, Loader2, UserCircle, Filter, CheckCircle, AlertCircle, Clock, XCircle, Copy, Link, Eye } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { format, parseISO, differenceInDays } from 'date-fns';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { DataTable } from '@/components/admin/DataTable';
-import { ColumnDef } from '@tanstack/react-table';
-import { Input } from '@/components/ui/input';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Calendar, Eye, Trash2, Search, Plus, ArrowRight, LayoutDashboard, Copy, User, Key, Link as LinkIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/lib/supabase";
+import { generatePassword } from "@/utils/passwordGenerator";
 
 interface Player {
   id: string;
   full_name: string;
   email: string;
-  phone: string;
-  sport_field?: string;
-  notes?: string;
-  registration_link_id?: string | null;
-  contact_status?: 'contacted' | 'pending' | null;
+  phone: string | null;
+  city: string | null;
+  club: string | null;
+  sport_field: string | null;
+  contact_status: string | null;
   created_at: string;
-  past_sessions_count: number;
-  last_session_date?: string;
-  next_session_date?: string;
-  next_session_time?: string;
+  password?: string;
+  has_account?: boolean;
 }
+
+const generatePassword = () => {
+  const length = 8;
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
+  }
+  return password;
+};
 
 const PlayersList = () => {
   const [players, setPlayers] = useState<Player[]>([]);
-  const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
-  const [playerToDelete, setPlayerToDelete] = useState<{ id: string; name: string } | null>(null);
-  const [sportFieldFilter, setSportFieldFilter] = useState<string>('all');
-  const [registrationTypeFilter, setRegistrationTypeFilter] = useState<string>('all');
-  const [contactStatusFilter, setContactStatusFilter] = useState<string>('all');
-  const [uniqueSportFields, setUniqueSportFields] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("table");
-  const [copiedPlayerId, setCopiedPlayerId] = useState<string | null>(null);
-  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [credentialsVisible, setCredentialsVisible] = useState<{ [key: string]: boolean }>({});
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchPlayers();
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [sportFieldFilter, registrationTypeFilter, contactStatusFilter, players]);
-
-  const applyFilters = () => {
-    let result = [...players];
-    
-    if (sportFieldFilter !== 'all') {
-      result = result.filter(player => player.sport_field === sportFieldFilter);
-    }
-    
-    if (registrationTypeFilter === 'self') {
-      result = result.filter(player => player.registration_link_id !== null);
-    } else if (registrationTypeFilter === 'coach') {
-      result = result.filter(player => player.registration_link_id === null);
-    }
-    
-    if (contactStatusFilter === 'contacted') {
-      result = result.filter(player => player.contact_status === 'contacted');
-    } else if (contactStatusFilter === 'pending') {
-      result = result.filter(player => player.contact_status === 'pending');
-    }
-    
-    setFilteredPlayers(result);
-  };
+  const { toast } = useToast();
 
   const fetchPlayers = async () => {
     try {
-      setError(null);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.error('No authenticated user found');
-        navigate('/auth');
-        return;
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("players")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
       }
 
-      console.log('Fetching players for coach:', user.id);
-
-      const { data: playersData, error: playersError } = await supabase
-        .from('players')
-        .select(`
-          id,
-          full_name,
-          email,
-          phone,
-          sport_field,
-          notes,
-          registration_link_id,
-          contact_status,
-          coach_id,
-          created_at
-        `)
-        .eq('coach_id', user.id);
-
-      if (playersError) {
-        console.error('Error fetching players:', playersError);
-        setError(playersError.message);
-        toast.error('שגיאה בטעינת רשימת השחקנים: ' + playersError.message);
-        throw playersError;
-      }
-
-      const today = new Date().toISOString().split('T')[0];
-      
-      const playersWithSessionData = await Promise.all(
-        (playersData || []).map(async (player) => {
-          const { count: pastSessionsCount, error: pastCountError } = await supabase
-            .from('sessions')
-            .select('id', { count: 'exact', head: true })
-            .eq('player_id', player.id)
-            .lt('session_date', today);
+      const playersWithAuthStatus = await Promise.all(
+        (data || []).map(async (player) => {
+          const { data: authData } = await supabase.auth.admin.listUsers({
+            filter: {
+              email: player.email
+            }
+          });
           
-          if (pastCountError) {
-            console.error('Error counting past sessions for player:', player.id, pastCountError);
-          }
-          
-          const { data: lastSession, error: lastSessionError } = await supabase
-            .from('sessions')
-            .select('session_date, session_time')
-            .eq('player_id', player.id)
-            .lt('session_date', today)
-            .order('session_date', { ascending: false })
-            .limit(1);
-          
-          if (lastSessionError) {
-            console.error('Error getting last session for player:', player.id, lastSessionError);
-          }
-          
-          const { data: nextSession, error: nextSessionError } = await supabase
-            .from('sessions')
-            .select('session_date, session_time')
-            .eq('player_id', player.id)
-            .gte('session_date', today)
-            .order('session_date', { ascending: true })
-            .limit(1);
-          
-          if (nextSessionError) {
-            console.error('Error getting next session for player:', player.id, nextSessionError);
-          }
-          
-          return { 
-            ...player, 
-            past_sessions_count: pastSessionsCount || 0,
-            last_session_date: lastSession && lastSession.length > 0 ? lastSession[0].session_date : undefined,
-            next_session_date: nextSession && nextSession.length > 0 ? nextSession[0].session_date : undefined,
-            next_session_time: nextSession && nextSession.length > 0 ? nextSession[0].session_time : undefined
+          return {
+            ...player,
+            has_account: authData && authData.users && authData.users.length > 0,
+            password: player.password || generatePassword()
           };
         })
       );
-      
-      console.log('Players with session data:', playersWithSessionData);
-      
-      const sportFields = [...new Set(playersWithSessionData?.map(player => player.sport_field || 'לא צוין').filter(Boolean))];
-      setUniqueSportFields(sportFields);
-      
-      setPlayers(playersWithSessionData || []);
-      setFilteredPlayers(playersWithSessionData || []);
-    } catch (error: any) {
-      console.error('Error in fetchPlayers:', error);
-      setError(error.message);
-      toast.error('שגיאה בטעינת רשימת השחקנים');
+
+      setPlayers(playersWithAuthStatus);
+    } catch (error) {
+      console.error("Error fetching players:", error);
+      toast({
+        title: "שגיאה בטעינת רשימת השחקנים",
+        description: "אירעה שגיאה בעת טעינת רשימת השחקנים. נסה שוב מאוחר יותר.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const copyPlayerLink = (playerId: string) => {
-    const baseUrl = window.location.origin;
-    const profileUrl = `${baseUrl}/player-profile/${playerId}`;
-    
-    navigator.clipboard.writeText(profileUrl)
-      .then(() => {
-        setCopiedPlayerId(playerId);
-        toast.success('הקישור הועתק ללוח');
-        
-        setTimeout(() => {
-          setCopiedPlayerId(null);
-        }, 2000);
-      })
-      .catch(err => {
-        console.error('Failed to copy:', err);
-        toast.error('שגיאה בהעתקת הקישור');
-      });
-  };
+  useEffect(() => {
+    fetchPlayers();
+  }, []);
 
-  const copyPlayerId = (playerId: string) => {
-    navigator.clipboard.writeText(playerId)
-      .then(() => {
-        toast.success('מזהה השחקן הועתק ללוח');
-      })
-      .catch(err => {
-        console.error('Failed to copy:', err);
-        toast.error('שגיאה בהעתקת מזהה השחקן');
-      });
-  };
+  const filteredPlayers = players.filter((player) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      player.full_name?.toLowerCase().includes(query) ||
+      player.email?.toLowerCase().includes(query) ||
+      player.phone?.toLowerCase().includes(query) ||
+      player.city?.toLowerCase().includes(query) ||
+      player.club?.toLowerCase().includes(query) ||
+      player.sport_field?.toLowerCase().includes(query)
+    );
+  });
 
-  const viewAsPlayer = (playerId: string) => {
-    toast('צפייה בתצוגת שחקן תהיה זמינה בקרוב', {
-      description: 'פיתוח תכונה זו בתהליך'
-    });
-  };
+  const handleDeletePlayer = async () => {
+    if (!selectedPlayer) return;
 
-  const updateContactStatus = async (playerId: string, newStatus: 'contacted' | 'pending') => {
     try {
       const { error } = await supabase
-        .from('players')
-        .update({ contact_status: newStatus })
-        .eq('id', playerId);
+        .from("players")
+        .delete()
+        .eq("id", selectedPlayer.id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      setPlayers(players.map(player => 
-        player.id === playerId ? { ...player, contact_status: newStatus } : player
+      toast({
+        title: "השחקן נמחק בהצלחה",
+        description: `השחקן ${selectedPlayer.full_name} נמחק מהמערכת`,
+      });
+
+      fetchPlayers();
+    } catch (error) {
+      console.error("Error deleting player:", error);
+      toast({
+        title: "שגיאה במחיקת השחקן",
+        description: "אירעה שגיאה בעת מחיקת השחקן. נסה שוב מאוחר יותר.",
+        variant: "destructive",
+      });
+    } finally {
+      setShowDeleteDialog(false);
+      setSelectedPlayer(null);
+    }
+  };
+
+  const createPlayerAccount = async (player: Player) => {
+    try {
+      if (player.has_account) {
+        toast({
+          title: "כבר קיים חשבון",
+          description: `לשחקן ${player.full_name} כבר יש חשבון במערכת`,
+        });
+        return;
+      }
+
+      const password = player.password || generatePassword();
+      
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: player.email,
+        password: password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: player.full_name,
+          role: 'player'
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      const { error: updateError } = await supabase
+        .from("players")
+        .update({ password: password })
+        .eq("id", player.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setPlayers(players.map(p => 
+        p.id === player.id 
+          ? { ...p, password: password, has_account: true } 
+          : p
       ));
 
-      toast.success(`סטטוס יצירת קשר עודכן בהצלחה`);
+      toast({
+        title: "חשבון שחקן נוצר בהצלחה",
+        description: `נוצר חשבון עבור ${player.full_name}`,
+      });
     } catch (error: any) {
-      toast.error('שגיאה בעדכון סטטוס יצירת קשר');
-      console.error('Error updating contact status:', error);
+      console.error("Error creating player account:", error);
+      toast({
+        title: "שגיאה ביצירת חשבון שחקן",
+        description: error.message || "אירעה שגיאה בעת יצירת חשבון השחקן",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleScheduleSession = (playerId: string, playerName: string) => {
-    navigate('/new-session', { 
-      state: { 
-        selectedPlayerId: playerId,
-        selectedPlayerName: playerName 
-      } 
+  const toggleCredentialsVisibility = (playerId: string) => {
+    setCredentialsVisible(prev => ({
+      ...prev,
+      [playerId]: !prev[playerId]
+    }));
+  };
+
+  const copyToClipboard = (text: string, type: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "הועתק בהצלחה",
+      description: `ה${type} הועתק ללוח`,
     });
   };
 
-  const handleEditPlayer = (playerId: string) => {
-    navigate('/edit-player', { state: { playerId } });
+  const getPlayerProfileUrl = (playerId: string) => {
+    return `${window.location.origin}/dashboard/player-profile/${playerId}`;
   };
-
-  const handleViewProfile = (playerId: string) => {
-    navigate(`/player-profile/${playerId}`);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!playerToDelete) return;
-
-    try {
-      const { error } = await supabase
-        .from('players')
-        .delete()
-        .eq('id', playerToDelete.id);
-
-      if (error) throw error;
-
-      setPlayers(players.filter(player => player.id !== playerToDelete.id));
-      toast.success('השחקן נמחק בהצלחה');
-      setPlayerToDelete(null);
-    } catch (error: any) {
-      toast.error('שגיאה במחיקת השחקן');
-      console.error('Error deleting player:', error);
-    }
-  };
-
-  const clearFilters = () => {
-    setSportFieldFilter('all');
-    setRegistrationTypeFilter('all');
-    setContactStatusFilter('all');
-  };
-
-  const formatDateTime = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return format(date, 'dd/MM/yyyy HH:mm');
-    } catch (error) {
-      return dateString || 'לא ידוע';
-    }
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    try {
-      return format(parseISO(dateString), 'dd/MM/yyyy');
-    } catch (error) {
-      return dateString;
-    }
-  };
-
-  const formatTime = (timeString?: string) => {
-    if (!timeString) return '';
-    return timeString.substring(0, 5);
-  };
-
-  const isInactive = (player: Player) => {
-    if (!player.last_session_date && !player.next_session_date) {
-      return true;
-    }
-    
-    if (player.next_session_date) {
-      return false;
-    }
-    
-    if (player.last_session_date) {
-      const lastSessionDate = parseISO(player.last_session_date);
-      const today = new Date();
-      return differenceInDays(today, lastSessionDate) > 14;
-    }
-    
-    return false;
-  };
-
-  const getSessionStatus = (player: Player) => {
-    if (player.next_session_date) {
-      return {
-        type: 'upcoming',
-        icon: <CheckCircle className="h-4 w-4 text-green-600" />,
-        message: 'מפגש קרוב מתוכנן',
-        color: 'text-green-600'
-      };
-    } else if (isInactive(player)) {
-      if (player.past_sessions_count === 0) {
-        return {
-          type: 'no_activity',
-          icon: <XCircle className="h-4 w-4 text-red-600" />,
-          message: 'ללא פעילות',
-          color: 'text-red-600'
-        };
-      } else {
-        return {
-          type: 'inactive',
-          icon: <AlertCircle className="h-4 w-4 text-amber-500" />,
-          message: 'יש לקבוע מפגש (לא פעיל יותר משבועיים)',
-          color: 'text-amber-500'
-        };
-      }
-    } else {
-      return {
-        type: 'active',
-        icon: <CheckCircle className="h-4 w-4 text-blue-600" />,
-        message: 'פעיל',
-        color: 'text-blue-600'
-      };
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-      </div>
-    );
-  }
-
-  const columns = [
-    {
-      accessorKey: "full_name",
-      header: "שם השחקן",
-      cell: ({ row }) => {
-        const player = row.original;
-        return (
-          <div className="flex items-center gap-2">
-            {player.full_name}
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  {player.contact_status === 'contacted' ? (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-yellow-500" />
-                  )}
-                </TooltipTrigger>
-                <TooltipContent>
-                  {player.contact_status === 'contacted' ? 'יצרנו קשר' : 'ממתין ליצירת קשר'}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "sport_field",
-      header: "ענף ספורט",
-      cell: ({ row }) => row.original.sport_field || "לא צוין",
-    },
-    {
-      accessorKey: "registration_link_id",
-      header: "אופן רישום",
-      cell: ({ row }) => {
-        const player = row.original;
-        return player.registration_link_id ? 
-          <Badge variant="secondary">רישום עצמאי</Badge> : 
-          <Badge variant="outline">נרשם ע״י המאמן</Badge>;
-      },
-    },
-    {
-      accessorKey: "contact_status",
-      header: "סטטוס יצירת קשר",
-      cell: ({ row }) => {
-        const player = row.original;
-        return (
-          <Select
-            value={player.contact_status || 'pending'}
-            onValueChange={(value) => updateContactStatus(player.id, value as 'contacted' | 'pending')}
-          >
-            <SelectTrigger className="w-[140px] text-right">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="text-right">
-              <SelectItem value="contacted">
-                <div className="flex items-center">
-                  <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
-                  יצרנו קשר
-                </div>
-              </SelectItem>
-              <SelectItem value="pending">
-                <div className="flex items-center">
-                  <AlertCircle className="h-3 w-3 text-yellow-500 mr-2" />
-                  ממתין ליצירת קשר
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        );
-      },
-    },
-    {
-      accessorKey: "created_at",
-      header: "תאריך רישום",
-      enableSorting: true,
-      sortDescFirst: true,
-      sortingFn: "datetime",
-      cell: ({ row }) => {
-        const player = row.original;
-        return (
-          <div className="flex items-center gap-1 text-sm">
-            <Clock className="h-3 w-3" />
-            {formatDateTime(player.created_at)}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "past_sessions_count",
-      header: "מפגשים שהתקיימו",
-      enableSorting: true,
-      sortingFn: "basic",
-      cell: ({ row }) => {
-        const player = row.original;
-        return (
-          <div className="text-center">
-            <Badge variant="outline" className="font-medium">
-              {player.past_sessions_count || 0}
-            </Badge>
-            {player.last_session_date && (
-              <div className="text-xs text-gray-500 mt-1">
-                אחרון: {formatDate(player.last_session_date)}
-              </div>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "next_session_date",
-      header: "מפגש עתידי",
-      cell: ({ row }) => {
-        const player = row.original;
-        const sessionStatus = getSessionStatus(player);
-        
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className={`flex items-center gap-1.5 ${sessionStatus.color}`}>
-                  {sessionStatus.icon}
-                  {player.next_session_date ? (
-                    <span className="text-sm">
-                      {formatDate(player.next_session_date)} {formatTime(player.next_session_time)}
-                    </span>
-                  ) : (
-                    <span className="text-sm">
-                      {sessionStatus.type === 'no_activity' ? 'ללא פעילות' : 'לא נקבע'}
-                    </span>
-                  )}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                {sessionStatus.message}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      },
-    },
-    {
-      accessorKey: "email",
-      header: "אימייל",
-      cell: ({ row }) => <span dir="ltr">{row.original.email}</span>,
-    },
-    {
-      accessorKey: "phone",
-      header: "טלפון",
-      cell: ({ row }) => <span dir="ltr">{row.original.phone || "-"}</span>,
-    },
-    {
-      accessorKey: "access",
-      header: "פרטי גישה",
-      cell: ({ row }) => {
-        const player = row.original;
-        const baseUrl = window.location.origin;
-        const profileUrl = `${baseUrl}/player-profile/${player.id}`;
-        
-        return (
-          <div className="flex gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Link className="h-3.5 w-3.5 mr-1" />
-                  פרטי גישה
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-3">
-                  <h4 className="font-medium mb-2">פרטי גישה עבור {player.full_name}</h4>
-                  
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-500">מזהה שחקן</label>
-                    <div className="flex items-center gap-1">
-                      <Input value={player.id} readOnly className="text-xs font-mono h-8" />
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-8 w-8" 
-                        onClick={() => copyPlayerId(player.id)}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-500">קישור לפרופיל</label>
-                    <div className="flex items-center gap-1">
-                      <Input value={profileUrl} readOnly className="text-xs font-mono h-8" dir="ltr" />
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-8 w-8" 
-                        onClick={() => copyPlayerLink(player.id)}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-500">אימייל</label>
-                    <Input value={player.email} readOnly className="text-xs h-8" dir="ltr" />
-                  </div>
-                  
-                  <div className="pt-2 flex justify-between">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="w-full" 
-                      onClick={() => viewAsPlayer(player.id)}
-                    >
-                      <Eye className="h-3.5 w-3.5 mr-1" />
-                      צפה כשחקן
-                    </Button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => copyPlayerLink(player.id)}
-              className="min-w-9 w-9 p-0"
-            >
-              {copiedPlayerId === player.id ? 
-                <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : 
-                <Copy className="h-3.5 w-3.5" />
-              }
-            </Button>
-          </div>
-        );
-      },
-    },
-    {
-      id: "actions",
-      header: "פעולות",
-      cell: ({ row }) => {
-        const player = row.original;
-        return (
-          <div className="flex gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleViewProfile(player.id)}
-                  >
-                    <UserCircle className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>צפה בפרופיל</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleEditPlayer(player.id)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleScheduleSession(player.id, player.full_name)}
-              className="gap-2"
-            >
-              <Calendar className="h-4 w-4" />
-              קבע מפגש
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPlayerToDelete({ id: player.id, name: player.full_name })}
-              className="text-red-600 hover:text-red-700"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        );
-      },
-    },
-  ] as ColumnDef<Player, unknown>[];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold">רשימת שחקנים</h1>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate('/')}
-              aria-label="חזרה לדף הראשי"
-            >
-              <Home className="h-4 w-4" />
-            </Button>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => navigate(-1)}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>חזור א��ורה</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => navigate("/")}
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>חזור לדף הבית</TooltipContent>
+            </Tooltip>
           </div>
-          <Button
-            onClick={() => navigate('/new-player')}
-            className="bg-primary hover:bg-primary/90"
-          >
-            הוספת שחקן חדש
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
+            ניהול שחקנים
+          </h1>
+          <Button onClick={() => navigate("/new-player")} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            הוסף שחקן חדש
           </Button>
         </div>
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-            <h3 className="font-bold">שגיאה בטעינת רשימת השחקנים:</h3>
-            <p>{error}</p>
-            <Button onClick={fetchPlayers} className="mt-2" variant="secondary">
-              נסה שוב
-            </Button>
+        <div className="bg-white shadow-md rounded-lg p-6 mb-8">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input
+                placeholder="חפש שחקן לפי שם, כתובת מייל, מספר טלפון, עיר או קבוצה..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4"
+              />
+            </div>
           </div>
-        )}
 
-        <div className="mb-4 text-gray-600">
-          סה"כ שחקנים: {players.length} | מוצגים: {filteredPlayers.length}
-        </div>
-
-        <Card className="p-4 mb-6">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex items-center">
-              <Filter className="h-4 w-4 mr-2" />
-              <span className="font-medium">סינון:</span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <span>ענף ספורט:</span>
-              <Select value={sportFieldFilter} onValueChange={setSportFieldFilter}>
-                <SelectTrigger className="w-[180px] text-right">
-                  <SelectValue placeholder="כל הענפים" />
-                </SelectTrigger>
-                <SelectContent className="text-right">
-                  <SelectItem value="all">כל הענפים</SelectItem>
-                  {uniqueSportFields.map(field => (
-                    <SelectItem key={field} value={field}>{field}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <span>אופן רישום:</span>
-              <Select value={registrationTypeFilter} onValueChange={setRegistrationTypeFilter}>
-                <SelectTrigger className="w-[180px] text-right">
-                  <SelectValue placeholder="כל השחקנים" />
-                </SelectTrigger>
-                <SelectContent className="text-right">
-                  <SelectItem value="all">כל השחקנים</SelectItem>
-                  <SelectItem value="self">רישום עצמאי</SelectItem>
-                  <SelectItem value="coach">נרשמו ע״י המאמן</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <span>סטטוס יצירת קשר:</span>
-              <Select value={contactStatusFilter} onValueChange={setContactStatusFilter}>
-                <SelectTrigger className="w-[180px] text-right">
-                  <SelectValue placeholder="כל השחקנים" />
-                </SelectTrigger>
-                <SelectContent className="text-right">
-                  <SelectItem value="all">כל השחקנים</SelectItem>
-                  <SelectItem value="contacted">יצרנו קשר</SelectItem>
-                  <SelectItem value="pending">ממתין ליצירת קשר</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Button 
-              variant="outline" 
-              onClick={clearFilters}
-              size="sm"
-            >
-              נקה סינון
-            </Button>
-          </div>
-        </Card>
-
-        {filteredPlayers.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            {players.length === 0 ? 
-              "לא נמצאו שחקנים במערכת" : 
-              "לא נמצאו שחקנים התואמים את הסינון הנוכחי"
-            }
-          </div>
-        ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full mb-6 grid grid-cols-2">
-              <TabsTrigger value="table">טבלה</TabsTrigger>
-              <TabsTrigger value="cards">כרטיסיות</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="table" className="w-full">
-              <div className="bg-white rounded-lg shadow overflow-auto">
-                <DataTable columns={columns} data={filteredPlayers} />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="cards" className="w-full">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredPlayers.map((player) => {
-                  const sessionStatus = getSessionStatus(player);
-                  const baseUrl = window.location.origin;
-                  const profileUrl = `${baseUrl}/player-profile/${player.id}`;
-                  
-                  return (
-                    <div key={player.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
-                      <div className="flex justify-between mb-3">
-                        <div className="text-right flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium text-lg">{player.full_name}</h3>
-                            {player.contact_status === 'contacted' ? (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <AlertCircle className="h-4 w-4 text-yellow-500" />
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-500">{player.sport_field || "לא צוין"}</p>
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[250px]">שם השחקן</TableHead>
+                  <TableHead>אימייל</TableHead>
+                  <TableHead>מספר טלפון</TableHead>
+                  <TableHead>קבוצה</TableHead>
+                  <TableHead>תחום ספורט</TableHead>
+                  <TableHead>תאריך הוספה</TableHead>
+                  <TableHead className="text-center">סטטוס חשבון</TableHead>
+                  <TableHead className="text-center">פעולות</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPlayers.length === 0 && !loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      לא נמצאו שחקנים התואמים את החיפוש
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredPlayers.map((player) => (
+                    <TableRow key={player.id}>
+                      <TableCell className="font-medium">
+                        {player.full_name}
+                      </TableCell>
+                      <TableCell>{player.email}</TableCell>
+                      <TableCell>
+                        {player.phone || <span className="text-gray-400">לא צוין</span>}
+                      </TableCell>
+                      <TableCell>
+                        {player.club || <span className="text-gray-400">לא צוין</span>}
+                      </TableCell>
+                      <TableCell>
+                        {player.sport_field || <span className="text-gray-400">לא צוין</span>}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5 text-gray-500" />
+                          <span>
+                            {new Date(player.created_at).toLocaleDateString('he-IL')}
+                          </span>
                         </div>
-                        <div className="rtl">
-                          {player.registration_link_id ? 
-                            <Badge variant="secondary" className="ml-2">רישום עצמאי</Badge> : 
-                            <Badge variant="outline" className="ml-2">נרשם ע״י המאמן</Badge>
-                          }
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
-                        <div>
-                          <p className="text-gray-500">אימייל:</p>
-                          <p dir="ltr" className="font-medium">{player.email}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">טלפון:</p>
-                          <p dir="ltr" className="font-medium">{player.phone || "-"}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
-                        <div>
-                          <p className="text-gray-500">מפגשים שהתקיימו:</p>
-                          <p className="font-medium">{player.past_sessions_count || 0}</p>
-                          {player.last_session_date && (
-                            <p className="text-xs text-gray-500">
-                              אחרון: {formatDate(player.last_session_date)}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-gray-500">מפגש עתידי:</p>
-                          <div className={`flex items-center gap-1.5 mt-1 ${sessionStatus.color}`}>
-                            {sessionStatus.icon}
-                            {player.next_session_date ? (
-                              <span className="text-sm">
-                                {formatDate(player.next_session_date)} {formatTime(player.next_session_time)}
-                              </span>
-                            ) : (
-                              <span className="text-sm">
-                                {sessionStatus.type === 'no_activity' ? 'ללא פעילות' : 'לא נקבע'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-2 mb-4 pt-2 border-t border-gray-100">
-                        <p className="text-gray-500 text-sm mb-1">פרטי גישה:</p>
-                        <div className="flex justify-between items-center">
-                          <div className="max-w-[70%] truncate">
-                            <p dir="ltr" className="text-xs text-gray-600 font-mono truncate">{profileUrl}</p>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => copyPlayerLink(player.id)}
-                            className="h-7 gap-1"
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {player.has_account ? (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            פעיל
+                          </Badge>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-xs" 
+                            onClick={() => createPlayerAccount(player)}
                           >
-                            {copiedPlayerId === player.id ? 
-                              <CheckCircle className="h-3 w-3 text-green-600" /> : 
-                              <Copy className="h-3 w-3" />
-                            }
-                            העתק קישור
+                            יצירת חשבון
                           </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewProfile(player.id)}
-                        >
-                          <UserCircle className="h-4 w-4 mr-1" />
-                          פרופיל
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditPlayer(player.id)}
-                        >
-                          <Pencil className="h-4 w-4 mr-1" />
-                          עריכה
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleScheduleSession(player.id, player.full_name)}
-                        >
-                          <Calendar className="h-4 w-4 mr-1" />
-                          קבע מפגש
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPlayerToDelete({ id: player.id, name: player.full_name })}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </TabsContent>
-          </Tabs>
-        )}
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-center items-center gap-2">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => toggleCredentialsVisibility(player.id)}
+                                >
+                                  <Key className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>פרטי התחברות</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => navigate(`/player-profile/${player.id}`)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>צפה בפרופיל</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
 
-        <AlertDialog 
-          open={!!playerToDelete} 
-          onOpenChange={() => setPlayerToDelete(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
-              <AlertDialogDescription>
-                האם אתה בטוח שברצונך למחוק את השחקן {playerToDelete?.name}?
-                <br />
-                פעולה זו לא ניתנת לביטול.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>ביטול</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
-                מחק
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <User className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>דף אישי ופרטי התחברות</DialogTitle>
+                                <DialogDescription>
+                                  פרטי ההתחברות של השחקן {player.full_name} לדף האישי שלו
+                                </DialogDescription>
+                              </DialogHeader>
+                              
+                              <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                  <label className="text-sm font-medium">כתובת הדף האישי:</label>
+                                  <div className="flex items-center gap-2">
+                                    <Input 
+                                      value={getPlayerProfileUrl(player.id)} 
+                                      readOnly 
+                                      className="font-mono text-sm"
+                                    />
+                                    <Button 
+                                      size="icon" 
+                                      variant="outline"
+                                      onClick={() => copyToClipboard(getPlayerProfileUrl(player.id), "קישור")}
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <label className="text-sm font-medium">שם משתמש (אימייל):</label>
+                                  <div className="flex items-center gap-2">
+                                    <Input value={player.email} readOnly />
+                                    <Button 
+                                      size="icon" 
+                                      variant="outline"
+                                      onClick={() => copyToClipboard(player.email, "אימייל")}
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <label className="text-sm font-medium">סיסמה:</label>
+                                  <div className="flex items-center gap-2">
+                                    <Input 
+                                      type={credentialsVisible[player.id] ? "text" : "password"} 
+                                      value={player.password || "********"} 
+                                      readOnly 
+                                    />
+                                    <Button 
+                                      size="icon" 
+                                      variant="outline"
+                                      onClick={() => toggleCredentialsVisibility(player.id)}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      size="icon" 
+                                      variant="outline"
+                                      onClick={() => copyToClipboard(player.password || "", "סיסמה")}
+                                      disabled={!player.password}
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                
+                                <div className="mt-6 bg-amber-50 border border-amber-200 rounded-md p-3">
+                                  <p className="text-sm text-amber-800">
+                                    שים לב: יש להעביר את הפרטים הללו לשחקן באופן מאובטח. 
+                                    {!player.has_account && " עליך ליצור חשבון עבור השחקן לפני שיוכל להתחבר."}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <DialogFooter>
+                                {!player.has_account && (
+                                  <Button 
+                                    onClick={() => createPlayerAccount(player)}
+                                    className="ml-auto"
+                                  >
+                                    צור חשבון
+                                  </Button>
+                                )}
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => navigate(`/dashboard/player-profile/${player.id}`)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <LinkIcon className="h-4 w-4" />
+                                  צפה בדף השחקן
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => setSelectedPlayer(player)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>מחיקת שחקן</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  האם אתה בטוח שברצונך למחוק את השחקן {player.full_name}?
+                                  פעולה זו אינה ניתנת לביטול.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeletePlayer} className="bg-red-500 hover:bg-red-600">
+                                  מחק שחקן
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       </div>
     </div>
   );

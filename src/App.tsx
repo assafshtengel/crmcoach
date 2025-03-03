@@ -29,6 +29,7 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import GamePreparation from "./pages/GamePreparation";
 import NotificationsDashboard from "./pages/NotificationsDashboard";
 import AuthPage from "./pages/auth/AuthPage";
+import PlayerAuthPage from "./pages/auth/PlayerAuthPage";
 import ActionPlan from "./pages/ActionPlan";
 import SessionSummaries from "./pages/SessionSummaries";
 import NewPlayerForm from "./pages/NewPlayerForm";
@@ -37,7 +38,9 @@ import RegistrationLinks from "./pages/RegistrationLinks";
 import PublicRegistrationForm from "./pages/PublicRegistrationForm";
 import ToolManagement from "./pages/ToolManagement";
 import AllMeetingSummaries from './pages/AllMeetingSummaries';
+import PlayerDashboard from './pages/PlayerDashboard';
 import { AuthGuard } from "./components/auth/AuthGuard";
+import { PlayerProfileGuard } from "./components/auth/PlayerProfileGuard";
 
 import "./App.css";
 
@@ -74,6 +77,7 @@ function App() {
         <Route path="/game-prep" element={<AuthGuard><GamePreparation /></AuthGuard>} />
         <Route path="/notifications" element={<AuthGuard><NotificationsDashboard /></AuthGuard>} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/player-auth" element={<PlayerAuthPage />} />
         <Route path="/action-plan" element={<AuthGuard><ActionPlan /></AuthGuard>} />
         <Route path="/session-summaries" element={<AuthGuard><SessionSummaries /></AuthGuard>} />
         <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />
@@ -83,6 +87,7 @@ function App() {
         <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
         <Route path="/tool-management" element={<AuthGuard><ToolManagement /></AuthGuard>} />
         <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
+        <Route path="/dashboard/player-profile/:playerId" element={<PlayerProfileGuard><PlayerDashboard /></PlayerProfileGuard>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
