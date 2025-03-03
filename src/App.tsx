@@ -38,7 +38,6 @@ import PublicRegistrationForm from "./pages/PublicRegistrationForm";
 import ToolManagement from "./pages/ToolManagement";
 import AllMeetingSummaries from './pages/AllMeetingSummaries';
 import { AuthGuard } from "./components/auth/AuthGuard";
-import PlayerAuthGuard from "./components/player/PlayerAuth";
 
 import "./App.css";
 
@@ -50,11 +49,7 @@ function App() {
         <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
         <Route path="/new" element={<AuthGuard><NewIndex /></AuthGuard>} />
         <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
-        <Route path="/dashboard/player-profile/:playerId" element={
-          <PlayerAuthGuard>
-            <PlayerProfile />
-          </PlayerAuthGuard>
-        } />
+        <Route path="/dashboard/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
         <Route path="/huze" element={<AuthGuard><Huze /></AuthGuard>} />
         <Route path="/contract" element={<AuthGuard><Contract /></AuthGuard>} />
         <Route path="/mental-commitment" element={<AuthGuard><MentalCommitment /></AuthGuard>} />
@@ -67,11 +62,7 @@ function App() {
         <Route path="/players-list" element={<AuthGuard><PlayersList /></AuthGuard>} />
         <Route path="/new-session" element={<AuthGuard><NewSessionForm /></AuthGuard>} />
         <Route path="/edit-session" element={<AuthGuard><EditSessionForm /></AuthGuard>} />
-        <Route path="/player-profile/:playerId" element={
-          <PlayerAuthGuard>
-            <PlayerProfile />
-          </PlayerAuthGuard>
-        } />
+        <Route path="/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
         <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
         <Route path="/goal-details-questions" element={<AuthGuard><GoalDetailsQuestions /></AuthGuard>} />
         <Route path="/profile-coach" element={<AuthGuard><ProfileCoach /></AuthGuard>} />

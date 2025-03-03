@@ -2,14 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Home, Pencil, Copy, CheckCircle, Eye, Link, Key, RefreshCw } from 'lucide-react';
+import { ChevronRight, Home, Pencil, Copy, CheckCircle, Eye, Link } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Player {
   id: string;
@@ -28,7 +27,6 @@ interface Player {
   sport_field: string;
   profile_image: string;
   created_at: string;
-  password: string | null;
 }
 
 const PlayerProfile = () => {
@@ -39,9 +37,6 @@ const PlayerProfile = () => {
   const [error, setError] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
-  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [isGeneratingPassword, setIsGeneratingPassword] = useState(false);
 
   useEffect(() => {
     const fetchPlayer = async () => {
@@ -111,65 +106,6 @@ const PlayerProfile = () => {
     toast('צפייה בתצוגת שחקן תהיה זמינה בקרוב', {
       description: 'פיתוח תכונה זו בתהליך'
     });
-  };
-
-  // Generate a random password of specified length
-  const generatePassword = (length: number = 8) => {
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let password = "";
-    for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * charset.length);
-      password += charset[randomIndex];
-    }
-    return password;
-  };
-
-  const handlePasswordReset = async () => {
-    if (!player) return;
-    
-    setIsGeneratingPassword(true);
-    try {
-      // Generate a new random password
-      const password = generatePassword(10);
-      setNewPassword(password);
-      
-      // Update the player's password in the database
-      const { error } = await supabase
-        .from('players')
-        .update({ password: password })
-        .eq('id', player.id);
-        
-      if (error) throw error;
-      
-      // Update local player state
-      setPlayer({...player, password});
-      
-      // Open the dialog to show the new password
-      setPasswordDialogOpen(true);
-      toast.success("סיסמה חדשה נוצרה בהצלחה");
-    } catch (err: any) {
-      console.error("Error resetting password:", err);
-      toast.error("שגיאה ביצירת סיסמה חדשה");
-    } finally {
-      setIsGeneratingPassword(false);
-    }
-  };
-
-  const handleClosePasswordDialog = () => {
-    setPasswordDialogOpen(false);
-    setNewPassword("");
-  };
-
-  const copyPassword = () => {
-    if (!newPassword) return;
-    
-    navigator.clipboard.writeText(newPassword)
-      .then(() => {
-        toast.success("הסיסמה הועתקה בהצלחה");
-      })
-      .catch(() => {
-        toast.error("שגיאה בהעתקת הסיסמה");
-      });
   };
 
   if (loading) {
@@ -358,31 +294,6 @@ const PlayerProfile = () => {
                   </p>
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium text-gray-700">סיסמת גישה</label>
-                  <div className="flex flex-col md:flex-row md:items-center gap-2">
-                    <div className="flex-1 bg-gray-50 p-3 rounded-md border border-gray-200">
-                      {player.password ? (
-                        <span className="font-medium text-green-600">✓ קיימת סיסמה</span>
-                      ) : (
-                        <span className="font-medium text-amber-600">✗ לא הוגדרה סיסמה</span>
-                      )}
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePasswordReset}
-                      disabled={isGeneratingPassword}
-                      className="gap-2 md:w-auto w-full"
-                    >
-                      <Key className="h-4 w-4" />
-                      {player.password ? "איפוס סיסמה" : "יצירת סיסמה"}
-                    </Button>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">
-                    השחקן יוכל להשתמש באימייל ובסיסמה כדי לגשת לפרופיל שלו
-                  </p>
-                </div>
-
                 <div className="md:col-span-2 flex justify-end">
                   <Button 
                     variant="outline" 
@@ -507,42 +418,6 @@ const PlayerProfile = () => {
           </Card>
         </div>
       </div>
-
-      {/* Password Reset Dialog */}
-      <Dialog open={passwordDialogOpen} onOpenChange={handleClosePasswordDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>סיסמה חדשה נוצרה</DialogTitle>
-            <DialogDescription>
-              זוהי הסיסמה החדשה של {player.full_name}. יש לשתף אותה עם השחקן ולהנחות אותו להתחבר עם האימייל והסיסמה.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center space-x-2 mt-2">
-            <div className="grid flex-1 gap-2">
-              <label className="text-sm font-medium text-gray-700">הסיסמה החדשה</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={newPassword}
-                  readOnly
-                  dir="ltr"
-                  className="font-mono text-base bg-gray-50"
-                />
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={copyPassword}
-                  className="h-9 w-9"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="sm:justify-center">
-            <Button variant="default" onClick={handleClosePasswordDialog}>סגור</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
