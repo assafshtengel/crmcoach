@@ -30,6 +30,7 @@ interface Player {
   last_session_date?: string;
   next_session_date?: string;
   next_session_time?: string;
+  password?: string | null; // Add password field to fix the TypeScript error
 }
 
 const PlayersList = () => {
@@ -103,7 +104,8 @@ const PlayersList = () => {
           registration_link_id,
           contact_status,
           coach_id,
-          created_at
+          created_at,
+          password
         `).eq('coach_id', user.id);
       if (playersError) {
         console.error('Error fetching players:', playersError);
@@ -764,55 +766,4 @@ const PlayersList = () => {
                         </div>
                       </div>
                       
-                      <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between">
-                        <Button variant="outline" size="sm" onClick={() => handleViewProfile(player.id)}>
-                          <UserCircle className="h-4 w-4 mr-1" />
-                          פרופיל
-                        </Button>
-                        
-                        <Button variant="outline" size="sm" onClick={() => handleEditPlayer(player.id)}>
-                          <Pencil className="h-4 w-4 mr-1" />
-                          עריכה
-                        </Button>
-                        
-                        <Button variant="outline" size="sm" onClick={() => handleScheduleSession(player.id, player.full_name)}>
-                          <Calendar className="h-4 w-4 mr-1" />
-                          קבע מפגש
-                        </Button>
-                        
-                        <Button variant="outline" size="sm" onClick={() => setPlayerToDelete({
-                    id: player.id,
-                    name: player.full_name
-                  })} className="text-red-600 hover:text-red-700">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>;
-            })}
-              </div>
-            </TabsContent>
-          </Tabs>}
-
-        <AlertDialog open={!!playerToDelete} onOpenChange={() => setPlayerToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
-              <AlertDialogDescription>
-                האם אתה בטוח שברצונך למחוק את השחקן {playerToDelete?.name}?
-                <br />
-                פעולה זו לא ניתנת לביטול.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>ביטול</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
-                מחק
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </div>;
-};
-
-export default PlayersList;
+                      <div className="mt-4 pt-4 border-t border-
