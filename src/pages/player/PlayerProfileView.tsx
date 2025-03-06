@@ -60,7 +60,7 @@ interface SessionSummary {
   progress_rating: number | null;
   next_session_focus: string | null;
   additional_notes: string | null;
-  tools_used: any[] | null;
+  tools_used: any | null; // Changed from any[] to any to accommodate both array and Json types
 }
 
 interface Session {
