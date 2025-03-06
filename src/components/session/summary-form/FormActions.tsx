@@ -6,16 +6,27 @@ import { Save, X, FileText, PanelRight, Settings } from "lucide-react";
 interface FormActionsProps {
   onCancel: () => void;
   onSubmit: () => void;
+  onSaveDraft?: () => void;
+  onExportPDF?: () => void;
+  onAdvancedSettings?: () => void;
+  isSaving?: boolean;
 }
 
-export function FormActions({ onCancel, onSubmit }: FormActionsProps) {
+export function FormActions({ 
+  onCancel, 
+  onSubmit, 
+  onSaveDraft, 
+  onExportPDF, 
+  onAdvancedSettings,
+  isSaving = false
+}: FormActionsProps) {
   return (
     <div className="space-y-2 mt-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <Button 
           type="button" 
           onClick={onCancel}
-          className="bg-yellow-400 hover:bg-yellow-500 text-white"
+          variant="yellow"
         >
           <X className="mr-2 h-4 w-4" />
           ביטול
@@ -23,7 +34,9 @@ export function FormActions({ onCancel, onSubmit }: FormActionsProps) {
         
         <Button 
           type="button"
-          className="bg-blue-400 hover:bg-blue-500 text-white"
+          onClick={onSaveDraft}
+          variant="blue"
+          disabled={isSaving}
         >
           <FileText className="mr-2 h-4 w-4" />
           שמור טיוטה
@@ -32,15 +45,18 @@ export function FormActions({ onCancel, onSubmit }: FormActionsProps) {
         <Button 
           type="button" 
           onClick={onSubmit}
-          className="bg-green-500 hover:bg-green-600 text-white"
+          variant="green"
+          disabled={isSaving}
         >
           <Save className="mr-2 h-4 w-4" />
-          שמור סיכום
+          {isSaving ? 'שומר...' : 'שמור סיכום'}
         </Button>
 
         <Button 
           type="button"
-          className="bg-gray-700 hover:bg-gray-800 text-white"
+          onClick={onExportPDF}
+          variant="gray"
+          disabled={isSaving}
         >
           <PanelRight className="mr-2 h-4 w-4" />
           שמור וייצא PDF
@@ -49,7 +65,10 @@ export function FormActions({ onCancel, onSubmit }: FormActionsProps) {
       
       <Button 
         type="button"
-        className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+        variant="purple"
+        onClick={onAdvancedSettings}
+        disabled={isSaving}
+        className="w-full"
       >
         <Settings className="mr-2 h-4 w-4" />
         הגדרות מתקדמות
