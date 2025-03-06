@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -22,6 +21,7 @@ interface SessionSummary {
   next_session_focus: string;
   additional_notes?: string;
   session: {
+    id: string;
     session_date: string;
     player: {
       id: string;
@@ -49,6 +49,7 @@ const AllMeetingSummaries = () => {
       .select(`
         *,
         session:sessions (
+          id,
           session_date,
           player:players (
             id,
@@ -60,7 +61,7 @@ const AllMeetingSummaries = () => {
       .order('created_at', { ascending: false });
 
     if (selectedPlayer !== 'all') {
-      query.eq('session.player_id', selectedPlayer);
+      query.eq('session.player.id', selectedPlayer);
     }
 
     const { data, error } = await query;
@@ -69,17 +70,24 @@ const AllMeetingSummaries = () => {
       return;
     }
     
-    // Filter by search query if provided
-    let filteredData = data;
+    const uniqueSessions = new Map<string, SessionSummary>();
+    data?.forEach((summary: SessionSummary) => {
+      if (!uniqueSessions.has(summary.session.id)) {
+        uniqueSessions.set(summary.session.id, summary);
+      }
+    });
+    
+    let uniqueData = Array.from(uniqueSessions.values());
+    
     if (searchQuery) {
       const lowerSearchQuery = searchQuery.toLowerCase();
-      filteredData = data.filter((summary: SessionSummary) => 
+      uniqueData = uniqueData.filter((summary: SessionSummary) => 
         summary.session.player.full_name.toLowerCase().includes(lowerSearchQuery) ||
         summary.summary_text.toLowerCase().includes(lowerSearchQuery)
       );
     }
     
-    setSummaries(filteredData);
+    setSummaries(uniqueData);
     setIsLoading(false);
   };
 
@@ -106,7 +114,6 @@ const AllMeetingSummaries = () => {
   useEffect(() => {
     fetchSummaries();
     
-    // Update URL params when filter changes
     if (selectedPlayer !== 'all') {
       setSearchParams({ playerId: selectedPlayer });
     } else {
@@ -260,7 +267,7 @@ const AllMeetingSummaries = () => {
                       <span className="text-gray-500 text-xs">
                         {format(new Date(summary.created_at), 'HH:mm dd/MM/yyyy', { locale: he })}
                       </span>
-                      <span className="text-[#6E59A5]">דירוג התקדמות: {summary.progress_rating}/5</span>
+                      <span className="text-[#6E59A5]">דירוג התקדמ��ת: {summary.progress_rating}/5</span>
                     </div>
                   </div>
                 </CardContent>
