@@ -52,6 +52,17 @@ interface Player {
   profile_image: string;
 }
 
+interface SessionSummary {
+  id: string;
+  summary_text: string;
+  achieved_goals: string[] | null;
+  future_goals: string[] | null;
+  progress_rating: number | null;
+  next_session_focus: string | null;
+  additional_notes: string | null;
+  tools_used: any[] | null;
+}
+
 interface Session {
   id: string;
   session_date: string;
@@ -62,16 +73,7 @@ interface Session {
     full_name: string;
   };
   has_summary: boolean;
-  session_summary?: {
-    id: string;
-    summary_text: string;
-    achieved_goals: string[] | null;
-    future_goals: string[] | null;
-    progress_rating: number | null;
-    next_session_focus: string | null;
-    additional_notes: string | null;
-    tools_used: any[] | null;
-  } | null;
+  session_summary?: SessionSummary | null;
 }
 
 type TimeFilter = 'all' | 'upcoming' | 'past' | 'week' | 'month';
@@ -161,11 +163,22 @@ const PlayerProfileView = () => {
           
         if (pastSessionsError) throw pastSessionsError;
         
-        // Format has_summary boolean
-        const formattedPastSessions = (pastSessionsData || []).map(session => ({
-          ...session,
-          has_summary: session.has_summary && session.has_summary.length > 0
-        }));
+        // Format data to match our Session interface
+        const formattedPastSessions = (pastSessionsData || []).map(session => {
+          // Track if there's a summary
+          const hasSummary = session.has_summary && session.has_summary.length > 0;
+          
+          // Get the first summary if it exists (there should only be one per session)
+          const summaryData = hasSummary && session.session_summary && session.session_summary.length > 0 
+            ? session.session_summary[0] 
+            : null;
+          
+          return {
+            ...session,
+            has_summary: hasSummary,
+            session_summary: summaryData
+          };
+        });
         
         setPastSessions(formattedPastSessions);
         
