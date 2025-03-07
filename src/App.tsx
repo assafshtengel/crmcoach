@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -8,19 +9,13 @@ import EditPlayerForm from './pages/EditPlayerForm';
 import SessionsList from './pages/SessionsList';
 import NewSessionForm from './pages/NewSessionForm';
 import EditSessionForm from './pages/EditSessionForm';
-import SessionDetails from './pages/SessionDetails';
-import SessionSummaryForm from './pages/SessionSummaryForm';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
 import { supabase } from './integrations/supabase/client';
 import { Toaster } from './components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
-import PlayerAuth from './pages/player/PlayerAuth';
 import PlayerProfileView from './pages/player/PlayerProfileView';
 import GamePreparation from './pages/GamePreparation';
+import PlayerAuth from './pages/PlayerAuth';
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -66,14 +61,14 @@ function App() {
         {/* Auth routes */}
         <Route
           path="/auth"
-          element={session ? <Navigate to="/dashboard" /> : <Login />}
+          element={session ? <Navigate to="/dashboard" /> : <div>Login Page</div>}
         />
         <Route
           path="/register"
-          element={session ? <Navigate to="/dashboard" /> : <Register />}
+          element={session ? <Navigate to="/dashboard" /> : <div>Register Page</div>}
         />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/forgot-password" element={<div>Forgot Password Page</div>} />
+        <Route path="/reset-password" element={<div>Reset Password Page</div>} />
 
         {/* Player routes */}
         <Route path="/player/profile" element={<PlayerProfileView />} />
@@ -120,11 +115,11 @@ function App() {
         />
         <Route
           path="/session-details/:sessionId"
-          element={session ? <SessionDetails /> : <Navigate to="/auth" />}
+          element={session ? <div>Session Details</div> : <Navigate to="/auth" />}
         />
         <Route
           path="/session-summary/:sessionId"
-          element={session ? <SessionSummaryForm /> : <Navigate to="/auth" />}
+          element={session ? <div>Session Summary</div> : <Navigate to="/auth" />}
         />
 
         {/* 404 route */}
