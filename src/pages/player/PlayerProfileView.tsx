@@ -13,8 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   Filter,
-  LogOut,
-  Target
+  LogOut
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -35,9 +34,6 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { PlayerGoals } from '@/components/goals/PlayerGoals';
 
 interface Player {
   id: string;
@@ -81,6 +77,13 @@ interface Session {
   session_summary?: SessionSummary | null;
 }
 
+interface PhysicalWorkout {
+  id: string;
+  date: string;
+  description: string;
+  duration: string;
+}
+
 type TimeFilter = 'all' | 'upcoming' | 'past' | 'week' | 'month';
 
 const PlayerProfileView = () => {
@@ -96,13 +99,6 @@ const PlayerProfileView = () => {
   const [workoutDescription, setWorkoutDescription] = useState('');
   const [workoutDuration, setWorkoutDuration] = useState('');
   const [physicalWorkouts, setPhysicalWorkouts] = useState<PhysicalWorkout[]>([]);
-
-  interface PhysicalWorkout {
-    id: string;
-    date: string;
-    description: string;
-    duration: string;
-  }
 
   useEffect(() => {
     const fetchPlayerData = async () => {
@@ -128,7 +124,7 @@ const PlayerProfileView = () => {
         if (!playerDetails) throw new Error("לא נמצאו פרטי שחקן");
         
         setPlayer(playerDetails);
-                
+        
         const now = new Date();
         const { data: upcomingSessionsData, error: upcomingSessionsError } = await supabase
           .from('sessions')
@@ -356,16 +352,6 @@ const PlayerProfileView = () => {
             <span>אימונים פיזיים</span>
           </Button>
           <Button
-            variant={activeTab === 'goals' ? 'default' : 'outline'}
-            className={`flex flex-col items-center px-6 py-4 h-auto min-w-[100px] ${
-              activeTab === 'goals' ? 'bg-[#F2FCE2] text-green-700 hover:bg-[#F2FCE2]' : ''
-            }`}
-            onClick={() => setActiveTab('goals')}
-          >
-            <Target className="h-6 w-6 mb-2" />
-            <span>המטרות שלי</span>
-          </Button>
-          <Button
             variant={activeTab === 'profile' ? 'default' : 'outline'}
             className={`flex flex-col items-center px-6 py-4 h-auto min-w-[100px] ${
               activeTab === 'profile' ? 'bg-[#F2FCE2] text-green-700 hover:bg-[#F2FCE2]' : ''
@@ -418,7 +404,7 @@ const PlayerProfileView = () => {
                   <p className="text-gray-700 mt-1">
                     {player.club && player.year_group ? (
                       <span>
-                        {player.club} ��� {player.year_group}
+                        {player.club} • {player.year_group}
                       </span>
                     ) : player.club ? (
                       <span>{player.club}</span>
@@ -433,20 +419,36 @@ const PlayerProfileView = () => {
             </CardContent>
           </Card>
 
-          {/* GOALS TAB */}
-          {activeTab === 'goals' && (
-            <div className="lg:col-span-3">
-              <Card>
-                <CardContent className="p-6">
-                  {player && <PlayerGoals playerId={player.id} />}
-                </CardContent>
-              </Card>
+          {activeTab !== 'physical' && (
+            <div className="lg:col-span-3 flex justify-between items-center mb-2">
+              <h3 className="text-lg font-medium">
+                {activeTab === 'upcoming' ? 'המפגשים הקרובים שלי' : 
+                activeTab === 'past' ? 'סיכומי המפגשים הקודמים' : 
+                activeTab === 'physical' ? 'האימונים הפיזיים שלי' : 'הפרופיל שלי'}
+              </h3>
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <Select 
+                  value={timeFilter} 
+                  onValueChange={(value) => setTimeFilter(value as TimeFilter)}
+                >
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="סנן לפי זמן" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">כל המפגשים</SelectItem>
+                    <SelectItem value="upcoming">מפגשים עתידיים</SelectItem>
+                    <SelectItem value="past">מפגשים קודמים</SelectItem>
+                    <SelectItem value="week">שבוע אחרון/הבא</SelectItem>
+                    <SelectItem value="month">חודש אחרון/הבא</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
 
-          {/* Keep existing tabs */}
-          {activeTab === 'physical' && (
-            <div className="lg:col-span-3">
+          <div className="lg:col-span-3">
+            {activeTab === 'physical' && (
               <Card>
                 <CardHeader>
                   <CardTitle>האימונים הפיזיים שלי</CardTitle>
@@ -517,11 +519,9 @@ const PlayerProfileView = () => {
                   )}
                 </CardContent>
               </Card>
-            </div>
-          )}
+            )}
 
-          {activeTab === 'upcoming' && (
-            <div className="lg:col-span-3">
+            {activeTab === 'upcoming' && (
               <Card>
                 <CardContent className="p-6">
                   {getFilteredUpcomingSessions().length > 0 ? (
@@ -589,11 +589,9 @@ const PlayerProfileView = () => {
                   )}
                 </CardContent>
               </Card>
-            </div>
-          )}
+            )}
 
-          {activeTab === 'past' && (
-            <div className="lg:col-span-3">
+            {activeTab === 'past' && (
               <Card>
                 <CardContent className="p-6">
                   {getFilteredPastSessions().length > 0 ? (
@@ -710,117 +708,117 @@ const PlayerProfileView = () => {
                   )}
                 </CardContent>
               </Card>
-            </div>
-          )}
+            )}
 
-          {activeTab === 'profile' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">פרטים אישיים</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <dl className="grid grid-cols-1 gap-y-4">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-700">שם מלא</dt>
-                      <dd>{player.full_name}</dd>
+            {activeTab === 'profile' && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">פרטים אישיים</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <dl className="grid grid-cols-1 gap-y-4">
+                      <div>
+                        <dt className="text-sm font-medium text-gray-700">שם מלא</dt>
+                        <dd>{player.full_name}</dd>
+                      </div>
+                      
+                      <div>
+                        <dt className="text-sm font-medium text-gray-700">כתובת אימייל</dt>
+                        <dd dir="ltr" className="font-mono text-sm">{player.email}</dd>
+                      </div>
+                      
+                      <div>
+                        <dt className="text-sm font-medium text-gray-700">מספר טלפון</dt>
+                        <dd dir="ltr" className="font-mono text-sm">{player.phone || "-"}</dd>
+                      </div>
+                      
+                      <div>
+                        <dt className="text-sm font-medium text-gray-700">תאריך לידה</dt>
+                        <dd>{player.birthdate || "-"}</dd>
+                      </div>
+                    </dl>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">פרטי מועדון</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <dl className="grid grid-cols-1 gap-y-4">
+                      <div>
+                        <dt className="text-sm font-medium text-gray-700">עיר</dt>
+                        <dd>{player.city || "-"}</dd>
+                      </div>
+                      
+                      <div>
+                        <dt className="text-sm font-medium text-gray-700">מועדון</dt>
+                        <dd>{player.club || "-"}</dd>
+                      </div>
+                      
+                      <div>
+                        <dt className="text-sm font-medium text-gray-700">שכבת גיל</dt>
+                        <dd>{player.year_group || "-"}</dd>
+                      </div>
+                      
+                      <div>
+                        <dt className="text-sm font-medium text-gray-700">ענף ספורט</dt>
+                        <dd>{player.sport_field || "-"}</dd>
+                      </div>
+                    </dl>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">פרטי הורים</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <dl className="grid grid-cols-1 gap-y-4">
+                      <div>
+                        <dt className="text-sm font-medium text-gray-700">שם הורה</dt>
+                        <dd>{player.parent_name || "-"}</dd>
+                      </div>
+                      
+                      <div>
+                        <dt className="text-sm font-medium text-gray-700">טלפון הורה</dt>
+                        <dd dir="ltr" className="font-mono text-sm">{player.parent_phone || "-"}</dd>
+                      </div>
+                      
+                      <div>
+                        <dt className="text-sm font-medium text-gray-700">אימייל הורה</dt>
+                        <dd dir="ltr" className="font-mono text-sm">{player.parent_email || "-"}</dd>
+                      </div>
+                    </dl>
+                  </CardContent>
+                </Card>
+                
+                <Card className="lg:col-span-3">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">מידע נוסף</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-700 mb-2">פציעות</h3>
+                        <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
+                          {player.injuries || "לא צוינו פציעות"}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-700 mb-2">הערות</h3>
+                        <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
+                          {player.notes || "אין הערות"}
+                        </p>
+                      </div>
                     </div>
-                    
-                    <div>
-                      <dt className="text-sm font-medium text-gray-700">כתובת אימייל</dt>
-                      <dd dir="ltr" className="font-mono text-sm">{player.email}</dd>
-                    </div>
-                    
-                    <div>
-                      <dt className="text-sm font-medium text-gray-700">מספר טלפון</dt>
-                      <dd dir="ltr" className="font-mono text-sm">{player.phone || "-"}</dd>
-                    </div>
-                    
-                    <div>
-                      <dt className="text-sm font-medium text-gray-700">תאריך לידה</dt>
-                      <dd>{player.birthdate || "-"}</dd>
-                    </div>
-                  </dl>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">פרטי מועדון</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <dl className="grid grid-cols-1 gap-y-4">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-700">עיר</dt>
-                      <dd>{player.city || "-"}</dd>
-                    </div>
-                    
-                    <div>
-                      <dt className="text-sm font-medium text-gray-700">מועדון</dt>
-                      <dd>{player.club || "-"}</dd>
-                    </div>
-                    
-                    <div>
-                      <dt className="text-sm font-medium text-gray-700">שכבת גיל</dt>
-                      <dd>{player.year_group || "-"}</dd>
-                    </div>
-                    
-                    <div>
-                      <dt className="text-sm font-medium text-gray-700">ענף ספורט</dt>
-                      <dd>{player.sport_field || "-"}</dd>
-                    </div>
-                  </dl>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">פרטי הורים</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <dl className="grid grid-cols-1 gap-y-4">
-                    <div>
-                      <dt className="text-sm font-medium text-gray-700">שם הורה</dt>
-                      <dd>{player.parent_name || "-"}</dd>
-                    </div>
-                    
-                    <div>
-                      <dt className="text-sm font-medium text-gray-700">טלפון הורה</dt>
-                      <dd dir="ltr" className="font-mono text-sm">{player.parent_phone || "-"}</dd>
-                    </div>
-                    
-                    <div>
-                      <dt className="text-sm font-medium text-gray-700">אימייל ה��רה</dt>
-                      <dd dir="ltr" className="font-mono text-sm">{player.parent_email || "-"}</dd>
-                    </div>
-                  </dl>
-                </CardContent>
-              </Card>
-              
-              <Card className="lg:col-span-3">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">מידע נוסף</CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2">פציעות</h3>
-                      <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
-                        {player.injuries || "לא צוינו פציעות"}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2">הערות</h3>
-                      <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
-                        {player.notes || "אין הערות"}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
