@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -145,10 +146,13 @@ const DashboardCoach = () => {
         isAfter(new Date(session.session_date), firstDayOfMonth)
       )?.length || 0;
 
-      const currentMonthFutureSessions = sessionsData?.filter(session => 
-        isAfter(new Date(session.session_date), today) && 
-        isBefore(new Date(session.session_date), lastDayOfMonth)
-      )?.length || 0;
+      // Fix: Ensure we're correctly identifying future sessions within current month
+      const currentMonthFutureSessions = sessionsData?.filter(session => {
+        const sessionDate = new Date(session.session_date);
+        // Check if session is in the future (or today) AND within current month
+        return (isAfter(sessionDate, today) || isSameDay(sessionDate, today)) && 
+               isBefore(sessionDate, lastDayOfMonth);
+      })?.length || 0;
 
       const lastMonthSessions = sessionsData?.filter(session => 
         isBefore(new Date(session.session_date), firstDayOfMonth) && 
