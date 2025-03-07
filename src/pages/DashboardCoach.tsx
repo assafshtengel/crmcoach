@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tool } from '@/types/tool';
 import AllMeetingSummaries from './AllMeetingSummaries';
 import { SessionFormDialog } from '@/components/sessions/SessionFormDialog';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -928,7 +929,40 @@ const DashboardCoach = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-[#2C3E50]">{stats.upcomingSessions}</div>
-              <p className="text-sm text-gray-500">בשבוע הקרוב ({stats.upcomingSessions} מפגשים)</p>
+              <p className="text-sm text-gray-500 mb-2">בשבוע הקרוב ({stats.upcomingSessions} מפגשים)</p>
+              
+              {upcomingSessions.length > 0 && (
+                <Collapsible className="mt-2">
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="w-full flex items-center justify-center text-[#3498DB]">
+                      הצג רשימת מפגשים
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="space-y-2 mt-2 max-h-[200px] overflow-y-auto pr-1">
+                      {upcomingSessions.map((session) => (
+                        <div 
+                          key={session.id} 
+                          className="p-2 rounded-md bg-gray-50 flex justify-between items-center text-sm hover:bg-gray-100 cursor-pointer"
+                          onClick={() => navigate('/edit-session', { state: { sessionId: session.id } })}
+                        >
+                          <div>
+                            <p className="font-medium">{session.player.full_name}</p>
+                            <p className="text-gray-500 text-xs">{session.session_date} | {session.session_time}</p>
+                          </div>
+                          <div className="flex items-center">
+                            {session.location && (
+                              <span className="text-xs text-gray-500 ml-2">{session.location}</span>
+                            )}
+                            <ChevronUp className="h-4 w-4 text-gray-400" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
             </CardContent>
           </Card>
 
