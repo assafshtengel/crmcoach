@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -186,7 +185,6 @@ const DashboardCoach = () => {
 
       if (upcomingError) throw upcomingError;
 
-      // Make sure we count the same sessions for both stats
       const upcomingSessionsCount = upcomingSessions?.length || 0;
 
       const [playersCountResult, remindersResult] = await Promise.all([
@@ -222,7 +220,7 @@ const DashboardCoach = () => {
         totalPlayers: playersCountResult.data?.length || 0,
         upcomingSessions: upcomingSessionsCount,
         currentMonthPastSessions,
-        currentMonthFutureSessions: currentMonthFutureSessions || upcomingSessionsCount, // Use upcoming count if no future sessions found
+        currentMonthFutureSessions,
         lastMonthSessions,
         twoMonthsAgoSessions,
         totalReminders: remindersResult.data?.length || 0
