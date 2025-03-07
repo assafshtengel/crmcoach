@@ -509,7 +509,6 @@ export type Database = {
       mental_prep_forms: {
         Row: {
           answers: Json
-          coach_id: string | null
           created_at: string
           current_pressure: string | null
           email: string
@@ -520,13 +519,11 @@ export type Database = {
           opposing_team: string
           optimal_pressure: string | null
           phone: string
-          player_id: string | null
           selected_goals: Json
           selected_states: Json
         }
         Insert: {
           answers: Json
-          coach_id?: string | null
           created_at?: string
           current_pressure?: string | null
           email: string
@@ -537,13 +534,11 @@ export type Database = {
           opposing_team: string
           optimal_pressure?: string | null
           phone: string
-          player_id?: string | null
           selected_goals: Json
           selected_states: Json
         }
         Update: {
           answers?: Json
-          coach_id?: string | null
           created_at?: string
           current_pressure?: string | null
           email?: string
@@ -554,26 +549,10 @@ export type Database = {
           opposing_team?: string
           optimal_pressure?: string | null
           phone?: string
-          player_id?: string | null
           selected_goals?: Json
           selected_states?: Json
         }
-        Relationships: [
-          {
-            foreignKeyName: "mental_prep_forms_coach_id_fkey"
-            columns: ["coach_id"]
-            isOneToOne: false
-            referencedRelation: "coaches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mental_prep_forms_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       mental_tools: {
         Row: {
@@ -1162,10 +1141,6 @@ export type Database = {
       }
     }
     Enums: {
-      notification_type:
-        | "session_reminder"
-        | "mental_prep_submission"
-        | "player_registration"
       user_role: "coach" | "player"
     }
     CompositeTypes: {
