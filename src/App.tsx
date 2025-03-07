@@ -17,6 +17,14 @@ import PlayerProfileView from './pages/player/PlayerProfileView';
 import GamePreparation from './pages/GamePreparation';
 import PlayerAuth from './pages/PlayerAuth';
 
+// Create placeholder components for missing pages
+const SessionDetails = () => <div>Session Details Page</div>;
+const SessionSummaryForm = () => <div>Session Summary Form Page</div>;
+const Login = () => <div>Login Page</div>;
+const Register = () => <div>Register Page</div>;
+const ForgotPassword = () => <div>Forgot Password Page</div>;
+const ResetPassword = () => <div>Reset Password Page</div>;
+
 function App() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -61,14 +69,14 @@ function App() {
         {/* Auth routes */}
         <Route
           path="/auth"
-          element={session ? <Navigate to="/dashboard" /> : <div>Login Page</div>}
+          element={session ? <Navigate to="/dashboard" /> : <Login />}
         />
         <Route
           path="/register"
-          element={session ? <Navigate to="/dashboard" /> : <div>Register Page</div>}
+          element={session ? <Navigate to="/dashboard" /> : <Register />}
         />
-        <Route path="/forgot-password" element={<div>Forgot Password Page</div>} />
-        <Route path="/reset-password" element={<div>Reset Password Page</div>} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Player routes */}
         <Route path="/player/profile" element={<PlayerProfileView />} />
@@ -115,11 +123,11 @@ function App() {
         />
         <Route
           path="/session-details/:sessionId"
-          element={session ? <div>Session Details</div> : <Navigate to="/auth" />}
+          element={session ? <SessionDetails /> : <Navigate to="/auth" />}
         />
         <Route
           path="/session-summary/:sessionId"
-          element={session ? <div>Session Summary</div> : <Navigate to="/auth" />}
+          element={session ? <SessionSummaryForm /> : <Navigate to="/auth" />}
         />
 
         {/* 404 route */}
