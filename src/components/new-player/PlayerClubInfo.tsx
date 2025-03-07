@@ -1,11 +1,14 @@
+
 import React from 'react';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { UseFormReturn } from 'react-hook-form';
 import { PlayerFormValues } from './PlayerFormSchema';
+
 interface PlayerClubInfoProps {
   form: UseFormReturn<PlayerFormValues>;
 }
+
 export const PlayerClubInfo: React.FC<PlayerClubInfoProps> = ({
   form
 }) => {
@@ -46,7 +49,10 @@ export const PlayerClubInfo: React.FC<PlayerClubInfoProps> = ({
       }) => <FormItem>
               <FormLabel>שנתון/קבוצת גיל</FormLabel>
               <FormControl>
-                <Input placeholder="ילדים א" className="placeholder:text-gray-400 placeholder:font-normal" />
+                <Input 
+                  placeholder="ילדים א" 
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>} />
