@@ -46,7 +46,7 @@ const NewPlayerForm = () => {
       birthDate: "",
       city: "",
       club: "",
-      yearGroup: "ילדים א",
+      yearGroup: "",
       injuries: "",
       parentName: "",
       parentPhone: "",

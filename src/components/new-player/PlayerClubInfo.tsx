@@ -47,10 +47,10 @@ export const PlayerClubInfo: React.FC<PlayerClubInfoProps> = ({
         <FormField control={form.control} name="yearGroup" render={({
         field
       }) => <FormItem>
-              <FormLabel>שנתון/קבוצת גיל</FormLabel>
+              <FormLabel>שנתון/קבוצת גיל (לדוגמא: ילדים א)</FormLabel>
               <FormControl>
                 <Input 
-                  placeholder="ילדים א" 
+                  placeholder="" 
                   {...field} 
                 />
               </FormControl>
