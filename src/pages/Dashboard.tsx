@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook, Edit, Save, X } from "lucide-react";
+import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook, Edit, Save, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from 'react-router-dom';
+import { SessionFormDialog } from "@/components/sessions/SessionFormDialog";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ const Dashboard = () => {
   const [isEditingLastMeeting, setIsEditingLastMeeting] = useState(false);
   const [lastMeetingText, setLastMeetingText] = useState("מפגש שני עם אסף בו למדנו את כלי ה-NEXT וה-SCOUT");
   const [lastMeetingDate, setLastMeetingDate] = useState("14.2.25");
+  const [isSessionFormOpen, setIsSessionFormOpen] = useState(false);
 
   const SECURITY_CODE = "1976";
 
@@ -138,11 +140,9 @@ const Dashboard = () => {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
 
-      // Update goals in state
       setGoals([...editedGoals]);
       setIsEditingGoals(false);
 
-      // Show success message
       toast({
         title: "המטרות נשמרו בהצלחה",
         description: "המטרות עודכנו ונשמרו",
@@ -338,6 +338,14 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex gap-4">
+              <Button
+                variant="green"
+                onClick={() => setIsSessionFormOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                הוסף מפגש חדש
+              </Button>
               <Link 
                 to="/game-preparation"
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
@@ -686,6 +694,11 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        <SessionFormDialog 
+          open={isSessionFormOpen} 
+          onOpenChange={setIsSessionFormOpen} 
+        />
 
         <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
           <AlertDialogContent className="bg-white/95 backdrop-blur-sm">

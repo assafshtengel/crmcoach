@@ -296,8 +296,126 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_messages: {
+        Row: {
+          created_at: string | null
+          goal_id: string | null
+          id: string
+          message: string
+          read_at: string | null
+          recipient_id: string | null
+          sender_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          goal_id?: string | null
+          id?: string
+          message: string
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          goal_id?: string | null
+          id?: string
+          message?: string
+          read_at?: string | null
+          recipient_id?: string | null
+          sender_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_messages_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_progress: {
+        Row: {
+          goal_id: string | null
+          id: string
+          progress_percentage: number | null
+          recorded_at: string | null
+          tasks_completed: number | null
+          total_tasks: number | null
+        }
+        Insert: {
+          goal_id?: string | null
+          id?: string
+          progress_percentage?: number | null
+          recorded_at?: string | null
+          tasks_completed?: number | null
+          total_tasks?: number | null
+        }
+        Update: {
+          goal_id?: string | null
+          id?: string
+          progress_percentage?: number | null
+          recorded_at?: string | null
+          tasks_completed?: number | null
+          total_tasks?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_progress_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_tasks: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          description: string | null
+          difficulty_level: number | null
+          due_date: string | null
+          goal_id: string | null
+          id: string
+          is_ai_generated: boolean | null
+          title: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          due_date?: string | null
+          goal_id?: string | null
+          id?: string
+          is_ai_generated?: boolean | null
+          title: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: number | null
+          due_date?: string | null
+          goal_id?: string | null
+          id?: string
+          is_ai_generated?: boolean | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_tasks_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goals: {
         Row: {
+          coach_id: string | null
           completed: boolean | null
           created_at: string | null
           description: string | null
@@ -309,6 +427,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          coach_id?: string | null
           completed?: boolean | null
           created_at?: string | null
           description?: string | null
@@ -320,6 +439,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          coach_id?: string | null
           completed?: boolean | null
           created_at?: string | null
           description?: string | null
