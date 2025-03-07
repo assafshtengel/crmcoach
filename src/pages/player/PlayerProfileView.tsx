@@ -13,7 +13,8 @@ import {
   ChevronDown,
   ChevronUp,
   Filter,
-  LogOut
+  LogOut,
+  Target
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -34,6 +35,10 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 
 interface Player {
   id: string;
@@ -77,6 +82,17 @@ interface Session {
   session_summary?: SessionSummary | null;
 }
 
+interface Goal {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string;
+  success_criteria: string | null;
+  completed: boolean;
+  type: 'long-term' | 'short-term' | 'immediate';
+  user_id: string;
+}
+
 interface PhysicalWorkout {
   id: string;
   date: string;
@@ -99,8 +115,21 @@ const PlayerProfileView = () => {
   const [workoutDescription, setWorkoutDescription] = useState('');
   const [workoutDuration, setWorkoutDuration] = useState('');
   const [physicalWorkouts, setPhysicalWorkouts] = useState<PhysicalWorkout[]>([]);
+  
+  // Goals state
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [newGoal, setNewGoal] = useState<Omit<Goal, 'id' | 'user_id'>>({
+    title: '',
+    description: '',
+    due_date: '',
+    success_criteria: '',
+    completed: false,
+    type: 'short-term'
+  });
+  const [activeGoalTab, setActiveGoalTab] = useState<'long-term' | 'short-term' | 'immediate'>('short-term');
 
   useEffect(() => {
+    // Get the current user and fetch goals
     const fetchPlayerData = async () => {
       try {
         setLoading(true);
@@ -125,6 +154,17 @@ const PlayerProfileView = () => {
         
         setPlayer(playerDetails);
         
+        // Fetch goals
+        const { data: goalsData, error: goalsError } = await supabase
+          .from('goals')
+          .select('*')
+          .eq('user_id', playerId)
+          .order('due_date', { ascending: true });
+          
+        if (goalsError) throw goalsError;
+        setGoals(goalsData || []);
+        
+        // Fetch upcoming sessions
         const now = new Date();
         const { data: upcomingSessionsData, error: upcomingSessionsError } = await supabase
           .from('sessions')
@@ -146,6 +186,7 @@ const PlayerProfileView = () => {
         
         setUpcomingSessions(formattedUpcomingSessions);
         
+        // Fetch past sessions
         const { data: pastSessionsData, error: pastSessionsError } = await supabase
           .from('sessions')
           .select(`
@@ -280,6 +321,133 @@ const PlayerProfileView = () => {
     return filterSessionsByTime(pastSessions, timeFilter);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewGoal(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleGoalTypeChange = (type: 'long-term' | 'short-term' | 'immediate') => {
+    setNewGoal(prev => ({ ...prev, type }));
+    setActiveGoalTab(type);
+  };
+
+  const handleSubmitGoal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!player) {
+      toast.error('משתמש לא מחובר');
+      return;
+    }
+    
+    try {
+      const playerSession = localStorage.getItem('playerSession');
+      if (!playerSession) {
+        toast.error('לא ניתן להוסיף מטרה, אתה לא מחובר');
+        return;
+      }
+      
+      const playerData = JSON.parse(playerSession);
+      const userId = playerData.id;
+      
+      const { data, error } = await supabase
+        .from('goals')
+        .insert([{
+          ...newGoal,
+          user_id: userId,
+          due_date: newGoal.due_date || new Date().toISOString()
+        }])
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setGoals(prev => [...prev, data[0] as Goal]);
+        setNewGoal({
+          title: '',
+          description: '',
+          due_date: '',
+          success_criteria: '',
+          completed: false,
+          type: newGoal.type
+        });
+        toast.success('המטרה נוספה בהצלחה');
+      }
+    } catch (error) {
+      console.error('Error adding goal:', error);
+      toast.error('שגיאה בהוספת המטרה');
+    }
+  };
+
+  const toggleGoalCompletion = async (id: string, completed: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('goals')
+        .update({ completed: !completed })
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      setGoals(prev => 
+        prev.map(goal => 
+          goal.id === id ? { ...goal, completed: !completed } : goal
+        )
+      );
+      
+      toast.success(completed ? 'המטרה סומנה כלא הושלמה' : 'המטרה סומנה כהושלמה');
+    } catch (error) {
+      console.error('Error updating goal:', error);
+      toast.error('שגיאה בעדכון המטרה');
+    }
+  };
+
+  const deleteGoal = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('goals')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      setGoals(prev => prev.filter(goal => goal.id !== id));
+      toast.success('המטרה נמחקה בהצלחה');
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+      toast.error('שגיאה במחיקת המטרה');
+    }
+  };
+
+  const getCompletionPercentage = (type: string) => {
+    const filteredGoals = goals.filter(goal => goal.type === type);
+    if (filteredGoals.length === 0) return 0;
+    
+    const completedGoals = filteredGoals.filter(goal => goal.completed).length;
+    return Math.round((completedGoals / filteredGoals.length) * 100);
+  };
+
+  const getGoalsByType = (type: string) => {
+    return goals.filter(goal => goal.type === type);
+  };
+
+  const getGoalTabLabel = (type: string) => {
+    switch (type) {
+      case 'long-term':
+        return 'מטרות ארוכות טווח';
+      case 'short-term':
+        return 'מטרות קצרות טווח';
+      case 'immediate':
+        return 'משימות מיידיות';
+      default:
+        return '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -352,6 +520,16 @@ const PlayerProfileView = () => {
             <span>אימונים פיזיים</span>
           </Button>
           <Button
+            variant={activeTab === 'goals' ? 'default' : 'outline'}
+            className={`flex flex-col items-center px-6 py-4 h-auto min-w-[100px] ${
+              activeTab === 'goals' ? 'bg-[#F2FCE2] text-green-700 hover:bg-[#F2FCE2]' : ''
+            }`}
+            onClick={() => setActiveTab('goals')}
+          >
+            <Target className="h-6 w-6 mb-2" />
+            <span>המטרות שלי</span>
+          </Button>
+          <Button
             variant={activeTab === 'profile' ? 'default' : 'outline'}
             className={`flex flex-col items-center px-6 py-4 h-auto min-w-[100px] ${
               activeTab === 'profile' ? 'bg-[#F2FCE2] text-green-700 hover:bg-[#F2FCE2]' : ''
@@ -419,36 +597,148 @@ const PlayerProfileView = () => {
             </CardContent>
           </Card>
 
-          {activeTab !== 'physical' && (
-            <div className="lg:col-span-3 flex justify-between items-center mb-2">
-              <h3 className="text-lg font-medium">
-                {activeTab === 'upcoming' ? 'המפגשים הקרובים שלי' : 
-                activeTab === 'past' ? 'סיכומי המפגשים הקודמים' : 
-                activeTab === 'physical' ? 'האימונים הפיזיים שלי' : 'הפרופיל שלי'}
-              </h3>
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-gray-500" />
-                <Select 
-                  value={timeFilter} 
-                  onValueChange={(value) => setTimeFilter(value as TimeFilter)}
-                >
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="סנן לפי זמן" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">כל המפגשים</SelectItem>
-                    <SelectItem value="upcoming">מפגשים עתידיים</SelectItem>
-                    <SelectItem value="past">מפגשים קודמים</SelectItem>
-                    <SelectItem value="week">שבוע אחרון/הבא</SelectItem>
-                    <SelectItem value="month">חודש אחרון/הבא</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          {/* GOALS TAB */}
+          {activeTab === 'goals' && (
+            <div className="lg:col-span-3">
+              <Tabs defaultValue="short-term" value={activeGoalTab} onValueChange={(value) => setActiveGoalTab(value as 'long-term' | 'short-term' | 'immediate')}>
+                <TabsList className="w-full mb-8 flex justify-center">
+                  <TabsTrigger value="long-term" onClick={() => handleGoalTypeChange('long-term')} className="flex items-center">
+                    <Target className="h-4 w-4 ml-2" />
+                    {getGoalTabLabel('long-term')}
+                  </TabsTrigger>
+                  <TabsTrigger value="short-term" onClick={() => handleGoalTypeChange('short-term')} className="flex items-center">
+                    <Clock className="h-4 w-4 ml-2" />
+                    {getGoalTabLabel('short-term')}
+                  </TabsTrigger>
+                  <TabsTrigger value="immediate" onClick={() => handleGoalTypeChange('immediate')} className="flex items-center">
+                    <CheckCircle className="h-4 w-4 ml-2" />
+                    {getGoalTabLabel('immediate')}
+                  </TabsTrigger>
+                </TabsList>
+
+                {['long-term', 'short-term', 'immediate'].map((type) => (
+                  <TabsContent key={type} value={type} className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex justify-between items-center">
+                          <span>{getGoalTabLabel(type)}</span>
+                          <span className="text-sm font-normal">
+                            {getGoalsByType(type).filter(g => g.completed).length} / {getGoalsByType(type).length} הושלמו
+                          </span>
+                        </CardTitle>
+                        <Progress value={getCompletionPercentage(type)} className="h-2" />
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={handleSubmitGoal} className="space-y-4 mb-6 p-4 border rounded-lg bg-slate-50">
+                          <h3 className="font-semibold mb-4">הוספת מטרה חדשה</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="title">כותרת המטרה</Label>
+                              <Input
+                                id="title"
+                                name="title"
+                                value={newGoal.title}
+                                onChange={handleInputChange}
+                                placeholder="הכנס כותרת למטרה"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="due_date">תאריך יעד</Label>
+                              <Input
+                                id="due_date"
+                                name="due_date"
+                                type="date"
+                                value={newGoal.due_date ? new Date(newGoal.due_date).toISOString().split('T')[0] : ''}
+                                onChange={handleInputChange}
+                                required={type !== 'immediate'}
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="description">תיאור המטרה</Label>
+                            <Textarea
+                              id="description"
+                              name="description"
+                              value={newGoal.description || ''}
+                              onChange={handleInputChange}
+                              placeholder="פרט את המטרה"
+                              className="min-h-[80px]"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="success_criteria">מדד הצלחה</Label>
+                            <Input
+                              id="success_criteria"
+                              name="success_criteria"
+                              value={newGoal.success_criteria || ''}
+                              onChange={handleInputChange}
+                              placeholder="כיצד תדע שהשגת את המטרה?"
+                            />
+                          </div>
+                          <Button type="submit" className="w-full">הוספת מטרה</Button>
+                        </form>
+
+                        <div className="space-y-4">
+                          {loading ? (
+                            <p className="text-center py-4">טוען מטרות...</p>
+                          ) : getGoalsByType(type).length === 0 ? (
+                            <p className="text-center py-4 text-gray-500">לא הוגדרו מטרות. הוסף את המטרה הראשונה שלך!</p>
+                          ) : (
+                            getGoalsByType(type).map((goal) => (
+                              <Card key={goal.id} className={`border-2 ${goal.completed ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+                                <CardHeader className="pb-2">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2">
+                                      <Checkbox 
+                                        id={`completed-${goal.id}`}
+                                        checked={goal.completed}
+                                        onCheckedChange={() => toggleGoalCompletion(goal.id, goal.completed)}
+                                      />
+                                      <CardTitle className={`text-lg ${goal.completed ? 'line-through text-gray-500' : ''}`}>
+                                        {goal.title}
+                                      </CardTitle>
+                                    </div>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="text-red-500 h-8 px-2"
+                                      onClick={() => deleteGoal(goal.id)}
+                                    >
+                                      מחיקה
+                                    </Button>
+                                  </div>
+                                  {goal.due_date && (
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      תאריך יעד: {new Date(goal.due_date).toLocaleDateString('he-IL')}
+                                    </p>
+                                  )}
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                  {goal.description && (
+                                    <p className="text-sm mb-2">{goal.description}</p>
+                                  )}
+                                  {goal.success_criteria && (
+                                    <div className="text-sm text-gray-600">
+                                      <span className="font-semibold">מדד הצלחה:</span> {goal.success_criteria}
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            ))
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                ))}
+              </Tabs>
             </div>
           )}
 
-          <div className="lg:col-span-3">
-            {activeTab === 'physical' && (
+          {/* Keep existing tabs */}
+          {activeTab === 'physical' && (
+            <div className="lg:col-span-3">
               <Card>
                 <CardHeader>
                   <CardTitle>האימונים הפיזיים שלי</CardTitle>
@@ -519,9 +809,11 @@ const PlayerProfileView = () => {
                   )}
                 </CardContent>
               </Card>
-            )}
+            </div>
+          )}
 
-            {activeTab === 'upcoming' && (
+          {activeTab === 'upcoming' && (
+            <div className="lg:col-span-3">
               <Card>
                 <CardContent className="p-6">
                   {getFilteredUpcomingSessions().length > 0 ? (
@@ -589,9 +881,11 @@ const PlayerProfileView = () => {
                   )}
                 </CardContent>
               </Card>
-            )}
+            </div>
+          )}
 
-            {activeTab === 'past' && (
+          {activeTab === 'past' && (
+            <div className="lg:col-span-3">
               <Card>
                 <CardContent className="p-6">
                   {getFilteredPastSessions().length > 0 ? (
@@ -708,117 +1002,117 @@ const PlayerProfileView = () => {
                   )}
                 </CardContent>
               </Card>
-            )}
+            </div>
+          )}
 
-            {activeTab === 'profile' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">פרטים אישיים</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <dl className="grid grid-cols-1 gap-y-4">
-                      <div>
-                        <dt className="text-sm font-medium text-gray-700">שם מלא</dt>
-                        <dd>{player.full_name}</dd>
-                      </div>
-                      
-                      <div>
-                        <dt className="text-sm font-medium text-gray-700">כתובת אימייל</dt>
-                        <dd dir="ltr" className="font-mono text-sm">{player.email}</dd>
-                      </div>
-                      
-                      <div>
-                        <dt className="text-sm font-medium text-gray-700">מספר טלפון</dt>
-                        <dd dir="ltr" className="font-mono text-sm">{player.phone || "-"}</dd>
-                      </div>
-                      
-                      <div>
-                        <dt className="text-sm font-medium text-gray-700">תאריך לידה</dt>
-                        <dd>{player.birthdate || "-"}</dd>
-                      </div>
-                    </dl>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">פרטי מועדון</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <dl className="grid grid-cols-1 gap-y-4">
-                      <div>
-                        <dt className="text-sm font-medium text-gray-700">עיר</dt>
-                        <dd>{player.city || "-"}</dd>
-                      </div>
-                      
-                      <div>
-                        <dt className="text-sm font-medium text-gray-700">מועדון</dt>
-                        <dd>{player.club || "-"}</dd>
-                      </div>
-                      
-                      <div>
-                        <dt className="text-sm font-medium text-gray-700">שכבת גיל</dt>
-                        <dd>{player.year_group || "-"}</dd>
-                      </div>
-                      
-                      <div>
-                        <dt className="text-sm font-medium text-gray-700">ענף ספורט</dt>
-                        <dd>{player.sport_field || "-"}</dd>
-                      </div>
-                    </dl>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">פרטי הורים</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <dl className="grid grid-cols-1 gap-y-4">
-                      <div>
-                        <dt className="text-sm font-medium text-gray-700">שם הורה</dt>
-                        <dd>{player.parent_name || "-"}</dd>
-                      </div>
-                      
-                      <div>
-                        <dt className="text-sm font-medium text-gray-700">טלפון הורה</dt>
-                        <dd dir="ltr" className="font-mono text-sm">{player.parent_phone || "-"}</dd>
-                      </div>
-                      
-                      <div>
-                        <dt className="text-sm font-medium text-gray-700">אימייל הורה</dt>
-                        <dd dir="ltr" className="font-mono text-sm">{player.parent_email || "-"}</dd>
-                      </div>
-                    </dl>
-                  </CardContent>
-                </Card>
-                
-                <Card className="lg:col-span-3">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">מידע נוסף</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">פציעות</h3>
-                        <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
-                          {player.injuries || "לא צוינו פציעות"}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">הערות</h3>
-                        <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
-                          {player.notes || "אין הערות"}
-                        </p>
-                      </div>
+          {activeTab === 'profile' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">פרטים אישיים</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <dl className="grid grid-cols-1 gap-y-4">
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">שם מלא</dt>
+                      <dd>{player.full_name}</dd>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </div>
+                    
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">כתובת אימייל</dt>
+                      <dd dir="ltr" className="font-mono text-sm">{player.email}</dd>
+                    </div>
+                    
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">מספר טלפון</dt>
+                      <dd dir="ltr" className="font-mono text-sm">{player.phone || "-"}</dd>
+                    </div>
+                    
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">תאריך לידה</dt>
+                      <dd>{player.birthdate || "-"}</dd>
+                    </div>
+                  </dl>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">פרטי מועדון</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <dl className="grid grid-cols-1 gap-y-4">
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">עיר</dt>
+                      <dd>{player.city || "-"}</dd>
+                    </div>
+                    
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">מועדון</dt>
+                      <dd>{player.club || "-"}</dd>
+                    </div>
+                    
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">שכבת גיל</dt>
+                      <dd>{player.year_group || "-"}</dd>
+                    </div>
+                    
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">ענף ספורט</dt>
+                      <dd>{player.sport_field || "-"}</dd>
+                    </div>
+                  </dl>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">פרטי הורים</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <dl className="grid grid-cols-1 gap-y-4">
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">שם הורה</dt>
+                      <dd>{player.parent_name || "-"}</dd>
+                    </div>
+                    
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">טלפון הורה</dt>
+                      <dd dir="ltr" className="font-mono text-sm">{player.parent_phone || "-"}</dd>
+                    </div>
+                    
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">אימייל הורה</dt>
+                      <dd dir="ltr" className="font-mono text-sm">{player.parent_email || "-"}</dd>
+                    </div>
+                  </dl>
+                </CardContent>
+              </Card>
+              
+              <Card className="lg:col-span-3">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">מידע נוסף</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">פציעות</h3>
+                      <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
+                        {player.injuries || "לא צוינו פציעות"}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">הערות</h3>
+                      <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
+                        {player.notes || "אין הערות"}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     </div>
