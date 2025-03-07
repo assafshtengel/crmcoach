@@ -19,6 +19,7 @@ import { Wrench } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tool } from '@/types/tool';
 import AllMeetingSummaries from './AllMeetingSummaries';
+import { SessionFormDialog } from '@/components/sessions/SessionFormDialog';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -110,6 +111,7 @@ const DashboardCoach = () => {
   const [summarizedSessions, setSummarizedSessions] = useState<UpcomingSession[]>([]);
   const [activeTab, setActiveTab] = useState("upcoming");
   const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
+  const [isSessionFormOpen, setIsSessionFormOpen] = useState(false);
 
   useEffect(() => {
     const initUser = async () => {
@@ -807,6 +809,8 @@ const DashboardCoach = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      <SessionFormDialog open={isSessionFormOpen} onOpenChange={setIsSessionFormOpen} />
+
       <header className="w-full bg-[#2C3E50] text-white py-6 mb-8 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
@@ -909,7 +913,18 @@ const DashboardCoach = () => {
           <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">מפגשים קרובים</CardTitle>
-              <Calendar className="h-5 w-5 text-[#3498DB]" />
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-1 text-[#3498DB] border-[#3498DB] hover:bg-[#3498DB]/10"
+                  onClick={() => setIsSessionFormOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  הוסף מפגש
+                </Button>
+                <Calendar className="h-5 w-5 text-[#3498DB]" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-[#2C3E50]">{stats.upcomingSessions}</div>
@@ -919,7 +934,7 @@ const DashboardCoach = () => {
 
           <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-medium">תזכורות שנשלחו</CardTitle>
+              <CardTitle className="text-lg font-medium">��זכורות שנשלחו</CardTitle>
               <Bell className="h-5 w-5 text-[#F1C40F]" />
             </CardHeader>
             <CardContent>
