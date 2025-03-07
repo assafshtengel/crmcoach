@@ -81,24 +81,6 @@ interface Session {
   session_summary?: SessionSummary | null;
 }
 
-interface Goal {
-  id: string;
-  title: string;
-  description: string | null;
-  due_date: string;
-  success_criteria: string | null;
-  completed: boolean;
-  type: 'long-term' | 'short-term' | 'immediate';
-  user_id: string;
-}
-
-interface PhysicalWorkout {
-  id: string;
-  date: string;
-  description: string;
-  duration: string;
-}
-
 type TimeFilter = 'all' | 'upcoming' | 'past' | 'week' | 'month';
 
 const PlayerProfileView = () => {
@@ -114,6 +96,13 @@ const PlayerProfileView = () => {
   const [workoutDescription, setWorkoutDescription] = useState('');
   const [workoutDuration, setWorkoutDuration] = useState('');
   const [physicalWorkouts, setPhysicalWorkouts] = useState<PhysicalWorkout[]>([]);
+
+  interface PhysicalWorkout {
+    id: string;
+    date: string;
+    description: string;
+    duration: string;
+  }
 
   useEffect(() => {
     const fetchPlayerData = async () => {
@@ -139,16 +128,7 @@ const PlayerProfileView = () => {
         if (!playerDetails) throw new Error("לא נמצאו פרטי שחקן");
         
         setPlayer(playerDetails);
-        
-        const { data: goalsData, error: goalsError } = await supabase
-          .from('goals')
-          .select('*')
-          .eq('user_id', playerId)
-          .order('due_date', { ascending: true });
-          
-        if (goalsError) throw goalsError;
-        setGoals(goalsData || []);
-        
+                
         const now = new Date();
         const { data: upcomingSessionsData, error: upcomingSessionsError } = await supabase
           .from('sessions')
@@ -304,133 +284,6 @@ const PlayerProfileView = () => {
     return filterSessionsByTime(pastSessions, timeFilter);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setNewGoal(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleGoalTypeChange = (type: 'long-term' | 'short-term' | 'immediate') => {
-    setNewGoal(prev => ({ ...prev, type }));
-    setActiveGoalTab(type);
-  };
-
-  const handleSubmitGoal = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!player) {
-      toast.error('משתמש לא מחובר');
-      return;
-    }
-    
-    try {
-      const playerSession = localStorage.getItem('playerSession');
-      if (!playerSession) {
-        toast.error('לא ניתן להוסיף מטרה, אתה לא מחובר');
-        return;
-      }
-      
-      const playerData = JSON.parse(playerSession);
-      const userId = playerData.id;
-      
-      const { data, error } = await supabase
-        .from('goals')
-        .insert([{
-          ...newGoal,
-          user_id: userId,
-          due_date: newGoal.due_date || new Date().toISOString()
-        }])
-        .select();
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        setGoals(prev => [...prev, data[0] as Goal]);
-        setNewGoal({
-          title: '',
-          description: '',
-          due_date: '',
-          success_criteria: '',
-          completed: false,
-          type: newGoal.type
-        });
-        toast.success('המטרה נוספה בהצלחה');
-      }
-    } catch (error) {
-      console.error('Error adding goal:', error);
-      toast.error('שגיאה בהוספת המטרה');
-    }
-  };
-
-  const toggleGoalCompletion = async (id: string, completed: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('goals')
-        .update({ completed: !completed })
-        .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      setGoals(prev => 
-        prev.map(goal => 
-          goal.id === id ? { ...goal, completed: !completed } : goal
-        )
-      );
-      
-      toast.success(completed ? 'המטרה סומנה כלא הושלמה' : 'המטרה סומנה כהושלמה');
-    } catch (error) {
-      console.error('Error updating goal:', error);
-      toast.error('שגיאה בעדכון המטרה');
-    }
-  };
-
-  const deleteGoal = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('goals')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      setGoals(prev => prev.filter(goal => goal.id !== id));
-      toast.success('המטרה נמחקה בהצלחה');
-    } catch (error) {
-      console.error('Error deleting goal:', error);
-      toast.error('שגיאה במחיקת המטרה');
-    }
-  };
-
-  const getCompletionPercentage = (type: string) => {
-    const filteredGoals = goals.filter(goal => goal.type === type);
-    if (filteredGoals.length === 0) return 0;
-    
-    const completedGoals = filteredGoals.filter(goal => goal.completed).length;
-    return Math.round((completedGoals / filteredGoals.length) * 100);
-  };
-
-  const getGoalsByType = (type: string) => {
-    return goals.filter(goal => goal.type === type);
-  };
-
-  const getGoalTabLabel = (type: string) => {
-    switch (type) {
-      case 'long-term':
-        return 'מטרות ארוכות טווח';
-      case 'short-term':
-        return 'מטרות קצרות טווח';
-      case 'immediate':
-        return 'משימות מיידיות';
-      default:
-        return '';
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -565,7 +418,7 @@ const PlayerProfileView = () => {
                   <p className="text-gray-700 mt-1">
                     {player.club && player.year_group ? (
                       <span>
-                        {player.club} • {player.year_group}
+                        {player.club} ��� {player.year_group}
                       </span>
                     ) : player.club ? (
                       <span>{player.club}</span>
