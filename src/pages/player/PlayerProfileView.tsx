@@ -13,7 +13,8 @@ import {
   ChevronDown,
   ChevronUp,
   Filter,
-  LogOut
+  LogOut,
+  Target
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -381,6 +382,16 @@ const PlayerProfileView = () => {
             <FileText className="h-6 w-6 mb-2" />
             <span>סיכומים</span>
           </Button>
+          <Button
+            variant={activeTab === 'gameprep' ? 'default' : 'outline'}
+            className={`flex flex-col items-center px-6 py-4 h-auto min-w-[120px] ${
+              activeTab === 'gameprep' ? 'bg-[#F2FCE2] text-green-700 hover:bg-[#F2FCE2]' : ''
+            }`}
+            onClick={() => setActiveTab('gameprep')}
+          >
+            <Target className="h-6 w-6 mb-2" />
+            <span>הכנה למשחק</span>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -419,6 +430,31 @@ const PlayerProfileView = () => {
             </CardContent>
           </Card>
 
+          {activeTab === 'gameprep' ? (
+            <Card className="lg:col-span-3">
+              <CardHeader>
+                <CardTitle>הכנה מנטלית למשחק</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="text-center flex flex-col items-center justify-center p-6">
+                  <Target className="h-16 w-16 text-primary mb-4" />
+                  <h3 className="text-xl font-medium mb-2">התכונן למשחק הבא שלך</h3>
+                  <p className="text-gray-500 mb-6 max-w-md">
+                    מלא את טופס ההכנה המנטלית כדי לשפר את הביצועים שלך במשחק הבא.
+                    הטופס יעזור לך להתמקד ולהתכונן בצורה הטובה ביותר.
+                  </p>
+                  <Button 
+                    className="w-full max-w-xs"
+                    onClick={() => navigate('/game-preparation')}
+                  >
+                    <Target className="mr-2 h-4 w-4" />
+                    טופס הכנה למשחק
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+          
           {activeTab !== 'physical' && (
             <div className="lg:col-span-3 flex justify-between items-center mb-2">
               <h3 className="text-lg font-medium">
@@ -826,3 +862,4 @@ const PlayerProfileView = () => {
 };
 
 export default PlayerProfileView;
+

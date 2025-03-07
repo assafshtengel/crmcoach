@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Home, Pencil, Copy, CheckCircle, Eye, Link, KeyRound } from 'lucide-react';
+import { ChevronRight, Home, Pencil, Copy, CheckCircle, Eye, Link, KeyRound, Target } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { Badge } from '@/components/ui/badge';
 
 interface Player {
   id: string;
@@ -39,6 +41,7 @@ const PlayerProfile = () => {
   const [copiedId, setCopiedId] = useState(false);
   const [copiedPassword, setCopiedPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [mentalPrepForms, setMentalPrepForms] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchPlayer = async () => {
@@ -59,6 +62,18 @@ const PlayerProfile = () => {
         if (!data) throw new Error("Player not found");
 
         setPlayer(data);
+
+        // Fetch mental prep forms for this player
+        if (data) {
+          const { data: formsData, error: formsError } = await supabase
+            .from('mental_prep_forms')
+            .select('*')
+            .eq('player_id', playerId)
+            .order('created_at', { ascending: false });
+
+          if (formsError) throw formsError;
+          setMentalPrepForms(formsData || []);
+        }
       } catch (err: any) {
         console.error("Error fetching player:", err);
         setError(err.message);
@@ -541,6 +556,93 @@ const PlayerProfile = () => {
           </Card>
           
           <Card className="lg:col-span-3">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">טפסי הכנה למשחק</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {mentalPrepForms.length > 0 ? (
+                <div className="space-y-4">
+                  {mentalPrepForms.map((form) => (
+                    <Collapsible key={form.id} className="border rounded-lg overflow-hidden">
+                      <div className="p-4 bg-white flex flex-col sm:flex-row justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium text-lg">
+                              {form.game_type} נגד {form.opposing_team}
+                            </p>
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </CollapsibleTrigger>
+                          </div>
+                          <p className="text-gray-500">
+                            {new Date(form.created_at).toLocaleDateString('he-IL')}
+                          </p>
+                        </div>
+                      </div>
+                      <CollapsibleContent>
+                        <div className="p-4 pt-0 border-t">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-700 mb-1">מצבים מנטליים שנבחרו:</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {form.selected_states.map((state: string, index: number) => (
+                                  <Badge key={index} variant="outline" className="bg-gray-100">
+                                    {state}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-700 mb-1">מטרות למשחק:</h4>
+                              {form.selected_goals && form.selected_goals.length > 0 ? (
+                                <ul className="list-disc list-inside">
+                                  {form.selected_goals.map((goal: string, index: number) => (
+                                    <li key={index} className="text-gray-600">{goal}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-gray-500">לא נבחרו מטרות</p>
+                              )}
+                            </div>
+                            
+                            {form.current_pressure && (
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">רמת לחץ נוכחית:</h4>
+                                <p>{form.current_pressure}</p>
+                              </div>
+                            )}
+                            
+                            {form.optimal_pressure && (
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">רמת לחץ אופטימלית:</h4>
+                                <p>{form.optimal_pressure}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">לא נמצאו טפסי הכנה למשחק</p>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/game-preparation')}
+                    className="mt-4"
+                  >
+                    מלא טופס הכנה למשחק
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">מידע נוסף</CardTitle>
             </CardHeader>
