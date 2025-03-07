@@ -62,7 +62,11 @@ export const PlayerClubInfo: React.FC<PlayerClubInfoProps> = ({ form }) => {
             <FormItem>
               <FormLabel>שנתון/קבוצת גיל</FormLabel>
               <FormControl>
-                <Input placeholder="נערים ב'" {...field} />
+                <Input 
+                  placeholder="ילדים א" 
+                  className="placeholder:text-gray-400 placeholder:font-normal" 
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
