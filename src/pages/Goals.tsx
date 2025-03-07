@@ -36,17 +36,33 @@ const Goals = () => {
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('long-term');
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchGoals();
+    // Get the current user and fetch goals
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+        fetchGoals(user.id);
+      } else {
+        // For demo purposes, use a fixed ID if not authenticated
+        const demoId = '00000000-0000-0000-0000-000000000000';
+        setUserId(demoId);
+        fetchGoals(demoId);
+      }
+    };
+    
+    getUser();
   }, []);
 
-  const fetchGoals = async () => {
+  const fetchGoals = async (uid: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('goals')
         .select('*')
+        .eq('user_id', uid)
         .order('due_date', { ascending: true });
 
       if (error) {
@@ -76,11 +92,17 @@ const Goals = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!userId) {
+      toast.error('משתמש לא מחובר');
+      return;
+    }
+    
     try {
       const { data, error } = await supabase
         .from('goals')
         .insert([{
           ...newGoal,
+          user_id: userId,
           due_date: newGoal.due_date || new Date().toISOString()
         }])
         .select();
