@@ -94,38 +94,18 @@ export const MentalPrepForm = () => {
 
   const handleConfirmSave = async () => {
     try {
-      // Get player session from localStorage
-      const playerSessionStr = localStorage.getItem('playerSession');
-      if (!playerSessionStr) {
+      const { data: session } = await supabase.auth.getSession();
+      
+      if (!session?.session) {
         toast({
           title: "שגיאה",
-          description: "לא ניתן למצוא מידע על המשתמש. אנא התחבר מחדש.",
+          description: "יש להתחבר למערכת כדי לשמור את הדוח.",
           variant: "destructive",
         });
-        navigate('/player-auth');
+        navigate('/auth');
         return;
       }
 
-      const playerSession = JSON.parse(playerSessionStr);
-      const playerId = playerSession.id;
-
-      // Get player details to find the coach_id
-      const { data: playerData, error: playerError } = await supabase
-        .from('players')
-        .select('coach_id')
-        .eq('id', playerId)
-        .single();
-
-      if (playerError) {
-        console.error('Error fetching player data:', playerError);
-        throw new Error('לא ניתן למצוא את פרטי השחקן');
-      }
-
-      if (!playerData.coach_id) {
-        throw new Error('לא נמצא מאמן משויך לשחקן זה');
-      }
-
-      // Insert form data with player_id and coach_id
       const { error } = await supabase
         .from('mental_prep_forms')
         .insert({
@@ -140,8 +120,6 @@ export const MentalPrepForm = () => {
           answers: formData.answers,
           current_pressure: formData.currentPressure,
           optimal_pressure: formData.optimalPressure,
-          player_id: playerId,
-          coach_id: playerData.coach_id
         });
 
       if (error) {
@@ -149,30 +127,16 @@ export const MentalPrepForm = () => {
         throw error;
       }
 
-      // Create a notification for the coach
-      const { error: notifyError } = await supabase
-        .from('notifications')
-        .insert({
-          coach_id: playerData.coach_id,
-          type: 'mental_prep_submission',
-          message: `${formData.fullName} מילא/ה טופס הכנה למשחק נגד ${formData.opposingTeam}`,
-        });
-
-      if (notifyError) {
-        console.error('Error creating notification:', notifyError);
-        // Continue even if notification fails - the form data is already saved
-      }
-
       toast({
         title: "הדוח נשלח ונשמר בהצלחה!",
-        description: "הדוח נשמר במערכת והמאמן קיבל התראה.",
+        description: "הדוח נשמר במערכת.",
       });
 
-      navigate('/player/profile');
-    } catch (error: any) {
+      navigate('/dashboard');
+    } catch (error) {
       toast({
         title: "שגיאה",
-        description: error.message || "אירעה שגיאה בשליחת הדוח. אנא נסה שוב.",
+        description: "אירעה שגיאה בשליחת הדוח. אנא נסה שוב.",
         variant: "destructive",
       });
     }
