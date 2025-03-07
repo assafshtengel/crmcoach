@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -150,27 +149,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
             <DialogTitle className="text-2xl font-bold">לוח אירועים</DialogTitle>
           </DialogHeader>
           
-          <div className="flex gap-2 mb-4">
-            <Button
-              variant={selectedView === 'timeGridDay' ? 'default' : 'outline'}
-              onClick={() => setSelectedView('timeGridDay')}
-            >
-              יומי
-            </Button>
-            <Button
-              variant={selectedView === 'timeGridWeek' ? 'default' : 'outline'}
-              onClick={() => setSelectedView('timeGridWeek')}
-            >
-              שבועי
-            </Button>
-            <Button
-              variant={selectedView === 'dayGridMonth' ? 'default' : 'outline'}
-              onClick={() => setSelectedView('dayGridMonth')}
-            >
-              חודשי
-            </Button>
-          </div>
-
           <div className="flex-1 overflow-auto">
             <FullCalendar
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
