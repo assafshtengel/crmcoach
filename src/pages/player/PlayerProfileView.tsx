@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,8 @@ import {
   MapPin,
   ChevronDown,
   ChevronUp,
-  Filter
+  Filter,
+  LogOut
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Textarea } from "@/components/ui/textarea";
 
 interface Player {
   id: string;
@@ -60,7 +61,7 @@ interface SessionSummary {
   progress_rating: number | null;
   next_session_focus: string | null;
   additional_notes: string | null;
-  tools_used: any | null; // Changed from any[] to any to accommodate both array and Json types
+  tools_used: any | null;
 }
 
 interface Session {
@@ -76,6 +77,13 @@ interface Session {
   session_summary?: SessionSummary | null;
 }
 
+interface PhysicalWorkout {
+  id: string;
+  date: string;
+  description: string;
+  duration: string;
+}
+
 type TimeFilter = 'all' | 'upcoming' | 'past' | 'week' | 'month';
 
 const PlayerProfileView = () => {
@@ -88,13 +96,15 @@ const PlayerProfileView = () => {
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [activeTab, setActiveTab] = useState('upcoming');
+  const [workoutDescription, setWorkoutDescription] = useState('');
+  const [workoutDuration, setWorkoutDuration] = useState('');
+  const [physicalWorkouts, setPhysicalWorkouts] = useState<PhysicalWorkout[]>([]);
 
   useEffect(() => {
     const fetchPlayerData = async () => {
       try {
         setLoading(true);
         
-        // Get player session from localStorage
         const playerSession = localStorage.getItem('playerSession');
         
         if (!playerSession) {
@@ -104,7 +114,6 @@ const PlayerProfileView = () => {
         const playerData = JSON.parse(playerSession);
         const playerId = playerData.id;
         
-        // Fetch player details
         const { data: playerDetails, error: playerError } = await supabase
           .from('players')
           .select('*')
@@ -116,7 +125,6 @@ const PlayerProfileView = () => {
         
         setPlayer(playerDetails);
         
-        // Fetch upcoming sessions for the player
         const now = new Date();
         const { data: upcomingSessionsData, error: upcomingSessionsError } = await supabase
           .from('sessions')
@@ -131,7 +139,6 @@ const PlayerProfileView = () => {
           
         if (upcomingSessionsError) throw upcomingSessionsError;
         
-        // Format has_summary boolean
         const formattedUpcomingSessions = (upcomingSessionsData || []).map(session => ({
           ...session,
           has_summary: session.has_summary && session.has_summary.length > 0
@@ -139,7 +146,6 @@ const PlayerProfileView = () => {
         
         setUpcomingSessions(formattedUpcomingSessions);
         
-        // Fetch past sessions for the player
         const { data: pastSessionsData, error: pastSessionsError } = await supabase
           .from('sessions')
           .select(`
@@ -163,12 +169,9 @@ const PlayerProfileView = () => {
           
         if (pastSessionsError) throw pastSessionsError;
         
-        // Format data to match our Session interface
         const formattedPastSessions = (pastSessionsData || []).map(session => {
-          // Track if there's a summary
           const hasSummary = session.has_summary && session.has_summary.length > 0;
           
-          // Get the first summary if it exists (there should only be one per session)
           const summaryData = hasSummary && session.session_summary && session.session_summary.length > 0 
             ? session.session_summary[0] 
             : null;
@@ -193,6 +196,35 @@ const PlayerProfileView = () => {
 
     fetchPlayerData();
   }, []);
+
+  const handleAddWorkout = () => {
+    if (workoutDescription.trim() === '') {
+      toast.error("אנא הכנס תיאור אימון");
+      return;
+    }
+    
+    if (workoutDuration.trim() === '') {
+      toast.error("אנא הכנס משך אימון");
+      return;
+    }
+    
+    const newWorkout: PhysicalWorkout = {
+      id: Date.now().toString(),
+      date: new Date().toISOString().split('T')[0],
+      description: workoutDescription,
+      duration: workoutDuration
+    };
+    
+    setPhysicalWorkouts(prev => [newWorkout, ...prev]);
+    setWorkoutDescription('');
+    setWorkoutDuration('');
+    toast.success('האימון נשמר בהצלחה');
+  };
+
+  const handleDeleteWorkout = (id: string) => {
+    setPhysicalWorkouts(prev => prev.filter(workout => workout.id !== id));
+    toast.success('האימון נמחק בהצלחה');
+  };
 
   const handleLogout = async () => {
     localStorage.removeItem('playerSession');
@@ -276,7 +308,6 @@ const PlayerProfileView = () => {
 
   const profileImageUrl = player.profile_image || 'https://via.placeholder.com/150';
 
-  // Format date to display in Hebrew format
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -287,10 +318,9 @@ const PlayerProfileView = () => {
     }).format(date);
   };
 
-  // Format time to display in Hebrew format
   const formatTime = (timeString: string) => {
     if (!timeString) return '';
-    return timeString.substring(0, 5); // Extract HH:MM from HH:MM:SS
+    return timeString.substring(0, 5);
   };
 
   return (
@@ -298,7 +328,12 @@ const PlayerProfileView = () => {
       <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <h1 className="text-3xl font-bold">הפרופיל שלי</h1>
-          <Button variant="outline" onClick={handleLogout} className="text-white border-white hover:bg-white/10">
+          <Button 
+            variant="ghost" 
+            onClick={handleLogout} 
+            className="text-red-500 hover:bg-white/10 hover:text-red-400 px-2 py-1 h-auto text-sm"
+          >
+            <LogOut className="h-4 w-4 mr-1" />
             התנתק
           </Button>
         </div>
@@ -307,32 +342,40 @@ const PlayerProfileView = () => {
       <div className="container mx-auto px-4 pb-12">
         <div className="flex mb-6 overflow-x-auto pb-2 justify-center gap-4">
           <Button
-            variant="outline"
-            className="flex flex-col items-center px-6 py-4 h-auto min-w-[100px]"
-            onClick={() => {}}
+            variant={activeTab === 'physical' ? 'default' : 'outline'}
+            className={`flex flex-col items-center px-6 py-4 h-auto min-w-[100px] ${
+              activeTab === 'physical' ? 'bg-[#F2FCE2] text-green-700 hover:bg-[#F2FCE2]' : ''
+            }`}
+            onClick={() => setActiveTab('physical')}
           >
             <Home className="h-6 w-6 mb-2" />
-            <span>ראשי</span>
+            <span>אימונים פיזיים</span>
           </Button>
           <Button
-            variant="outline"
-            className="flex flex-col items-center px-6 py-4 h-auto min-w-[100px]"
+            variant={activeTab === 'profile' ? 'default' : 'outline'}
+            className={`flex flex-col items-center px-6 py-4 h-auto min-w-[100px] ${
+              activeTab === 'profile' ? 'bg-[#F2FCE2] text-green-700 hover:bg-[#F2FCE2]' : ''
+            }`}
             onClick={() => setActiveTab('profile')}
           >
             <User className="h-6 w-6 mb-2" />
             <span>פרופיל</span>
           </Button>
           <Button
-            variant="default"
-            className="flex flex-col items-center px-6 py-4 h-auto min-w-[100px]"
+            variant={activeTab === 'upcoming' ? 'default' : 'outline'}
+            className={`flex flex-col items-center px-6 py-4 h-auto min-w-[100px] ${
+              activeTab === 'upcoming' ? 'bg-[#F2FCE2] text-green-700 hover:bg-[#F2FCE2]' : ''
+            }`}
             onClick={() => setActiveTab('upcoming')}
           >
             <Calendar className="h-6 w-6 mb-2" />
-            <span>אימונים</span>
+            <span>מפגשים</span>
           </Button>
           <Button
-            variant="outline"
-            className="flex flex-col items-center px-6 py-4 h-auto min-w-[100px]"
+            variant={activeTab === 'past' ? 'default' : 'outline'}
+            className={`flex flex-col items-center px-6 py-4 h-auto min-w-[100px] ${
+              activeTab === 'past' ? 'bg-[#F2FCE2] text-green-700 hover:bg-[#F2FCE2]' : ''
+            }`}
             onClick={() => setActiveTab('past')}
           >
             <FileText className="h-6 w-6 mb-2" />
@@ -341,7 +384,6 @@ const PlayerProfileView = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile Header Card - Always visible */}
           <Card className="lg:col-span-3">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
@@ -377,34 +419,108 @@ const PlayerProfileView = () => {
             </CardContent>
           </Card>
 
-          {/* Filter controls */}
-          <div className="lg:col-span-3 flex justify-between items-center mb-2">
-            <h3 className="text-lg font-medium">
-              {activeTab === 'upcoming' ? 'האימונים הקרובים שלי' : 
-               activeTab === 'past' ? 'סיכומי האימונים הקודמים' : 'הפרופיל שלי'}
-            </h3>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-500" />
-              <Select 
-                value={timeFilter} 
-                onValueChange={(value) => setTimeFilter(value as TimeFilter)}
-              >
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="סנן לפי זמן" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">כל האימונים</SelectItem>
-                  <SelectItem value="upcoming">אימונים עתידיים</SelectItem>
-                  <SelectItem value="past">אימונים קודמים</SelectItem>
-                  <SelectItem value="week">שבוע אחרון/הבא</SelectItem>
-                  <SelectItem value="month">חודש אחרון/הבא</SelectItem>
-                </SelectContent>
-              </Select>
+          {activeTab !== 'physical' && (
+            <div className="lg:col-span-3 flex justify-between items-center mb-2">
+              <h3 className="text-lg font-medium">
+                {activeTab === 'upcoming' ? 'המפגשים הקרובים שלי' : 
+                activeTab === 'past' ? 'סיכומי המפגשים הקודמים' : 
+                activeTab === 'physical' ? 'האימונים הפיזיים שלי' : 'הפרופיל שלי'}
+              </h3>
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <Select 
+                  value={timeFilter} 
+                  onValueChange={(value) => setTimeFilter(value as TimeFilter)}
+                >
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="סנן לפי זמן" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">כל המפגשים</SelectItem>
+                    <SelectItem value="upcoming">מפגשים עתידיים</SelectItem>
+                    <SelectItem value="past">מפגשים קודמים</SelectItem>
+                    <SelectItem value="week">שבוע אחרון/הבא</SelectItem>
+                    <SelectItem value="month">חודש אחרון/הבא</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Main Content Area */}
           <div className="lg:col-span-3">
+            {activeTab === 'physical' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>האימונים הפיזיים שלי</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="mb-6 bg-gray-50 p-4 rounded-lg border">
+                    <h3 className="text-lg font-medium mb-4">הוסף אימון פיזי חדש</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label htmlFor="workout-description" className="block text-sm font-medium text-gray-700 mb-1">
+                          תיאור האימון
+                        </label>
+                        <Textarea
+                          id="workout-description"
+                          placeholder="לדוגמה: ריצה בפארק, אימון כוח, שחייה"
+                          value={workoutDescription}
+                          onChange={(e) => setWorkoutDescription(e.target.value)}
+                          className="h-24"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="workout-duration" className="block text-sm font-medium text-gray-700 mb-1">
+                          משך האימון (דקות)
+                        </label>
+                        <input
+                          id="workout-duration"
+                          type="text"
+                          placeholder="לדוגמה: 45 דקות"
+                          value={workoutDuration}
+                          onChange={(e) => setWorkoutDuration(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    <Button onClick={handleAddWorkout} className="mt-2">
+                      הוסף אימון
+                    </Button>
+                  </div>
+
+                  {physicalWorkouts.length > 0 ? (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium mt-6 mb-4">האימונים האחרונים שלי</h3>
+                      {physicalWorkouts.map((workout) => (
+                        <div key={workout.id} className="bg-white p-4 rounded-lg border flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-medium">{formatDate(workout.date)}</span>
+                              <Badge variant="outline">{workout.duration}</Badge>
+                            </div>
+                            <p className="text-gray-700">{workout.description}</p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-500 hover:bg-red-50"
+                            onClick={() => handleDeleteWorkout(workout.id)}
+                          >
+                            מחק
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>עדיין לא נרשמו אימונים פיזיים</p>
+                      <p className="text-sm mt-2">הוסף את האימון הראשון שלך למעקב</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {activeTab === 'upcoming' && (
               <Card>
                 <CardContent className="p-6">
@@ -468,7 +584,7 @@ const PlayerProfileView = () => {
                     </div>
                   ) : (
                     <div className="text-center py-6">
-                      <p className="text-gray-500">אין אימונים מתוכננים בקרוב</p>
+                      <p className="text-gray-500">אין מפגשים מתוכננים בקרוב</p>
                     </div>
                   )}
                 </CardContent>
@@ -587,7 +703,7 @@ const PlayerProfileView = () => {
                     </div>
                   ) : (
                     <div className="text-center py-6">
-                      <p className="text-gray-500">אין אימונים קודמים להצגה</p>
+                      <p className="text-gray-500">אין מפגשים קודמים להצגה</p>
                     </div>
                   )}
                 </CardContent>
@@ -596,7 +712,6 @@ const PlayerProfileView = () => {
 
             {activeTab === 'profile' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Personal Info Card */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">פרטים אישיים</CardTitle>
@@ -626,7 +741,6 @@ const PlayerProfileView = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Club Info Card */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">פרטי מועדון</CardTitle>
