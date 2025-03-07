@@ -2,7 +2,7 @@
 import React, { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Home, Calendar, Users, Wrench, FileText, Settings, Menu, X } from "lucide-react";
+import { ArrowRight, Home, Calendar, Users, Wrench, FileText, Settings, Menu, X, Target } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface LayoutProps {
@@ -21,6 +21,7 @@ export function Layout({ children }: LayoutProps) {
     { path: "/dashboard-coach", label: "בית", icon: Home },
     { path: "/sessions-list", label: "מפגשים", icon: Calendar },
     { path: "/players-list", label: "שחקנים", icon: Users },
+    { path: "/goals", label: "מטרות", icon: Target }, // New Goals navigation item
     { path: "/tool-management", label: "ניהול כלים", icon: Wrench },
     { path: "/session-summaries", label: "סיכומים", icon: FileText },
     { path: "/profile-coach", label: "הגדרות", icon: Settings },

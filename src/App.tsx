@@ -40,6 +40,7 @@ import AllMeetingSummaries from './pages/AllMeetingSummaries';
 import PlayerAuth from './pages/PlayerAuth';
 import PlayerProfileView from './pages/player/PlayerProfileView';
 import { AuthGuard } from "./components/auth/AuthGuard";
+import Goals from "./pages/Goals"; // Import the new Goals page
 
 import "./App.css";
 
@@ -87,6 +88,7 @@ function App() {
         <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
         <Route path="/tool-management" element={<AuthGuard><ToolManagement /></AuthGuard>} />
         <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
+        <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} /> {/* Add the new route for Goals */}
         
         {/* New player-specific routes */}
         <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
