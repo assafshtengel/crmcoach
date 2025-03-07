@@ -11,32 +11,29 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Target, Clock, ListChecks } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-
-interface Goal {
-  id: string;
-  title: string;
-  description: string | null;
-  due_date: string;
-  success_criteria: string | null;
-  completed: boolean;
-  type: 'long-term' | 'short-term' | 'immediate';
-  user_id: string;
-}
+import { supabase, Goal } from "@/integrations/supabase/client";
+import { CategorySelector } from "@/components/goals/CategorySelector";
+import { GoalForm } from "@/components/goals/GoalForm";
+import { GoalsList } from "@/components/goals/GoalsList";
 
 const Goals = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [newGoal, setNewGoal] = useState<Omit<Goal, 'id' | 'user_id' | 'created_at'>>({
+  const [newGoal, setNewGoal] = useState<Omit<Goal, 'id' | 'created_at'>>({
     title: '',
     description: '',
     due_date: '',
     success_criteria: '',
     completed: false,
-    type: 'long-term'
+    type: 'long-term',
+    user_id: '',
+    category: 'physical',
+    status: 'new'
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('long-term');
+  const [activeCategory, setActiveCategory] = useState<'physical' | 'mental' | 'academic'>('physical');
   const [userId, setUserId] = useState<string | null>(null);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
 
   useEffect(() => {
     // Get the current user and fetch goals
@@ -69,9 +66,14 @@ const Goals = () => {
         throw error;
       }
 
-      if (data) {
-        setGoals(data as Goal[]);
-      }
+      // Ensure all goals have the required fields
+      const processedGoals = (data || []).map(goal => ({
+        ...goal,
+        category: goal.category || 'physical',
+        status: goal.status || 'new'
+      })) as Goal[];
+
+      setGoals(processedGoals);
     } catch (error) {
       console.error('Error fetching goals:', error);
     } finally {
@@ -89,22 +91,21 @@ const Goals = () => {
     setActiveTab(type);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (goalData: Omit<Goal, 'id' | 'created_at'>) => {
     if (!userId) {
       toast.error('משתמש לא מחובר');
       return;
     }
     
     try {
+      const goalWithUserId = {
+        ...goalData,
+        user_id: userId,
+      };
+      
       const { data, error } = await supabase
         .from('goals')
-        .insert([{
-          ...newGoal,
-          user_id: userId,
-          due_date: newGoal.due_date || new Date().toISOString()
-        }])
+        .insert([goalWithUserId])
         .select();
 
       if (error) {
@@ -119,13 +120,53 @@ const Goals = () => {
           due_date: '',
           success_criteria: '',
           completed: false,
-          type: newGoal.type
+          type: goalData.type,
+          user_id: '',
+          category: goalData.category,
+          status: 'new'
         });
         toast.success('המטרה נוספה בהצלחה');
       }
     } catch (error) {
       console.error('Error adding goal:', error);
       toast.error('שגיאה בהוספת המטרה');
+    }
+  };
+
+  const handleUpdateGoal = async (updatedGoal: Omit<Goal, 'id' | 'created_at'>) => {
+    if (!editingGoal) return;
+
+    try {
+      const { error } = await supabase
+        .from('goals')
+        .update({
+          title: updatedGoal.title,
+          description: updatedGoal.description,
+          due_date: updatedGoal.due_date,
+          success_criteria: updatedGoal.success_criteria,
+          type: updatedGoal.type,
+          category: updatedGoal.category,
+          status: updatedGoal.status,
+        })
+        .eq('id', editingGoal.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setGoals(prev => 
+        prev.map(goal => 
+          goal.id === editingGoal.id 
+            ? { ...goal, ...updatedGoal } 
+            : goal
+        )
+      );
+      
+      toast.success('המטרה עודכנה בהצלחה');
+      setEditingGoal(null);
+    } catch (error) {
+      console.error('Error updating goal:', error);
+      toast.error('שגיאה בעדכון המטרה');
     }
   };
 
@@ -172,16 +213,32 @@ const Goals = () => {
     }
   };
 
-  const getCompletionPercentage = (type: string) => {
-    const filteredGoals = goals.filter(goal => goal.type === type);
-    if (filteredGoals.length === 0) return 0;
-    
-    const completedGoals = filteredGoals.filter(goal => goal.completed).length;
-    return Math.round((completedGoals / filteredGoals.length) * 100);
+  const updateGoalStatus = async (id: string, status: 'new' | 'in-progress' | 'achieved') => {
+    try {
+      const { error } = await supabase
+        .from('goals')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      setGoals(prev => 
+        prev.map(goal => 
+          goal.id === id ? { ...goal, status } : goal
+        )
+      );
+      
+      toast.success('סטטוס המטרה עודכן');
+    } catch (error) {
+      console.error('Error updating goal status:', error);
+      toast.error('שגיאה בעדכון סטטוס המטרה');
+    }
   };
 
   const getGoalsByType = (type: string) => {
-    return goals.filter(goal => goal.type === type);
+    return goals.filter(goal => goal.type === type && goal.category === activeCategory);
   };
 
   const getTabLabel = (type: string) => {
@@ -216,9 +273,14 @@ const Goals = () => {
         <div className="flex flex-col items-center mb-8">
           <h1 className="text-3xl font-bold mb-2 text-center">מטרות</h1>
           <p className="text-gray-500 text-center">
-            הגדר מטרות וצעדים נדרשים להשגתן בטווחי זמן שונים
+            הגדר מטרות וצעדים נדרשים להשגתן בטווחי זמן וקטגוריות שונים
           </p>
         </div>
+
+        <CategorySelector 
+          activeCategory={activeCategory} 
+          onCategoryChange={setActiveCategory} 
+        />
 
         <Tabs defaultValue="long-term" value={activeTab} onValueChange={(value) => setActiveTab(value as 'long-term' | 'short-term' | 'immediate')}>
           <TabsList className="w-full mb-8 flex justify-center">
@@ -251,107 +313,34 @@ const Goals = () => {
                     {type === 'short-term' && 'מטרות לטווח של 3 חודשים קדימה'}
                     {type === 'immediate' && 'משימות לביצוע מיידי'}
                   </CardDescription>
-                  <Progress value={getCompletionPercentage(type)} className="h-2" />
+                  <Progress 
+                    value={
+                      getGoalsByType(type).length > 0 
+                      ? Math.round((getGoalsByType(type).filter(g => g.completed).length / getGoalsByType(type).length) * 100)
+                      : 0
+                    } 
+                    className="h-2" 
+                  />
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-4 mb-6 p-4 border rounded-lg bg-slate-50">
-                    <h3 className="font-semibold mb-4">הוספת מטרה חדשה</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="title">כותרת המטרה</Label>
-                        <Input
-                          id="title"
-                          name="title"
-                          value={newGoal.title}
-                          onChange={handleInputChange}
-                          placeholder="הכנס כותרת למטרה"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="due_date">תאריך יעד</Label>
-                        <Input
-                          id="due_date"
-                          name="due_date"
-                          type="date"
-                          value={newGoal.due_date ? new Date(newGoal.due_date).toISOString().split('T')[0] : ''}
-                          onChange={handleInputChange}
-                          required={type !== 'immediate'}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="description">תיאור המטרה</Label>
-                      <Textarea
-                        id="description"
-                        name="description"
-                        value={newGoal.description || ''}
-                        onChange={handleInputChange}
-                        placeholder="פרט את המטרה"
-                        className="min-h-[80px]"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="success_criteria">מדד הצלחה</Label>
-                      <Input
-                        id="success_criteria"
-                        name="success_criteria"
-                        value={newGoal.success_criteria || ''}
-                        onChange={handleInputChange}
-                        placeholder="כיצד תדע שהשגת את המטרה?"
-                      />
-                    </div>
-                    <Button type="submit" className="w-full">הוספת מטרה</Button>
-                  </form>
+                  <GoalForm 
+                    onSubmit={handleSubmit} 
+                    category={activeCategory}
+                    initialGoal={{
+                      ...newGoal,
+                      id: '',
+                      type: type as 'long-term' | 'short-term' | 'immediate'
+                    }}
+                  />
 
-                  <div className="space-y-4">
-                    {loading ? (
-                      <p className="text-center py-4">טוען מטרות...</p>
-                    ) : getGoalsByType(type).length === 0 ? (
-                      <p className="text-center py-4 text-gray-500">לא הוגדרו מטרות. הוסף את המטרה הראשונה שלך!</p>
-                    ) : (
-                      getGoalsByType(type).map((goal) => (
-                        <Card key={goal.id} className={`border-2 ${goal.completed ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
-                          <CardHeader className="pb-2">
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-center gap-2">
-                                <Checkbox 
-                                  id={`completed-${goal.id}`}
-                                  checked={goal.completed}
-                                  onCheckedChange={() => toggleGoalCompletion(goal.id, goal.completed)}
-                                />
-                                <CardTitle className={`text-lg ${goal.completed ? 'line-through text-gray-500' : ''}`}>
-                                  {goal.title}
-                                </CardTitle>
-                              </div>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-red-500 h-8 px-2"
-                                onClick={() => deleteGoal(goal.id)}
-                              >
-                                מחיקה
-                              </Button>
-                            </div>
-                            {goal.due_date && (
-                              <CardDescription>
-                                תאריך יעד: {new Date(goal.due_date).toLocaleDateString('he-IL')}
-                              </CardDescription>
-                            )}
-                          </CardHeader>
-                          <CardContent className="pt-0">
-                            {goal.description && (
-                              <p className="text-sm mb-2">{goal.description}</p>
-                            )}
-                            {goal.success_criteria && (
-                              <div className="text-sm text-gray-600">
-                                <span className="font-semibold">מדד הצלחה:</span> {goal.success_criteria}
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
+                  <div className="mt-8">
+                    <GoalsList 
+                      goals={getGoalsByType(type)} 
+                      onToggleComplete={toggleGoalCompletion}
+                      onDeleteGoal={deleteGoal}
+                      onUpdateStatus={updateGoalStatus}
+                      onEditGoal={setEditingGoal}
+                    />
                   </div>
                 </CardContent>
               </Card>

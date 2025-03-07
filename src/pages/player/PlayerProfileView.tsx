@@ -37,8 +37,7 @@ import { toast } from 'sonner';
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
+import { PlayerGoals } from '@/components/goals/PlayerGoals';
 
 interface Player {
   id: string;
@@ -115,21 +114,8 @@ const PlayerProfileView = () => {
   const [workoutDescription, setWorkoutDescription] = useState('');
   const [workoutDuration, setWorkoutDuration] = useState('');
   const [physicalWorkouts, setPhysicalWorkouts] = useState<PhysicalWorkout[]>([]);
-  
-  // Goals state
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [newGoal, setNewGoal] = useState<Omit<Goal, 'id' | 'user_id'>>({
-    title: '',
-    description: '',
-    due_date: '',
-    success_criteria: '',
-    completed: false,
-    type: 'short-term'
-  });
-  const [activeGoalTab, setActiveGoalTab] = useState<'long-term' | 'short-term' | 'immediate'>('short-term');
 
   useEffect(() => {
-    // Get the current user and fetch goals
     const fetchPlayerData = async () => {
       try {
         setLoading(true);
@@ -154,7 +140,6 @@ const PlayerProfileView = () => {
         
         setPlayer(playerDetails);
         
-        // Fetch goals
         const { data: goalsData, error: goalsError } = await supabase
           .from('goals')
           .select('*')
@@ -164,7 +149,6 @@ const PlayerProfileView = () => {
         if (goalsError) throw goalsError;
         setGoals(goalsData || []);
         
-        // Fetch upcoming sessions
         const now = new Date();
         const { data: upcomingSessionsData, error: upcomingSessionsError } = await supabase
           .from('sessions')
@@ -186,7 +170,6 @@ const PlayerProfileView = () => {
         
         setUpcomingSessions(formattedUpcomingSessions);
         
-        // Fetch past sessions
         const { data: pastSessionsData, error: pastSessionsError } = await supabase
           .from('sessions')
           .select(`
@@ -600,139 +583,11 @@ const PlayerProfileView = () => {
           {/* GOALS TAB */}
           {activeTab === 'goals' && (
             <div className="lg:col-span-3">
-              <Tabs defaultValue="short-term" value={activeGoalTab} onValueChange={(value) => setActiveGoalTab(value as 'long-term' | 'short-term' | 'immediate')}>
-                <TabsList className="w-full mb-8 flex justify-center">
-                  <TabsTrigger value="long-term" onClick={() => handleGoalTypeChange('long-term')} className="flex items-center">
-                    <Target className="h-4 w-4 ml-2" />
-                    {getGoalTabLabel('long-term')}
-                  </TabsTrigger>
-                  <TabsTrigger value="short-term" onClick={() => handleGoalTypeChange('short-term')} className="flex items-center">
-                    <Clock className="h-4 w-4 ml-2" />
-                    {getGoalTabLabel('short-term')}
-                  </TabsTrigger>
-                  <TabsTrigger value="immediate" onClick={() => handleGoalTypeChange('immediate')} className="flex items-center">
-                    <CheckCircle className="h-4 w-4 ml-2" />
-                    {getGoalTabLabel('immediate')}
-                  </TabsTrigger>
-                </TabsList>
-
-                {['long-term', 'short-term', 'immediate'].map((type) => (
-                  <TabsContent key={type} value={type} className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                          <span>{getGoalTabLabel(type)}</span>
-                          <span className="text-sm font-normal">
-                            {getGoalsByType(type).filter(g => g.completed).length} / {getGoalsByType(type).length} הושלמו
-                          </span>
-                        </CardTitle>
-                        <Progress value={getCompletionPercentage(type)} className="h-2" />
-                      </CardHeader>
-                      <CardContent>
-                        <form onSubmit={handleSubmitGoal} className="space-y-4 mb-6 p-4 border rounded-lg bg-slate-50">
-                          <h3 className="font-semibold mb-4">הוספת מטרה חדשה</h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="title">כותרת המטרה</Label>
-                              <Input
-                                id="title"
-                                name="title"
-                                value={newGoal.title}
-                                onChange={handleInputChange}
-                                placeholder="הכנס כותרת למטרה"
-                                required
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="due_date">תאריך יעד</Label>
-                              <Input
-                                id="due_date"
-                                name="due_date"
-                                type="date"
-                                value={newGoal.due_date ? new Date(newGoal.due_date).toISOString().split('T')[0] : ''}
-                                onChange={handleInputChange}
-                                required={type !== 'immediate'}
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="description">תיאור המטרה</Label>
-                            <Textarea
-                              id="description"
-                              name="description"
-                              value={newGoal.description || ''}
-                              onChange={handleInputChange}
-                              placeholder="פרט את המטרה"
-                              className="min-h-[80px]"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="success_criteria">מדד הצלחה</Label>
-                            <Input
-                              id="success_criteria"
-                              name="success_criteria"
-                              value={newGoal.success_criteria || ''}
-                              onChange={handleInputChange}
-                              placeholder="כיצד תדע שהשגת את המטרה?"
-                            />
-                          </div>
-                          <Button type="submit" className="w-full">הוספת מטרה</Button>
-                        </form>
-
-                        <div className="space-y-4">
-                          {loading ? (
-                            <p className="text-center py-4">טוען מטרות...</p>
-                          ) : getGoalsByType(type).length === 0 ? (
-                            <p className="text-center py-4 text-gray-500">לא הוגדרו מטרות. הוסף את המטרה הראשונה שלך!</p>
-                          ) : (
-                            getGoalsByType(type).map((goal) => (
-                              <Card key={goal.id} className={`border-2 ${goal.completed ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
-                                <CardHeader className="pb-2">
-                                  <div className="flex justify-between items-start">
-                                    <div className="flex items-center gap-2">
-                                      <Checkbox 
-                                        id={`completed-${goal.id}`}
-                                        checked={goal.completed}
-                                        onCheckedChange={() => toggleGoalCompletion(goal.id, goal.completed)}
-                                      />
-                                      <CardTitle className={`text-lg ${goal.completed ? 'line-through text-gray-500' : ''}`}>
-                                        {goal.title}
-                                      </CardTitle>
-                                    </div>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm" 
-                                      className="text-red-500 h-8 px-2"
-                                      onClick={() => deleteGoal(goal.id)}
-                                    >
-                                      מחיקה
-                                    </Button>
-                                  </div>
-                                  {goal.due_date && (
-                                    <p className="text-sm text-gray-500 mt-1">
-                                      תאריך יעד: {new Date(goal.due_date).toLocaleDateString('he-IL')}
-                                    </p>
-                                  )}
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                  {goal.description && (
-                                    <p className="text-sm mb-2">{goal.description}</p>
-                                  )}
-                                  {goal.success_criteria && (
-                                    <div className="text-sm text-gray-600">
-                                      <span className="font-semibold">מדד הצלחה:</span> {goal.success_criteria}
-                                    </div>
-                                  )}
-                                </CardContent>
-                              </Card>
-                            ))
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                ))}
-              </Tabs>
+              <Card>
+                <CardContent className="p-6">
+                  {player && <PlayerGoals playerId={player.id} />}
+                </CardContent>
+              </Card>
             </div>
           )}
 
@@ -1082,7 +937,7 @@ const PlayerProfileView = () => {
                     </div>
                     
                     <div>
-                      <dt className="text-sm font-medium text-gray-700">אימייל הורה</dt>
+                      <dt className="text-sm font-medium text-gray-700">אימייל ה��רה</dt>
                       <dd dir="ltr" className="font-mono text-sm">{player.parent_email || "-"}</dd>
                     </div>
                   </dl>

@@ -9,3 +9,18 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+// Define the Goal type that matches our database structure
+export interface Goal {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string;
+  success_criteria: string | null;
+  completed: boolean;
+  type: 'long-term' | 'short-term' | 'immediate';
+  user_id: string;
+  category: 'physical' | 'mental' | 'academic' | null;
+  status: 'new' | 'in-progress' | 'achieved';
+  created_at?: string;
+}
