@@ -16,20 +16,21 @@ import { supabase } from "@/integrations/supabase/client";
 interface Goal {
   id: string;
   title: string;
-  description: string;
-  dueDate: string;
-  successCriteria: string;
+  description: string | null;
+  due_date: string;
+  success_criteria: string | null;
   completed: boolean;
   type: 'long-term' | 'short-term' | 'immediate';
+  user_id: string;
 }
 
 const Goals = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [newGoal, setNewGoal] = useState<Omit<Goal, 'id'>>({
+  const [newGoal, setNewGoal] = useState<Omit<Goal, 'id' | 'user_id' | 'created_at'>>({
     title: '',
     description: '',
-    dueDate: '',
-    successCriteria: '',
+    due_date: '',
+    success_criteria: '',
     completed: false,
     type: 'long-term'
   });
@@ -46,7 +47,7 @@ const Goals = () => {
       const { data, error } = await supabase
         .from('goals')
         .select('*')
-        .order('dueDate', { ascending: true });
+        .order('due_date', { ascending: true });
 
       if (error) {
         throw error;
@@ -80,7 +81,7 @@ const Goals = () => {
         .from('goals')
         .insert([{
           ...newGoal,
-          dueDate: newGoal.dueDate || new Date().toISOString()
+          due_date: newGoal.due_date || new Date().toISOString()
         }])
         .select();
 
@@ -93,8 +94,8 @@ const Goals = () => {
         setNewGoal({
           title: '',
           description: '',
-          dueDate: '',
-          successCriteria: '',
+          due_date: '',
+          success_criteria: '',
           completed: false,
           type: newGoal.type
         });
@@ -246,12 +247,12 @@ const Goals = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="dueDate">תאריך יעד</Label>
+                        <Label htmlFor="due_date">תאריך יעד</Label>
                         <Input
-                          id="dueDate"
-                          name="dueDate"
+                          id="due_date"
+                          name="due_date"
                           type="date"
-                          value={newGoal.dueDate.split('T')[0]}
+                          value={newGoal.due_date ? new Date(newGoal.due_date).toISOString().split('T')[0] : ''}
                           onChange={handleInputChange}
                           required={type !== 'immediate'}
                         />
@@ -262,18 +263,18 @@ const Goals = () => {
                       <Textarea
                         id="description"
                         name="description"
-                        value={newGoal.description}
+                        value={newGoal.description || ''}
                         onChange={handleInputChange}
                         placeholder="פרט את המטרה"
                         className="min-h-[80px]"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="successCriteria">מדד הצלחה</Label>
+                      <Label htmlFor="success_criteria">מדד הצלחה</Label>
                       <Input
-                        id="successCriteria"
-                        name="successCriteria"
-                        value={newGoal.successCriteria}
+                        id="success_criteria"
+                        name="success_criteria"
+                        value={newGoal.success_criteria || ''}
                         onChange={handleInputChange}
                         placeholder="כיצד תדע שהשגת את המטרה?"
                       />
@@ -310,9 +311,9 @@ const Goals = () => {
                                 מחיקה
                               </Button>
                             </div>
-                            {goal.dueDate && (
+                            {goal.due_date && (
                               <CardDescription>
-                                תאריך יעד: {new Date(goal.dueDate).toLocaleDateString('he-IL')}
+                                תאריך יעד: {new Date(goal.due_date).toLocaleDateString('he-IL')}
                               </CardDescription>
                             )}
                           </CardHeader>
@@ -320,9 +321,9 @@ const Goals = () => {
                             {goal.description && (
                               <p className="text-sm mb-2">{goal.description}</p>
                             )}
-                            {goal.successCriteria && (
+                            {goal.success_criteria && (
                               <div className="text-sm text-gray-600">
-                                <span className="font-semibold">מדד הצלחה:</span> {goal.successCriteria}
+                                <span className="font-semibold">מדד הצלחה:</span> {goal.success_criteria}
                               </div>
                             )}
                           </CardContent>

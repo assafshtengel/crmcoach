@@ -296,6 +296,42 @@ export type Database = {
         }
         Relationships: []
       }
+      goals: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          success_criteria: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          success_criteria?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          success_criteria?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       last_meetings: {
         Row: {
           created_at: string
