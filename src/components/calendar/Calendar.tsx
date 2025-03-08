@@ -4,7 +4,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
@@ -123,18 +123,22 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       
       console.log('Saving event with player_id:', playerIdToUse);
       
-      // Format the data for the sessions table
-      const sessionData: SessionData = {
-        player_id: playerIdToUse as string,
-        session_date: data.date, // YYYY-MM-DD format
-        session_time: data.time, // HH:MM format
-        location: data.location || 'לא צוין',
-        notes: data.notes
+      // Format the data for the fullcalendar event format first
+      const eventData = {
+        title: data.title,
+        start: `${data.date}T${data.time}:00`,
+        extendedProps: {
+          notes: data.notes,
+          eventType: data.eventType,
+          player_id: playerIdToUse,
+          location: data.location,
+          playerName: data.title // Use the title as playerName for display
+        }
       };
       
-      console.log('Saving session data:', sessionData);
+      console.log('Submitting event data:', eventData);
       
-      await onEventAdd(sessionData);
+      await onEventAdd(eventData);
       
       setIsAddEventOpen(false);
       form.reset({
@@ -146,7 +150,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
         player_id: selectedPlayerId,
         location: ''
       });
-      toast.success('האירוע נשמר בהצלחה ונוסף ללוח השנה!');
+      
     } catch (error) {
       console.error('Error adding event:', error);
       toast.error('אירעה שגיאה, אנא נסה שוב.');
@@ -195,6 +199,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
         <DialogContent className="max-w-6xl h-[80vh]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">לוח אירועים</DialogTitle>
+            <DialogDescription>צפה באירועים מתוכננים</DialogDescription>
           </DialogHeader>
           
           <div className="flex-1 overflow-auto">
@@ -260,6 +265,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>פרטי אירוע</DialogTitle>
+              <DialogDescription>מידע מפורט על האירוע</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div>
@@ -313,6 +319,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>הוספת אירוע חדש</DialogTitle>
+            <DialogDescription>מלא את הפרטים להוספת אירוע חדש</DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onAddEvent)} className="space-y-4">
@@ -347,7 +354,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
                   <FormItem>
                     <FormLabel>כותרת</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} required />
                     </FormControl>
                   </FormItem>
                 )}
@@ -359,7 +366,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
                   <FormItem>
                     <FormLabel>תאריך</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input type="date" {...field} required />
                     </FormControl>
                   </FormItem>
                 )}
@@ -371,7 +378,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
                   <FormItem>
                     <FormLabel>שעה</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} />
+                      <Input type="time" {...field} required />
                     </FormControl>
                   </FormItem>
                 )}

@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/calendar/Calendar';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,8 +24,8 @@ export function SessionFormDialog({
   onSessionAdd
 }: SessionFormDialogProps) {
   const [events, setEvents] = React.useState([]);
-  const [selectedPlayerId, setSelectedPlayerId] = React.useState<string | undefined>(undefined);
-  const [loading, setLoading] = React.useState(true);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
 
   React.useEffect(() => {
     // Here you would typically fetch events
@@ -46,23 +46,30 @@ export function SessionFormDialog({
         return;
       }
       
+      // Make sure all required fields exist and are formatted correctly
       const sessionData = {
         player_id: eventData.extendedProps.player_id,
         session_date: eventData.start.split('T')[0],
-        session_time: eventData.start.split('T')[1],
+        session_time: eventData.start.split('T')[1].substring(0, 5), // Ensure HH:MM format
         location: eventData.extendedProps.location || '',
         notes: eventData.extendedProps.notes || ''
       };
       
-      console.log('Extracted session data:', sessionData);
+      console.log('Sending session data to parent:', sessionData);
       
       if (onSessionAdd) {
-        await onSessionAdd(sessionData);
-        onOpenChange(false); // Close the dialog after successful submission
+        try {
+          await onSessionAdd(sessionData);
+          toast.success('המפגש נשמר בהצלחה');
+          onOpenChange(false); // Close the dialog after successful submission
+        } catch (error) {
+          console.error('Error in onSessionAdd:', error);
+          toast.error('אירעה שגיאה בשמירת המפגש');
+        }
       }
     } catch (error) {
       console.error('Error processing event data:', error);
-      toast.error('אירעה שגיאה בשמירת המפגש');
+      toast.error('אירעה שגיאה בעיבוד נתוני המפגש');
     }
   };
 
@@ -71,6 +78,9 @@ export function SessionFormDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>הוסף מפגש חדש</DialogTitle>
+          <DialogDescription>
+            בחר תאריך, שעה ומלא את הפרטים הנדרשים
+          </DialogDescription>
         </DialogHeader>
         <div className="py-4">
           {loading ? (
