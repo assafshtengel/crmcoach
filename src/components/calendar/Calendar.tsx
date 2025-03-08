@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -54,6 +55,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedView, setSelectedView] = useState<'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'>('dayGridMonth');
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<EventFormData>({
     defaultValues: {
@@ -84,24 +86,30 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
   };
 
   const onAddEvent = async (data: EventFormData) => {
+    if (!onEventAdd) return;
+    
     try {
-      if (onEventAdd) {
-        await onEventAdd({
-          title: data.title,
-          start: `${data.date}T${data.time}`,
-          extendedProps: {
-            playerName: data.title,
-            notes: data.notes,
-            reminderSent: false,
-            eventType: data.eventType
-          }
-        });
-        setIsAddEventOpen(false);
-        form.reset();
-        toast.success('האירוע נוסף בהצלחה');
-      }
+      setIsSubmitting(true);
+      
+      await onEventAdd({
+        title: data.title,
+        start: `${data.date}T${data.time}`,
+        extendedProps: {
+          playerName: data.title,
+          notes: data.notes,
+          reminderSent: false,
+          eventType: data.eventType
+        }
+      });
+      
+      setIsAddEventOpen(false);
+      form.reset();
+      toast.success('האירוע נוסף בהצלחה');
     } catch (error) {
+      console.error('Error adding event:', error);
       toast.error('שגיאה בהוספת האירוע');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -246,7 +254,12 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
         </Dialog>
       )}
 
-      <Dialog open={isAddEventOpen} onOpenChange={setIsAddEventOpen}>
+      <Dialog open={isAddEventOpen} onOpenChange={(open) => {
+        if (!open) {
+          form.reset();
+        }
+        setIsAddEventOpen(open);
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>הוספת אירוע חדש</DialogTitle>
@@ -326,11 +339,17 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
                 )}
               />
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsAddEventOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => {
+                  form.reset();
+                  setIsAddEventOpen(false);
+                }}>
                   ביטול
                 </Button>
-                <Button type="submit">
-                  שמור
+                <Button 
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'שומר...' : 'שמור'}
                 </Button>
               </div>
             </form>
