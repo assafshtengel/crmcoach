@@ -143,7 +143,7 @@ const NewSessionForm = () => {
               }))} required dir="ltr" />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 text-[007BFF] text-[#eceff1] bg-[007BFF] bg-[#1078ed]">
                 <Label htmlFor="session_time">שעה</Label>
                 <Input id="session_time" name="session_time" type="time" value={formData.session_time} onChange={e => setFormData(prev => ({
                 ...prev,
