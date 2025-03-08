@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +22,12 @@ interface MonthlyData {
   name: string;
   newPlayers: number;
   sessions: number;
+}
+
+interface MonthlyCountItem {
+  key: string;
+  name: string;
+  count: number;
 }
 
 interface ComparisonStats {
@@ -61,17 +66,14 @@ const PlayerStatistics = () => {
           return;
         }
 
-        // Fetch monthly data for players and sessions
         const [playersData, sessionsData] = await Promise.all([
           fetchMonthlyPlayersData(user.id),
           fetchMonthlySessionsData(user.id)
         ]);
 
-        // Process data to combine players and sessions by month
         const combinedData = processMonthlyData(playersData, sessionsData);
         setMonthlyData(combinedData);
 
-        // Calculate comparison statistics
         const stats = calculateComparisonStats(playersData, sessionsData);
         setComparisonStats(stats);
 
@@ -90,12 +92,11 @@ const PlayerStatistics = () => {
     fetchStatistics();
   }, [navigate, toast]);
 
-  const fetchMonthlyPlayersData = async (coachId: string) => {
+  const fetchMonthlyPlayersData = async (coachId: string): Promise<MonthlyCountItem[]> => {
     const today = new Date();
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(today.getMonth() - 5);
 
-    // Format date to YYYY-MM-DD
     const formattedStartDate = sixMonthsAgo.toISOString().split('T')[0];
 
     const { data, error } = await supabase
@@ -106,16 +107,14 @@ const PlayerStatistics = () => {
 
     if (error) throw error;
 
-    // Process data to get monthly counts
     return processMonthlyCountsData(data || [], 'created_at');
   };
 
-  const fetchMonthlySessionsData = async (coachId: string) => {
+  const fetchMonthlySessionsData = async (coachId: string): Promise<MonthlyCountItem[]> => {
     const today = new Date();
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(today.getMonth() - 5);
 
-    // Format date to YYYY-MM-DD
     const formattedStartDate = sixMonthsAgo.toISOString().split('T')[0];
 
     const { data, error } = await supabase
@@ -126,18 +125,16 @@ const PlayerStatistics = () => {
 
     if (error) throw error;
 
-    // Process data to get monthly counts
     return processMonthlyCountsData(data || [], 'session_date');
   };
 
-  const processMonthlyCountsData = (data: any[], dateField: string) => {
-    const monthlyCounts: Record<string, number> = {};
+  const processMonthlyCountsData = (data: any[], dateField: string): MonthlyCountItem[] => {
+    const monthlyCounts: Record<string, { count: number; name: string }> = {};
     const monthNames = [
       "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
       "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
     ];
 
-    // Initialize last 6 months
     const today = new Date();
     for (let i = 5; i >= 0; i--) {
       const month = new Date();
@@ -147,7 +144,6 @@ const PlayerStatistics = () => {
       monthlyCounts[monthKey] = { count: 0, name: monthName };
     }
 
-    // Count items by month
     data.forEach(item => {
       const date = new Date(item[dateField]);
       const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
@@ -157,7 +153,6 @@ const PlayerStatistics = () => {
       }
     });
 
-    // Convert to array format for charts
     return Object.entries(monthlyCounts).map(([key, value]) => ({
       key,
       name: value.name,
@@ -165,8 +160,7 @@ const PlayerStatistics = () => {
     }));
   };
 
-  const processMonthlyData = (playersData: any[], sessionsData: any[]) => {
-    // Combine data for chart display
+  const processMonthlyData = (playersData: MonthlyCountItem[], sessionsData: MonthlyCountItem[]): MonthlyData[] => {
     const combinedData: MonthlyData[] = [];
 
     playersData.forEach((playerMonth, index) => {
@@ -181,14 +175,12 @@ const PlayerStatistics = () => {
     return combinedData;
   };
 
-  const calculateComparisonStats = (playersData: any[], sessionsData: any[]) => {
-    // Get current and previous month data
+  const calculateComparisonStats = (playersData: MonthlyCountItem[], sessionsData: MonthlyCountItem[]): ComparisonStats => {
     const currentMonthPlayers = playersData[5]?.count || 0;
     const previousMonthPlayers = playersData[4]?.count || 0;
     const currentMonthSessions = sessionsData[5]?.count || 0;
     const previousMonthSessions = sessionsData[4]?.count || 0;
 
-    // Calculate percentage changes
     const playersPercentChange = previousMonthPlayers === 0 
       ? 100 
       : ((currentMonthPlayers - previousMonthPlayers) / previousMonthPlayers) * 100;
@@ -197,27 +189,30 @@ const PlayerStatistics = () => {
       ? 100 
       : ((currentMonthSessions - previousMonthSessions) / previousMonthSessions) * 100;
 
-    // Calculate total active players (players with at least one session)
     const fetchTotalActivePlayers = async () => {
-      const { data, error } = await supabase
-        .rpc('get_coach_statistics');
-      
-      if (error) {
+      try {
+        const { data, error } = await supabase
+          .rpc('get_coach_statistics');
+        
+        if (error) {
+          console.error("Error fetching active players:", error);
+          return { totalActivePlayers: 0, averageSessionsPerPlayer: 0 };
+        }
+
+        const totalPlayers = data[0]?.activeplayerscount || 0;
+        const totalSessions = data[0]?.totalsessions || 0;
+        const averageSessionsPerPlayer = totalPlayers > 0 
+          ? Number((totalSessions / totalPlayers).toFixed(1)) 
+          : 0;
+
+        setComparisonStats(prev => ({
+          ...prev,
+          totalActivePlayers: totalPlayers,
+          averageSessionsPerPlayer: averageSessionsPerPlayer
+        }));
+      } catch (error) {
         console.error("Error fetching active players:", error);
-        return { totalActivePlayers: 0, averageSessionsPerPlayer: 0 };
       }
-
-      const totalPlayers = data[0]?.activeplayerscount || 0;
-      const totalSessions = data[0]?.totalsessions || 0;
-      const averageSessionsPerPlayer = totalPlayers > 0 
-        ? Number((totalSessions / totalPlayers).toFixed(1)) 
-        : 0;
-
-      setComparisonStats(prev => ({
-        ...prev,
-        totalActivePlayers: totalPlayers,
-        averageSessionsPerPlayer: averageSessionsPerPlayer
-      }));
     };
 
     fetchTotalActivePlayers();
@@ -229,8 +224,8 @@ const PlayerStatistics = () => {
       sessionsThisMonth: currentMonthSessions,
       sessionsLastMonth: previousMonthSessions,
       sessionsPercentChange: Number(sessionsPercentChange.toFixed(1)),
-      totalActivePlayers: 0, // Will be updated by async function
-      averageSessionsPerPlayer: 0 // Will be updated by async function
+      totalActivePlayers: 0,
+      averageSessionsPerPlayer: 0
     };
   };
 
@@ -249,7 +244,6 @@ const PlayerStatistics = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-8 px-4 md:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <div className="flex justify-between items-center p-4 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm">
           <Button
             variant="outline"
@@ -265,7 +259,6 @@ const PlayerStatistics = () => {
           <div className="w-10" />
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -326,9 +319,7 @@ const PlayerStatistics = () => {
           </Card>
         </div>
 
-        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Monthly New Players Chart */}
           <Card>
             <CardHeader>
               <CardTitle>שחקנים חדשים לפי חודשים</CardTitle>
@@ -346,7 +337,6 @@ const PlayerStatistics = () => {
             </CardContent>
           </Card>
 
-          {/* Monthly Sessions Chart */}
           <Card>
             <CardHeader>
               <CardTitle>מפגשים לפי חודשים</CardTitle>
@@ -364,7 +354,6 @@ const PlayerStatistics = () => {
             </CardContent>
           </Card>
 
-          {/* Combined Line Chart */}
           <Card className="col-span-1 lg:col-span-2">
             <CardHeader>
               <CardTitle>השוואה: שחקנים חדשים מול מפגשים</CardTitle>
