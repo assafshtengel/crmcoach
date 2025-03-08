@@ -1,44 +1,75 @@
 
-import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/calendar/Calendar';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface SessionFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSessionAdd?: (sessionData: {
+    player_id: string;
+    session_date: string;
+    session_time: string;
+    location?: string;
+    notes?: string;
+  }) => Promise<void>;
 }
 
-export const SessionFormDialog: React.FC<SessionFormDialogProps> = ({
-  open,
+export function SessionFormDialog({ 
+  open, 
   onOpenChange,
-}) => {
-  const navigate = useNavigate();
+  onSessionAdd
+}: SessionFormDialogProps) {
+  const [events, setEvents] = React.useState([]);
+  const [selectedPlayerId, setSelectedPlayerId] = React.useState<string | undefined>(undefined);
+  const [loading, setLoading] = React.useState(true);
 
-  const handleNavigateToSessionForm = () => {
-    onOpenChange(false);
-    navigate("/new-session");
+  React.useEffect(() => {
+    // Here you would typically fetch events
+    // For now, let's just set loading to false
+    setLoading(false);
+  }, []);
+
+  const handleEventClick = (eventId: string) => {
+    // Handle event click if needed
+    console.log('Event clicked:', eventId);
+  };
+
+  const handleAddEvent = async (sessionData: {
+    player_id: string;
+    session_date: string;
+    session_time: string;
+    location?: string;
+    notes?: string;
+  }) => {
+    if (onSessionAdd) {
+      await onSessionAdd(sessionData);
+      onOpenChange(false); // Close the dialog after successful submission
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-white/95 backdrop-blur-md">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-center text-xl">הוספת מפגש חדש</DialogTitle>
+          <DialogTitle>הוסף מפגש חדש</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col items-center justify-center p-6 space-y-4">
-          <p className="text-gray-600 text-center">
-            לחץ על הכפתור למטה כדי להוסיף מפגש חדש במערכת
-          </p>
-          <Button
-            variant="green"
-            className="w-full"
-            onClick={handleNavigateToSessionForm}
-          >
-            המשך להוספת מפגש
-          </Button>
+        <div className="py-4">
+          {loading ? (
+            <div className="text-center py-4">טוען...</div>
+          ) : (
+            <Calendar
+              events={events}
+              onEventClick={handleEventClick}
+              onEventAdd={handleAddEvent}
+              selectedPlayerId={selectedPlayerId}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>
   );
-};
+}

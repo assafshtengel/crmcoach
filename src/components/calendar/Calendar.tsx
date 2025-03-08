@@ -37,10 +37,19 @@ interface CalendarEvent {
   };
 }
 
+interface SessionData {
+  player_id: string;
+  coach_id?: string;
+  session_date: string;
+  session_time: string;
+  location?: string;
+  notes?: string;
+}
+
 interface CalendarProps {
   events: CalendarEvent[];
   onEventClick: (eventId: string) => void;
-  onEventAdd?: (event: Omit<CalendarEvent, 'id'> & { player_id: string }) => Promise<void>;
+  onEventAdd?: (sessionData: SessionData) => Promise<void>;
   selectedPlayerId?: string;
 }
 
@@ -51,6 +60,7 @@ interface EventFormData {
   notes?: string;
   eventType: 'reminder' | 'task' | 'other';
   player_id?: string;
+  location?: string;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEventAdd, selectedPlayerId }) => {
@@ -67,7 +77,8 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       time: '12:00',
       notes: '',
       eventType: 'reminder',
-      player_id: selectedPlayerId
+      player_id: selectedPlayerId,
+      location: ''
     }
   });
 
@@ -112,18 +123,18 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       
       console.log('Saving event with player_id:', playerIdToUse);
       
-      await onEventAdd({
-        title: data.title,
-        start: `${data.date}T${data.time}`,
+      // Format the data for the sessions table
+      const sessionData: SessionData = {
         player_id: playerIdToUse as string,
-        extendedProps: {
-          playerName: data.title,
-          notes: data.notes,
-          reminderSent: false,
-          eventType: data.eventType,
-          player_id: playerIdToUse
-        }
-      });
+        session_date: data.date, // YYYY-MM-DD format
+        session_time: data.time, // HH:MM format
+        location: data.location || 'לא צוין',
+        notes: data.notes
+      };
+      
+      console.log('Saving session data:', sessionData);
+      
+      await onEventAdd(sessionData);
       
       setIsAddEventOpen(false);
       form.reset({
@@ -132,7 +143,8 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
         time: '12:00',
         notes: '',
         eventType: 'reminder',
-        player_id: selectedPlayerId
+        player_id: selectedPlayerId,
+        location: ''
       });
       toast.success('האירוע נשמר בהצלחה ונוסף ללוח השנה!');
     } catch (error) {
@@ -292,7 +304,8 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
             time: '12:00',
             notes: '',
             eventType: 'reminder',
-            player_id: selectedPlayerId
+            player_id: selectedPlayerId,
+            location: ''
           });
         }
         setIsAddEventOpen(open);
@@ -359,6 +372,18 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
                     <FormLabel>שעה</FormLabel>
                     <FormControl>
                       <Input type="time" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>מיקום</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="הוסף מיקום למפגש..." />
                     </FormControl>
                   </FormItem>
                 )}

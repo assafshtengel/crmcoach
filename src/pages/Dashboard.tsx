@@ -320,6 +320,56 @@ const Dashboard = () => {
     setWatchedVideos(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
   };
 
+  const handleAddSession = async (sessionData: {
+    player_id: string;
+    session_date: string;
+    session_time: string;
+    location?: string;
+    notes?: string;
+  }) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "שגיאה",
+          description: "יש להתחבר למערכת כדי להוסיף מפגש",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const sessionWithCoach = {
+        ...sessionData,
+        coach_id: user.id
+      };
+
+      console.log('Adding new session:', sessionWithCoach);
+
+      const { error } = await supabase
+        .from('sessions')
+        .insert(sessionWithCoach);
+
+      if (error) {
+        console.error('Error saving session:', error);
+        throw error;
+      }
+
+      toast({
+        title: "המפגש נוסף בהצלחה",
+        description: "המפגש נוסף ללוח השנה",
+      });
+      
+    } catch (error) {
+      console.error('Error in handleAddSession:', error);
+      toast({
+        title: "שגיאה בהוספת המפגש",
+        description: "אנא נסה שוב מאוחר יותר",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto p-8">
@@ -698,6 +748,7 @@ const Dashboard = () => {
         <SessionFormDialog 
           open={isSessionFormOpen} 
           onOpenChange={setIsSessionFormOpen} 
+          onSessionAdd={handleAddSession}
         />
 
         <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
