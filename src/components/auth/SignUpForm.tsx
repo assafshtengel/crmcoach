@@ -92,6 +92,23 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
             }
           }
         }
+
+        // Send notification email about the new coach
+        try {
+          console.log("Sending notification email for new coach");
+          const response = await supabase.functions.invoke('notify-new-coach', {
+            body: { coachId: data.user.id }
+          });
+
+          if (response.error) {
+            console.error("Error sending notification email:", response.error);
+          } else {
+            console.log("Notification email sent successfully");
+          }
+        } catch (emailError) {
+          console.error("Failed to send notification email:", emailError);
+          // We don't want to block the signup process if notification fails
+        }
       }
 
       toast({

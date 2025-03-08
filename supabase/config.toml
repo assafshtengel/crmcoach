@@ -3,3 +3,6 @@ project_id = "hntgzgrlyfhojcaofbjv"
 
 [functions.send-whatsapp-notification]
 verify_jwt = true
+
+[functions.notify-new-coach]
+verify_jwt = false
