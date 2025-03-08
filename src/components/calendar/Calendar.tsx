@@ -49,7 +49,7 @@ interface SessionData {
 interface CalendarProps {
   events: CalendarEvent[];
   onEventClick: (eventId: string) => void;
-  onEventAdd?: (sessionData: SessionData) => Promise<void>;
+  onEventAdd?: (eventData: any) => Promise<void>;
   selectedPlayerId?: string;
 }
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -146,10 +145,8 @@ const DashboardCoach = () => {
         isAfter(new Date(session.session_date), firstDayOfMonth)
       )?.length || 0;
 
-      // Fix: Ensure we're correctly identifying future sessions within current month
       const currentMonthFutureSessions = sessionsData?.filter(session => {
         const sessionDate = new Date(session.session_date);
-        // Check if session is in the future (or today) AND within current month
         return (isAfter(sessionDate, today) || isSameDay(sessionDate, today)) && 
                isBefore(sessionDate, lastDayOfMonth);
       })?.length || 0;
@@ -674,31 +671,43 @@ const DashboardCoach = () => {
     }
   };
 
-  const handleAddEvent = async (eventData: Omit<CalendarEvent, 'id'>) => {
+  const handleAddEvent = async (eventData: any) => {
     try {
       if (!user?.id) {
         throw new Error('משתמש לא מחובר');
       }
 
-      const { data, error } = await supabase
+      const sessionData = {
+        player_id: eventData.extendedProps?.player_id || '',
+        coach_id: user.id,
+        session_date: eventData.start.split('T')[0],
+        session_time: eventData.start.split('T')[1],
+        location: eventData.extendedProps?.location || '',
+        notes: eventData.extendedProps?.notes || ''
+      };
+
+      console.log('Adding new session:', sessionData);
+
+      const { error } = await supabase
         .from('sessions')
-        .insert([
-          {
-            coach_id: user.id,
-            session_date: eventData.start.split('T')[0],
-            session_time: eventData.start.split('T')[1],
-            notes: eventData.extendedProps.notes,
-            reminder_sent: false
-          }
-        ])
+        .insert(sessionData)
         .select()
         .single();
 
       if (error) throw error;
 
       await fetchCalendarEvents(user.id);
+      toast({
+        title: "המפגש נוסף בהצלחה",
+        description: "המפגש נוסף ללוח השנה",
+      });
     } catch (error) {
       console.error('Error adding event:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהוספת המפגש",
+        description: "אנא נסה שוב מאוחר יותר",
+      });
       throw error;
     }
   };
@@ -1112,3 +1121,4 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
+

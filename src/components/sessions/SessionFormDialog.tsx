@@ -38,16 +38,31 @@ export function SessionFormDialog({
     console.log('Event clicked:', eventId);
   };
 
-  const handleAddEvent = async (sessionData: {
-    player_id: string;
-    session_date: string;
-    session_time: string;
-    location?: string;
-    notes?: string;
-  }) => {
-    if (onSessionAdd) {
-      await onSessionAdd(sessionData);
-      onOpenChange(false); // Close the dialog after successful submission
+  const handleAddEvent = async (eventData: any) => {
+    try {
+      // Extract the required fields from the eventData
+      if (!eventData.extendedProps?.player_id) {
+        toast.error('נא לבחור שחקן לפני הוספת אירוע');
+        return;
+      }
+      
+      const sessionData = {
+        player_id: eventData.extendedProps.player_id,
+        session_date: eventData.start.split('T')[0],
+        session_time: eventData.start.split('T')[1],
+        location: eventData.extendedProps.location || '',
+        notes: eventData.extendedProps.notes || ''
+      };
+      
+      console.log('Extracted session data:', sessionData);
+      
+      if (onSessionAdd) {
+        await onSessionAdd(sessionData);
+        onOpenChange(false); // Close the dialog after successful submission
+      }
+    } catch (error) {
+      console.error('Error processing event data:', error);
+      toast.error('אירעה שגיאה בשמירת המפגש');
     }
   };
 
