@@ -418,13 +418,14 @@ const DashboardCoach = () => {
 
       if (error) throw error;
 
-      setUpcomingSessions(prev => 
-        prev.map(session => 
-          session.id === sessionId 
-            ? { ...session, has_summary: true }
-            : session
-        )
-      );
+      setPastSessionsToSummarize(prev => prev.filter(session => session.id !== sessionId));
+      
+      const summarizedSession = pastSessionsToSummarize.find(s => s.id === sessionId);
+      
+      if (summarizedSession) {
+        const updatedSession = { ...summarizedSession, has_summary: true };
+        setSummarizedSessions(prev => [updatedSession, ...prev]);
+      }
 
       toast({
         title: "הסיכום נשמר בהצלחה",
@@ -434,7 +435,6 @@ const DashboardCoach = () => {
 
       setTimeout(() => {
         document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click();
-        navigate('/');
       }, 1000);
 
     } catch (error) {
@@ -804,6 +804,28 @@ const DashboardCoach = () => {
 
     fetchPlayers();
   }, []);
+
+  useEffect(() => {
+    const handleSessionSummarized = (event: any) => {
+      const { sessionId } = event.detail;
+      console.log("Session summarized event received for session:", sessionId);
+
+      setPastSessionsToSummarize(prev => prev.filter(session => session.id !== sessionId));
+      
+      const summarizedSession = pastSessionsToSummarize.find(s => s.id === sessionId);
+      
+      if (summarizedSession) {
+        const updatedSession = { ...summarizedSession, has_summary: true };
+        setSummarizedSessions(prev => [updatedSession, ...prev]);
+      }
+    };
+
+    window.addEventListener('sessionSummarized', handleSessionSummarized);
+    
+    return () => {
+      window.removeEventListener('sessionSummarized', handleSessionSummarized);
+    };
+  }, [pastSessionsToSummarize]);
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">

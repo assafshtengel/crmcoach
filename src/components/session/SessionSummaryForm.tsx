@@ -61,6 +61,9 @@ export function SessionSummaryForm({
       await onSubmit({ ...data, tools_used: selectedTools });
       console.log("Form submitted successfully");
       
+      // Update the session status in the frontend
+      updateSessionSummaryStatus(sessionId);
+      
       // Show success feedback dialog
       setFeedbackData({
         title: "הצלחה",
@@ -84,6 +87,39 @@ export function SessionSummaryForm({
       toast.error("שגיאה בשמירת סיכום המפגש");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Function to update the session status after summary is created
+  const updateSessionSummaryStatus = async (sessionId: string) => {
+    try {
+      // Check if the summary exists (for verification)
+      const { data: summaries, error: checkError } = await supabase
+        .from('session_summaries')
+        .select('id')
+        .eq('session_id', sessionId);
+      
+      if (checkError) {
+        console.error("Error checking session summary status:", checkError);
+        return;
+      }
+      
+      console.log("Session summaries status check:", summaries);
+      
+      // If summary exists, the session was successfully summarized
+      if (summaries && summaries.length > 0) {
+        // Force a refresh of the parent component by causing sessions state update
+        if (window.dispatchEvent) {
+          // Create a custom event to notify that a session was summarized
+          const event = new CustomEvent('sessionSummarized', { 
+            detail: { sessionId } 
+          });
+          window.dispatchEvent(event);
+          console.log("Dispatched sessionSummarized event for session:", sessionId);
+        }
+      }
+    } catch (error) {
+      console.error("Error updating session summary status:", error);
     }
   };
 
