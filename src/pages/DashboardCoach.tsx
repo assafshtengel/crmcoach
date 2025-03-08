@@ -1,101 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { format, startOfMonth, endOfMonth, subMonths, isBefore, isAfter, isSameDay, isPast, formatDistance } from 'date-fns';
-import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
-import { Calendar as CalendarComponent } from '@/components/calendar/Calendar';
-import { Link } from 'react-router-dom';
-import { Wrench } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tool } from '@/types/tool';
-import AllMeetingSummaries from './AllMeetingSummaries';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
+import { CalendarComponent } from '@/components/calendar/Calendar';
+import { CalendarEvent, UpcomingSession, DashboardStats } from '@/types/dashboard';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { DashboardStats as StatsCards } from '@/components/dashboard/DashboardStats';
+import { UpcomingSessions } from '@/components/dashboard/UpcomingSessions';
+import { PastSessions } from '@/components/dashboard/PastSessions';
+import { NotificationsDropdown } from '@/components/dashboard/NotificationsDropdown';
 import { SessionFormDialog } from '@/components/sessions/SessionFormDialog';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-
-interface DashboardStats {
-  totalPlayers: number;
-  upcomingSessions: number;
-  currentMonthPastSessions: number;
-  currentMonthFutureSessions: number;
-  lastMonthSessions: number;
-  twoMonthsAgoSessions: number;
-  totalReminders: number;
-}
-
-interface UpcomingSession {
-  id: string;
-  session_date: string;
-  session_time: string;
-  notes: string;
-  reminder_sent: boolean;
-  location: string;
-  player: {
-    full_name: string;
-    id?: string;
-  };
-  has_summary?: boolean;
-}
-
-interface SessionResponse {
-  id: string;
-  session_date: string;
-  session_time: string;
-  location: string | null;
-  notes: string | null;
-  reminder_sent: boolean | null;
-  player: {
-    full_name: string;
-  };
-}
-
-interface Notification {
-  id: string;
-  message: string;
-  created_at: string;
-  is_read: boolean;
-  type: string;
-}
-
-interface CalendarEvent {
-  id: string;
-  title: string;
-  start: string;
-  end?: string;
-  location?: string;
-  extendedProps: {
-    playerName: string;
-    location?: string;
-    reminderSent: boolean;
-    notes?: string;
-  };
-}
-
-interface EventFormData {
-  title: string;
-  date: string;
-  time: string;
-  notes?: string;
-}
 
 const DashboardCoach = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [coachName, setCoachName] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [coachName, setCoachName] = useState('');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [stats, setStats] = useState<DashboardStats>({
     totalPlayers: 0,
     upcomingSessions: 0,
@@ -105,16 +34,13 @@ const DashboardCoach = () => {
     twoMonthsAgoSessions: 0,
     totalReminders: 0
   });
-  const [isLoading, setIsLoading] = useState(true);
   const [upcomingSessions, setUpcomingSessions] = useState<UpcomingSession[]>([]);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
-  const [isSessionsExpanded, setIsSessionsExpanded] = useState(false);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [pastSessionsToSummarize, setPastSessionsToSummarize] = useState<UpcomingSession[]>([]);
   const [summarizedSessions, setSummarizedSessions] = useState<UpcomingSession[]>([]);
-  const [activeTab, setActiveTab] = useState("upcoming");
-  const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
   const [isSessionFormOpen, setIsSessionFormOpen] = useState(false);
+  const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
 
   useEffect(() => {
     const initUser = async () => {
@@ -130,10 +56,10 @@ const DashboardCoach = () => {
       const nextWeek = new Date(today);
       nextWeek.setDate(today.getDate() + 7);
       
-      const firstDayOfMonth = startOfMonth(today);
-      const lastDayOfMonth = endOfMonth(today);
-      const lastMonth = subMonths(today, 1);
-      const twoMonthsAgo = subMonths(today, 2);
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const twoMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 2, 1);
       
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
@@ -142,26 +68,25 @@ const DashboardCoach = () => {
       
       if (sessionsError) throw sessionsError;
 
-      const currentMonthPastSessions = sessionsData?.filter(session => 
-        isBefore(new Date(session.session_date), today) && 
-        isAfter(new Date(session.session_date), firstDayOfMonth)
-      )?.length || 0;
+      const currentMonthPastSessions = sessionsData?.filter(session => {
+        const sessionDate = new Date(session.session_date);
+        return sessionDate < today && sessionDate >= firstDayOfMonth;
+      })?.length || 0;
 
       const currentMonthFutureSessions = sessionsData?.filter(session => {
         const sessionDate = new Date(session.session_date);
-        return (isAfter(sessionDate, today) || isSameDay(sessionDate, today)) && 
-               isBefore(sessionDate, lastDayOfMonth);
+        return (sessionDate >= today) && sessionDate <= lastDayOfMonth;
       })?.length || 0;
 
-      const lastMonthSessions = sessionsData?.filter(session => 
-        isBefore(new Date(session.session_date), firstDayOfMonth) && 
-        isAfter(new Date(session.session_date), startOfMonth(lastMonth))
-      )?.length || 0;
+      const lastMonthSessions = sessionsData?.filter(session => {
+        const sessionDate = new Date(session.session_date);
+        return sessionDate < firstDayOfMonth && sessionDate >= lastMonth;
+      })?.length || 0;
 
-      const twoMonthsAgoSessions = sessionsData?.filter(session => 
-        isBefore(new Date(session.session_date), startOfMonth(lastMonth)) && 
-        isAfter(new Date(session.session_date), startOfMonth(twoMonthsAgo))
-      )?.length || 0;
+      const twoMonthsAgoSessions = sessionsData?.filter(session => {
+        const sessionDate = new Date(session.session_date);
+        return sessionDate < lastMonth && sessionDate >= twoMonthsAgo;
+      })?.length || 0;
 
       const { data: upcomingSessions, error: upcomingError } = await supabase
         .from('sessions')
@@ -312,34 +237,52 @@ const DashboardCoach = () => {
     }
   };
 
-  const markAsRead = async (notificationId: string, e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-    }
+  const fetchCalendarEvents = async (userId: string) => {
     try {
-      const {
-        error
-      } = await supabase.from('notifications').update({
-        is_read: true
-      }).eq('id', notificationId);
+      const { data: rawSessions, error } = await supabase
+        .from('sessions')
+        .select(`
+          id,
+          session_date,
+          session_time,
+          location,
+          notes,
+          reminder_sent,
+          player:players!inner(
+            full_name
+          )
+        `)
+        .eq('coach_id', userId);
+
       if (error) throw error;
-      setNotifications(prev => prev.map(n => n.id === notificationId ? {
-        ...n,
-        is_read: true
-      } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+
+      const events: CalendarEvent[] = rawSessions.map(session => ({
+        id: session.id,
+        title: session.player.full_name,
+        start: `${session.session_date}T${session.session_time}`,
+        location: session.location || undefined,
+        extendedProps: {
+          playerName: session.player.full_name,
+          location: session.location || undefined,
+          reminderSent: session.reminder_sent || false,
+          notes: session.notes || undefined
+        }
+      }));
+
+      setCalendarEvents(events);
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Error fetching calendar events:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת המפגשים",
+        description: "אנא נסה שוב מאוחר יותר"
+      });
     }
   };
 
   const handleSendReminder = async (sessionId: string) => {
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('לא נמצא משתמש מחובר');
       const session = upcomingSessions.find(s => s.id === sessionId);
       if (!session) throw new Error('לא נמצא מפגש');
@@ -348,9 +291,7 @@ const DashboardCoach = () => {
         type: 'reminder_scheduled',
         message: `תזכורת תשלח לשחקן ${session.player.full_name} בעוד 15 דקות`
       });
-      const {
-        error
-      } = await supabase.from('notifications_log').insert([{
+      const { error } = await supabase.from('notifications_log').insert([{
         session_id: sessionId,
         status: 'Sent',
         message_content: 'תזכורת למפגש',
@@ -504,175 +445,6 @@ const DashboardCoach = () => {
     }
   };
 
-  const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
-    const sessionDate = new Date(session.session_date);
-    const isToday = isSameDay(sessionDate, new Date());
-    const isPastSession = isPast(sessionDate);
-    const hasNoSummary = isPastSession && !session.has_summary;
-
-    if (isPastSession && session.has_summary && !showSummaryButton) {
-      return null;
-    }
-
-    return (
-      <Card 
-        key={session.id} 
-        className={`bg-gray-50 hover:bg-white transition-all duration-300 ${
-          isToday ? 'border-l-4 border-l-blue-500 shadow-blue-200' :
-          hasNoSummary ? 'border-l-4 border-l-red-500 shadow-red-200' :
-          session.has_summary ? 'border-l-4 border-l-green-500 shadow-green-200' :
-          'border'
-        }`}
-      >
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-semibold text-[#2C3E50]">{session.player.full_name}</h3>
-              <p className="text-sm text-gray-500">
-                {session.session_date} | {session.session_time}
-              </p>
-            </div>
-            <div>
-              {isToday && (
-                <div className="flex items-center text-blue-600 text-sm font-medium">
-                  <Clock className="h-4 w-4 mr-1" />
-                  היום
-                </div>
-              )}
-              {hasNoSummary && (
-                <div className="flex items-center text-red-600 text-sm font-medium">
-                  <AlertCircle className="h-4 w-4 mr-1" />
-                  חסר סיכום
-                </div>
-              )}
-              {session.has_summary && (
-                <div className="flex items-center text-green-600 text-sm font-medium">
-                  <Check className="h-4 w-4 mr-1" />
-                  סוכם
-                </div>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">{session.location || 'לא צוין מיקום'}</span>
-            <div className="flex gap-2">
-              {!session.reminder_sent && !isPastSession ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleSendReminder(session.id)}
-                  className="text-[#27AE60] hover:text-[#219A52]"
-                >
-                  <Send className="h-4 w-4 mr-1" />
-                  שלח תזכורת
-                </Button>
-              ) : !isPastSession ? (
-                <span className="text-sm text-[#27AE60] flex items-center">
-                  <Check className="h-4 w-4 mr-1" />
-                  נשלחה תזכורת
-                </span>
-              ) : null}
-              {showSummaryButton && !session.has_summary && (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="flex items-center">
-                      <FileEdit className="h-4 w-4 mr-1" />
-                      סכם מפגש
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>סיכום מפגש</DialogTitle>
-                    </DialogHeader>
-                    <div className="mt-4">
-                      <SessionSummaryForm
-                        sessionId={session.id}
-                        playerName={session.player.full_name}
-                        sessionDate={session.session_date}
-                        onSubmit={(data) => handleSaveSessionSummary(session.id, data)}
-                        onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()}
-                      />
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
-              {session.has_summary && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex items-center"
-                  onClick={() => session.player.id 
-                    ? handleViewSummary(session.player.id, session.player.full_name) 
-                    : navigate('/session-summaries')}
-                >
-                  <FileText className="h-4 w-4 mr-1" />
-                  צפה בסיכום
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  const fetchCalendarEvents = async (userId: string) => {
-    try {
-      const { data: rawSessions, error } = await supabase
-        .from('sessions')
-        .select(`
-          id,
-          session_date,
-          session_time,
-          location,
-          notes,
-          reminder_sent,
-          player:players!inner(
-            full_name
-          )
-        `)
-        .eq('coach_id', userId);
-
-      if (error) throw error;
-
-      const sessions = (rawSessions as any[])?.map(session => ({
-        id: session.id as string,
-        session_date: session.session_date as string,
-        session_time: session.session_time as string,
-        location: session.location as string | null,
-        notes: session.notes as string | null,
-        reminder_sent: session.reminder_sent as boolean | null,
-        player: {
-          full_name: session.player?.full_name as string
-        }
-      })) as SessionResponse[];
-
-      const events: CalendarEvent[] = sessions.map(session => ({
-        id: session.id,
-        title: session.player.full_name,
-        start: `${session.session_date}T${session.session_time}`,
-        location: session.location || undefined,
-        extendedProps: {
-          playerName: session.player.full_name,
-          location: session.location || undefined,
-          reminderSent: session.reminder_sent || false,
-          notes: session.notes || undefined
-        }
-      }));
-
-      setCalendarEvents(events);
-    } catch (error) {
-      console.error('Error fetching calendar events:', error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בטעינת המפגשים",
-        description: "אנא נסה שוב מאוחר יותר"
-      });
-    }
-  };
-
   const handleAddEvent = async (eventData: any) => {
     try {
       if (!user?.id) {
@@ -712,6 +484,10 @@ const DashboardCoach = () => {
       });
       throw error;
     }
+  };
+
+  const handleEventClick = (eventId: string) => {
+    navigate('/edit-session', { state: { sessionId: eventId } });
   };
 
   useEffect(() => {
@@ -758,50 +534,23 @@ const DashboardCoach = () => {
     initializeDashboard();
   }, []);
 
-  const handleEventClick = (eventId: string) => {
-    const session = upcomingSessions.find(s => s.id === eventId);
-    if (session) {
-      navigate('/edit-session', { state: { sessionId: eventId } });
-    }
-  };
+  const fetchPlayers = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-  const getMonthlySessionsData = () => {
-    return [{
-      name: 'לפני חודשיים',
-      מפגשים: stats.twoMonthsAgoSessions,
-      fill: '#9CA3AF'
-    }, {
-      name: 'חודש קודם',
-      מפגשים: stats.lastMonthSessions,
-      fill: '#F59E0B'
-    }, {
-      name: 'החודש (בוצעו)',
-      מפגשים: stats.currentMonthPastSessions,
-      fill: '#10B981'
-    }, {
-      name: 'החודש (מתוכננים)',
-      מפגשים: stats.currentMonthFutureSessions,
-      fill: '#3B82F6'
-    }];
+    const { data, error } = await supabase
+      .from('players')
+      .select('id, full_name')
+      .eq('coach_id', user.id);
+
+    if (error) {
+      console.error('Error fetching players:', error);
+      return;
+    }
+    setPlayers(data);
   };
 
   useEffect(() => {
-    const fetchPlayers = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-  
-      const { data, error } = await supabase
-        .from('players')
-        .select('id, full_name')
-        .eq('coach_id', user.id);
-  
-      if (error) {
-        console.error('Error fetching players:', error);
-        return;
-      }
-      setPlayers(data);
-    };
-
     fetchPlayers();
   }, []);
 
@@ -828,58 +577,43 @@ const DashboardCoach = () => {
 
       <SessionFormDialog open={isSessionFormOpen} onOpenChange={setIsSessionFormOpen} />
 
-      <header className="w-full bg-[#2C3E50] text-white py-6 mb-8 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center overflow-hidden">
-                {profilePicture ? (
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={profilePicture} alt={coachName} />
-                    <AvatarFallback>{coachName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <Users className="h-6 w-6 text-white/90" />
-                )}
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold animate-fade-in">
-                  {coachName ? (
-                    <span className="bg-gradient-to-r from-white to-white/80 bg-clip-text">
-                      ברוך הבא, {coachName}
-                    </span>
-                  ) : (
-                    'ברוך הבא'
-                  )}
-                </h1>
-                <p className="text-white/70 text-sm">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: he })}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} onEventAdd={handleAddEvent} />
-              <Button 
-                variant="ghost" 
-                className="text-white hover:bg-white/10"
-                onClick={() => navigate('/registration-links')}
-              >
-                <Share2 className="h-5 w-5 mr-2" />
-                <span className="hidden sm:inline">לינקי הרשמה</span>
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative text-white hover:bg-white/10">
-                    <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && 
-                      <span className="absolute -top-1 -right-1 bg-[#E74C3C] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                        {unreadCount}
-                      </span>
-                    }
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
-                  <div className="p-2 border-b dark:border-gray-700">
-                    <h3 className="font-semibold text-lg px-2 py-1 dark:text-white">התראות</h3>
-                  </div>
-                  <ScrollArea className="h-[400px]">
-                    {notifications.length > 0 ? <div className="py-2">
-                        {notifications.map(notification => <div key={notification.id} className={`relative w-full text-right px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+      <DashboardHeader 
+        coachName={coachName}
+        profilePicture={profilePicture}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        markAsRead={(id, e) => e && id ? e.preventDefault() : null}
+        calendarEvents={calendarEvents}
+        onEventClick={handleEventClick}
+        onEventAdd={handleAddEvent}
+        onLogoutClick={() => setIsLogoutDialogOpen(true)}
+      />
+
+      <div className="max-w-7xl mx-auto mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <StatsCards stats={stats} />
+          
+          <UpcomingSessions 
+            sessions={upcomingSessions}
+            onSendReminder={handleSendReminder}
+            onSaveSessionSummary={handleSaveSessionSummary}
+            onViewSummary={handleViewSummary}
+          />
+          
+          <PastSessions 
+            sessionsToSummarize={pastSessionsToSummarize}
+            summarizedSessions={summarizedSessions}
+            onSaveSessionSummary={handleSaveSessionSummary}
+            onViewSummary={handleViewSummary}
+          />
+        </div>
+
+        <div className="space-y-6">
+          {/* Activity chart and other sidebar components could go here */}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardCoach;
