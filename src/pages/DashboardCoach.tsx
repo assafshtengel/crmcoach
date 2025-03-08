@@ -21,6 +21,7 @@ import { Tool } from '@/types/tool';
 import AllMeetingSummaries from './AllMeetingSummaries';
 import { SessionFormDialog } from '@/components/sessions/SessionFormDialog';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -94,6 +95,7 @@ const DashboardCoach = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [coachName, setCoachName] = useState('');
   const [user, setUser] = useState<any>(null);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     totalPlayers: 0,
     upcomingSessions: 0,
@@ -718,12 +720,13 @@ const DashboardCoach = () => {
       if (authUser) {
         const { data: coachData } = await supabase
           .from('coaches')
-          .select('full_name')
+          .select('full_name, profile_picture')
           .eq('id', authUser.id)
           .single();
         
         if (coachData) {
           setCoachName(coachData.full_name);
+          setProfilePicture(coachData.profile_picture);
         }
 
         await fetchData(authUser.id);
@@ -829,8 +832,15 @@ const DashboardCoach = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
-                <Users className="h-6 w-6 text-white/90" />
+              <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center overflow-hidden">
+                {profilePicture ? (
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={profilePicture} alt={coachName} />
+                    <AvatarFallback>{coachName.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <Users className="h-6 w-6 text-white/90" />
+                )}
               </div>
               <div>
                 <h1 className="text-2xl font-bold animate-fade-in">
@@ -1061,7 +1071,7 @@ const DashboardCoach = () => {
               <Target className="h-5 w-5 text-[#27ae60]" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500 mb-3">מלא טופס הכנה למשחק עבור השחקנים</p>
+              <p className="text-sm text-gray-500 mb-3">מלא טו��ס הכנה למשחק עבור השחקנים</p>
               <Button 
                 variant="default" 
                 className="w-full bg-[#27ae60] hover:bg-[#219653]"
@@ -1161,4 +1171,3 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
-
