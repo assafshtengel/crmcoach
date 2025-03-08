@@ -5,10 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { supabase } from "@/lib/supabase";
@@ -37,7 +34,6 @@ export function SessionSummaryForm({
 }: SessionSummaryFormProps) {
   const { tools, selectedTools, setSelectedTools, loading } = useTools();
   const [isSaving, setIsSaving] = useState(false);
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -54,7 +50,9 @@ export function SessionSummaryForm({
   const handleSubmit = async (data: FormValues) => {
     setIsSaving(true);
     try {
+      console.log("Submitting form data:", { ...data, tools_used: selectedTools });
       await onSubmit({ ...data, tools_used: selectedTools });
+      console.log("Form submitted successfully");
       toast.success("סיכום המפגש נשמר בהצלחה");
     } catch (error) {
       console.error("Error saving session summary:", error);
@@ -64,43 +62,12 @@ export function SessionSummaryForm({
     }
   };
 
-  const handleSaveDraft = async () => {
-    setIsSaving(true);
-    try {
-      const currentFormValues = form.getValues();
-      
-      // Save draft to localStorage with timestamp
-      const draftData = {
-        sessionId,
-        formValues: currentFormValues,
-        tools: selectedTools,
-        savedAt: new Date().toISOString()
-      };
-      
-      localStorage.setItem(`sessionDraft_${sessionId}`, JSON.stringify(draftData));
-      toast.success("טיוטת סיכום המפגש נשמרה בהצלחה");
-      
-      // Optionally save to database as draft
-      const { error } = await supabase
-        .from('session_drafts')
-        .upsert({
-          session_id: sessionId,
-          form_data: currentFormValues,
-          tools_used: selectedTools,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'session_id' });
-        
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error saving draft:", error);
-      toast.error("שגיאה בשמירת הטיוטה, אך נשמרה מקומית");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleExportPDF = async () => {
     try {
+      // First save the form data
+      const currentFormValues = form.getValues();
+      await handleSubmit(currentFormValues);
+      
       toast.info("מכין PDF, אנא המתן...");
       
       // Wait for any state updates to complete
@@ -184,34 +151,10 @@ export function SessionSummaryForm({
         </form>
       </ScrollArea>
       <FormActions
-        onCancel={onCancel}
         onSubmit={form.handleSubmit(handleSubmit)}
-        onSaveDraft={handleSaveDraft}
         onExportPDF={handleExportPDF}
-        onAdvancedSettings={() => setShowAdvancedSettings(true)}
         isSaving={isSaving}
       />
-
-      {/* Advanced Settings Dialog */}
-      <Dialog open={showAdvancedSettings} onOpenChange={setShowAdvancedSettings}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>הגדרות מתקדמות</DialogTitle>
-            <DialogDescription>
-              התאם את הגדרות הסיכום לפי צרכיך
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <Alert className="bg-yellow-50 border-yellow-200">
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
-              <AlertDescription>
-                הגדרות מתקדמות יתווספו בגרסה הבאה
-              </AlertDescription>
-            </Alert>
-          </div>
-        </DialogContent>
-      </Dialog>
     </Form>
   );
 }
