@@ -5,7 +5,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -131,6 +131,16 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
           <CalendarIcon className="h-5 w-5" />
           <span>לוח מפגשים</span>
         </Button>
+        {onEventAdd && (
+          <Button
+            variant="ghost"
+            className="flex items-center gap-2 text-white hover:bg-white/10"
+            onClick={() => setIsAddEventOpen(true)}
+          >
+            <Plus className="h-5 w-5" />
+            <span>הוסף אירוע</span>
+          </Button>
+        )}
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
