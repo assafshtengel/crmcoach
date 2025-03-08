@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,9 +58,14 @@ const Reports = () => {
         return;
       }
 
+      // Get the current coach's ID from the session
+      const coachId = session.session.user.id;
+
+      // Fetch only reports that belong to the current coach
       const { data, error } = await supabase
         .from('mental_prep_forms')
         .select('*')
+        .eq('coach_id', coachId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
