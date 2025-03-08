@@ -26,6 +26,7 @@ import Contact from "./pages/Contact";
 import Next from "./pages/Next";
 import PlayerEvaluation from "./pages/PlayerEvaluation";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+import PlayerStatistics from "./pages/PlayerStatistics"; // Add import for new page
 import GamePreparation from "./pages/GamePreparation";
 import NotificationsDashboard from "./pages/NotificationsDashboard";
 import AuthPage from "./pages/auth/AuthPage";
@@ -40,7 +41,7 @@ import AllMeetingSummaries from './pages/AllMeetingSummaries';
 import PlayerAuth from './pages/PlayerAuth';
 import PlayerProfileView from './pages/player/PlayerProfileView';
 import { AuthGuard } from "./components/auth/AuthGuard";
-import Goals from "./pages/Goals"; // Import the new Goals page
+import Goals from "./pages/Goals"; 
 
 import "./App.css";
 
@@ -75,6 +76,7 @@ function App() {
         <Route path="/next" element={<AuthGuard><Next /></AuthGuard>} />
         <Route path="/player-evaluation" element={<AuthGuard><PlayerEvaluation /></AuthGuard>} />
         <Route path="/analytics" element={<AuthGuard><AnalyticsDashboard /></AuthGuard>} />
+        <Route path="/player-statistics" element={<AuthGuard><PlayerStatistics /></AuthGuard>} /> {/* Add new route */}
         <Route path="/game-prep" element={<AuthGuard><GamePreparation /></AuthGuard>} />
         <Route path="/notifications" element={<AuthGuard><NotificationsDashboard /></AuthGuard>} />
         <Route path="/auth" element={<AuthPage />} />
@@ -88,7 +90,7 @@ function App() {
         <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
         <Route path="/tool-management" element={<AuthGuard><ToolManagement /></AuthGuard>} />
         <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
-        <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} /> {/* Add the new route for Goals */}
+        <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} /> 
         
         {/* New player-specific routes */}
         <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />

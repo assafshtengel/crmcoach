@@ -1,9 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, FileText, MapPin, User } from "lucide-react";
+import { ArrowRight, Calendar, FileText, MapPin, User, BarChart2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -65,7 +64,6 @@ const Reports = () => {
 
       if (error) throw error;
 
-      // המרה מפורשת של הנתונים לפורמט הנכון
       const formattedData: Report[] = (data || []).map(item => ({
         id: item.id,
         created_at: item.created_at,
@@ -122,6 +120,40 @@ const Reports = () => {
           <ArrowRight className="h-4 w-4" />
         </Button>
         <h1 className="text-3xl font-bold">דוחות טרום משחק</h1>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <Card 
+          className="hover:shadow-lg transition-shadow cursor-pointer bg-white/90"
+          onClick={() => navigate('/player-statistics')}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <BarChart2 className="h-5 w-5 text-primary" />
+              סטטיסטיקות שחקנים ומפגשים
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">צפה בנתונים סטטיסטיים מפורטים על שחקנים חדשים ומפגשים</p>
+            <Button variant="outline" className="w-full">לצפייה</Button>
+          </CardContent>
+        </Card>
+        
+        <Card 
+          className="hover:shadow-lg transition-shadow cursor-pointer bg-white/90"
+          onClick={() => navigate('/analytics')}
+        >
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              דוחות כלליים
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">צפה בדוחות כלליים ונתונים נוספים</p>
+            <Button variant="outline" className="w-full">לצפייה</Button>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6">

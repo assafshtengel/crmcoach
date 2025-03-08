@@ -1,8 +1,7 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { ArrowRight, ChartBar, PieChart, LineChart } from "lucide-react";
+import { ArrowRight, ChartBar, PieChart, LineChart, BarChart2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -187,6 +186,42 @@ const AnalyticsDashboard = () => {
             דוחות וסטטיסטיקות
           </h1>
           <div className="w-10" />
+        </div>
+
+        {/* Navigation Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/player-statistics')}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-medium">סטטיסטיקות שחקנים</CardTitle>
+              <Users className="h-5 w-5 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">נתונים סטטיסטיים על שחקנים חדשים ומפגשים לפי חודשים</p>
+              <Button variant="outline" className="w-full mt-4">לצפייה</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/reports')}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-medium">דוחות טרום משחק</CardTitle>
+              <BarChart2 className="h-5 w-5 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">צפייה בדוחות של הכנות טרום משחק</p>
+              <Button variant="outline" className="w-full mt-4">לצפייה</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-medium">ביצועי שחקנים</CardTitle>
+              <LineChart className="h-5 w-5 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">גרפים וניתוחים של ביצועי השחקנים לאורך זמן</p>
+              <Button variant="outline" className="w-full mt-4">בקרוב</Button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Stats Cards */}
