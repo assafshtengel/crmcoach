@@ -5,10 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
-import { Award, BookOpen, GraduationCap, Upload, ArrowLeft } from 'lucide-react';
+import { Award, BookOpen, GraduationCap, Upload, ArrowLeft, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ImageUpload } from '@/components/new-player/ImageUpload';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface CoachProfile {
   full_name: string;
@@ -36,6 +38,7 @@ const ProfileCoach = () => {
   });
   const [loading, setLoading] = useState(false);
   const [newCertification, setNewCertification] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -77,6 +80,33 @@ const ProfileCoach = () => {
     }
   };
 
+  const uploadProfilePicture = async (file: File) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const filePath = `profile_pictures/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('coaches')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('coaches')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('שגיאה בהעלאת התמונה');
+      return null;
+    }
+  };
+
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -85,6 +115,12 @@ const ProfileCoach = () => {
       if (!user) {
         toast.error('לא נמצא משתמש מחובר');
         return;
+      }
+
+      // Upload profile picture if there's a new one
+      let profilePictureUrl = profile.profile_picture;
+      if (imageFile) {
+        profilePictureUrl = await uploadProfilePicture(imageFile);
       }
 
       const { error } = await supabase
@@ -98,7 +134,7 @@ const ProfileCoach = () => {
           certifications: profile.certifications,
           education: profile.education,
           description: profile.description,
-          profile_picture: profile.profile_picture
+          profile_picture: profilePictureUrl
         })
         .eq('id', user.id);
 
@@ -134,6 +170,18 @@ const ProfileCoach = () => {
     }));
   };
 
+  const handleImageUpload = (file: File) => {
+    setImageFile(file);
+  };
+
+  const handleImageRemove = () => {
+    setImageFile(null);
+    setProfile(prev => ({
+      ...prev,
+      profile_picture: null
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -152,6 +200,29 @@ const ProfileCoach = () => {
             <CardDescription>ערוך את פרטי הפרופיל שלך</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* תמונת פרופיל */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                תמונת פרופיל
+              </h3>
+              <div className="flex flex-col items-center gap-4">
+                {profile.profile_picture && !imageFile && (
+                  <div className="relative w-32 h-32 mx-auto">
+                    <Avatar className="w-32 h-32">
+                      <AvatarImage src={profile.profile_picture} alt="תמונת פרופיל" />
+                      <AvatarFallback>{profile.full_name?.charAt(0) || "C"}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                )}
+                <ImageUpload
+                  onImageUpload={handleImageUpload}
+                  onImageRemove={handleImageRemove}
+                  previewUrl={imageFile ? URL.createObjectURL(imageFile) : undefined}
+                />
+              </div>
+            </div>
+
             {/* מידע אישי */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
