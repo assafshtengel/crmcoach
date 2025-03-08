@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { ArrowRight, ChartBar, PieChart, LineChart, BarChart2, Users } from "lucide-react";
+import { ArrowRight, ChartBar, PieChart, LineChart, BarChart2, Users, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +53,6 @@ const AnalyticsDashboard = () => {
     try {
       console.log("Fetching stats for user:", userId);
 
-      // Fetch basic stats
       const { data: statsData, error: statsError } = await supabase
         .rpc('get_coach_statistics', { coach_id: userId });
 
@@ -64,7 +63,6 @@ const AnalyticsDashboard = () => {
 
       console.log("Stats data received:", statsData);
 
-      // Fetch monthly sessions data
       const { data: monthlyData, error: monthlyError } = await supabase
         .rpc('get_monthly_sessions_count', { coach_id: userId });
 
@@ -75,7 +73,6 @@ const AnalyticsDashboard = () => {
 
       console.log("Monthly data received:", monthlyData);
 
-      // Fetch player distribution data
       const { data: distributionData, error: distributionError } = await supabase
         .rpc('get_player_session_distribution', { coach_id: userId });
 
@@ -86,7 +83,6 @@ const AnalyticsDashboard = () => {
 
       console.log("Distribution data received:", distributionData);
 
-      // Fetch monthly reminders data
       const { data: remindersData, error: remindersError } = await supabase
         .rpc('get_monthly_reminders_count', { coach_id: userId });
 
@@ -97,7 +93,6 @@ const AnalyticsDashboard = () => {
 
       console.log("Reminders data received:", remindersData);
 
-      // עדכון הנתונים בסטייט
       setStats({
         totalSessions: statsData[0]?.totalsessions || 0,
         successfulReminders: statsData[0]?.successfulreminders || 0,
@@ -133,7 +128,6 @@ const AnalyticsDashboard = () => {
       console.log("Initializing data for user:", user.id);
       await fetchData(user.id);
 
-      // Subscribe to real-time changes
       const sessionsChannel = supabase
         .channel('analytics-changes')
         .on(
@@ -156,7 +150,6 @@ const AnalyticsDashboard = () => {
         )
         .subscribe();
 
-      // Cleanup subscription
       return () => {
         supabase.removeChannel(sessionsChannel);
       };
@@ -172,23 +165,31 @@ const AnalyticsDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-8 px-4 md:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <div className="flex justify-between items-center p-4 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="transition-transform hover:scale-105"
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="transition-transform hover:scale-105"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/')}
+              className="transition-transform hover:scale-105 flex items-center gap-2"
+            >
+              <Home className="h-4 w-4" />
+              <span>דף הבית</span>
+            </Button>
+          </div>
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
             דוחות וסטטיסטיקות
           </h1>
           <div className="w-10" />
         </div>
 
-        {/* Navigation Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/player-statistics')}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -224,7 +225,6 @@ const AnalyticsDashboard = () => {
           </Card>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -255,9 +255,7 @@ const AnalyticsDashboard = () => {
           </Card>
         </div>
 
-        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Monthly Sessions Chart */}
           <Card className="col-span-1 lg:col-span-2">
             <CardHeader>
               <CardTitle>מפגשים לפי חודשים</CardTitle>
@@ -275,7 +273,6 @@ const AnalyticsDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Player Distribution Pie Chart */}
           <Card>
             <CardHeader>
               <CardTitle>התפלגות שחקנים לפי מפגשים</CardTitle>
@@ -303,7 +300,6 @@ const AnalyticsDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Monthly Reminders Chart */}
           <Card>
             <CardHeader>
               <CardTitle>תזכורות שנשלחו לפי חודשים</CardTitle>
