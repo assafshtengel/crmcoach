@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -1054,7 +1055,7 @@ const DashboardCoach = () => {
 
           <Card 
             className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#27ae60] cursor-pointer"
-            onClick={() => navigate('/game-preparation')}
+            onClick={() => navigate('/game-prep')}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">הכנה למשחק</CardTitle>
