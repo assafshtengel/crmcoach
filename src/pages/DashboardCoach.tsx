@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
@@ -1051,6 +1051,26 @@ const DashboardCoach = () => {
               </Button>
             </CardContent>
           </Card>
+
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#27ae60] cursor-pointer"
+            onClick={() => navigate('/game-preparation')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">הכנה למשחק</CardTitle>
+              <Target className="h-5 w-5 text-[#27ae60]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">מלא טופס הכנה למשחק עבור השחקנים</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#27ae60] hover:bg-[#219653]"
+              >
+                <Target className="h-4 w-4 mr-2" />
+                מלא טופס הכנה
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="bg-white/90 shadow-lg">
@@ -1061,7 +1081,7 @@ const DashboardCoach = () => {
             <Tabs defaultValue="unsummarized" className="w-full" onValueChange={setActiveTab}>
               <TabsList className="mb-4">
                 <TabsTrigger value="unsummarized">ממתינים לסיכום ({pastSessionsToSummarize.length})</TabsTrigger>
-                <TabsTrigger value="summarized">מסוכמים ({summarizedSessions.length})</TabsTrigger>
+                <TabsTrigger value="summarized">��סוכמים ({summarizedSessions.length})</TabsTrigger>
               </TabsList>
               <TabsContent value="unsummarized" className="mt-0">
                 <div className="space-y-4">
