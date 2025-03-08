@@ -932,7 +932,7 @@ const DashboardCoach = () => {
                   variant="outline" 
                   size="sm" 
                   className="flex items-center gap-1 text-[#3498DB] border-[#3498DB] hover:bg-[#3498DB]/10"
-                  onClick={() => setIsSessionFormOpen(true)}
+                  onClick={() => navigate('/new-session')}
                 >
                   <Plus className="h-4 w-4" />
                   הוסף מפגש
@@ -1121,4 +1121,3 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
-
