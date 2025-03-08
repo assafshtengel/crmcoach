@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
@@ -12,9 +11,7 @@ import { supabase } from "@/lib/supabase";
 
 import { SessionHeader } from "./summary-form/SessionHeader";
 import { SummaryTab } from "./summary-form/SummaryTab";
-import { ToolsTab } from "./summary-form/ToolsTab";
 import { FormActions } from "./summary-form/FormActions";
-import { useTools } from "./summary-form/hooks/useTools";
 import { formSchema, FormValues } from "./summary-form/schemaValidation";
 import { FeedbackDialog } from "@/components/public-registration/FeedbackDialog";
 
@@ -33,7 +30,7 @@ export function SessionSummaryForm({
   onSubmit, 
   onCancel 
 }: SessionSummaryFormProps) {
-  const { tools, selectedTools, setSelectedTools, loading } = useTools();
+  const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackData, setFeedbackData] = useState({
@@ -216,25 +213,7 @@ export function SessionSummaryForm({
           className="space-y-4"
           id="session-summary-content"
         >
-          <Tabs defaultValue="summary" dir="rtl" className="w-full">
-            <TabsList className="w-full">
-              <TabsTrigger value="summary" className="flex-1">סיכום מפגש</TabsTrigger>
-              <TabsTrigger value="tools" className="flex-1">כלים שהשתמשתי</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="summary">
-              <SummaryTab form={form} />
-            </TabsContent>
-            
-            <TabsContent value="tools" className="pt-4">
-              <ToolsTab
-                tools={tools}
-                selectedTools={selectedTools}
-                setSelectedTools={setSelectedTools}
-                loading={loading}
-              />
-            </TabsContent>
-          </Tabs>
+          <SummaryTab form={form} />
         </form>
       </ScrollArea>
       <FormActions
@@ -254,3 +233,4 @@ export function SessionSummaryForm({
     </Form>
   );
 }
+
