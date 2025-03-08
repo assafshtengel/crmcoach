@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { CalendarComponent } from '@/components/calendar/Calendar';
+import { Calendar } from '@/components/calendar/Calendar';
 import { CalendarEvent, UpcomingSession, DashboardStats } from '@/types/dashboard';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardStats as StatsCards } from '@/components/dashboard/DashboardStats';
@@ -150,7 +151,7 @@ const DashboardCoach = () => {
         currentMonthPastSessions,
         currentMonthFutureSessions,
         lastMonthSessions,
-        twoMonthsAgoSessions,
+        twoMonthsAgoSessions: twoMonthsAgoSessions,
         totalReminders: remindersResult.data?.length || 0
       });
 
@@ -547,7 +548,7 @@ const DashboardCoach = () => {
       console.error('Error fetching players:', error);
       return;
     }
-    setPlayers(data);
+    setPlayers(data || []);
   };
 
   useEffect(() => {

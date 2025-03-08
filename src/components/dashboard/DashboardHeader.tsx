@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { CalendarComponent } from '@/components/calendar/Calendar';
+import { Calendar } from '@/components/calendar/Calendar';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { CalendarEvent, Notification } from '@/types/dashboard';
 
@@ -66,7 +66,7 @@ export function DashboardHeader({
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <CalendarComponent 
+            <Calendar 
               events={calendarEvents} 
               onEventClick={onEventClick} 
               onEventAdd={onEventAdd} 

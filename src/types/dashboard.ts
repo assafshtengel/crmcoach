@@ -7,7 +7,7 @@ export interface DashboardStats {
   currentMonthPastSessions: number;
   currentMonthFutureSessions: number;
   lastMonthSessions: number;
-  twoMonthsAgoSessions: 0;
+  twoMonthsAgoSessions: number;
   totalReminders: number;
 }
 
