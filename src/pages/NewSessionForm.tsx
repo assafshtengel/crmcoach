@@ -124,7 +124,7 @@ const NewSessionForm = () => {
                 ...prev,
                 player_id: value
               }))}>
-                  <SelectTrigger className="bg-zinc-400">
+                  <SelectTrigger className="bg-zinc-50">
                     <SelectValue placeholder="בחר שחקן" />
                   </SelectTrigger>
                   <SelectContent>
