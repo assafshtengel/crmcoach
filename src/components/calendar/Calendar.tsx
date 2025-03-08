@@ -33,15 +33,15 @@ interface CalendarEvent {
     reminderSent: boolean;
     notes?: string;
     eventType?: 'reminder' | 'task' | 'other';
-    player_id?: string; // Add player_id to the interface
+    player_id?: string; 
   };
 }
 
 interface CalendarProps {
   events: CalendarEvent[];
   onEventClick: (eventId: string) => void;
-  onEventAdd?: (event: Omit<CalendarEvent, 'id'>) => Promise<void>;
-  selectedPlayerId?: string; // Add selectedPlayerId to props
+  onEventAdd?: (event: Omit<CalendarEvent, 'id'> & { player_id: string }) => Promise<void>;
+  selectedPlayerId?: string;
 }
 
 interface EventFormData {
@@ -50,6 +50,7 @@ interface EventFormData {
   time: string;
   notes?: string;
   eventType: 'reminder' | 'task' | 'other';
+  player_id?: string;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEventAdd, selectedPlayerId }) => {
@@ -65,9 +66,17 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       date: new Date().toISOString().split('T')[0],
       time: '12:00',
       notes: '',
-      eventType: 'reminder'
+      eventType: 'reminder',
+      player_id: selectedPlayerId
     }
   });
+
+  // Update form values when selectedPlayerId changes
+  React.useEffect(() => {
+    if (selectedPlayerId) {
+      form.setValue('player_id', selectedPlayerId);
+    }
+  }, [selectedPlayerId, form]);
 
   const handleEventClick = (info: any) => {
     const event = events.find(e => e.id === info.event.id);
@@ -90,23 +99,41 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
   const onAddEvent = async (data: EventFormData) => {
     if (!onEventAdd) return;
     
+    // Check if player_id exists, if not, show an error
+    if (!data.player_id && !selectedPlayerId) {
+      toast.error('נא לבחור שחקן לפני הוספת אירוע');
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
+      
+      const playerIdToUse = data.player_id || selectedPlayerId;
+      
+      console.log('Saving event with player_id:', playerIdToUse);
       
       await onEventAdd({
         title: data.title,
         start: `${data.date}T${data.time}`,
+        player_id: playerIdToUse as string,
         extendedProps: {
           playerName: data.title,
           notes: data.notes,
           reminderSent: false,
           eventType: data.eventType,
-          player_id: selectedPlayerId // Add the player_id to the event data
+          player_id: playerIdToUse
         }
       });
       
       setIsAddEventOpen(false);
-      form.reset();
+      form.reset({
+        title: '',
+        date: new Date().toISOString().split('T')[0],
+        time: '12:00',
+        notes: '',
+        eventType: 'reminder',
+        player_id: selectedPlayerId
+      });
       toast.success('האירוע נשמר בהצלחה ונוסף ללוח השנה!');
     } catch (error) {
       console.error('Error adding event:', error);
@@ -259,7 +286,14 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
 
       <Dialog open={isAddEventOpen} onOpenChange={(open) => {
         if (!open) {
-          form.reset();
+          form.reset({
+            title: '',
+            date: new Date().toISOString().split('T')[0],
+            time: '12:00',
+            notes: '',
+            eventType: 'reminder',
+            player_id: selectedPlayerId
+          });
         }
         setIsAddEventOpen(open);
       }}>
