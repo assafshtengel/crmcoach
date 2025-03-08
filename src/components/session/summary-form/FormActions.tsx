@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Save, PanelRight } from "lucide-react";
+import { Save, FileDown } from "lucide-react";
 
 interface FormActionsProps {
   onSubmit: () => void;
@@ -33,7 +33,7 @@ export function FormActions({
           variant="gray"
           disabled={isSaving}
         >
-          <PanelRight className="mr-2 h-4 w-4" />
+          <FileDown className="mr-2 h-4 w-4" />
           שמור וייצא PDF
         </Button>
       </div>
