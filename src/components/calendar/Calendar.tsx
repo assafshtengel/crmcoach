@@ -31,7 +31,7 @@ interface CalendarEvent {
     location?: string;
     reminderSent: boolean;
     notes?: string;
-    eventType?: 'meeting' | 'reminder' | 'task' | 'other';
+    eventType?: 'reminder' | 'task' | 'other';
   };
 }
 
@@ -46,7 +46,7 @@ interface EventFormData {
   date: string;
   time: string;
   notes?: string;
-  eventType: 'meeting' | 'reminder' | 'task' | 'other';
+  eventType: 'reminder' | 'task' | 'other';
 }
 
 export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEventAdd }) => {
@@ -61,7 +61,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       date: new Date().toISOString().split('T')[0],
       time: '12:00',
       notes: '',
-      eventType: 'meeting'
+      eventType: 'reminder'
     }
   });
 
@@ -105,10 +105,8 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
     }
   };
 
-  const getEventColor = (eventType?: 'meeting' | 'reminder' | 'task' | 'other') => {
+  const getEventColor = (eventType?: 'reminder' | 'task' | 'other') => {
     switch (eventType) {
-      case 'meeting':
-        return '#3B82F6'; // כחול
       case 'reminder':
         return '#F59E0B'; // כתום
       case 'task':
@@ -116,7 +114,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       case 'other':
         return '#6B7280'; // אפור
       default:
-        return '#3B82F6';
+        return '#F59E0B'; // Default to reminder color (orange)
     }
   };
 
@@ -236,8 +234,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
               )}
               <div>
                 <h3 className="font-bold mb-1">סוג אירוע</h3>
-                <p className="text-lg">{selectedEvent.extendedProps.eventType === 'meeting' ? 'מפגש' : 
-                  selectedEvent.extendedProps.eventType === 'reminder' ? 'תזכורת' :
+                <p className="text-lg">{selectedEvent.extendedProps.eventType === 'reminder' ? 'תזכורת' :
                   selectedEvent.extendedProps.eventType === 'task' ? 'משימה' : 'אחר'}</p>
               </div>
             </div>
@@ -272,7 +269,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="meeting">מפגש</SelectItem>
                         <SelectItem value="reminder">תזכורת</SelectItem>
                         <SelectItem value="task">משימה</SelectItem>
                         <SelectItem value="other">אחר</SelectItem>
