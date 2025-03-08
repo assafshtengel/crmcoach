@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -24,7 +25,7 @@ interface SessionSummary {
     session_date: string;
     player: {
       full_name: string;
-    };
+    } | null;
   };
 }
 
@@ -67,7 +68,8 @@ const SessionSummaries = () => {
     
     const uniqueSessions = new Map<string, SessionSummary>();
     data?.forEach((summary: SessionSummary) => {
-      if (!uniqueSessions.has(summary.session.id)) {
+      // Add null check for session and player
+      if (summary.session && summary.session.id) {
         uniqueSessions.set(summary.session.id, summary);
       }
     });
@@ -184,10 +186,10 @@ const SessionSummaries = () => {
                   <div className="flex justify-between items-start">
                     <div className="text-right w-full">
                       <CardTitle className="text-lg font-medium text-[#6E59A5]">
-                        {summary.session.player.full_name}
+                        {summary.session?.player?.full_name || "שחקן לא ידוע"}
                       </CardTitle>
                       <p className="text-sm text-gray-500">
-                        {format(new Date(summary.session.session_date), 'dd/MM/yyyy', { locale: he })}
+                        {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 mr-2">
@@ -201,9 +203,9 @@ const SessionSummaries = () => {
                         <DialogContent className="max-w-3xl max-h-screen">
                           <DialogHeader>
                             <DialogTitle className="flex items-center justify-between mb-4 text-right">
-                              <span className="text-[#6E59A5]">סיכום מפגש - {summary.session.player.full_name}</span>
+                              <span className="text-[#6E59A5]">סיכום מפגש - {summary.session?.player?.full_name || "שחקן לא ידוע"}</span>
                               <span className="text-sm font-normal text-gray-500">
-                                {format(new Date(summary.session.session_date), 'dd/MM/yyyy', { locale: he })}
+                                {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
                               </span>
                             </DialogTitle>
                           </DialogHeader>

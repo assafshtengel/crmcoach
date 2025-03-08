@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -26,7 +27,7 @@ interface SessionSummary {
     player: {
       id: string;
       full_name: string;
-    };
+    } | null;
   };
 }
 
@@ -72,7 +73,8 @@ const AllMeetingSummaries = () => {
     
     const uniqueSessions = new Map<string, SessionSummary>();
     data?.forEach((summary: SessionSummary) => {
-      if (!uniqueSessions.has(summary.session.id)) {
+      // Add null check for session and player
+      if (summary.session && summary.session.id) {
         uniqueSessions.set(summary.session.id, summary);
       }
     });
@@ -82,7 +84,7 @@ const AllMeetingSummaries = () => {
     if (searchQuery) {
       const lowerSearchQuery = searchQuery.toLowerCase();
       uniqueData = uniqueData.filter((summary: SessionSummary) => 
-        summary.session.player.full_name.toLowerCase().includes(lowerSearchQuery) ||
+        (summary.session?.player?.full_name?.toLowerCase().includes(lowerSearchQuery)) ||
         summary.summary_text.toLowerCase().includes(lowerSearchQuery)
       );
     }
@@ -220,10 +222,10 @@ const AllMeetingSummaries = () => {
                   <div className="flex justify-between items-start">
                     <div className="text-right w-full">
                       <CardTitle className="text-lg font-medium text-[#6E59A5]">
-                        {summary.session.player.full_name}
+                        {summary.session?.player?.full_name || "שחקן לא ידוע"}
                       </CardTitle>
                       <p className="text-sm text-gray-500">
-                        {format(new Date(summary.session.session_date), 'dd/MM/yyyy', { locale: he })}
+                        {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 mr-2">
@@ -237,9 +239,9 @@ const AllMeetingSummaries = () => {
                         <DialogContent className="max-w-3xl max-h-screen">
                           <DialogHeader>
                             <DialogTitle className="flex items-center justify-between mb-4 text-right">
-                              <span className="text-[#6E59A5]">סיכום מפגש - {summary.session.player.full_name}</span>
+                              <span className="text-[#6E59A5]">סיכום מפגש - {summary.session?.player?.full_name || "שחקן לא ידוע"}</span>
                               <span className="text-sm font-normal text-gray-500">
-                                {format(new Date(summary.session.session_date), 'dd/MM/yyyy', { locale: he })}
+                                {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
                               </span>
                             </DialogTitle>
                           </DialogHeader>
@@ -267,7 +269,7 @@ const AllMeetingSummaries = () => {
                       <span className="text-gray-500 text-xs">
                         {format(new Date(summary.created_at), 'HH:mm dd/MM/yyyy', { locale: he })}
                       </span>
-                      <span className="text-[#6E59A5]">דירוג התקדמ��ת: {summary.progress_rating}/5</span>
+                      <span className="text-[#6E59A5]">דירוג התקדמות: {summary.progress_rating}/5</span>
                     </div>
                   </div>
                 </CardContent>
