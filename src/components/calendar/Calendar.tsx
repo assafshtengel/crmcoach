@@ -33,6 +33,7 @@ interface CalendarEvent {
     reminderSent: boolean;
     notes?: string;
     eventType?: 'reminder' | 'task' | 'other';
+    player_id?: string; // Add player_id to the interface
   };
 }
 
@@ -40,6 +41,7 @@ interface CalendarProps {
   events: CalendarEvent[];
   onEventClick: (eventId: string) => void;
   onEventAdd?: (event: Omit<CalendarEvent, 'id'>) => Promise<void>;
+  selectedPlayerId?: string; // Add selectedPlayerId to props
 }
 
 interface EventFormData {
@@ -50,7 +52,7 @@ interface EventFormData {
   eventType: 'reminder' | 'task' | 'other';
 }
 
-export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEventAdd }) => {
+export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEventAdd, selectedPlayerId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedView, setSelectedView] = useState<'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'>('dayGridMonth');
@@ -98,16 +100,17 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
           playerName: data.title,
           notes: data.notes,
           reminderSent: false,
-          eventType: data.eventType
+          eventType: data.eventType,
+          player_id: selectedPlayerId // Add the player_id to the event data
         }
       });
       
       setIsAddEventOpen(false);
       form.reset();
-      toast.success('האירוע נוסף בהצלחה');
+      toast.success('האירוע נשמר בהצלחה ונוסף ללוח השנה!');
     } catch (error) {
       console.error('Error adding event:', error);
-      toast.error('שגיאה בהוספת האירוע');
+      toast.error('אירעה שגיאה, אנא נסה שוב.');
     } finally {
       setIsSubmitting(false);
     }
