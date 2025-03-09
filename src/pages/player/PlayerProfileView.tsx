@@ -149,7 +149,6 @@ const PlayerProfileView = () => {
         
         setPlayer(playerDetails);
         
-        // Mock data for demo
         const mockWorkouts: PhysicalWorkout[] = [
           {
             id: '1',
@@ -193,7 +192,6 @@ const PlayerProfileView = () => {
         setPhysicalWorkouts(mockWorkouts.slice(0, 3));
         setAllPhysicalWorkouts(mockWorkouts);
         
-        // Mock goals data
         const mockGoals: PlayerGoal[] = [
           {
             id: '1',
@@ -828,4 +826,99 @@ const PlayerProfileView = () => {
                       </div>
                     </div>
                     <div className="mb-4">
-                      <label htmlFor="goal-description"
+                      <label htmlFor="goal-description" className="block text-sm font-medium text-gray-700 mb-1">
+                        תיאור המטרה
+                      </label>
+                      <Textarea
+                        id="goal-description"
+                        placeholder="פירוט על המטרה, איך תשיג אותה וכדומה"
+                        value={newGoalDescription}
+                        onChange={(e) => setNewGoalDescription(e.target.value)}
+                        className="h-24"
+                      />
+                    </div>
+                    <Button onClick={handleAddGoal}>
+                      הוסף מטרה
+                    </Button>
+                  </div>
+
+                  {goals.length > 0 ? (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium mt-6 mb-4">המטרות שלי</h3>
+                      {goals.map((goal) => (
+                        <div key={goal.id} className="bg-white p-4 rounded-lg border">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className={`w-5 h-5 rounded-full flex items-center justify-center cursor-pointer border ${
+                                  goal.completed 
+                                    ? 'bg-green-500 border-green-500 text-white' 
+                                    : 'border-gray-300'
+                                }`}
+                                onClick={() => toggleGoalCompletion(goal.id)}
+                              >
+                                {goal.completed && <CheckCircle className="h-4 w-4" />}
+                              </div>
+                              <h4 className={`font-medium ${goal.completed ? 'line-through text-gray-500' : ''}`}>
+                                {goal.title}
+                              </h4>
+                              {goal.target_date && (
+                                <Badge variant="outline" className="bg-blue-50">
+                                  {formatDate(goal.target_date)}
+                                </Badge>
+                              )}
+                              {goal.completed && (
+                                <Badge variant="outline" className="bg-green-50 text-green-800">
+                                  הושלם
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => toggleGoalExpanded(goal.id)}
+                              >
+                                {expandedGoalId === goal.id ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-red-500 hover:bg-red-50 h-8"
+                                onClick={() => handleDeleteGoal(goal.id)}
+                              >
+                                מחק
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {expandedGoalId === goal.id && goal.description && (
+                            <div className="mt-3 pt-3 border-t text-gray-700 whitespace-pre-wrap">
+                              {goal.description}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>עדיין לא נוספו מטרות</p>
+                      <p className="text-sm mt-2">הוסף את המטרה הראשונה שלך</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PlayerProfileView;
