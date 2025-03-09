@@ -1,15 +1,39 @@
 
-import React from 'react';
-import { Layout } from "@/components/layout/Layout";
-import { ToolsList } from "@/components/tools/ToolsList";
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ToolsList from "@/components/tools/ToolsList";
+import VideoManagement from "@/components/admin/VideoManagement";
+import { VideoIcon } from "lucide-react";
 
 export default function ToolManagement() {
+  const [activeTab, setActiveTab] = useState("mental-tools");
+
   return (
-    <Layout>
-      <div className="container py-6">
-        <h1 className="text-2xl font-bold mb-6">ניהול כלים</h1>
-        <ToolsList />
+    <div className="container mx-auto py-8">
+      <div className="flex flex-col space-y-6">
+        <div className="flex flex-col space-y-2">
+          <h1 className="text-3xl font-bold">ניהול כלים</h1>
+          <p className="text-muted-foreground">
+            נהל את כלי האימון המנטליים וסרטוני הוידאו במערכת
+          </p>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="mental-tools">כלים מנטליים</TabsTrigger>
+            <TabsTrigger value="videos">סרטוני וידאו</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="mental-tools" className="space-y-4">
+            <ToolsList />
+          </TabsContent>
+          
+          <TabsContent value="videos" className="space-y-4">
+            <VideoManagement />
+          </TabsContent>
+        </Tabs>
       </div>
-    </Layout>
+    </div>
   );
 }
