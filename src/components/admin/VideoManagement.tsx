@@ -168,6 +168,16 @@ export default function VideoManagement() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not logged in');
 
+      // Validate required fields
+      if (!formData.title || !formData.url) {
+        toast({
+          title: "שגיאה בהוספת סרטון",
+          description: "כותרת וקישור URL הם שדות חובה",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Validate URL format
       if (!formData.url.match(/^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/)) {
         toast({
