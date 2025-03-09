@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit } from "lucide-react";
+import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -21,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { AdminMessageForm } from "@/components/admin/AdminMessageForm";
 import { BeliefBreakingCard } from "@/components/ui/BeliefBreakingCard";
+import { MentalLibrary } from "@/components/mental-library/MentalLibrary";
 
 const Index = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -237,6 +237,32 @@ const Index = () => {
           
           <BeliefBreakingCard />
           
+          {/* Mental Library Card */}
+          <Card className="bg-white shadow-md overflow-hidden border border-amber-100">
+            <CardHeader className="bg-amber-50 py-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-semibold text-amber-800">
+                  הספרייה המנטאלית
+                </CardTitle>
+                <BookOpen className="h-6 w-6 text-amber-600" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-col gap-4 items-center">
+                <p className="text-gray-700 text-center">
+                  ספריית הספרים המנטליים - רשימת קריאה מומלצת לשיפור הביצועים הספורטיביים
+                </p>
+                <Button 
+                  className="bg-amber-600 hover:bg-amber-700 transition-colors w-full"
+                  onClick={() => navigate("/mental-library")}
+                >
+                  לספרייה המנטאלית
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
           <Card className="bg-white/90 shadow-md">
             <CardHeader className="bg-primary/10 py-4 rounded-t-lg border-b border-primary/10">
               <div className="flex items-center justify-between">
@@ -248,7 +274,7 @@ const Index = () => {
               <AdminMessageForm />
             </CardContent>
           </Card>
-          
+
           {/* New Mental Assessment Card */}
           <Card className="bg-white shadow-md overflow-hidden border border-indigo-100">
             <CardHeader className="bg-indigo-50 py-4">

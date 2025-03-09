@@ -49,6 +49,7 @@ import AllMeetingSummaries from '@/pages/AllMeetingSummaries';
 import Goals from '@/pages/Goals';
 import PlayerProfileView from '@/pages/player/PlayerProfileView';
 import NotFound from '@/pages/NotFound';
+import MentalLibrary from '@/pages/MentalLibrary'; // Import the new MentalLibrary page
 
 import "./App.css";
 
@@ -102,6 +103,7 @@ function App() {
             <Route path="/auto-video-management" element={<AuthGuard><AutoVideoManagement /></AuthGuard>} />
             <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
             <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} />
+            <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} /> {/* Add the new route for the Mental Library */}
             
             <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
             
