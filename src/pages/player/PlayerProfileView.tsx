@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -149,6 +150,7 @@ const PlayerProfileView = () => {
         
         setPlayer(playerDetails);
         
+        // Mock data for demo
         const mockWorkouts: PhysicalWorkout[] = [
           {
             id: '1',
@@ -192,6 +194,7 @@ const PlayerProfileView = () => {
         setPhysicalWorkouts(mockWorkouts.slice(0, 3));
         setAllPhysicalWorkouts(mockWorkouts);
         
+        // Mock goals data
         const mockGoals: PlayerGoal[] = [
           {
             id: '1',
@@ -394,7 +397,7 @@ const PlayerProfileView = () => {
   };
 
   const navigateToGamePrep = () => {
-    navigate('/game-prep');
+    navigate('/game-preparation');
   };
 
   const toggleShowAllWorkouts = () => {
