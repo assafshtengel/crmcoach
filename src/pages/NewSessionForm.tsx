@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -121,7 +122,7 @@ const NewSessionForm = () => {
       if (error) throw error;
       setPlayers(data || []);
     } catch (error: any) {
-      toast.error('שגיאה ב��עינת רשימת השחקנים');
+      toast.error('שגיאה בטעינת רשימת השחקנים');
       console.error('Error fetching players:', error);
     }
   };
@@ -147,18 +148,23 @@ const NewSessionForm = () => {
         return;
       }
       const selectedPlayer = players.find(p => p.id === formData.player_id);
-      const {
-        error: sessionError
-      } = await supabase.from('sessions').insert({
+      
+      // We need to remove the meeting_type field as it's causing database errors
+      const sessionData = {
         coach_id: user.id,
         player_id: formData.player_id,
         session_date: formData.session_date,
         session_time: formData.session_time,
         location: locationValue,
-        notes: formData.notes,
-        meeting_type: formData.meeting_type
-      });
-      if (sessionError) throw sessionError;
+        notes: formData.notes
+      };
+      
+      const { error: sessionError } = await supabase.from('sessions').insert(sessionData);
+      
+      if (sessionError) {
+        console.error('Error creating session:', sessionError);
+        throw new Error(sessionError.message || 'שגיאה בקביעת המפגש');
+      }
 
       if (formData.meeting_type === 'zoom' && formData.location && !defaultZoomLink) {
         const saveDefaultLink = window.confirm('האם ברצונך לשמור את קישור הזום כקישור ברירת מחדל לשימוש בפגישות עתידיות?');
@@ -178,18 +184,24 @@ const NewSessionForm = () => {
         }
       }
 
-      const {
-        error: notificationError
-      } = await supabase.from('notifications').insert({
+      // Create notification for the new session
+      const notificationData = {
         coach_id: user.id,
         type: 'new_session',
         message: `נקבע מפגש חדש עם ${selectedPlayer?.full_name} בתאריך ${formData.session_date}`
-      });
-      if (notificationError) throw notificationError;
+      };
+      
+      const { error: notificationError } = await supabase.from('notifications').insert(notificationData);
+      
+      if (notificationError) {
+        console.error('Error creating notification:', notificationError);
+      }
+      
       const meetingTypeText = formData.meeting_type === 'in_person' ? 'פרונטלי' : 'בזום';
       toast.success(`המפגש ${meetingTypeText} עם ${selectedPlayer?.full_name} נקבע בהצלחה ל-${formData.session_date} בשעה ${formData.session_time}!`);
       navigate('/');
     } catch (error: any) {
+      console.error('Form submission error:', error);
       toast.error(error.message || 'אירעה שגיאה בקביעת המפגש');
     } finally {
       setLoading(false);
@@ -308,7 +320,7 @@ const NewSessionForm = () => {
                 <Button variant="outline" type="button" onClick={() => navigate(-1)}>
                   ביטול
                 </Button>
-                <Button type="submit" disabled={loading}>
+                <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700">
                   {loading ? 'שומר...' : 'קבע מפגש'}
                 </Button>
               </div>
