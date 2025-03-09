@@ -169,7 +169,7 @@ const PlayerProfile = () => {
     
     localStorage.setItem('playerSession', JSON.stringify(playerSession));
     
-    window.open('/game-preparation', '_blank');
+    window.open('/game-prep', '_blank');
   };
 
   if (loading) {

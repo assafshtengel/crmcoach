@@ -793,6 +793,51 @@ export type Database = {
         }
         Relationships: []
       }
+      player_videos: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          player_id: string | null
+          video_id: string | null
+          watched: boolean | null
+          watched_at: string | null
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          player_id?: string | null
+          video_id?: string | null
+          watched?: boolean | null
+          watched_at?: string | null
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          player_id?: string | null
+          video_id?: string | null
+          watched?: boolean | null
+          watched_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_videos_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_videos_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           birthdate: string | null
@@ -815,6 +860,7 @@ export type Database = {
           registration_link_id: string | null
           registration_timestamp: string | null
           sport_field: string | null
+          video_count: number | null
           year_group: string | null
         }
         Insert: {
@@ -838,6 +884,7 @@ export type Database = {
           registration_link_id?: string | null
           registration_timestamp?: string | null
           sport_field?: string | null
+          video_count?: number | null
           year_group?: string | null
         }
         Update: {
@@ -861,6 +908,7 @@ export type Database = {
           registration_link_id?: string | null
           registration_timestamp?: string | null
           sport_field?: string | null
+          video_count?: number | null
           year_group?: string | null
         }
         Relationships: [
@@ -1109,6 +1157,42 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      videos: {
+        Row: {
+          category: string | null
+          coach_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_admin_video: boolean | null
+          tags: string[] | null
+          title: string
+          url: string
+        }
+        Insert: {
+          category?: string | null
+          coach_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_admin_video?: boolean | null
+          tags?: string[] | null
+          title: string
+          url: string
+        }
+        Update: {
+          category?: string | null
+          coach_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_admin_video?: boolean | null
+          tags?: string[] | null
+          title?: string
+          url?: string
         }
         Relationships: []
       }
