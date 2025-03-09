@@ -7,13 +7,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideosTab } from "@/components/player/VideosTab";
-import { Bell, User, LogOut, Calendar, Target, FileText, StickyNote } from "lucide-react";
+import { Bell, User, LogOut, Calendar, Target, FileText, StickyNote, PencilLine, CheckSquare } from "lucide-react";
 import { 
   Popover, 
   PopoverContent, 
   PopoverTrigger 
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 
 interface PlayerData {
   id: string;
@@ -35,6 +36,14 @@ interface Notification {
   created_at: string;
 }
 
+interface Goal {
+  id: string;
+  title: string;
+  description?: string;
+  term: "short" | "long";
+  status: "active" | "completed";
+}
+
 const PlayerProfileView = () => {
   const navigate = useNavigate();
   const [player, setPlayer] = useState<PlayerData | null>(null);
@@ -44,6 +53,18 @@ const PlayerProfileView = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [sessionSummaries, setSessionSummaries] = useState([]);
+  const [shortTermGoals, setShortTermGoals] = useState<Goal[]>([
+    { id: "1", title: "לשפר דיוק בבעיטות חופשיות", term: "short", status: "active" },
+    { id: "2", title: "לעבוד על אסרטיביות בהגנה", term: "short", status: "active" },
+    { id: "3", title: "להגביר יכולות קבלת החלטות תחת לחץ", term: "short", status: "active" }
+  ]);
+  const [longTermGoals, setLongTermGoals] = useState<Goal[]>([
+    { id: "4", title: "להיות שחקן הרכב קבוע בקבוצה", term: "long", status: "active" },
+    { id: "5", title: "לשפר מדדים גופניים כלליים ב-15%", term: "long", status: "active" },
+    { id: "6", title: "להפוך למנהיג בקבוצה", term: "long", status: "active" }
+  ]);
+  const [editingGoal, setEditingGoal] = useState<string | null>(null);
+  const [editedGoalText, setEditedGoalText] = useState("");
 
   useEffect(() => {
     const loadPlayerData = async () => {
@@ -156,6 +177,44 @@ const PlayerProfileView = () => {
   };
   
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  const handleEditGoal = (goalId: string, currentTitle: string) => {
+    setEditingGoal(goalId);
+    setEditedGoalText(currentTitle);
+  };
+
+  const handleSaveGoal = (goalId: string, term: "short" | "long") => {
+    if (term === "short") {
+      setShortTermGoals(prev => 
+        prev.map(goal => goal.id === goalId ? { ...goal, title: editedGoalText } : goal)
+      );
+    } else {
+      setLongTermGoals(prev => 
+        prev.map(goal => goal.id === goalId ? { ...goal, title: editedGoalText } : goal)
+      );
+    }
+    setEditingGoal(null);
+    toast.success("המטרה עודכנה בהצלחה");
+  };
+
+  const handleToggleGoalStatus = (goalId: string, term: "short" | "long") => {
+    if (term === "short") {
+      setShortTermGoals(prev => 
+        prev.map(goal => goal.id === goalId 
+          ? { ...goal, status: goal.status === "active" ? "completed" : "active" } 
+          : goal
+        )
+      );
+    } else {
+      setLongTermGoals(prev => 
+        prev.map(goal => goal.id === goalId 
+          ? { ...goal, status: goal.status === "active" ? "completed" : "active" } 
+          : goal
+        )
+      );
+    }
+    toast.success("סטטוס המטרה עודכן בהצלחה");
+  };
 
   if (loading) {
     return (
@@ -280,7 +339,7 @@ const PlayerProfileView = () => {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="profile">
               <User className="h-4 w-4 mr-2" />
               פרופיל
@@ -304,6 +363,10 @@ const PlayerProfileView = () => {
             <TabsTrigger value="goals">
               <Target className="h-4 w-4 mr-2" />
               מטרות
+            </TabsTrigger>
+            <TabsTrigger value="game-prep">
+              <CheckSquare className="h-4 w-4 mr-2" />
+              הכנה למשחק
             </TabsTrigger>
           </TabsList>
           
@@ -333,18 +396,6 @@ const PlayerProfileView = () => {
                   <p className="text-sm font-medium text-gray-500">שכבת גיל</p>
                   <p>{player.year_group || "-"}</p>
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">הכנה למשחק</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-4">מלא טופס הכנה מנטלית לפני משחק חשוב</p>
-                <Button onClick={() => navigate('/game-prep')}>
-                  טופס הכנה למשחק
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -420,10 +471,9 @@ const PlayerProfileView = () => {
                           <div className="mt-3">
                             <p className="text-sm font-medium mb-1">מטרות שהושגו:</p>
                             <ul className="list-disc list-inside text-sm text-gray-600">
-                              {summary.achieved_goals.slice(0, 2).map((goal, index) => (
+                              {summary.achieved_goals.map((goal, index) => (
                                 <li key={index}>{goal}</li>
                               ))}
-                              {summary.achieved_goals.length > 2 && <li>...</li>}
                             </ul>
                           </div>
                         )}
@@ -443,31 +493,120 @@ const PlayerProfileView = () => {
                 <CardTitle className="text-lg">המטרות שלי</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 mb-4">
-                  <h3 className="font-medium">מטרות קצרות טווח</h3>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>לשפר דיוק בבעיטות חופשיות</li>
-                      <li>לעבוד על אסרטיביות בהגנה</li>
-                      <li>להגביר יכולות קבלת החלטות תחת לחץ</li>
-                    </ul>
+                {/* Short-term goals */}
+                <div className="space-y-2 mb-6">
+                  <h3 className="font-medium text-lg border-b pb-2">מטרות קצרות טווח</h3>
+                  <div className="space-y-3">
+                    {shortTermGoals.map(goal => (
+                      <div key={goal.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          {editingGoal === goal.id ? (
+                            <Textarea 
+                              value={editedGoalText} 
+                              onChange={(e) => setEditedGoalText(e.target.value)}
+                              className="min-h-[60px]"
+                            />
+                          ) : (
+                            <p className={`${goal.status === 'completed' ? 'line-through text-gray-500' : ''}`}>
+                              {goal.title}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-1 flex-shrink-0">
+                          {editingGoal === goal.id ? (
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleSaveGoal(goal.id, "short")}
+                            >
+                              שמור
+                            </Button>
+                          ) : (
+                            <>
+                              <Button 
+                                size="icon" 
+                                variant="outline" 
+                                onClick={() => handleEditGoal(goal.id, goal.title)}
+                              >
+                                <PencilLine className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="icon" 
+                                variant={goal.status === 'completed' ? 'default' : 'outline'}
+                                onClick={() => handleToggleGoalStatus(goal.id, "short")}
+                              >
+                                <CheckSquare className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 
+                {/* Long-term goals */}
                 <div className="space-y-2">
-                  <h3 className="font-medium">מטרות ארוכות טווח</h3>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>להיות שחקן הרכב קבוע בקבוצה</li>
-                      <li>לשפר מדדים גופניים כלליים ב-15%</li>
-                      <li>להפוך למנהיג בקבוצה</li>
-                    </ul>
+                  <h3 className="font-medium text-lg border-b pb-2">מטרות ארוכות טווח</h3>
+                  <div className="space-y-3">
+                    {longTermGoals.map(goal => (
+                      <div key={goal.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          {editingGoal === goal.id ? (
+                            <Textarea 
+                              value={editedGoalText} 
+                              onChange={(e) => setEditedGoalText(e.target.value)}
+                              className="min-h-[60px]"
+                            />
+                          ) : (
+                            <p className={`${goal.status === 'completed' ? 'line-through text-gray-500' : ''}`}>
+                              {goal.title}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-1 flex-shrink-0">
+                          {editingGoal === goal.id ? (
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleSaveGoal(goal.id, "long")}
+                            >
+                              שמור
+                            </Button>
+                          ) : (
+                            <>
+                              <Button 
+                                size="icon" 
+                                variant="outline" 
+                                onClick={() => handleEditGoal(goal.id, goal.title)}
+                              >
+                                <PencilLine className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="icon" 
+                                variant={goal.status === 'completed' ? 'default' : 'outline'}
+                                onClick={() => handleToggleGoalStatus(goal.id, "long")}
+                              >
+                                <CheckSquare className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                
-                <Button className="mt-4 w-full">
-                  <StickyNote className="h-4 w-4 mr-2" />
-                  עדכון מטרות
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="game-prep">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">הכנה למשחק</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">מלא טופס הכנה מנטלית לפני משחק חשוב</p>
+                <Button onClick={() => navigate('/game-prep')}>
+                  פתח טופס הכנה למשחק
                 </Button>
               </CardContent>
             </Card>
