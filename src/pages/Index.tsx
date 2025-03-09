@@ -28,6 +28,7 @@ const Index = () => {
   const [assignedVideos, setAssignedVideos] = useState<any[]>([]);
   const [allVideos, setAllVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null); // Added userId state
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -37,7 +38,11 @@ const Index = () => {
       setUserEmail(user?.email || null);
       
       if (user) {
+        setUserId(user.id); // Set the user ID
         fetchVideos(user.id);
+      } else {
+        console.log("No authenticated user found");
+        setLoading(false);
       }
     };
     getUserEmail();
@@ -49,6 +54,7 @@ const Index = () => {
     try {
       console.log("Fetching videos for player:", userId);
       
+      // First, fetch assigned videos for the user
       const { data: assignedVideoData, error: assignedError } = await supabase
         .from('player_videos')
         .select(`
@@ -71,20 +77,25 @@ const Index = () => {
       }
       
       console.log("Assigned videos fetched:", assignedVideoData);
-      setAssignedVideos(assignedVideoData || []);
       
+      // Filter out any null entries that might exist
+      const filteredAssignedVideos = assignedVideoData?.filter(video => video.videos) || [];
+      setAssignedVideos(filteredAssignedVideos);
+      
+      // Then, fetch all admin videos
       const { data: allVideoData, error: allError } = await supabase
         .from('videos')
         .select('*')
         .eq('is_admin_video', true);
       
       if (allError) {
-        console.error('Error fetching all videos:', allError);
+        console.error('Error fetching admin videos:', allError);
         throw allError;
       }
       
       console.log("Admin videos fetched:", allVideoData);
       setAllVideos(allVideoData || []);
+      
     } catch (error) {
       console.error('Error fetching videos:', error);
       toast({
@@ -141,6 +152,17 @@ const Index = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
+  };
+
+  // Function to manually refresh videos
+  const refreshVideos = () => {
+    if (userId) {
+      fetchVideos(userId);
+      toast({
+        title: "מרענן את רשימת הסרטונים",
+        description: "רשימת הסרטונים מתעדכנת",
+      });
+    }
   };
 
   return (
@@ -267,6 +289,17 @@ const Index = () => {
               </div>
             </CardHeader>
             <CardContent className="pt-6">
+              <div className="flex justify-end mb-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={refreshVideos}
+                  className="text-xs"
+                >
+                  רענן רשימת סרטונים
+                </Button>
+              </div>
+              
               <Tabs defaultValue="assigned" className="w-full">
                 <TabsList className="w-full mb-4">
                   <TabsTrigger value="assigned" className="flex-1">
