@@ -1,14 +1,16 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToolsList } from "@/components/tools/ToolsList";
 import VideoManagement from "@/components/admin/VideoManagement";
-import { VideoIcon } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { VideoIcon, ArrowRight } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function ToolManagement() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("mental-tools");
   
   useEffect(() => {
@@ -23,7 +25,18 @@ export default function ToolManagement() {
     <div className="container mx-auto py-8">
       <div className="flex flex-col space-y-6">
         <div className="flex flex-col space-y-2">
-          <h1 className="text-3xl font-bold">ניהול כלים</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold">ניהול כלים</h1>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2" 
+              onClick={() => navigate("/dashboard-coach")}
+            >
+              <ArrowRight className="h-4 w-4" />
+              חזרה לדף הבית
+            </Button>
+          </div>
           <p className="text-muted-foreground">
             נהל את כלי האימון המנטליים וסרטוני הוידאו במערכת
           </p>
