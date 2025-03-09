@@ -31,7 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Film, Plus, Pencil, Trash2, CheckCircle, User, ExternalLink } from "lucide-react";
+import { Film, Plus, Pencil, Trash2, CheckCircle, User, ExternalLink, Clock } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function VideoManagement() {
@@ -48,6 +48,7 @@ export default function VideoManagement() {
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingVideo, setAddingVideo] = useState(false);
+  const [playersWithAssignments, setPlayersWithAssignments] = useState<Record<string, boolean>>({});
 
   const [formData, setFormData] = useState({
     title: "",
@@ -63,15 +64,12 @@ export default function VideoManagement() {
     const checkUserRole = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // For simplicity, we'll just check if the user is in the coaches table
         const { data: coachData } = await supabase
           .from('coaches')
           .select('id, email')
           .eq('id', user.id)
           .single();
 
-        // For this example, we're considering admin as the first coach who signed up
-        // In a real app, you'd have a proper admin flag or role
         if (coachData && coachData.email === 'admin@example.com') {
           setIsAdmin(true);
         }
@@ -89,7 +87,6 @@ export default function VideoManagement() {
     try {
       console.log("Fetching videos...");
       
-      // Fetch admin videos
       const { data: adminVideoData, error: adminError } = await supabase
         .from('videos')
         .select('*')
@@ -103,7 +100,6 @@ export default function VideoManagement() {
       console.log("Admin videos fetched:", adminVideoData);
       setAdminVideos(adminVideoData || []);
 
-      // Fetch coach's own videos
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         console.log("Current user ID:", user.id);
@@ -177,7 +173,7 @@ export default function VideoManagement() {
   };
 
   const handleAddVideo = async () => {
-    if (addingVideo) return; // Prevent multiple submissions
+    if (addingVideo) return;
     setAddingVideo(true);
     
     try {
@@ -192,7 +188,6 @@ export default function VideoManagement() {
         return;
       }
 
-      // Validate required fields
       if (!formData.title || !formData.url) {
         toast({
           title: "שגיאה בהוספת סרטון",
@@ -202,7 +197,6 @@ export default function VideoManagement() {
         return;
       }
 
-      // Validate URL format
       if (!formData.url.match(/^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/)) {
         toast({
           title: "כתובת URL לא תקינה",
@@ -214,14 +208,13 @@ export default function VideoManagement() {
 
       console.log("Adding video with user ID:", user.id);
       
-      // Create video object with explicit coach_id
       const videoData = {
         title: formData.title,
         url: formData.url,
         description: formData.description || null,
         category: formData.category || null,
         is_admin_video: isAdmin && currentTab === "admin",
-        coach_id: user.id, // Explicitly set the coach_id to the current user's ID
+        coach_id: user.id,
       };
       
       console.log("Video data being inserted:", videoData);
@@ -245,7 +238,7 @@ export default function VideoManagement() {
 
       resetForm();
       setOpenAddDialog(false);
-      await fetchVideos(); // Refresh the videos list
+      await fetchVideos();
     } catch (error: any) {
       console.error('Error adding video:', error);
       toast({
@@ -297,7 +290,6 @@ export default function VideoManagement() {
     if (!selectedVideo) return;
 
     try {
-      // First, delete any assignments of this video to players
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('player_videos')
         .select('id, player_id')
@@ -305,9 +297,7 @@ export default function VideoManagement() {
 
       if (assignmentsError) throw assignmentsError;
 
-      // Update player video counts for each affected player
       for (const assignment of (assignmentsData || [])) {
-        // Call the RPC function to decrement the player's video count
         const { error: decrementError } = await supabase.rpc(
           'decrement_player_video_count',
           { player_id_param: assignment.player_id }
@@ -316,7 +306,6 @@ export default function VideoManagement() {
         if (decrementError) console.error('Error decrementing video count:', decrementError);
       }
 
-      // Delete the assignments
       const { error: deleteAssignmentsError } = await supabase
         .from('player_videos')
         .delete()
@@ -324,7 +313,6 @@ export default function VideoManagement() {
 
       if (deleteAssignmentsError) throw deleteAssignmentsError;
 
-      // Then delete the video itself
       const { error: deleteVideoError } = await supabase
         .from('videos')
         .delete()
@@ -356,34 +344,50 @@ export default function VideoManagement() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not logged in');
 
-      const assignmentsToInsert = selectedPlayers.map(playerId => ({
+      const newAssignments = selectedPlayers.filter(
+        playerId => !playersWithAssignments[playerId]
+      );
+      
+      if (newAssignments.length === 0) {
+        toast({
+          title: "כל השחקנים שנבחרו כבר קיבלו את הסרטון",
+          description: "אין הקצאות חדשות לבצע",
+        });
+        setSelectedPlayers([]);
+        setOpenAssignDialog(false);
+        return;
+      }
+
+      const assignmentsToInsert = newAssignments.map(playerId => ({
         player_id: playerId,
         video_id: selectedVideo.id,
         assigned_by: user.id,
         watched: false,
       }));
 
-      // Insert assignments
       const { data, error } = await supabase
         .from('player_videos')
         .insert(assignmentsToInsert);
 
       if (error) throw error;
 
-      // Update video count for each player
-      for (const playerId of selectedPlayers) {
-        // Call the RPC function to increment the player's video count
+      for (const playerId of newAssignments) {
         const { error: incrementError } = await supabase.rpc(
           'increment_player_video_count',
           { player_id_param: playerId }
         );
         
         if (incrementError) console.error('Error incrementing video count:', incrementError);
+        
+        setPlayersWithAssignments(prev => ({
+          ...prev,
+          [playerId]: true
+        }));
       }
 
       toast({
         title: "סרטון הוקצה בהצלחה",
-        description: `הסרטון הוקצה ל-${selectedPlayers.length} שחקנים`,
+        description: `הסרטון הוקצה ל-${newAssignments.length} שחקנים חדשים`,
       });
 
       setSelectedPlayers([]);
@@ -414,10 +418,30 @@ export default function VideoManagement() {
     setOpenEditDialog(true);
   };
 
-  const handleAssignClick = (video: any) => {
+  const handleAssignClick = async (video: any) => {
     setSelectedVideo(video);
     setSelectedPlayers([]);
     setOpenAssignDialog(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('player_videos')
+        .select('player_id')
+        .eq('video_id', video.id);
+        
+      if (error) throw error;
+      
+      const assignmentsMap: Record<string, boolean> = {};
+      (data || []).forEach(assignment => {
+        assignmentsMap[assignment.player_id] = true;
+      });
+      
+      setPlayersWithAssignments(assignmentsMap);
+      console.log("Existing assignments:", assignmentsMap);
+      
+    } catch (error) {
+      console.error('Error fetching video assignments:', error);
+    }
   };
 
   const handleDeleteClick = (video: any) => {
@@ -553,7 +577,6 @@ export default function VideoManagement() {
         </CardContent>
       </Card>
 
-      {/* Add Video Dialog */}
       <Dialog open={openAddDialog} onOpenChange={setOpenAddDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -606,7 +629,7 @@ export default function VideoManagement() {
                   <SelectValue placeholder="בחר קטגוריה" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mental">מנטלי</SelectItem>
+                  <SelectItem value="mental">mentorלי</SelectItem>
                   <SelectItem value="technical">טכני</SelectItem>
                   <SelectItem value="tactical">טקטי</SelectItem>
                   <SelectItem value="physical">פיזי</SelectItem>
@@ -639,7 +662,6 @@ export default function VideoManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Video Dialog */}
       <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -692,7 +714,7 @@ export default function VideoManagement() {
                   <SelectValue placeholder="בחר קטגוריה" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mental">מנטלי</SelectItem>
+                  <SelectItem value="mental">mentorלי</SelectItem>
                   <SelectItem value="technical">טכני</SelectItem>
                   <SelectItem value="tactical">טקטי</SelectItem>
                   <SelectItem value="physical">פיזי</SelectItem>
@@ -708,7 +730,6 @@ export default function VideoManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Video Dialog */}
       <Dialog open={openAssignDialog} onOpenChange={setOpenAssignDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -731,9 +752,17 @@ export default function VideoManagement() {
                       onClick={() => togglePlayerSelection(player.id)}
                     >
                       <div className="flex-1">{player.full_name}</div>
-                      {selectedPlayers.includes(player.id) && (
-                        <CheckCircle className="h-5 w-5 text-primary" />
-                      )}
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        {playersWithAssignments[player.id] && (
+                          <Badge variant="outline" className="text-xs bg-amber-100 text-amber-800 border-amber-200">
+                            <Clock className="h-3 w-3 mr-1 rtl:ml-1 rtl:mr-0" />
+                            הוקצה בעבר
+                          </Badge>
+                        )}
+                        {selectedPlayers.includes(player.id) && (
+                          <CheckCircle className="h-5 w-5 text-primary" />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -743,6 +772,9 @@ export default function VideoManagement() {
             </ScrollArea>
             <div className="mt-2 text-sm text-gray-500">
               נבחרו {selectedPlayers.length} שחקנים
+              {selectedPlayers.filter(id => playersWithAssignments[id]).length > 0 && (
+                <span className="text-amber-600"> (כולל {selectedPlayers.filter(id => playersWithAssignments[id]).length} שכבר קיבלו את הסרטון בעבר)</span>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -757,7 +789,6 @@ export default function VideoManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Video Dialog */}
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

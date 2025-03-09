@@ -32,7 +32,10 @@ export default function ToolManagement() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList>
             <TabsTrigger value="mental-tools">כלים מנטליים</TabsTrigger>
-            <TabsTrigger value="videos">סרטוני וידאו</TabsTrigger>
+            <TabsTrigger value="videos">
+              סרטוני וידאו
+              <VideoIcon className="ml-1 h-4 w-4" />
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="mental-tools" className="space-y-4">

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard, Film } from "lucide-react";
+import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -25,6 +26,7 @@ const Index = () => {
   const [allVideos, setAllVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const getUserEmail = async () => {
@@ -41,42 +43,57 @@ const Index = () => {
   const fetchVideos = async (userId: string) => {
     setLoading(true);
     
-    // Fetch assigned videos for this player
-    const { data: assignedVideoData, error: assignedError } = await supabase
-      .from('player_videos')
-      .select(`
-        id,
-        watched,
-        watched_at,
-        videos:video_id (
+    try {
+      console.log("Fetching videos for player:", userId);
+      
+      // Fetch assigned videos for this player
+      const { data: assignedVideoData, error: assignedError } = await supabase
+        .from('player_videos')
+        .select(`
           id,
-          title,
-          url,
-          description,
-          category
-        )
-      `)
-      .eq('player_id', userId);
-    
-    if (!assignedError && assignedVideoData) {
-      setAssignedVideos(assignedVideoData);
-    } else {
-      console.error('Error fetching assigned videos:', assignedError);
+          watched,
+          watched_at,
+          videos:video_id (
+            id,
+            title,
+            url,
+            description,
+            category
+          )
+        `)
+        .eq('player_id', userId);
+      
+      if (assignedError) {
+        console.error('Error fetching assigned videos:', assignedError);
+        throw assignedError;
+      }
+      
+      console.log("Assigned videos fetched:", assignedVideoData);
+      setAssignedVideos(assignedVideoData || []);
+      
+      // Fetch all videos (admin + coach videos)
+      const { data: allVideoData, error: allError } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('is_admin_video', true);
+      
+      if (allError) {
+        console.error('Error fetching all videos:', allError);
+        throw allError;
+      }
+      
+      console.log("Admin videos fetched:", allVideoData);
+      setAllVideos(allVideoData || []);
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+      toast({
+        title: "שגיאה בטעינת סרטונים",
+        description: "לא ניתן לטעון את רשימת הסרטונים",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-    
-    // Fetch all videos (admin + coach videos)
-    const { data: allVideoData, error: allError } = await supabase
-      .from('videos')
-      .select('*')
-      .eq('is_admin_video', true);
-    
-    if (!allError && allVideoData) {
-      setAllVideos(allVideoData);
-    } else {
-      console.error('Error fetching all videos:', allError);
-    }
-    
-    setLoading(false);
   };
 
   const handleVideoClick = (videoUrl: string) => {
@@ -84,15 +101,20 @@ const Index = () => {
   };
 
   const markVideoAsWatched = async (playerVideoId: string) => {
-    const { error } = await supabase
-      .from('player_videos')
-      .update({
-        watched: true,
-        watched_at: new Date().toISOString()
-      })
-      .eq('id', playerVideoId);
-    
-    if (!error) {
+    try {
+      const { error } = await supabase
+        .from('player_videos')
+        .update({
+          watched: true,
+          watched_at: new Date().toISOString()
+        })
+        .eq('id', playerVideoId);
+      
+      if (error) {
+        console.error('Error marking video as watched:', error);
+        throw error;
+      }
+      
       // Update the local state
       setAssignedVideos(prev => 
         prev.map(video => 
@@ -101,8 +123,18 @@ const Index = () => {
             : video
         )
       );
-    } else {
+      
+      toast({
+        title: "סרטון סומן כנצפה",
+        description: "הסטטוס עודכן בהצלחה",
+      });
+    } catch (error) {
       console.error('Error marking video as watched:', error);
+      toast({
+        title: "שגיאה בסימון הסרטון",
+        description: "לא ניתן לעדכן את סטטוס הצפייה",
+        variant: "destructive",
+      });
     }
   };
 
@@ -159,13 +191,27 @@ const Index = () => {
             <CardHeader className="bg-primary/10 py-4 rounded-t-lg border-b border-primary/10">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl font-semibold text-primary">סרטוני וידאו</CardTitle>
-                <Film className="h-6 w-6 text-primary" />
+                <div className="flex items-center">
+                  {assignedVideos.length > 0 && !assignedVideos.every(v => v.watched) && (
+                    <Badge variant="outline" className="mr-2 bg-amber-100 text-amber-800 border-amber-200">
+                      יש סרטונים חדשים
+                    </Badge>
+                  )}
+                  <Film className="h-6 w-6 text-primary" />
+                </div>
               </div>
             </CardHeader>
             <CardContent className="pt-6">
               <Tabs defaultValue="assigned" className="w-full">
                 <TabsList className="w-full mb-4">
-                  <TabsTrigger value="assigned" className="flex-1">סרטונים שהוקצו לי</TabsTrigger>
+                  <TabsTrigger value="assigned" className="flex-1">
+                    סרטונים שהוקצו לי
+                    {assignedVideos.length > 0 && !assignedVideos.every(v => v.watched) && (
+                      <span className="bg-primary text-white text-xs rounded-full ml-2 px-2 py-0.5">
+                        {assignedVideos.filter(v => !v.watched).length}
+                      </span>
+                    )}
+                  </TabsTrigger>
                   <TabsTrigger value="all" className="flex-1">כל הסרטונים</TabsTrigger>
                 </TabsList>
                 <TabsContent value="assigned" className="space-y-4">
@@ -177,16 +223,36 @@ const Index = () => {
                   ) : assignedVideos.length > 0 ? (
                     <div className="space-y-3">
                       {assignedVideos.map((playerVideo) => (
-                        <div key={playerVideo.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div 
+                          key={playerVideo.id} 
+                          className={`flex justify-between items-center p-3 rounded-lg transition-colors ${
+                            playerVideo.watched 
+                              ? 'bg-gray-50 hover:bg-gray-100' 
+                              : 'bg-amber-50 hover:bg-amber-100 border border-amber-200'
+                          }`}
+                        >
                           <div className="flex-1">
-                            <h3 className="font-medium">{playerVideo.videos.title}</h3>
+                            <div className="flex items-center">
+                              <h3 className="font-medium">{playerVideo.videos.title}</h3>
+                              {!playerVideo.watched && (
+                                <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-800 border-amber-200">
+                                  חדש
+                                </Badge>
+                              )}
+                            </div>
                             {playerVideo.videos.description && (
                               <p className="text-sm text-gray-500 mt-1">{playerVideo.videos.description}</p>
+                            )}
+                            {playerVideo.videos.category && (
+                              <Badge variant="secondary" className="mt-1">{playerVideo.videos.category}</Badge>
                             )}
                           </div>
                           <div className="flex space-x-2 rtl:space-x-reverse items-center">
                             {playerVideo.watched ? (
-                              <span className="text-green-500 text-sm px-2 py-1 bg-green-50 rounded-full">נצפה</span>
+                              <div className="flex items-center text-green-500 text-sm px-2 py-1 bg-green-50 rounded-full">
+                                <CheckCircle className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
+                                <span>נצפה</span>
+                              </div>
                             ) : (
                               <Button 
                                 variant="ghost" 
