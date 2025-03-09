@@ -18,7 +18,9 @@ import {
   Users,
   Target,
   Flag,
-  ListChecks
+  ListChecks,
+  Bell,
+  BellDot
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -36,6 +38,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Textarea } from "@/components/ui/textarea";
@@ -123,6 +130,9 @@ const PlayerProfileView = () => {
   const [newGoalDescription, setNewGoalDescription] = useState('');
   const [newGoalDate, setNewGoalDate] = useState('');
   const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
+  const [hasNewNotifications, setHasNewNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadVideos, setUnreadVideos] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchPlayerData = async () => {
@@ -277,6 +287,42 @@ const PlayerProfileView = () => {
         });
         
         setPastSessions(formattedPastSessions);
+        
+        // Fetch player's assigned videos to check for unread/new ones
+        const { data: videoData, error: videoError } = await supabase
+          .from('player_videos')
+          .select(`
+            id,
+            watched,
+            watched_at,
+            videos:video_id (
+              id,
+              title,
+              url,
+              description,
+              category
+            )
+          `)
+          .eq('player_id', playerId)
+          .is('watched', false);
+        
+        if (videoError) throw videoError;
+        
+        const unwatchedVideos = videoData || [];
+        setUnreadVideos(unwatchedVideos);
+        setHasNewNotifications(unwatchedVideos.length > 0);
+        
+        // Create notification items from unwatched videos
+        const videoNotifications = unwatchedVideos.map(video => ({
+          id: video.id,
+          type: 'video',
+          title: 'סרטון חדש',
+          message: `סרטון חדש זמין לצפייה: ${video.videos.title}`,
+          videoData: video,
+          date: new Date().toISOString()
+        }));
+        
+        setNotifications(videoNotifications);
         
       } catch (err: any) {
         console.error("Error fetching player data:", err);
@@ -441,6 +487,38 @@ const PlayerProfileView = () => {
     return filterSessionsByTime(pastSessions, timeFilter);
   };
 
+  const markVideoAsWatched = async (playerVideoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('player_videos')
+        .update({
+          watched: true,
+          watched_at: new Date().toISOString()
+        })
+        .eq('id', playerVideoId);
+      
+      if (error) {
+        console.error('Error marking video as watched:', error);
+        throw error;
+      }
+      
+      // Update local state
+      setUnreadVideos(prev => prev.filter(video => video.id !== playerVideoId));
+      setNotifications(prev => prev.filter(notification => notification.id !== playerVideoId));
+      setHasNewNotifications(prev => prev && notifications.length > 1);
+      
+      toast.success("הסרטון סומן כנצפה");
+    } catch (error) {
+      console.error('Error marking video as watched:', error);
+      toast.error("שגיאה בעדכון סטטוס הצפייה");
+    }
+  };
+
+  const handleVideoClick = (videoUrl: string, playerVideoId: string) => {
+    window.open(videoUrl, '_blank');
+    markVideoAsWatched(playerVideoId);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -489,14 +567,74 @@ const PlayerProfileView = () => {
       <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <h1 className="text-3xl font-bold">הפרופיל שלי</h1>
-          <Button 
-            variant="ghost" 
-            onClick={handleLogout} 
-            className="text-red-500 hover:bg-white/10 hover:text-red-400 px-2 py-1 h-auto text-sm"
-          >
-            <LogOut className="h-4 w-4 mr-1" />
-            התנתק
-          </Button>
+          <div className="flex items-center gap-4">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="relative text-white hover:bg-white/10"
+                >
+                  {hasNewNotifications ? (
+                    <BellDot className="h-6 w-6" />
+                  ) : (
+                    <Bell className="h-6 w-6" />
+                  )}
+                  {hasNewNotifications && (
+                    <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full"></span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 mr-4" align="end">
+                <div className="space-y-2">
+                  <h3 className="font-medium text-lg mb-2">התראות</h3>
+                  <Separator />
+                  {notifications.length > 0 ? (
+                    <div className="max-h-60 overflow-y-auto space-y-2 py-2">
+                      {notifications.map((notification) => (
+                        <div 
+                          key={notification.id} 
+                          className="p-2 rounded-md bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+                          onClick={() => notification.type === 'video' && 
+                            handleVideoClick(notification.videoData.videos.url, notification.id)}
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className="bg-primary/10 p-2 rounded-full flex-shrink-0">
+                              {notification.type === 'video' && <FileText className="h-4 w-4 text-primary" />}
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm">{notification.title}</div>
+                              <p className="text-xs text-gray-600">{notification.message}</p>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="mt-1 h-7 text-xs text-primary hover:text-primary/80"
+                              >
+                                צפה עכשיו
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center text-gray-500">
+                      <Bell className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                      <p>אין התראות חדשות</p>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button 
+              variant="ghost" 
+              onClick={handleLogout} 
+              className="text-red-500 hover:bg-white/10 hover:text-red-400 px-2 py-1 h-auto text-sm"
+            >
+              <LogOut className="h-4 w-4 mr-1" />
+              התנתק
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -908,7 +1046,7 @@ const PlayerProfileView = () => {
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       <p>עדיין לא נוספו מטרות</p>
-                      <p className="text-sm mt-2">הוסף את המטרה הראשונה שלך</p>
+                      <p className="text-sm mt-2">הוסף את המ��רה הראשונה שלך</p>
                     </div>
                   )}
                 </CardContent>
@@ -922,3 +1060,4 @@ const PlayerProfileView = () => {
 };
 
 export default PlayerProfileView;
+
