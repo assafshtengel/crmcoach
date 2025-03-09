@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToolsList } from "@/components/tools/ToolsList";
 import VideoManagement from "@/components/admin/VideoManagement";
-import { VideoIcon, ArrowRight } from "lucide-react";
+import { VideoIcon, ArrowRight, Calendar } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function ToolManagement() {
@@ -56,6 +56,17 @@ export default function ToolManagement() {
           </TabsContent>
           
           <TabsContent value="videos" className="space-y-4">
+            <div className="mb-4 flex justify-between items-center">
+              <h2 className="text-2xl font-semibold">ניהול סרטונים</h2>
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={() => navigate("/auto-video-management")}
+              >
+                <Calendar className="h-4 w-4" />
+                ניהול סרטונים אוטומטיים
+              </Button>
+            </div>
             <VideoManagement />
           </TabsContent>
         </Tabs>

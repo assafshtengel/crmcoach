@@ -73,8 +73,31 @@ serve(async (req) => {
     const sentInLast24h = stats?.length || 0;
     console.log(`Videos sent in last 24 hours: ${sentInLast24h}`);
 
+    // קבלת היסטוריית שליחות אחרונות
+    const { data: recentAssignments, error: recentError } = await supabase
+      .from("auto_video_assignments")
+      .select(`
+        id, 
+        sent, 
+        scheduled_for, 
+        assigned_at,
+        players:player_id (full_name, email),
+        videos:video_id (title, days_after_registration)
+      `)
+      .eq("sent", true)
+      .order("scheduled_for", { ascending: false })
+      .limit(20);
+
+    if (recentError) {
+      console.error("Error fetching recent assignments:", recentError);
+    }
+
     return new Response(
-      JSON.stringify({ success: true, sent_in_last_24h: sentInLast24h }),
+      JSON.stringify({ 
+        success: true, 
+        sent_in_last_24h: sentInLast24h,
+        recent_assignments: recentAssignments || []
+      }),
       { 
         status: 200, 
         headers: { 
