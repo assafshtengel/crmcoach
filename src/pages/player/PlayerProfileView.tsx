@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -154,7 +155,7 @@ const PlayerProfileView = () => {
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5 text-white" />
                   {unreadCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[18px] h-[18px]" variant="destructive">
+                    <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[18px] h-[18px]" variant="default">
                       {unreadCount}
                     </Badge>
                   )}
@@ -244,7 +245,7 @@ const PlayerProfileView = () => {
             <TabsTrigger value="videos">
               סרטונים
               {unreadCount > 0 && (
-                <Badge variant="destructive" className="ml-2">
+                <Badge variant="default" className="ml-2">
                   {unreadCount}
                 </Badge>
               )}
