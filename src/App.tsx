@@ -99,6 +99,7 @@ function App() {
             <Route path="/registration-links" element={<AuthGuard><RegistrationLinks /></AuthGuard>} />
             <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
             <Route path="/tool-management" element={<AuthGuard><ToolManagement /></AuthGuard>} />
+            <Route path="/auto-video-management" element={<AuthGuard><AutoVideoManagement /></AuthGuard>} />
             <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
             <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} />
             
