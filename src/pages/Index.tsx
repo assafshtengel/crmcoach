@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle } from "lucide-react";
+import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -19,6 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { AdminMessageForm } from "@/components/admin/AdminMessageForm";
 
 const Index = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -186,6 +186,19 @@ const Index = () => {
               <MentalPrepForm />
             </div>
           </div>
+          
+          {/* Add AdminMessageForm in a card before the Video Card */}
+          <Card className="bg-white/90 shadow-md">
+            <CardHeader className="bg-primary/10 py-4 rounded-t-lg border-b border-primary/10">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-semibold text-primary">שליחת הודעה למנהלים</CardTitle>
+                <Send className="h-6 w-6 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <AdminMessageForm />
+            </CardContent>
+          </Card>
           
           {/* Video Card */}
           <Card className="bg-white shadow-lg border-primary/20 overflow-visible">

@@ -23,6 +23,7 @@ import { SessionFormDialog } from '@/components/sessions/SessionFormDialog';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Film } from 'lucide-react';
+import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -937,6 +938,15 @@ const DashboardCoach = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <Card className="bg-white/90 shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-semibold text-[#2C3E50]">שליחת הודעה למנהלים</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AdminMessageForm />
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#27AE60]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
