@@ -100,7 +100,7 @@ export default function AutoVideoManagement() {
       const { data: videosData, error: videosError } = await supabase
         .from('videos')
         .select('*')
-        .order('auto_sequence_order', { ascending: true, nullsLast: true });
+        .order('auto_sequence_order', { ascending: true, nullsFirst: true });
 
       if (videosError) throw videosError;
       setVideos(videosData || []);
@@ -346,7 +346,7 @@ export default function AutoVideoManagement() {
                           </TableCell>
                           <TableCell className="text-center">
                             {video.is_auto_scheduled ? (
-                              <Badge variant="success" className="bg-green-100 text-green-800">
+                              <Badge variant="outline" className="bg-green-100 text-green-800">
                                 <CheckCircle className="h-3.5 w-3.5 mr-1" />
                                 פעיל
                               </Badge>

@@ -1,11 +1,54 @@
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
-import AuthGuard from '@/components/auth/AuthGuard';
-import Layout from '@/components/layout/Layout';
+import { AuthGuard } from '@/components/auth/AuthGuard';
+import { Layout } from '@/components/layout/Layout';
 import ToolManagement from '@/pages/ToolManagement';
 import AutoVideoManagement from '@/pages/AutoVideoManagement';
+
+// Import all the missing page components
+import DashboardCoach from '@/pages/DashboardCoach';
+import Index from '@/pages/Index';
+import NewIndex from '@/pages/NewIndex';
+import Dashboard from '@/pages/Dashboard';
+import PlayerProfile from '@/pages/PlayerProfile';
+import Huze from '@/pages/Huze';
+import Contract from '@/pages/Contract';
+import MentalCommitment from '@/pages/MentalCommitment';
+import Admin from '@/pages/Admin';
+import MentalTools from '@/pages/MentalTools';
+import ShortTermGoals from '@/pages/ShortTermGoals';
+import DailyChallenge from '@/pages/DailyChallenge';
+import PlayerForm from '@/pages/PlayerForm';
+import SessionsList from '@/pages/SessionsList';
+import PlayersList from '@/pages/PlayersList';
+import NewSessionForm from '@/pages/NewSessionForm';
+import EditSessionForm from '@/pages/EditSessionForm';
+import GoalDetailsQuestions from '@/pages/GoalDetailsQuestions';
+import ProfileCoach from '@/pages/ProfileCoach';
+import CoachSignUp from '@/pages/CoachSignUp';
+import Reports from '@/pages/Reports';
+import Contact from '@/pages/Contact';
+import Next from '@/pages/Next';
+import PlayerEvaluation from '@/pages/PlayerEvaluation';
+import AnalyticsDashboard from '@/pages/AnalyticsDashboard';
+import PlayerStatistics from '@/pages/PlayerStatistics';
+import GamePreparation from '@/pages/GamePreparation';
+import NotificationsDashboard from '@/pages/NotificationsDashboard';
+import AuthPage from '@/pages/auth/AuthPage';
+import PlayerAuth from '@/pages/PlayerAuth';
+import ActionPlan from '@/pages/ActionPlan';
+import SessionSummaries from '@/pages/SessionSummaries';
+import NewPlayerForm from '@/pages/NewPlayerForm';
+import EditPlayerForm from '@/pages/EditPlayerForm';
+import RegistrationLinks from '@/pages/RegistrationLinks';
+import PublicRegistrationForm from '@/pages/PublicRegistrationForm';
+import AllMeetingSummaries from '@/pages/AllMeetingSummaries';
+import Goals from '@/pages/Goals';
+import PlayerProfileView from '@/pages/player/PlayerProfileView';
+import NotFound from '@/pages/NotFound';
 
 import "./App.css";
 
