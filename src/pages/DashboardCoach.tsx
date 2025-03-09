@@ -1012,7 +1012,9 @@ const DashboardCoach = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F]">
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F] cursor-pointer"
+            onClick={() => navigate('/tool-management?tab=videos')}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">סרטוני וידאו</CardTitle>
               <Film className="h-5 w-5 text-[#F1C40F]" />
