@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,7 +42,6 @@ const PlayerProfileView = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Load player data from session
   useEffect(() => {
     const loadPlayerData = async () => {
       try {
@@ -57,7 +55,6 @@ const PlayerProfileView = () => {
 
         const sessionData = JSON.parse(playerSession);
         
-        // Fetch player data from Supabase
         const { data, error } = await supabase
           .from("players")
           .select("*")
@@ -70,7 +67,6 @@ const PlayerProfileView = () => {
 
         setPlayer(data);
         
-        // Fetch notifications - for now we'll mock this with video data
         const { data: videosData, error: videosError } = await supabase
           .from("videos")
           .select("*")
@@ -81,12 +77,11 @@ const PlayerProfileView = () => {
         if (videosError) {
           console.error("Error fetching videos:", videosError);
         } else if (videosData) {
-          // Convert videos to notifications
           const videoNotifications: Notification[] = videosData.map(video => ({
             id: video.id,
             title: video.title,
             type: "video",
-            read: false, // We'd store this in a player_notifications table in a real app
+            read: false,
             contentId: video.id,
             created_at: video.created_at
           }));
@@ -192,7 +187,7 @@ const PlayerProfileView = () => {
                               </p>
                             </div>
                             {!notification.read && (
-                              <Badge variant="primary" className="text-xs">חדש</Badge>
+                              <Badge variant="default" className="text-xs">חדש</Badge>
                             )}
                           </div>
                         </div>
