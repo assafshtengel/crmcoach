@@ -2,13 +2,19 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Initialize Resend with API key from environment variables
+const resendApiKey = Deno.env.get("RESEND_API_KEY");
+if (!resendApiKey) {
+  console.error("RESEND_API_KEY is not set in environment variables");
+}
+const resend = new Resend(resendApiKey);
 const ADMIN_EMAIL = "socr.co.il@gmail.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface AdminMessageRequest {
@@ -17,14 +23,27 @@ interface AdminMessageRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log("Received request in send-admin-message function");
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      headers: corsHeaders,
+      status: 204,
+    });
   }
 
   try {
-    const { message, userEmail }: AdminMessageRequest = await req.json();
+    // Log for debugging
+    console.log("Processing request body");
+    
+    // Parse the request body
+    const requestData = await req.json();
+    console.log("Request data:", requestData);
+    
+    const { message, userEmail }: AdminMessageRequest = requestData;
 
+    // Validate input
     if (!message || message.trim() === "") {
       throw new Error("Message content cannot be empty");
     }
@@ -37,6 +56,8 @@ const handler = async (req: Request): Promise<Response> => {
       timeZone: "Asia/Jerusalem"
     });
 
+    console.log("Sending email with Resend, API Key exists:", !!resendApiKey);
+    
     const emailResponse = await resend.emails.send({
       from: "Sports Mental Coach <onboarding@resend.dev>",
       to: [ADMIN_EMAIL],
@@ -69,7 +90,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in send-admin-message function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || "Unknown error occurred" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

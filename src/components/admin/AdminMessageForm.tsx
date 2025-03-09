@@ -55,15 +55,20 @@ export const AdminMessageForm = () => {
         
       if (dbError) throw dbError;
       
+      console.log("Sending message via Edge Function to:", user.email);
+      
       // Send the message via email
       const response = await supabase.functions.invoke('send-admin-message', {
         body: {
           message,
           userEmail: user.email
-        }
+        },
       });
       
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) {
+        console.error("Edge function error:", response.error);
+        throw new Error(response.error.message || "שגיאה בשליחת ההודעה");
+      }
       
       toast({
         title: "הודעתך נשלחה בהצלחה",
@@ -75,7 +80,7 @@ export const AdminMessageForm = () => {
       console.error('Error sending message:', error);
       toast({
         title: "שגיאה בשליחת ההודעה",
-        description: "אירעה שגיאה בשליחת ההודעה. נסה שוב מאוחר יותר.",
+        description: error.message || "אירעה שגיאה בשליחת ההודעה. נסה שוב מאוחר יותר.",
         variant: "destructive",
       });
     } finally {
