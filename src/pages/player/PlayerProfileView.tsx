@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,12 @@ import {
   ChevronDown,
   ChevronUp,
   Filter,
-  LogOut
+  LogOut,
+  Dumbbell,
+  Users,
+  Target,
+  Flag,
+  ListChecks
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -82,6 +88,16 @@ interface PhysicalWorkout {
   date: string;
   description: string;
   duration: string;
+  workout_type: 'individual' | 'team';
+  team_name?: string;
+}
+
+interface PlayerGoal {
+  id: string;
+  title: string;
+  description: string;
+  target_date: string;
+  completed: boolean;
 }
 
 type TimeFilter = 'all' | 'upcoming' | 'past' | 'week' | 'month';
@@ -98,7 +114,16 @@ const PlayerProfileView = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [workoutDescription, setWorkoutDescription] = useState('');
   const [workoutDuration, setWorkoutDuration] = useState('');
+  const [workoutType, setWorkoutType] = useState<'individual' | 'team'>('individual');
+  const [teamName, setTeamName] = useState('');
   const [physicalWorkouts, setPhysicalWorkouts] = useState<PhysicalWorkout[]>([]);
+  const [allPhysicalWorkouts, setAllPhysicalWorkouts] = useState<PhysicalWorkout[]>([]);
+  const [showAllWorkouts, setShowAllWorkouts] = useState(false);
+  const [goals, setGoals] = useState<PlayerGoal[]>([]);
+  const [newGoalTitle, setNewGoalTitle] = useState('');
+  const [newGoalDescription, setNewGoalDescription] = useState('');
+  const [newGoalDate, setNewGoalDate] = useState('');
+  const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPlayerData = async () => {
@@ -124,6 +149,77 @@ const PlayerProfileView = () => {
         if (!playerDetails) throw new Error("לא נמצאו פרטי שחקן");
         
         setPlayer(playerDetails);
+        
+        // Mock data for demo
+        const mockWorkouts: PhysicalWorkout[] = [
+          {
+            id: '1',
+            date: '2023-05-15',
+            description: 'ריצה בפארק למשך 5 ק״מ',
+            duration: '45 דקות',
+            workout_type: 'individual'
+          },
+          {
+            id: '2',
+            date: '2023-05-10',
+            description: 'אימון כוח - חזה וכתפיים',
+            duration: '60 דקות',
+            workout_type: 'individual'
+          },
+          {
+            id: '3',
+            date: '2023-05-08',
+            description: 'אימון קבוצתי - תרגילי כדור',
+            duration: '90 דקות',
+            workout_type: 'team',
+            team_name: 'שמשון תל אביב'
+          },
+          {
+            id: '4',
+            date: '2023-05-05',
+            description: 'שחייה',
+            duration: '30 דקות',
+            workout_type: 'individual'
+          },
+          {
+            id: '5',
+            date: '2023-05-01',
+            description: 'אימון קבוצתי - משחקון',
+            duration: '120 דקות',
+            workout_type: 'team',
+            team_name: 'שמשון תל אביב'
+          }
+        ];
+        
+        setPhysicalWorkouts(mockWorkouts.slice(0, 3));
+        setAllPhysicalWorkouts(mockWorkouts);
+        
+        // Mock goals data
+        const mockGoals: PlayerGoal[] = [
+          {
+            id: '1',
+            title: 'שיפור סיבולת',
+            description: 'לרוץ 5 קילומטרים ברצף ללא הפסקה',
+            target_date: '2023-06-15',
+            completed: false
+          },
+          {
+            id: '2',
+            title: 'עבודה על בעיטות',
+            description: 'לתרגל 50 בעיטות לשער כל יום',
+            target_date: '2023-07-01',
+            completed: true
+          },
+          {
+            id: '3',
+            title: 'שיפור מהירות',
+            description: 'להוריד 0.5 שניות בריצת 100 מטר',
+            target_date: '2023-08-10',
+            completed: false
+          }
+        ];
+        
+        setGoals(mockGoals);
         
         const now = new Date();
         const { data: upcomingSessionsData, error: upcomingSessionsError } = await supabase
@@ -208,22 +304,82 @@ const PlayerProfileView = () => {
       return;
     }
     
+    if (workoutType === 'team' && teamName.trim() === '') {
+      toast.error("אנא הכנס שם קבוצה");
+      return;
+    }
+    
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    
     const newWorkout: PhysicalWorkout = {
       id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0],
+      date: formattedDate,
       description: workoutDescription,
-      duration: workoutDuration
+      duration: workoutDuration,
+      workout_type: workoutType,
+      ...(workoutType === 'team' && { team_name: teamName })
     };
     
     setPhysicalWorkouts(prev => [newWorkout, ...prev]);
+    setAllPhysicalWorkouts(prev => [newWorkout, ...prev]);
     setWorkoutDescription('');
     setWorkoutDuration('');
+    setWorkoutType('individual');
+    setTeamName('');
     toast.success('האימון נשמר בהצלחה');
   };
 
   const handleDeleteWorkout = (id: string) => {
     setPhysicalWorkouts(prev => prev.filter(workout => workout.id !== id));
+    setAllPhysicalWorkouts(prev => prev.filter(workout => workout.id !== id));
     toast.success('האימון נמחק בהצלחה');
+  };
+
+  const handleAddGoal = () => {
+    if (newGoalTitle.trim() === '') {
+      toast.error("אנא הכנס כותרת מטרה");
+      return;
+    }
+    
+    const newGoal: PlayerGoal = {
+      id: Date.now().toString(),
+      title: newGoalTitle,
+      description: newGoalDescription,
+      target_date: newGoalDate || new Date().toISOString().split('T')[0],
+      completed: false
+    };
+    
+    setGoals(prev => [...prev, newGoal]);
+    setNewGoalTitle('');
+    setNewGoalDescription('');
+    setNewGoalDate('');
+    toast.success('המטרה נוספה בהצלחה');
+  };
+
+  const toggleGoalCompletion = (id: string) => {
+    setGoals(prev => 
+      prev.map(goal => 
+        goal.id === id 
+          ? { ...goal, completed: !goal.completed }
+          : goal
+      )
+    );
+    
+    toast.success('סטטוס המטרה עודכן בהצלחה');
+  };
+  
+  const handleDeleteGoal = (id: string) => {
+    setGoals(prev => prev.filter(goal => goal.id !== id));
+    toast.success('המטרה נמחקה בהצלחה');
+  };
+
+  const toggleGoalExpanded = (goalId: string) => {
+    if (expandedGoalId === goalId) {
+      setExpandedGoalId(null);
+    } else {
+      setExpandedGoalId(goalId);
+    }
   };
 
   const handleLogout = async () => {
@@ -238,6 +394,14 @@ const PlayerProfileView = () => {
     } else {
       setExpandedSessionId(sessionId);
     }
+  };
+
+  const navigateToGamePrep = () => {
+    navigate('/game-preparation');
+  };
+
+  const toggleShowAllWorkouts = () => {
+    setShowAllWorkouts(!showAllWorkouts);
   };
 
   const filterSessionsByTime = (sessions: Session[], filter: TimeFilter): Session[] => {
@@ -348,8 +512,18 @@ const PlayerProfileView = () => {
             }`}
             onClick={() => setActiveTab('physical')}
           >
-            <Home className="h-6 w-6 mb-2" />
+            <Dumbbell className="h-6 w-6 mb-2" />
             <span>אימונים פיזיים</span>
+          </Button>
+          <Button
+            variant={activeTab === 'goals' ? 'default' : 'outline'}
+            className={`flex flex-col items-center px-6 py-4 h-auto min-w-[100px] ${
+              activeTab === 'goals' ? 'bg-[#F2FCE2] text-green-700 hover:bg-[#F2FCE2]' : ''
+            }`}
+            onClick={() => setActiveTab('goals')}
+          >
+            <Target className="h-6 w-6 mb-2" />
+            <span>המטרות שלי</span>
           </Button>
           <Button
             variant={activeTab === 'profile' ? 'default' : 'outline'}
@@ -380,6 +554,19 @@ const PlayerProfileView = () => {
           >
             <FileText className="h-6 w-6 mb-2" />
             <span>סיכומים</span>
+          </Button>
+          <Button
+            variant={activeTab === 'gameprep' ? 'default' : 'outline'}
+            className={`flex flex-col items-center px-6 py-4 h-auto min-w-[120px] ${
+              activeTab === 'gameprep' ? 'bg-[#F2FCE2] text-green-700 hover:bg-[#F2FCE2]' : ''
+            }`}
+            onClick={() => {
+              setActiveTab('gameprep');
+              navigateToGamePrep();
+            }}
+          >
+            <ListChecks className="h-6 w-6 mb-2" />
+            <span>הכנה למשחק</span>
           </Button>
         </div>
 
@@ -419,12 +606,13 @@ const PlayerProfileView = () => {
             </CardContent>
           </Card>
 
-          {activeTab !== 'physical' && (
+          {activeTab !== 'physical' && activeTab !== 'goals' && activeTab !== 'gameprep' && (
             <div className="lg:col-span-3 flex justify-between items-center mb-2">
               <h3 className="text-lg font-medium">
                 {activeTab === 'upcoming' ? 'המפגשים הקרובים שלי' : 
                 activeTab === 'past' ? 'סיכומי המפגשים הקודמים' : 
-                activeTab === 'physical' ? 'האימונים הפיזיים שלי' : 'הפרופיל שלי'}
+                activeTab === 'physical' ? 'האימונים הפיזיים שלי' : 
+                activeTab === 'goals' ? 'המטרות שלי' : 'הפרופיל שלי'}
               </h3>
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-gray-500" />
@@ -451,11 +639,47 @@ const PlayerProfileView = () => {
             {activeTab === 'physical' && (
               <Card>
                 <CardHeader>
-                  <CardTitle>האימונים הפיזיים שלי</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Dumbbell className="h-5 w-5 text-primary" />
+                    האימונים הפיזיים שלי
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="mb-6 bg-gray-50 p-4 rounded-lg border">
                     <h3 className="text-lg font-medium mb-4">הוסף אימון פיזי חדש</h3>
+                    
+                    <div className="grid grid-cols-1 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          סוג האימון
+                        </label>
+                        <div className="flex gap-4">
+                          <div 
+                            className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${
+                              workoutType === 'individual' 
+                                ? 'bg-primary/10 border-primary' 
+                                : 'border-gray-300 hover:border-primary/50'
+                            }`}
+                            onClick={() => setWorkoutType('individual')}
+                          >
+                            <Dumbbell className={`h-5 w-5 ${workoutType === 'individual' ? 'text-primary' : 'text-gray-500'}`} />
+                            <span>אימון אישי</span>
+                          </div>
+                          <div 
+                            className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${
+                              workoutType === 'team' 
+                                ? 'bg-primary/10 border-primary' 
+                                : 'border-gray-300 hover:border-primary/50'
+                            }`}
+                            onClick={() => setWorkoutType('team')}
+                          >
+                            <Users className={`h-5 w-5 ${workoutType === 'team' ? 'text-primary' : 'text-gray-500'}`} />
+                            <span>אימון קבוצתי</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <label htmlFor="workout-description" className="block text-sm font-medium text-gray-700 mb-1">
@@ -469,18 +693,36 @@ const PlayerProfileView = () => {
                           className="h-24"
                         />
                       </div>
-                      <div>
-                        <label htmlFor="workout-duration" className="block text-sm font-medium text-gray-700 mb-1">
-                          משך האימון (דקות)
-                        </label>
-                        <input
-                          id="workout-duration"
-                          type="text"
-                          placeholder="לדוגמה: 45 דקות"
-                          value={workoutDuration}
-                          onChange={(e) => setWorkoutDuration(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        />
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                          <label htmlFor="workout-duration" className="block text-sm font-medium text-gray-700 mb-1">
+                            משך האימון (דקות)
+                          </label>
+                          <input
+                            id="workout-duration"
+                            type="text"
+                            placeholder="לדוגמה: 45 דקות"
+                            value={workoutDuration}
+                            onChange={(e) => setWorkoutDuration(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                          />
+                        </div>
+                        
+                        {workoutType === 'team' && (
+                          <div>
+                            <label htmlFor="team-name" className="block text-sm font-medium text-gray-700 mb-1">
+                              שם הקבוצה
+                            </label>
+                            <input
+                              id="team-name"
+                              type="text"
+                              placeholder="שם הקבוצה"
+                              value={teamName}
+                              onChange={(e) => setTeamName(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <Button onClick={handleAddWorkout} className="mt-2">
@@ -488,22 +730,49 @@ const PlayerProfileView = () => {
                     </Button>
                   </div>
 
-                  {physicalWorkouts.length > 0 ? (
+                  {allPhysicalWorkouts.length > 0 ? (
                     <div className="space-y-4">
-                      <h3 className="text-lg font-medium mt-6 mb-4">האימונים האחרונים שלי</h3>
-                      {physicalWorkouts.map((workout) => (
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-medium mt-6 mb-4">האימונים האחרונים שלי</h3>
+                        <Button 
+                          variant="ghost" 
+                          onClick={toggleShowAllWorkouts}
+                          className="text-primary"
+                        >
+                          {showAllWorkouts ? 'הצג פחות' : 'הצג את כל האימונים'}
+                        </Button>
+                      </div>
+                      
+                      {(showAllWorkouts ? allPhysicalWorkouts : physicalWorkouts).map((workout) => (
                         <div key={workout.id} className="bg-white p-4 rounded-lg border flex justify-between items-start">
-                          <div>
+                          <div className="w-full">
                             <div className="flex items-center gap-2 mb-2">
-                              <span className="font-medium">{formatDate(workout.date)}</span>
+                              <Badge variant="outline" className="bg-blue-50">
+                                {formatDate(workout.date)}
+                              </Badge>
                               <Badge variant="outline">{workout.duration}</Badge>
+                              {workout.workout_type === 'team' && (
+                                <Badge variant="outline" className="bg-green-50 text-green-800">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  אימון קבוצתי
+                                </Badge>
+                              )}
+                              {workout.workout_type === 'individual' && (
+                                <Badge variant="outline" className="bg-purple-50 text-purple-800">
+                                  <Dumbbell className="h-3 w-3 mr-1" />
+                                  אימון אישי
+                                </Badge>
+                              )}
                             </div>
                             <p className="text-gray-700">{workout.description}</p>
+                            {workout.team_name && (
+                              <p className="text-gray-500 text-sm mt-1">קבוצה: {workout.team_name}</p>
+                            )}
                           </div>
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="text-red-500 hover:bg-red-50"
+                            className="text-red-500 hover:bg-red-50 shrink-0"
                             onClick={() => handleDeleteWorkout(workout.id)}
                           >
                             מחק
@@ -515,6 +784,146 @@ const PlayerProfileView = () => {
                     <div className="text-center py-8 text-gray-500">
                       <p>עדיין לא נרשמו אימונים פיזיים</p>
                       <p className="text-sm mt-2">הוסף את האימון הראשון שלך למעקב</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {activeTab === 'goals' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    המטרות שלי
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="mb-6 bg-gray-50 p-4 rounded-lg border">
+                    <h3 className="text-lg font-medium mb-4">הוסף מטרה חדשה</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label htmlFor="goal-title" className="block text-sm font-medium text-gray-700 mb-1">
+                          כותרת המטרה
+                        </label>
+                        <input
+                          id="goal-title"
+                          type="text"
+                          placeholder="לדוגמה: שיפור סיבולת"
+                          value={newGoalTitle}
+                          onChange={(e) => setNewGoalTitle(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="goal-date" className="block text-sm font-medium text-gray-700 mb-1">
+                          תאריך יעד
+                        </label>
+                        <input
+                          id="goal-date"
+                          type="date"
+                          value={newGoalDate}
+                          onChange={(e) => setNewGoalDate(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label htmlFor="goal-description" className="block text-sm font-medium text-gray-700 mb-1">
+                        תיאור המטרה
+                      </label>
+                      <Textarea
+                        id="goal-description"
+                        placeholder="תאר את המטרה בפירוט"
+                        value={newGoalDescription}
+                        onChange={(e) => setNewGoalDescription(e.target.value)}
+                        className="h-24"
+                      />
+                    </div>
+                    <Button onClick={handleAddGoal} className="mt-2">
+                      הוסף מטרה
+                    </Button>
+                  </div>
+
+                  {goals.length > 0 ? (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium mt-6 mb-4">המטרות שלי</h3>
+                      {goals.map((goal) => (
+                        <Collapsible
+                          key={goal.id}
+                          open={expandedGoalId === goal.id}
+                          onOpenChange={() => toggleGoalExpanded(goal.id)}
+                          className="border rounded-lg overflow-hidden"
+                        >
+                          <div className="p-4 bg-white flex flex-col sm:flex-row justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={goal.completed}
+                                    onChange={() => toggleGoalCompletion(goal.id)}
+                                    className="h-5 w-5 text-primary border-gray-300 rounded focus:ring-primary"
+                                  />
+                                  <p className={`font-medium text-lg ${goal.completed ? 'line-through text-gray-500' : ''}`}>
+                                    {goal.title}
+                                  </p>
+                                </div>
+                                <CollapsibleTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    {expandedGoalId === goal.id ? (
+                                      <ChevronUp className="h-4 w-4" />
+                                    ) : (
+                                      <ChevronDown className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </CollapsibleTrigger>
+                              </div>
+                              <div className="flex items-center mt-1 gap-2">
+                                {goal.target_date && (
+                                  <Badge variant="outline" className="bg-blue-50">
+                                    <Calendar className="h-3 w-3 mr-1" />
+                                    {formatDate(goal.target_date)}
+                                  </Badge>
+                                )}
+                                {goal.completed ? (
+                                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    הושלם
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                                    <Flag className="h-3 w-3 mr-1" />
+                                    בתהליך
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <CollapsibleContent>
+                            <div className="p-4 pt-0 border-t">
+                              <div className="mt-2">
+                                <p className="whitespace-pre-wrap text-gray-700">{goal.description}</p>
+                              </div>
+                              <div className="flex justify-end mt-4">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-red-500 hover:bg-red-50"
+                                  onClick={() => handleDeleteGoal(goal.id)}
+                                >
+                                  מחק מטרה
+                                </Button>
+                              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>עדיין לא נרשמו מטרות</p>
+                      <p className="text-sm mt-2">הוסף את המטרה הראשונה שלך</p>
                     </div>
                   )}
                 </CardContent>

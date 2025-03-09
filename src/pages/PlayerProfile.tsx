@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Home, Pencil, Copy, CheckCircle, Eye, Link, KeyRound } from 'lucide-react';
+import { ChevronRight, Home, Pencil, Copy, CheckCircle, Eye, Link, KeyRound, ListChecks } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
@@ -156,6 +156,20 @@ const PlayerProfile = () => {
     localStorage.setItem('playerSession', JSON.stringify(playerSession));
     
     window.open('/player/profile', '_blank');
+  };
+
+  const openGamePreparation = () => {
+    if (!player) return;
+    
+    const playerSession = {
+      id: player.id,
+      email: player.email,
+      password: player.password
+    };
+    
+    localStorage.setItem('playerSession', JSON.stringify(playerSession));
+    
+    window.open('/game-preparation', '_blank');
   };
 
   if (loading) {
@@ -444,7 +458,7 @@ const PlayerProfile = () => {
                   </p>
                 </div>
 
-                <div className="md:col-span-2 flex justify-end">
+                <div className="md:col-span-2 flex flex-wrap gap-2 justify-end">
                   <Button 
                     variant="outline" 
                     onClick={viewAsPlayer}
@@ -452,6 +466,15 @@ const PlayerProfile = () => {
                   >
                     <Eye className="h-4 w-4" />
                     צפה כשחקן
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={openGamePreparation}
+                    className="gap-2"
+                  >
+                    <ListChecks className="h-4 w-4" />
+                    הכנה למשחק
                   </Button>
                 </div>
               </div>
