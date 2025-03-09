@@ -1,13 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Home, Pencil, Copy, CheckCircle, Eye, Link, KeyRound, ListChecks } from 'lucide-react';
+import { ChevronRight, Home, Pencil, Copy, CheckCircle, Eye, Link, KeyRound, ListChecks, User, Phone, Mail, Calendar, Map, Building, School, Shield, HeartPulse, ClipboardList } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 interface Player {
   id: string;
@@ -174,8 +176,8 @@ const PlayerProfile = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      <div className="flex items-center justify-center min-h-screen bg-page">
+        <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
   }
@@ -183,7 +185,7 @@ const PlayerProfile = () => {
   if (error || !player) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg">
           <p className="font-medium">שגיאה בטעינת פרטי השחקן</p>
           <p>{error || "לא נמצאו פרטים"}</p>
           <Button 
@@ -204,8 +206,8 @@ const PlayerProfile = () => {
   const playerLoginUrl = `${baseUrl}/player-auth`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <header className="w-full bg-[#1A1F2C] text-white py-6 mb-8 shadow-md">
+    <div className="min-h-screen bg-page">
+      <header className="w-full bg-primary text-white py-6 mb-8 shadow-md">
         <div className="container mx-auto px-4">
           <h1 className="text-3xl font-bold">פרופיל שחקן</h1>
         </div>
@@ -218,6 +220,7 @@ const PlayerProfile = () => {
             size="icon"
             onClick={() => navigate(-1)}
             aria-label="חזרה לדף הקודם"
+            className="rounded-lg hover:bg-gray-100"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -226,6 +229,7 @@ const PlayerProfile = () => {
             size="icon"
             onClick={() => navigate('/players-list')}
             aria-label="חזרה לרשימת השחקנים"
+            className="rounded-lg hover:bg-gray-100"
           >
             <Home className="h-4 w-4" />
           </Button>
@@ -233,37 +237,41 @@ const PlayerProfile = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-3">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
-                <div className="w-24 h-24 relative shrink-0 rounded-full overflow-hidden">
+            <div className="relative h-24 bg-gradient-to-r from-primary to-primary-light"></div>
+            <CardContent className="p-0">
+              <div className="flex flex-col md:flex-row md:items-center gap-6 p-6 relative -mt-12">
+                <div className="w-24 h-24 relative rounded-full overflow-hidden border-4 border-white shadow-md flex-shrink-0">
                   <img 
                     src={profileImageUrl} 
                     alt={player.full_name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = 'https://via.placeholder.com/150?text=' + encodeURIComponent(player.full_name);
+                      target.src = 'https://via.placeholder.com/150?text=' + encodeURIComponent(player.full_name[0] || 'U');
                     }}
                   />
                 </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold">{player.full_name}</h2>
-                  <p className="text-gray-500">{player.sport_field || "לא צוין ענף ספורטיבי"}</p>
-                  <p className="text-gray-700 mt-1">
-                    {player.club && player.year_group ? (
-                      <span>
-                        {player.club} • {player.year_group}
-                      </span>
-                    ) : player.club ? (
-                      <span>{player.club}</span>
-                    ) : player.year_group ? (
-                      <span>{player.year_group}</span>
-                    ) : (
-                      <span>לא צוין מועדון/קבוצת גיל</span>
+                <div className="flex-1 pt-0 md:pt-12">
+                  <h2 className="text-2xl font-bold text-gray-900">{player.full_name}</h2>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {player.sport_field && (
+                      <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                        {player.sport_field}
+                      </Badge>
                     )}
-                  </p>
+                    {player.club && (
+                      <Badge variant="outline" className="bg-gray-100 text-gray-800">
+                        {player.club}
+                      </Badge>
+                    )}
+                    {player.year_group && (
+                      <Badge variant="outline" className="bg-gray-100 text-gray-800">
+                        {player.year_group}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                <Button onClick={handleEditPlayer} className="shrink-0">
+                <Button onClick={handleEditPlayer} className="shrink-0 shadow-sm hover:shadow" variant="light">
                   <Pencil className="h-4 w-4 mr-2" />
                   ערוך פרטי שחקן
                 </Button>
@@ -274,12 +282,12 @@ const PlayerProfile = () => {
           <Card className="lg:col-span-3">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Link className="h-5 w-5" />
+                <Link className="h-5 w-5 text-primary" />
                 פרטי גישה
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">מזהה שחקן</label>
                   <div className="flex items-center gap-2">
@@ -287,7 +295,7 @@ const PlayerProfile = () => {
                       value={playerId || ""} 
                       readOnly 
                       dir="ltr"
-                      className="font-mono text-sm bg-gray-50"
+                      className="font-mono text-sm bg-gray-50 rounded-lg"
                     />
                     <TooltipProvider>
                       <Tooltip>
@@ -296,7 +304,7 @@ const PlayerProfile = () => {
                             onClick={copyPlayerId} 
                             size="icon" 
                             variant="outline"
-                            className="h-9 w-9"
+                            className="h-9 w-9 rounded-lg"
                           >
                             {copiedId ? (
                               <CheckCircle className="h-4 w-4 text-green-600" />
@@ -318,7 +326,7 @@ const PlayerProfile = () => {
                       value={player.email} 
                       readOnly 
                       dir="ltr"
-                      className="text-sm bg-gray-50"
+                      className="text-sm bg-gray-50 rounded-lg"
                     />
                   </div>
                 </div>
@@ -331,7 +339,7 @@ const PlayerProfile = () => {
                       value={player.password || "אין סיסמה"} 
                       readOnly 
                       dir="ltr"
-                      className="font-mono text-sm bg-gray-50"
+                      className="font-mono text-sm bg-gray-50 rounded-lg"
                     />
                     <TooltipProvider>
                       <Tooltip>
@@ -340,7 +348,7 @@ const PlayerProfile = () => {
                             onClick={() => setShowPassword(!showPassword)} 
                             size="icon" 
                             variant="outline"
-                            className="h-9 w-9"
+                            className="h-9 w-9 rounded-lg"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -355,7 +363,7 @@ const PlayerProfile = () => {
                             onClick={copyPassword} 
                             size="icon" 
                             variant="outline"
-                            className="h-9 w-9"
+                            className="h-9 w-9 rounded-lg"
                             disabled={!player.password}
                           >
                             {copiedPassword ? (
@@ -375,7 +383,7 @@ const PlayerProfile = () => {
                             onClick={resetPassword} 
                             size="icon" 
                             variant="outline"
-                            className="h-9 w-9"
+                            className="h-9 w-9 rounded-lg"
                           >
                             <KeyRound className="h-4 w-4" />
                           </Button>
@@ -398,7 +406,7 @@ const PlayerProfile = () => {
                       value={playerLoginUrl} 
                       readOnly 
                       dir="ltr"
-                      className="font-mono text-sm bg-gray-50"
+                      className="font-mono text-sm bg-gray-50 rounded-lg"
                     />
                     <TooltipProvider>
                       <Tooltip>
@@ -410,7 +418,7 @@ const PlayerProfile = () => {
                             }} 
                             size="icon" 
                             variant="outline"
-                            className="h-9 w-9"
+                            className="h-9 w-9 rounded-lg"
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
@@ -431,7 +439,7 @@ const PlayerProfile = () => {
                       value={profileUrl} 
                       readOnly 
                       dir="ltr"
-                      className="font-mono text-sm bg-gray-50"
+                      className="font-mono text-sm bg-gray-50 rounded-lg"
                     />
                     <TooltipProvider>
                       <Tooltip>
@@ -440,7 +448,7 @@ const PlayerProfile = () => {
                             onClick={copyPlayerLink} 
                             size="icon" 
                             variant="outline"
-                            className="h-9 w-9"
+                            className="h-9 w-9 rounded-lg"
                           >
                             {copiedLink ? (
                               <CheckCircle className="h-4 w-4 text-green-600" />
@@ -460,7 +468,7 @@ const PlayerProfile = () => {
 
                 <div className="md:col-span-2 flex flex-wrap gap-2 justify-end">
                   <Button 
-                    variant="outline" 
+                    variant="secondary" 
                     onClick={viewAsPlayer}
                     className="gap-2"
                   >
@@ -469,7 +477,7 @@ const PlayerProfile = () => {
                   </Button>
                   
                   <Button 
-                    variant="outline" 
+                    variant="secondary" 
                     onClick={openGamePreparation}
                     className="gap-2"
                   >
@@ -483,28 +491,51 @@ const PlayerProfile = () => {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">פרטים אישיים</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                פרטים אישיים
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <dl className="grid grid-cols-1 gap-y-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-700">שם מלא</dt>
-                  <dd>{player.full_name}</dd>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary flex-shrink-0">
+                    <User className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">שם מלא</dt>
+                    <dd className="text-gray-900">{player.full_name}</dd>
+                  </div>
                 </div>
                 
-                <div>
-                  <dt className="text-sm font-medium text-gray-700">כתובת אימייל</dt>
-                  <dd dir="ltr" className="font-mono text-sm">{player.email}</dd>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary flex-shrink-0">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">כתובת אימייל</dt>
+                    <dd dir="ltr" className="font-mono text-sm text-gray-900">{player.email}</dd>
+                  </div>
                 </div>
                 
-                <div>
-                  <dt className="text-sm font-medium text-gray-700">מספר טלפון</dt>
-                  <dd dir="ltr" className="font-mono text-sm">{player.phone || "-"}</dd>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary flex-shrink-0">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">מספר טלפון</dt>
+                    <dd dir="ltr" className="font-mono text-sm text-gray-900">{player.phone || "-"}</dd>
+                  </div>
                 </div>
                 
-                <div>
-                  <dt className="text-sm font-medium text-gray-700">תאריך לידה</dt>
-                  <dd>{player.birthdate || "-"}</dd>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary flex-shrink-0">
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">תאריך לידה</dt>
+                    <dd className="text-gray-900">{player.birthdate || "-"}</dd>
+                  </div>
                 </div>
               </dl>
             </CardContent>
@@ -512,28 +543,51 @@ const PlayerProfile = () => {
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">פרטי מועדון</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Building className="h-5 w-5 text-primary" />
+                פרטי מועדון
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <dl className="grid grid-cols-1 gap-y-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-700">עיר</dt>
-                  <dd>{player.city || "-"}</dd>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary flex-shrink-0">
+                    <Map className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">עיר</dt>
+                    <dd className="text-gray-900">{player.city || "-"}</dd>
+                  </div>
                 </div>
                 
-                <div>
-                  <dt className="text-sm font-medium text-gray-700">מועדון</dt>
-                  <dd>{player.club || "-"}</dd>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary flex-shrink-0">
+                    <Building className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">מועדון</dt>
+                    <dd className="text-gray-900">{player.club || "-"}</dd>
+                  </div>
                 </div>
                 
-                <div>
-                  <dt className="text-sm font-medium text-gray-700">שכבת גיל</dt>
-                  <dd>{player.year_group || "-"}</dd>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary flex-shrink-0">
+                    <School className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">שכבת גיל</dt>
+                    <dd className="text-gray-900">{player.year_group || "-"}</dd>
+                  </div>
                 </div>
                 
-                <div>
-                  <dt className="text-sm font-medium text-gray-700">ענף ספורט</dt>
-                  <dd>{player.sport_field || "-"}</dd>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary flex-shrink-0">
+                    <Shield className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">ענף ספורט</dt>
+                    <dd className="text-gray-900">{player.sport_field || "-"}</dd>
+                  </div>
                 </div>
               </dl>
             </CardContent>
@@ -541,23 +595,41 @@ const PlayerProfile = () => {
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">פרטי הורים</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                פרטי הורים
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <dl className="grid grid-cols-1 gap-y-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-700">שם הורה</dt>
-                  <dd>{player.parent_name || "-"}</dd>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary flex-shrink-0">
+                    <User className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">שם הורה</dt>
+                    <dd className="text-gray-900">{player.parent_name || "-"}</dd>
+                  </div>
                 </div>
                 
-                <div>
-                  <dt className="text-sm font-medium text-gray-700">טלפון הורה</dt>
-                  <dd dir="ltr" className="font-mono text-sm">{player.parent_phone || "-"}</dd>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary flex-shrink-0">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">טלפון הורה</dt>
+                    <dd dir="ltr" className="font-mono text-sm text-gray-900">{player.parent_phone || "-"}</dd>
+                  </div>
                 </div>
                 
-                <div>
-                  <dt className="text-sm font-medium text-gray-700">אימייל הורה</dt>
-                  <dd dir="ltr" className="font-mono text-sm">{player.parent_email || "-"}</dd>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full text-primary flex-shrink-0">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">אימייל הורה</dt>
+                    <dd dir="ltr" className="font-mono text-sm text-gray-900">{player.parent_email || "-"}</dd>
+                  </div>
                 </div>
               </dl>
             </CardContent>
@@ -565,22 +637,35 @@ const PlayerProfile = () => {
           
           <Card className="lg:col-span-3">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">מידע נוסף</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ClipboardList className="h-5 w-5 text-primary" />
+                מידע נוסף
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">פציעות</h3>
-                  <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
-                    {player.injuries || "לא צוינו פציעות"}
-                  </p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <HeartPulse className="h-5 w-5 text-primary" />
+                    <h3 className="text-sm font-medium text-gray-900">פציעות</h3>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg min-h-24 border border-gray-100">
+                    <p className="whitespace-pre-wrap text-gray-700">
+                      {player.injuries || "לא צוינו פציעות"}
+                    </p>
+                  </div>
                 </div>
                 
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">הערות</h3>
-                  <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded-md min-h-24">
-                    {player.notes || "אין הערות"}
-                  </p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <ClipboardList className="h-5 w-5 text-primary" />
+                    <h3 className="text-sm font-medium text-gray-900">הערות</h3>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg min-h-24 border border-gray-100">
+                    <p className="whitespace-pre-wrap text-gray-700">
+                      {player.notes || "אין הערות"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>

@@ -35,7 +35,7 @@ html {
 }
 
 body {
-  @apply font-heebo bg-gray-50;
+  @apply font-heebo bg-page text-foreground;
   direction: rtl;
   overflow-x: hidden;
   width: 100%;
@@ -51,9 +51,9 @@ input, textarea, select, .select-trigger, .select-content {
   text-align: right !important;
 }
 
-/* Glass card design */
-.glass-card {
-  @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg;
+/* Modern Card Design */
+.modern-card {
+  @apply bg-white rounded-xl border border-gray-100 shadow-card hover:shadow-card-hover transition-all duration-300;
 }
 
 /* Animation for form steps */
@@ -63,17 +63,17 @@ input, textarea, select, .select-trigger, .select-content {
 
 /* Form input styling */
 .input-field {
-  @apply w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 text-right;
+  @apply w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 text-right;
 }
 
 /* Primary button styling */
 .btn-primary {
-  @apply px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
 /* Secondary button styling */
 .btn-secondary {
-  @apply px-6 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-all duration-200;
+  @apply px-6 py-2.5 bg-white text-primary border border-primary rounded-lg hover:bg-primary/5 transition-all duration-200;
 }
 
 /* Progress bar styling */
@@ -85,6 +85,19 @@ input, textarea, select, .select-trigger, .select-content {
   @apply h-full bg-primary transition-all duration-500 ease-out;
 }
 
+/* Modern Tabs */
+.modern-tabs .tabs-list {
+  @apply bg-white rounded-xl p-1 shadow-sm border border-gray-100;
+}
+
+.modern-tabs .tab-trigger {
+  @apply rounded-lg px-4 py-2.5 text-gray-600 hover:text-primary transition-colors duration-200;
+}
+
+.modern-tabs .tab-trigger[data-state="active"] {
+  @apply bg-primary/10 text-primary font-medium;
+}
+
 /* Mental state tag styling */
 .mental-state-tag {
   @apply px-3 py-1 rounded-full bg-secondary/50 text-secondary-foreground text-sm cursor-pointer hover:bg-secondary transition-all duration-200;
@@ -92,6 +105,23 @@ input, textarea, select, .select-trigger, .select-content {
 
 .mental-state-tag.selected {
   @apply bg-primary text-white;
+}
+
+/* Status badges */
+.status-badge {
+  @apply text-xs px-2.5 py-1 rounded-full font-medium;
+}
+
+.status-badge.active {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-badge.pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.status-badge.completed {
+  @apply bg-blue-100 text-blue-800;
 }
 
 /* Signature canvas styling */
@@ -145,4 +175,57 @@ input, textarea, select, .select-trigger, .select-content {
   .print\\:hidden {
     display: none !important;
   }
+}
+
+/* Modern Layout Containers */
+.page-container {
+  @apply min-h-screen bg-page pb-12;
+}
+
+.content-container {
+  @apply container mx-auto px-4 py-6;
+}
+
+/* Modern Header */
+.page-header {
+  @apply bg-primary text-white py-6 shadow-md mb-6;
+}
+
+/* Dashboard Section Header */
+.section-header {
+  @apply text-xl font-bold text-primary mb-4 pb-2 border-b border-gray-100;
+}
+
+/* Modern Profile Card */
+.profile-card {
+  @apply bg-white rounded-xl shadow-card p-6 flex flex-col md:flex-row items-center gap-6;
+}
+
+.profile-image {
+  @apply w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-md;
+}
+
+.data-label {
+  @apply text-sm font-medium text-gray-500;
+}
+
+.data-value {
+  @apply text-base text-gray-900;
+}
+
+/* Player Tabs */
+.player-tabs .tabs-list {
+  @apply grid grid-cols-3 md:grid-cols-6 gap-1 bg-white rounded-xl p-1 shadow-sm;
+}
+
+.player-tabs .tab-trigger {
+  @apply flex items-center justify-center gap-1 py-3 text-gray-600 hover:text-primary transition-colors rounded-lg;
+}
+
+.player-tabs .tab-trigger[data-state="active"] {
+  @apply bg-primary/10 text-primary font-medium;
+}
+
+.player-tabs .tab-content {
+  @apply py-6;
 }

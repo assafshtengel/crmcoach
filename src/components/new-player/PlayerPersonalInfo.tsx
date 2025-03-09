@@ -29,19 +29,19 @@ export const PlayerPersonalInfo: React.FC<PlayerPersonalInfoProps> = ({ form }) 
         name="sportField"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>ענף ספורט</FormLabel>
+            <FormLabel className="text-gray-700">ענף ספורט</FormLabel>
             <Select 
               onValueChange={handleSportFieldChange} 
               defaultValue={field.value}
             >
               <FormControl>
-                <SelectTrigger className="text-right">
+                <SelectTrigger className="text-right bg-white border-gray-200 rounded-lg h-11 focus:ring-primary">
                   <SelectValue placeholder="בחר ענף ספורט" />
                 </SelectTrigger>
               </FormControl>
-              <SelectContent className="text-right">
+              <SelectContent className="text-right bg-white rounded-lg">
                 {sportFields.map((sport) => (
-                  <SelectItem key={sport.value} value={sport.value}>
+                  <SelectItem key={sport.value} value={sport.value} className="focus:bg-primary/5 focus:text-primary">
                     {sport.label}
                   </SelectItem>
                 ))}
@@ -58,9 +58,13 @@ export const PlayerPersonalInfo: React.FC<PlayerPersonalInfoProps> = ({ form }) 
           name="otherSportField"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>פרט ענף ספורט</FormLabel>
+              <FormLabel className="text-gray-700">פרט ענף ספורט</FormLabel>
               <FormControl>
-                <Input placeholder="הקלד ענף ספורט" {...field} />
+                <Input 
+                  placeholder="הקלד ענף ספורט" 
+                  {...field} 
+                  className="bg-white border-gray-200 rounded-lg h-11 focus:ring-primary"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -73,9 +77,13 @@ export const PlayerPersonalInfo: React.FC<PlayerPersonalInfoProps> = ({ form }) 
         name="firstName"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>שם פרטי</FormLabel>
+            <FormLabel className="text-gray-700">שם פרטי</FormLabel>
             <FormControl>
-              <Input placeholder="ישראל" {...field} />
+              <Input 
+                placeholder="ישראל" 
+                {...field} 
+                className="bg-white border-gray-200 rounded-lg h-11 focus:ring-primary"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -87,9 +95,13 @@ export const PlayerPersonalInfo: React.FC<PlayerPersonalInfoProps> = ({ form }) 
         name="lastName"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>שם משפחה</FormLabel>
+            <FormLabel className="text-gray-700">שם משפחה</FormLabel>
             <FormControl>
-              <Input placeholder="ישראלי" {...field} />
+              <Input 
+                placeholder="ישראלי" 
+                {...field} 
+                className="bg-white border-gray-200 rounded-lg h-11 focus:ring-primary"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -101,9 +113,14 @@ export const PlayerPersonalInfo: React.FC<PlayerPersonalInfoProps> = ({ form }) 
         name="playerEmail"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>אימייל שחקן</FormLabel>
+            <FormLabel className="text-gray-700">אימייל שחקן</FormLabel>
             <FormControl>
-              <Input type="email" placeholder="example@example.com" {...field} />
+              <Input 
+                type="email" 
+                placeholder="example@example.com" 
+                {...field} 
+                className="bg-white border-gray-200 rounded-lg h-11 focus:ring-primary"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -115,9 +132,13 @@ export const PlayerPersonalInfo: React.FC<PlayerPersonalInfoProps> = ({ form }) 
         name="playerPhone"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>טלפון שחקן</FormLabel>
+            <FormLabel className="text-gray-700">טלפון שחקן</FormLabel>
             <FormControl>
-              <Input placeholder="050-0000000" {...field} />
+              <Input 
+                placeholder="050-0000000" 
+                {...field} 
+                className="bg-white border-gray-200 rounded-lg h-11 focus:ring-primary"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -129,9 +150,13 @@ export const PlayerPersonalInfo: React.FC<PlayerPersonalInfoProps> = ({ form }) 
         name="birthDate"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>תאריך לידה</FormLabel>
+            <FormLabel className="text-gray-700">תאריך לידה</FormLabel>
             <FormControl>
-              <Input placeholder="DD-MM-YYYY" {...field} />
+              <Input 
+                placeholder="DD-MM-YYYY" 
+                {...field} 
+                className="bg-white border-gray-200 rounded-lg h-11 focus:ring-primary"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideosTab } from "@/components/player/VideosTab";
-import { Bell, User, LogOut, Calendar, Target, FileText, StickyNote, PencilLine, CheckSquare } from 'lucide-react';
+import { Bell, User, LogOut, Calendar, Target, FileText, Video, CheckSquare, PencilLine, Clock, ArrowRight } from 'lucide-react';
 import { 
   Popover, 
   PopoverContent, 
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 
 interface PlayerData {
   id: string;
@@ -227,23 +228,25 @@ const PlayerProfileView = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      <div className="flex items-center justify-center min-h-screen bg-page">
+        <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
   }
 
   if (!player) {
     return (
-      <div className="container mx-auto py-8 px-4">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-red-500">לא נמצאו פרטי שחקן. אנא התחבר מחדש.</p>
-            <Button onClick={() => navigate("/player-auth")} className="mt-4">
-              חזרה לדף ההתחברות
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="page-container">
+        <div className="content-container">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-red-500 mb-4">לא נמצאו פרטי שחקן. אנא התחבר מחדש.</p>
+              <Button onClick={() => navigate("/player-auth")}>
+                חזרה לדף ההתחברות
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -256,33 +259,35 @@ const PlayerProfileView = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <header className="w-full bg-[#1A1F2C] text-white py-6 shadow-md">
+    <div className="page-container">
+      <header className="w-full bg-primary text-white py-5 shadow-md sticky top-0 z-10">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">פרופיל שחקן</h1>
           <div className="flex items-center gap-3">
             <Popover open={showNotifications} onOpenChange={setShowNotifications}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5 text-white" />
+                <Button variant="ghost" size="icon" className="relative text-white hover:bg-primary-light/20">
+                  <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[18px] h-[18px]" variant="default">
+                    <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[18px] h-[18px] bg-red-500" variant="default">
                       {unreadCount}
                     </Badge>
                   )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80" align="end">
-                <div className="space-y-2">
-                  <h3 className="font-semibold">התראות</h3>
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg">התראות</h3>
                   {notifications.length === 0 ? (
-                    <p className="text-sm text-gray-500">אין התראות חדשות</p>
+                    <div className="p-4 text-center text-gray-500 bg-gray-50 rounded-lg">
+                      <p>אין התראות חדשות</p>
+                    </div>
                   ) : (
                     <div className="space-y-2 max-h-[300px] overflow-y-auto">
                       {notifications.map(notification => (
                         <div 
                           key={notification.id} 
-                          className={`p-2 border rounded ${notification.read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'}`}
+                          className={`p-3 border rounded-lg ${notification.read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'} cursor-pointer hover:shadow-sm transition-all`}
                           onClick={() => {
                             if (notification.type === 'video') {
                               markNotificationAsRead(notification.id);
@@ -292,14 +297,19 @@ const PlayerProfileView = () => {
                           }}
                         >
                           <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium text-sm">{notification.title}</p>
-                              <p className="text-xs text-gray-500">
-                                {notification.type === 'video' ? 'סרטון חדש' : 'הודעה חדשה'}
-                              </p>
+                            <div className="flex gap-3 items-start">
+                              <div className="bg-primary/10 p-2 rounded-full text-primary">
+                                <Video className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{notification.title}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {notification.type === 'video' ? 'סרטון חדש' : 'הודעה חדשה'}
+                                </p>
+                              </div>
                             </div>
                             {!notification.read && (
-                              <Badge variant="default" className="text-xs">חדש</Badge>
+                              <Badge variant="default" className="text-xs bg-primary">חדש</Badge>
                             )}
                           </div>
                         </div>
@@ -309,7 +319,7 @@ const PlayerProfileView = () => {
                 </div>
               </PopoverContent>
             </Popover>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:bg-primary-light/20">
               <LogOut className="h-4 w-4 mr-2" />
               התנתק
             </Button>
@@ -317,63 +327,74 @@ const PlayerProfileView = () => {
         </div>
       </header>
 
-      <div className="container mx-auto py-8 px-4">
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row items-center gap-4">
-              <div className="w-24 h-24 relative rounded-full overflow-hidden flex-shrink-0">
+      <div className="content-container">
+        <Card className="mb-6 overflow-hidden shadow-card">
+          <div className="relative h-24 bg-gradient-to-r from-primary to-primary-light"></div>
+          <CardContent className="p-0">
+            <div className="flex flex-col md:flex-row items-center gap-6 p-6 relative -mt-12">
+              <div className="w-24 h-24 relative rounded-full overflow-hidden flex-shrink-0 border-4 border-white bg-white shadow-md">
                 <img
                   src={profileImageUrl}
                   alt={player.full_name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = 'https://via.placeholder.com/150?text=' + encodeURIComponent(player.full_name);
+                    target.src = 'https://via.placeholder.com/150?text=' + encodeURIComponent(player.full_name[0] || 'U');
                   }}
                 />
               </div>
-              <div className="text-center md:text-right flex-1">
-                <h2 className="text-2xl font-bold">{player.full_name}</h2>
-                <p className="text-gray-500">
-                  {player.sport_field || "לא צוין ענף ספורטיבי"}
-                </p>
-                <p className="text-gray-700 mt-1">
-                  {player.club && player.year_group 
-                    ? `${player.club} • ${player.year_group}`
-                    : player.club || player.year_group || "לא צוין מועדון/קבוצת גיל"}
-                </p>
+              <div className="text-center md:text-right flex-1 mt-6 md:mt-12">
+                <h2 className="text-2xl font-bold text-gray-900">{player.full_name}</h2>
+                <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
+                  {player.sport_field && (
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                      {player.sport_field}
+                    </Badge>
+                  )}
+                  {player.club && (
+                    <Badge variant="outline" className="bg-gray-100 text-gray-800">
+                      {player.club}
+                    </Badge>
+                  )}
+                  {player.year_group && (
+                    <Badge variant="outline" className="bg-gray-100 text-gray-800">
+                      {player.year_group}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="profile">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 player-tabs modern-tabs">
+          <TabsList className="tabs-list w-full rounded-xl">
+            <TabsTrigger value="profile" className="tab-trigger">
               <User className="h-4 w-4 mr-2" />
               פרופיל
             </TabsTrigger>
-            <TabsTrigger value="videos">
+            <TabsTrigger value="videos" className="tab-trigger">
+              <Video className="h-4 w-4 mr-2" />
               סרטונים
               {unreadCount > 0 && (
-                <Badge variant="default" className="ml-2">
+                <Badge variant="default" className="ml-2 bg-red-500 h-5 min-w-5 flex items-center justify-center">
                   {unreadCount}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="sessions">
+            <TabsTrigger value="sessions" className="tab-trigger">
               <Calendar className="h-4 w-4 mr-2" />
               מפגשים
             </TabsTrigger>
-            <TabsTrigger value="summaries">
+            <TabsTrigger value="summaries" className="tab-trigger">
               <FileText className="h-4 w-4 mr-2" />
               סיכומים
             </TabsTrigger>
-            <TabsTrigger value="goals">
+            <TabsTrigger value="goals" className="tab-trigger">
               <Target className="h-4 w-4 mr-2" />
               מטרות
             </TabsTrigger>
-            <TabsTrigger value="game-prep">
+            <TabsTrigger value="game-prep" className="tab-trigger">
               <CheckSquare className="h-4 w-4 mr-2" />
               הכנה למשחק
             </TabsTrigger>
@@ -382,28 +403,31 @@ const PlayerProfileView = () => {
           <TabsContent value="profile" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">פרטים אישיים</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  פרטים אישיים
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">שם מלא</p>
-                  <p>{player.full_name}</p>
+                  <p className="data-label">שם מלא</p>
+                  <p className="data-value">{player.full_name}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">כתובת אימייל</p>
-                  <p dir="ltr" className="font-mono text-sm">{player.email}</p>
+                  <p className="data-label">כתובת אימייל</p>
+                  <p dir="ltr" className="font-mono text-sm data-value">{player.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">ענף ספורט</p>
-                  <p>{player.sport_field || "-"}</p>
+                  <p className="data-label">ענף ספורט</p>
+                  <p className="data-value">{player.sport_field || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">מועדון</p>
-                  <p>{player.club || "-"}</p>
+                  <p className="data-label">מועדון</p>
+                  <p className="data-value">{player.club || "-"}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">שכבת גיל</p>
-                  <p>{player.year_group || "-"}</p>
+                  <p className="data-label">שכבת גיל</p>
+                  <p className="data-value">{player.year_group || "-"}</p>
                 </div>
               </CardContent>
             </Card>
@@ -424,27 +448,35 @@ const PlayerProfileView = () => {
           <TabsContent value="sessions">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">מפגשים מתוכננים</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  מפגשים מתוכננים
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {upcomingSessions.length > 0 ? (
                   <div className="space-y-4">
                     {upcomingSessions.map((session) => (
-                      <div key={session.id} className="p-4 border rounded-lg">
-                        <div className="flex justify-between">
-                          <div>
-                            <p className="font-semibold">{formatDate(session.session_date)}</p>
-                            <p className="text-sm text-gray-500">{session.session_time}</p>
-                          </div>
-                          {session.location && (
-                            <div className="text-right">
-                              <p className="text-sm font-medium">מיקום</p>
-                              <p className="text-sm">{session.location}</p>
+                      <div key={session.id} className="p-4 border border-gray-100 rounded-lg hover:shadow-sm transition-all">
+                        <div className="flex flex-col md:flex-row justify-between gap-4">
+                          <div className="flex gap-4 items-start">
+                            <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
+                              <Clock className="h-5 w-5" />
                             </div>
-                          )}
+                            <div>
+                              <p className="font-semibold text-lg">{formatDate(session.session_date)}</p>
+                              <p className="text-gray-500">{session.session_time}</p>
+                              {session.location && (
+                                <p className="text-gray-700 mt-1">מיקום: {session.location}</p>
+                              )}
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="status-badge active self-start md:self-center">
+                            מתוכנן
+                          </Badge>
                         </div>
                         {session.notes && (
-                          <div className="mt-2 pt-2 border-t">
+                          <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
                             <p className="text-sm text-gray-600">{session.notes}</p>
                           </div>
                         )}
@@ -452,7 +484,10 @@ const PlayerProfileView = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-4">אין מפגשים מתוכננים כרגע</p>
+                  <div className="bg-gray-50 rounded-lg p-8 text-center">
+                    <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-gray-500">אין מפגשים מתוכננים כרגע</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -461,27 +496,45 @@ const PlayerProfileView = () => {
           <TabsContent value="summaries">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">סיכומי מפגשים אחרונים</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  סיכומי מפגשים אחרונים
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {sessionSummaries.length > 0 ? (
                   <div className="space-y-4">
                     {sessionSummaries.map((summary) => (
-                      <div key={summary.id} className="p-4 border rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                          <p className="font-semibold">
-                            {summary.session && formatDate(summary.session.session_date)}
-                          </p>
-                          <Badge variant="outline">דירוג התקדמות: {summary.progress_rating}/5</Badge>
+                      <div key={summary.id} className="p-4 border border-gray-100 rounded-lg hover:shadow-sm transition-all">
+                        <div className="flex flex-col md:flex-row justify-between gap-4 mb-3">
+                          <div className="flex gap-4 items-start">
+                            <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-lg">
+                                {summary.session && formatDate(summary.session.session_date)}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge 
+                            variant="outline" 
+                            className={`rounded-full px-3 py-1 ${summary.progress_rating >= 4 ? 'bg-green-100 text-green-700' : summary.progress_rating >= 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'} self-start md:self-center`}
+                          >
+                            דירוג התקדמות: {summary.progress_rating}/5
+                          </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 line-clamp-3">{summary.summary_text}</p>
+                        
+                        <div className="bg-gray-50 p-3 rounded-lg text-gray-700 text-sm">
+                          {summary.summary_text}
+                        </div>
                         
                         {summary.achieved_goals && summary.achieved_goals.length > 0 && (
-                          <div className="mt-3">
-                            <p className="text-sm font-medium mb-1">מטרות שהושגו:</p>
+                          <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
+                            <p className="text-sm font-medium mb-1 text-gray-700">מטרות שהושגו:</p>
                             <ul className="list-disc list-inside text-sm text-gray-600">
                               {summary.achieved_goals.map((goal, index) => (
-                                <li key={index}>{goal}</li>
+                                <li key={index} className="py-0.5">{goal}</li>
                               ))}
                             </ul>
                           </div>
@@ -490,7 +543,10 @@ const PlayerProfileView = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-4">אין סיכומי מפגשים זמינים כרגע</p>
+                  <div className="bg-gray-50 rounded-lg p-8 text-center">
+                    <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                    <p className="text-gray-500">אין סיכומי מפגשים זמינים כרגע</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -499,15 +555,23 @@ const PlayerProfileView = () => {
           <TabsContent value="goals">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">המטרות שלי</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  המטרות שלי
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {/* Short-term goals */}
-                <div className="space-y-2 mb-6">
-                  <h3 className="font-medium text-lg border-b pb-2">מטרות קצרות טווח</h3>
+                <div className="space-y-4 mb-8">
+                  <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
+                    <Badge variant="outline" className="font-normal bg-orange-50 text-orange-700 border-orange-200">
+                      קצר טווח
+                    </Badge>
+                    מטרות קצרות טווח
+                  </h3>
                   <div className="space-y-3">
                     {shortTermGoals.map(goal => (
-                      <div key={goal.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
+                      <div key={goal.id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:shadow-sm transition-all border border-gray-100">
                         <div className="flex-1">
                           {editingGoal === goal.id ? (
                             <Textarea 
@@ -516,12 +580,12 @@ const PlayerProfileView = () => {
                               className="min-h-[60px]"
                             />
                           ) : (
-                            <p className={`${goal.status === 'completed' ? 'line-through text-gray-500' : ''}`}>
+                            <p className={`${goal.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-700'}`}>
                               {goal.title}
                             </p>
                           )}
                         </div>
-                        <div className="flex gap-1 flex-shrink-0">
+                        <div className="flex gap-2 flex-shrink-0">
                           {editingGoal === goal.id ? (
                             <Button 
                               size="sm" 
@@ -533,17 +597,19 @@ const PlayerProfileView = () => {
                             <>
                               <Button 
                                 size="icon" 
-                                variant="outline" 
+                                variant="ghost" 
                                 onClick={() => handleEditGoal(goal.id, goal.title)}
+                                className="hover:bg-gray-100"
                               >
-                                <PencilLine className="h-4 w-4" />
+                                <PencilLine className="h-4 w-4 text-gray-500" />
                               </Button>
                               <Button 
-                                size="icon" 
+                                size="sm" 
                                 variant={goal.status === 'completed' ? 'default' : 'outline'}
                                 onClick={() => handleToggleGoalStatus(goal.id, "short")}
+                                className={goal.status === 'completed' ? '' : 'hover:bg-primary/5'}
                               >
-                                <CheckSquare className="h-4 w-4" />
+                                {goal.status === 'completed' ? 'הושלם' : 'סמן כהושלם'}
                               </Button>
                             </>
                           )}
@@ -554,11 +620,16 @@ const PlayerProfileView = () => {
                 </div>
                 
                 {/* Long-term goals */}
-                <div className="space-y-2">
-                  <h3 className="font-medium text-lg border-b pb-2">מטרות ארוכות טווח</h3>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
+                    <Badge variant="outline" className="font-normal bg-blue-50 text-blue-700 border-blue-200">
+                      ארוך טווח
+                    </Badge>
+                    מטרות ארוכות טווח
+                  </h3>
                   <div className="space-y-3">
                     {longTermGoals.map(goal => (
-                      <div key={goal.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
+                      <div key={goal.id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:shadow-sm transition-all border border-gray-100">
                         <div className="flex-1">
                           {editingGoal === goal.id ? (
                             <Textarea 
@@ -567,12 +638,12 @@ const PlayerProfileView = () => {
                               className="min-h-[60px]"
                             />
                           ) : (
-                            <p className={`${goal.status === 'completed' ? 'line-through text-gray-500' : ''}`}>
+                            <p className={`${goal.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-700'}`}>
                               {goal.title}
                             </p>
                           )}
                         </div>
-                        <div className="flex gap-1 flex-shrink-0">
+                        <div className="flex gap-2 flex-shrink-0">
                           {editingGoal === goal.id ? (
                             <Button 
                               size="sm" 
@@ -584,17 +655,19 @@ const PlayerProfileView = () => {
                             <>
                               <Button 
                                 size="icon" 
-                                variant="outline" 
+                                variant="ghost" 
                                 onClick={() => handleEditGoal(goal.id, goal.title)}
+                                className="hover:bg-gray-100"
                               >
-                                <PencilLine className="h-4 w-4" />
+                                <PencilLine className="h-4 w-4 text-gray-500" />
                               </Button>
                               <Button 
-                                size="icon" 
+                                size="sm" 
                                 variant={goal.status === 'completed' ? 'default' : 'outline'}
                                 onClick={() => handleToggleGoalStatus(goal.id, "long")}
+                                className={goal.status === 'completed' ? '' : 'hover:bg-primary/5'}
                               >
-                                <CheckSquare className="h-4 w-4" />
+                                {goal.status === 'completed' ? 'הושלם' : 'סמן כהושלם'}
                               </Button>
                             </>
                           )}
@@ -610,12 +683,31 @@ const PlayerProfileView = () => {
           <TabsContent value="game-prep">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">הכנה למשחק</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-primary" />
+                  הכנה למשחק
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-4">מלא טופס הכנה מנטלית לפני משחק חשוב</p>
-                <Button onClick={() => navigate('/game-prep')}>
+              <CardContent className="flex flex-col items-center md:items-start text-center md:text-right">
+                <div className="max-w-xl w-full mb-6">
+                  <p className="text-gray-600 mb-4">מלא טופס הכנה מנטלית לפני משחק חשוב. הטופס יעזור לך להתכונן באופן מנטלי למשחק ולשפר את הביצועים שלך.</p>
+                </div>
+                
+                <div className="bg-primary/5 rounded-xl p-6 border border-primary/10 w-full max-w-xl shadow-sm mb-6">
+                  <div className="flex flex-col md:flex-row items-center gap-4">
+                    <div className="bg-primary/10 p-3 rounded-full">
+                      <CheckSquare className="h-8 w-8 text-primary" />
+                    </div>
+                    <div className="flex-1 text-center md:text-right">
+                      <h3 className="text-lg font-medium text-gray-900">טופס הכנה מנטלית למשחק</h3>
+                      <p className="text-gray-500 text-sm mt-1">מילוי הטופס יעזור לך להתכונן באופן מיטבי למשחק</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <Button onClick={() => navigate('/game-prep')} className="gap-2">
                   פתח טופס הכנה למשחק
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </CardContent>
             </Card>
