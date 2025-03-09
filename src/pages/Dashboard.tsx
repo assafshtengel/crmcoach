@@ -16,6 +16,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from 'react-router-dom';
 import { SessionFormDialog } from "@/components/sessions/SessionFormDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { AdminMessageForm } from "@/components/admin/AdminMessageForm";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -775,6 +776,8 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          <AdminMessageForm />
         </div>
 
         <SessionFormDialog 

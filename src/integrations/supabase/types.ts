@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_messages: {
+        Row: {
+          id: string
+          message: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          message: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          message?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       auto_video_assignments: {
         Row: {
           assigned_at: string
