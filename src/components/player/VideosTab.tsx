@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,38 +73,21 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           return;
         }
         
-        // Fetch coach videos that should be visible
-        const { data: coachVideos, error: coachVideosError } = await supabase
+        // Fetch all videos that should be visible to the player (both coach and admin videos)
+        // Important: Only fetch videos that are in the visibleVideoIds list
+        const { data: visibleVideos, error: visibleVideosError } = await supabase
           .from("videos")
           .select("*")
           .in("id", visibleVideoIds)
           .order("created_at", { ascending: false });
           
-        if (coachVideosError) throw coachVideosError;
+        if (visibleVideosError) throw visibleVideosError;
         
-        // Fetch admin videos
-        const { data: adminVideos, error: adminVideosError } = await supabase
-          .from("videos")
-          .select("*")
-          .eq("is_admin_video", true)
-          .order("created_at", { ascending: false });
-          
-        if (adminVideosError) throw adminVideosError;
-        
-        // Filter admin videos to only include those that have been assigned or sent
-        const visibleAdminVideos = adminVideos?.filter(video => 
-          visibleVideoIds.includes(video.id)
-        ) || [];
-        
-        // Combine and sort videos
-        const allVideos = [...(coachVideos || []), ...(visibleAdminVideos || [])];
-        allVideos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        
-        setVideos(allVideos);
+        setVideos(visibleVideos || []);
         
         // Set the first video as active if available
-        if (allVideos.length > 0) {
-          setActiveVideo(allVideos[0]);
+        if (visibleVideos && visibleVideos.length > 0) {
+          setActiveVideo(visibleVideos[0]);
         }
       } catch (error) {
         console.error("Error fetching videos:", error);
