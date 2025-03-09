@@ -15,14 +15,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+
 interface Player {
   id: string;
   full_name: string;
 }
+
 interface CoachProfile {
   id: string;
   default_zoom_link: string | null;
 }
+
 interface SessionFormData {
   player_id: string;
   session_date: string;
@@ -31,6 +34,7 @@ interface SessionFormData {
   notes: string;
   meeting_type: 'in_person' | 'zoom';
 }
+
 const NewSessionForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -47,7 +51,6 @@ const NewSessionForm = () => {
     meeting_type: 'in_person'
   });
 
-  // Update the session_date in formData when selectedDate changes
   useEffect(() => {
     if (selectedDate) {
       setFormData(prev => ({
@@ -56,12 +59,12 @@ const NewSessionForm = () => {
       }));
     }
   }, [selectedDate]);
+
   useEffect(() => {
     fetchPlayers();
     fetchDefaultZoomLink();
   }, []);
 
-  // Fetch the coach's default Zoom link if available
   const fetchDefaultZoomLink = async () => {
     try {
       const {
@@ -86,7 +89,6 @@ const NewSessionForm = () => {
     }
   };
 
-  // Apply default Zoom link to the location field when checkbox is checked
   useEffect(() => {
     if (formData.meeting_type === 'zoom' && useDefaultLink && defaultZoomLink) {
       setFormData(prev => ({
@@ -100,6 +102,7 @@ const NewSessionForm = () => {
       }));
     }
   }, [useDefaultLink, defaultZoomLink, formData.meeting_type]);
+
   const fetchPlayers = async () => {
     try {
       const {
@@ -118,10 +121,11 @@ const NewSessionForm = () => {
       if (error) throw error;
       setPlayers(data || []);
     } catch (error: any) {
-      toast.error('שגיאה בטעינת רשימת השחקנים');
+      toast.error('שגיאה ב��עינת רשימת השחקנים');
       console.error('Error fetching players:', error);
     }
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.player_id || !formData.session_date || !formData.session_time) {
@@ -129,8 +133,6 @@ const NewSessionForm = () => {
       return;
     }
 
-    // If meeting_type is zoom but no location (which would be the zoom link),
-    // we should set a default location
     const locationValue = formData.meeting_type === 'zoom' && !formData.location ? 'Zoom meeting link will be generated' : formData.location;
     setLoading(true);
     try {
@@ -158,7 +160,6 @@ const NewSessionForm = () => {
       });
       if (sessionError) throw sessionError;
 
-      // Save the default Zoom link if it's the first time the coach is using a Zoom link
       if (formData.meeting_type === 'zoom' && formData.location && !defaultZoomLink) {
         const saveDefaultLink = window.confirm('האם ברצונך לשמור את קישור הזום כקישור ברירת מחדל לשימוש בפגישות עתידיות?');
         if (saveDefaultLink) {
@@ -177,7 +178,6 @@ const NewSessionForm = () => {
         }
       }
 
-      // Create notification for new session
       const {
         error: notificationError
       } = await supabase.from('notifications').insert({
@@ -195,6 +195,7 @@ const NewSessionForm = () => {
       setLoading(false);
     }
   };
+
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12">
       <div className="max-w-md mx-auto px-4">
         <div className="flex justify-end mb-6">
@@ -232,7 +233,6 @@ const NewSessionForm = () => {
                 setFormData(prev => ({
                   ...prev,
                   meeting_type: value as 'in_person' | 'zoom',
-                  // Clear location when switching to in_person
                   location: value === 'in_person' ? '' : prev.location
                 }));
               }} className="flex space-x-4 rtl:space-x-reverse">
@@ -290,7 +290,6 @@ const NewSessionForm = () => {
                   ...prev,
                   location: e.target.value
                 }));
-                // If using default link, uncheck when manually editing
                 if (useDefaultLink) {
                   setUseDefaultLink(false);
                 }
@@ -310,7 +309,7 @@ const NewSessionForm = () => {
                   ביטול
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? 'שומר...' : 'שמירה'}
+                  {loading ? 'שומר...' : 'קבע מפגש'}
                 </Button>
               </div>
             </form>
@@ -319,4 +318,5 @@ const NewSessionForm = () => {
       </div>
     </div>;
 };
+
 export default NewSessionForm;
