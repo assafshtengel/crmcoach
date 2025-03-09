@@ -38,6 +38,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +56,7 @@ import {
   CheckCircle, 
   ClockIcon, 
   Film, 
+  Info,
   ListChecks, 
   RefreshCw,
   Send,
@@ -352,20 +359,38 @@ export default function AutoVideoManagement() {
               <ArrowLeft className="h-4 w-4" />
               חזרה לניהול כלים
             </Button>
-            <Button
-              onClick={processAutoVideos}
-              disabled={processingVideos}
-              className="gap-2"
-            >
-              {processingVideos ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              שלח סרטונים מוכנים לשליחה
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={processAutoVideos}
+                    disabled={processingVideos}
+                    className="gap-2"
+                  >
+                    {processingVideos ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    שלח סרטונים מוכנים לשליחה כעת
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[300px] text-center">
+                  <p>הסרטונים נשלחים אוטומטית לשחקנים חדשים, אך ניתן ללחוץ כאן כדי לעבד ולשלוח מיידית במקום להמתין לשליחה האוטומטית הבאה</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
+
+        <Card className="bg-blue-50 border-blue-200 mb-2">
+          <CardContent className="flex items-center p-4 gap-3">
+            <Info className="h-5 w-5 text-blue-600 flex-shrink-0" />
+            <p className="text-sm text-blue-700">
+              המערכת שולחת סרטונים אוטומטית לשחקנים חדשים לפי לוח הזמנים שהגדרת. אין צורך ללחוץ על כפתור השליחה אלא אם ברצונך לאלץ שליחה מיידית.
+            </p>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>

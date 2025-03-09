@@ -13,8 +13,10 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Only POST requests are allowed
-  if (req.method !== "POST") {
+  // Allow only POST requests and scheduled cron invocations
+  const isScheduledInvocation = req.headers.get("Authorization")?.includes("Bearer");
+  
+  if (req.method !== "POST" && !isScheduledInvocation) {
     return new Response(
       JSON.stringify({ error: "Method not allowed" }),
       { 
@@ -47,7 +49,7 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    console.log("Starting to process auto video assignments (manual trigger)");
+    console.log("Starting scheduled auto video processing");
     
     // Call the database function to process auto video assignments
     const { data, error } = await supabase.rpc("process_auto_video_assignments");
@@ -73,30 +75,11 @@ serve(async (req) => {
     const sentInLast24h = stats?.length || 0;
     console.log(`Videos sent in last 24 hours: ${sentInLast24h}`);
 
-    // Get recent assignment history
-    const { data: recentAssignments, error: recentError } = await supabase
-      .from("auto_video_assignments")
-      .select(`
-        id, 
-        sent, 
-        scheduled_for, 
-        assigned_at,
-        players:player_id (full_name, email),
-        videos:video_id (title, days_after_registration)
-      `)
-      .eq("sent", true)
-      .order("scheduled_for", { ascending: false })
-      .limit(20);
-
-    if (recentError) {
-      console.error("Error fetching recent assignments:", recentError);
-    }
-
     return new Response(
       JSON.stringify({ 
         success: true, 
-        sent_in_last_24h: sentInLast24h,
-        recent_assignments: recentAssignments || []
+        message: "Scheduled auto video processing completed successfully",
+        sent_in_last_24h: sentInLast24h
       }),
       { 
         status: 200, 
@@ -107,7 +90,7 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error("Error:", error);
+    console.error("Error in scheduled auto video processing:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
