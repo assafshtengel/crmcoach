@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideosTab } from "@/components/player/VideosTab";
-import { Bell, User, LogOut } from "lucide-react";
+import { Bell, User, LogOut, Calendar, Target, FileText, StickyNote } from "lucide-react";
 import { 
   Popover, 
   PopoverContent, 
@@ -42,6 +42,8 @@ const PlayerProfileView = () => {
   const [activeTab, setActiveTab] = useState("profile");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const [sessionSummaries, setSessionSummaries] = useState([]);
 
   useEffect(() => {
     const loadPlayerData = async () => {
@@ -68,6 +70,7 @@ const PlayerProfileView = () => {
 
         setPlayer(data);
         
+        // Load videos and create notifications
         const { data: videosData, error: videosError } = await supabase
           .from("videos")
           .select("*")
@@ -88,6 +91,41 @@ const PlayerProfileView = () => {
           }));
           
           setNotifications(videoNotifications);
+        }
+
+        // Load upcoming sessions
+        if (data.coach_id) {
+          const { data: sessionsData, error: sessionsError } = await supabase
+            .from("sessions")
+            .select("*")
+            .eq("player_id", data.id)
+            .eq("coach_id", data.coach_id)
+            .gte("session_date", new Date().toISOString().split('T')[0])
+            .order("session_date", { ascending: true })
+            .limit(5);
+
+          if (!sessionsError && sessionsData) {
+            setUpcomingSessions(sessionsData);
+          }
+
+          // Load session summaries
+          const { data: summariesData, error: summariesError } = await supabase
+            .from("session_summaries")
+            .select(`
+              *,
+              session:sessions (
+                id,
+                session_date,
+                session_time
+              )
+            `)
+            .eq("coach_id", data.coach_id)
+            .order("created_at", { ascending: false })
+            .limit(5);
+
+          if (!summariesError && summariesData) {
+            setSessionSummaries(summariesData);
+          }
         }
       } catch (error: any) {
         console.error("Error loading player data:", error);
@@ -143,6 +181,11 @@ const PlayerProfileView = () => {
   }
 
   const profileImageUrl = player.profile_image || 'https://via.placeholder.com/150';
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('he-IL');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -237,7 +280,7 @@ const PlayerProfileView = () => {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile">
               <User className="h-4 w-4 mr-2" />
               פרופיל
@@ -249,6 +292,18 @@ const PlayerProfileView = () => {
                   {unreadCount}
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="sessions">
+              <Calendar className="h-4 w-4 mr-2" />
+              מפגשים
+            </TabsTrigger>
+            <TabsTrigger value="summaries">
+              <FileText className="h-4 w-4 mr-2" />
+              סיכומים
+            </TabsTrigger>
+            <TabsTrigger value="goals">
+              <Target className="h-4 w-4 mr-2" />
+              מטרות
             </TabsTrigger>
           </TabsList>
           
@@ -280,6 +335,18 @@ const PlayerProfileView = () => {
                 </div>
               </CardContent>
             </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">הכנה למשחק</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">מלא טופס הכנה מנטלית לפני משחק חשוב</p>
+                <Button onClick={() => navigate('/game-prep')}>
+                  טופס הכנה למשחק
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
           
           <TabsContent value="videos">
@@ -292,6 +359,118 @@ const PlayerProfileView = () => {
                 }
               }}
             />
+          </TabsContent>
+          
+          <TabsContent value="sessions">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">מפגשים מתוכננים</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {upcomingSessions.length > 0 ? (
+                  <div className="space-y-4">
+                    {upcomingSessions.map((session) => (
+                      <div key={session.id} className="p-4 border rounded-lg">
+                        <div className="flex justify-between">
+                          <div>
+                            <p className="font-semibold">{formatDate(session.session_date)}</p>
+                            <p className="text-sm text-gray-500">{session.session_time}</p>
+                          </div>
+                          {session.location && (
+                            <div className="text-right">
+                              <p className="text-sm font-medium">מיקום</p>
+                              <p className="text-sm">{session.location}</p>
+                            </div>
+                          )}
+                        </div>
+                        {session.notes && (
+                          <div className="mt-2 pt-2 border-t">
+                            <p className="text-sm text-gray-600">{session.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">אין מפגשים מתוכננים כרגע</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="summaries">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">סיכומי מפגשים אחרונים</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {sessionSummaries.length > 0 ? (
+                  <div className="space-y-4">
+                    {sessionSummaries.map((summary) => (
+                      <div key={summary.id} className="p-4 border rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <p className="font-semibold">
+                            {summary.session && formatDate(summary.session.session_date)}
+                          </p>
+                          <Badge variant="outline">דירוג התקדמות: {summary.progress_rating}/5</Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 line-clamp-3">{summary.summary_text}</p>
+                        
+                        {summary.achieved_goals && summary.achieved_goals.length > 0 && (
+                          <div className="mt-3">
+                            <p className="text-sm font-medium mb-1">מטרות שהושגו:</p>
+                            <ul className="list-disc list-inside text-sm text-gray-600">
+                              {summary.achieved_goals.slice(0, 2).map((goal, index) => (
+                                <li key={index}>{goal}</li>
+                              ))}
+                              {summary.achieved_goals.length > 2 && <li>...</li>}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">אין סיכומי מפגשים זמינים כרגע</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="goals">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">המטרות שלי</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 mb-4">
+                  <h3 className="font-medium">מטרות קצרות טווח</h3>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>לשפר דיוק בבעיטות חופשיות</li>
+                      <li>לעבוד על אסרטיביות בהגנה</li>
+                      <li>להגביר יכולות קבלת החלטות תחת לחץ</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="font-medium">מטרות ארוכות טווח</h3>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>להיות שחקן הרכב קבוע בקבוצה</li>
+                      <li>לשפר מדדים גופניים כלליים ב-15%</li>
+                      <li>להפוך למנהיג בקבוצה</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <Button className="mt-4 w-full">
+                  <StickyNote className="h-4 w-4 mr-2" />
+                  עדכון מטרות
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
