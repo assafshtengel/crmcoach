@@ -1,4 +1,4 @@
-<lov-code>
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -612,172 +612,24 @@ export default function VideoManagement() {
               {video.category && (
                 <Badge variant="secondary" className="mt-1">{video.category}</Badge>
               )}
+            </CardHeader>
+            <CardContent className="pb-2">
+              {video.description && (
+                <p className="text-sm text-gray-600 line-clamp-2">{video.description}</p>
+              )}
+              <div className="mt-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full text-blue-600 border-blue-200"
+                  onClick={() => openVideoUrl(video.url)}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 mr-1 rtl:ml-1 rtl:mr-0" />
+                  צפה בסרטון
+                </Button>
+              </div>
             </CardContent>
             <CardFooter className="pt-2 border-t flex justify-between flex-wrap gap-2">
-              <div className="flex space-x-2 rtl:space-x-reverse">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleEditClick(video)}
-                  title="ערוך סרטון"
-                >
-                  <Pencil className="h-4 w-4 text-gray-500" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleDeleteClick(video)}
-                  className="text-destructive"
-                  title="מחק סרטון"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleAutoScheduleClick(video)}
-                  title="הגדר תזמון אוטומטי"
-                  className={isAutoScheduled(video) ? "text-green-600" : "text-gray-500"}
-                >
-                  <Calendar className="h-4 w-4" />
-                </Button>
-              </div>
-              <Button 
-                variant="secondary" 
-                size="sm"
-                onClick={() => handleAssignClick(video)}
-              >
-                <User className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
-                הקצה לשחקנים
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl flex items-center">
-            <Film className="h-5 w-5 mr-2 rtl:ml-2 rtl:mr-0" />
-            ניהול סרטוני וידאו
-          </CardTitle>
-          <CardDescription>
-            נהל את מאגר הסרטונים, הקצה אותם לשחקנים או הגדר תזמון אוטומטי
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={currentTab} onValueChange={setCurrentTab}>
-            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-              <TabsList>
-                <TabsTrigger value="admin">סרטוני מנהל</TabsTrigger>
-                <TabsTrigger value="coach">הסרטונים שלי</TabsTrigger>
-              </TabsList>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={triggerProcessAutoAssignments}
-                  title="הפעל שליחה אוטומטית של סרטונים מתוזמנים"
-                >
-                  <Clock className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
-                  שלח סרטונים מתוזמנים
-                </Button>
-                <Button onClick={() => { resetForm(); setOpenAddDialog(true); }}>
-                  <Plus className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
-                  הוסף סרטון
-                </Button>
-              </div>
-            </div>
-
-            <TabsContent value="admin" className="mt-2">
-              {renderVideoCards(adminVideos)}
-            </TabsContent>
-            
-            <TabsContent value="coach" className="mt-2">
-              {renderVideoCards(videos)}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      <Dialog open={openAddDialog} onOpenChange={setOpenAddDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>הוסף סרטון חדש</DialogTitle>
-            <DialogDescription>
-              הזן את פרטי הסרטון להוספה למאגר
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">כותרת הסרטון</Label>
-              <Input
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                placeholder="כותרת הסרטון"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="url">קישור לסרטון</Label>
-              <Input
-                id="url"
-                name="url"
-                value={formData.url}
-                onChange={handleInputChange}
-                placeholder="https://example.com/video"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">תיאור</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                placeholder="תיאור הסרטון"
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">קטגוריה</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => handleSelectChange("category", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="בחר קטגוריה" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mental">mentorלי</SelectItem>
-                  <SelectItem value="technical">טכני</SelectItem>
-                  <SelectItem value="tactical">טקטי</SelectItem>
-                  <SelectItem value="physical">פיזי</SelectItem>
-                  <SelectItem value="other">אחר</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {isAdmin && currentTab === "admin" && (
-              <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                <input
-                  type="checkbox"
-                  id="is_admin_video"
-                  checked={true}
-                  disabled
-                  className="rounded border-gray-300"
-                />
-                <Label htmlFor="is_admin_video">סרטון מנהל (זמין לכל המאמנים)</Label>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="pt-2 border-t flex justify-between">
               <div className="flex space-x-2 rtl:space-x-reverse">
                 <Button 
                   variant="ghost" 
@@ -943,4 +795,258 @@ export default function VideoManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenAddDialog(false)}>ביטול</Button>
-            
+            <Button type="submit" onClick={handleAddVideo} disabled={addingVideo}>
+              {addingVideo ? (
+                <>
+                  <div className="h-4 w-4 animate-spin mr-2 border-2 border-current border-t-transparent rounded-full"></div>
+                  מוסיף...
+                </>
+              ) : (
+                "הוסף סרטון"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>ערוך סרטון</DialogTitle>
+            <DialogDescription>
+              ערוך את פרטי הסרטון
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">כותרת הסרטון</Label>
+              <Input
+                id="edit-title"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                placeholder="כותרת הסרטון"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-url">קישור לסרטון</Label>
+              <Input
+                id="edit-url"
+                name="url"
+                value={formData.url}
+                onChange={handleInputChange}
+                placeholder="https://example.com/video"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">תיאור</Label>
+              <Textarea
+                id="edit-description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="תיאור הסרטון"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-category">קטגוריה</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => handleSelectChange("category", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר קטגוריה" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mental">mentorלי</SelectItem>
+                  <SelectItem value="technical">טכני</SelectItem>
+                  <SelectItem value="tactical">טקטי</SelectItem>
+                  <SelectItem value="physical">פיזי</SelectItem>
+                  <SelectItem value="other">אחר</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenEditDialog(false)}>ביטול</Button>
+            <Button type="submit" onClick={handleEditVideo}>
+              שמור שינויים
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">מחק סרטון</DialogTitle>
+            <DialogDescription>
+              האם אתה בטוח שברצונך למחוק את הסרטון? פעולה זו אינה ניתנת לביטול ותסיר את הסרטון מכל השחקנים.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedVideo && (
+              <div className="bg-gray-50 p-3 rounded-md">
+                <p className="font-semibold">{selectedVideo.title}</p>
+                {selectedVideo.description && (
+                  <p className="text-sm text-gray-600 mt-1">{selectedVideo.description}</p>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>
+              ביטול
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteVideo}>
+              מחק סרטון
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openAssignDialog} onOpenChange={setOpenAssignDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>הקצה סרטון לשחקנים</DialogTitle>
+            <DialogDescription>
+              בחר את השחקנים שיקבלו את הסרטון
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedVideo && (
+              <div className="bg-gray-50 p-3 rounded-md mb-4">
+                <p className="font-semibold">{selectedVideo.title}</p>
+                {selectedVideo.description && (
+                  <p className="text-sm text-gray-600 mt-1">{selectedVideo.description}</p>
+                )}
+              </div>
+            )}
+            <div className="space-y-1">
+              <Label>שחקנים</Label>
+              <ScrollArea className="h-60 mt-2 border rounded-md p-2">
+                {players.length > 0 ? (
+                  <div className="space-y-2">
+                    {players.map((player) => (
+                      <div key={player.id} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`player-${player.id}`}
+                          checked={selectedPlayers.includes(player.id)}
+                          onChange={() => togglePlayerSelection(player.id)}
+                          className="mr-2 rounded border-gray-300"
+                        />
+                        <Label htmlFor={`player-${player.id}`} className="flex-1 cursor-pointer">
+                          {player.full_name}
+                        </Label>
+                        {playersWithAssignments[player.id] && (
+                          <Badge variant="outline" className="bg-green-100 text-green-800 ml-2 text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" /> הוקצה
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full py-8">
+                    <AlertCircle className="h-8 w-8 text-gray-300 mb-2" />
+                    <p className="text-gray-500 text-center">אין שחקנים זמינים</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>
+              ביטול
+            </Button>
+            <Button 
+              onClick={handleAssignVideo} 
+              disabled={selectedPlayers.length === 0 || players.length === 0}
+            >
+              <User className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
+              הקצה ל-{selectedPlayers.length} שחקנים
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>הגדרת תזמון אוטומטי</DialogTitle>
+            <DialogDescription>
+              הגדר מתי הסרטון יישלח אוטומטית לשחקנים חדשים
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedVideo && (
+              <div className="bg-gray-50 p-3 rounded-md mb-4">
+                <p className="font-semibold">{selectedVideo.title}</p>
+              </div>
+            )}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="auto-schedule">הפעל תזמון אוטומטי</Label>
+                  <p className="text-sm text-muted-foreground">שלח סרטון זה אוטומטית לכל שחקן חדש</p>
+                </div>
+                <Switch 
+                  id="auto-schedule" 
+                  checked={autoScheduleData.is_auto_scheduled}
+                  onCheckedChange={(checked) => handleAutoScheduleChange("is_auto_scheduled", checked)}
+                />
+              </div>
+
+              {autoScheduleData.is_auto_scheduled && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="days-after">שלח לאחר (ימים מרישום)</Label>
+                    <div className="flex items-center">
+                      <Input
+                        id="days-after"
+                        type="number"
+                        min={1}
+                        value={autoScheduleData.days_after_registration}
+                        onChange={(e) => handleAutoScheduleChange("days_after_registration", parseInt(e.target.value) || 1)}
+                        className="max-w-[100px]"
+                      />
+                      <span className="mr-2 text-sm text-gray-500">ימים לאחר רישום השחקן</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="sequence-order">סדר בסדרת הסרטונים</Label>
+                    <div className="flex items-center">
+                      <Input
+                        id="sequence-order"
+                        type="number"
+                        min={1}
+                        value={autoScheduleData.auto_sequence_order}
+                        onChange={(e) => handleAutoScheduleChange("auto_sequence_order", parseInt(e.target.value) || 1)}
+                        className="max-w-[100px]"
+                      />
+                      <span className="mr-2 text-sm text-gray-500">מספר סידורי בסדרת הסרטונים</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>
+              ביטול
+            </Button>
+            <Button onClick={handleAutoScheduleSave}>
+              <Calendar className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
+              שמור הגדרות תזמון
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
