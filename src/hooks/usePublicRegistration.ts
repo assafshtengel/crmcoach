@@ -19,6 +19,7 @@ export const usePublicRegistration = () => {
   const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState({ title: "", message: "", isError: false });
   const [showOtherSportField, setShowOtherSportField] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState("");
   
   const currentDateTime = format(new Date(), 'dd/MM/yyyy HH:mm');
 
@@ -87,6 +88,15 @@ export const usePublicRegistration = () => {
     fetchLinkData();
   }, [linkId, navigate, toast]);
 
+  const generatePassword = (length: number = 8): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
   const showFeedback = (title: string, message: string, isError: boolean = false) => {
     setFeedbackMessage({
       title,
@@ -146,6 +156,10 @@ export const usePublicRegistration = () => {
           ? 'אחר'
           : values.sportField;
 
+      // Generate a random password for the player
+      const password = generatePassword(10);
+      setGeneratedPassword(password);
+
       // Prepare player data
       const playerData = {
         coach_id: linkData.coach.id,
@@ -163,7 +177,8 @@ export const usePublicRegistration = () => {
         notes: values.notes,
         sport_field: finalSportField,
         registration_link_id: linkId,
-        registration_timestamp: values.registrationTimestamp
+        registration_timestamp: values.registrationTimestamp,
+        password: password // Store the generated password
       };
 
       console.log("Inserting player data for coach ID:", linkData.coach.id);
@@ -213,7 +228,7 @@ export const usePublicRegistration = () => {
         // Continue even if notification creation fails
       }
 
-      // Show success feedback
+      // Show success feedback with password info
       showFeedback(
         "נרשמת בהצלחה!",
         `תודה על הרישום! פרטיך נשלחו למאמן ${linkData.coach.full_name} בהצלחה.`,
@@ -252,6 +267,7 @@ export const usePublicRegistration = () => {
     showOtherSportField,
     handleSportFieldChange,
     handleCloseWindow,
-    onSubmit
+    onSubmit,
+    generatedPassword
   };
 };

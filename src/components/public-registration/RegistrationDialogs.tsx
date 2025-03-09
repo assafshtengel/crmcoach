@@ -16,6 +16,7 @@ interface RegistrationDialogsProps {
   coachName?: string;
   handleCloseWindow: () => void;
   onFeedbackClose?: () => void;
+  generatedPassword?: string;
 }
 
 export const RegistrationDialogs = ({
@@ -26,7 +27,8 @@ export const RegistrationDialogs = ({
   setShowSuccessDialog,
   coachName,
   handleCloseWindow,
-  onFeedbackClose
+  onFeedbackClose,
+  generatedPassword
 }: RegistrationDialogsProps) => {
   // Handle feedback dialog close
   const handleFeedbackClose = () => {
@@ -53,7 +55,8 @@ export const RegistrationDialogs = ({
         showSuccessDialog={showSuccessDialog} 
         setShowSuccessDialog={setShowSuccessDialog} 
         coachName={coachName} 
-        handleCloseWindow={handleCloseWindow} 
+        handleCloseWindow={handleCloseWindow}
+        generatedPassword={generatedPassword}
       />
     </>
   );

@@ -20,7 +20,8 @@ const PublicRegistrationForm = () => {
     showOtherSportField,
     handleSportFieldChange,
     handleCloseWindow,
-    onSubmit
+    onSubmit,
+    generatedPassword
   } = usePublicRegistration();
 
   if (isLoading) {
@@ -55,6 +56,7 @@ const PublicRegistrationForm = () => {
         coachName={linkData?.coach?.full_name}
         handleCloseWindow={handleCloseWindow}
         onFeedbackClose={() => setShowSuccessDialog(true)}
+        generatedPassword={generatedPassword}
       />
     </div>
   );
