@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface Player {
   id: string;
@@ -26,6 +27,8 @@ interface SessionFormData {
   session_time: string;
   player_id: string;
   notes: string;
+  location: string;
+  meeting_type: 'in_person' | 'zoom';
 }
 
 const EditSessionForm = () => {
@@ -39,7 +42,9 @@ const EditSessionForm = () => {
     session_date: '',
     session_time: '',
     player_id: '',
-    notes: ''
+    notes: '',
+    location: '',
+    meeting_type: 'in_person'
   });
 
   // Fetch players
@@ -81,7 +86,9 @@ const EditSessionForm = () => {
           session_date,
           session_time,
           notes,
-          player_id
+          player_id,
+          location,
+          meeting_type
         `)
         .eq('id', sessionId)
         .single();
@@ -97,7 +104,9 @@ const EditSessionForm = () => {
           session_date: sessionData.session_date,
           session_time: sessionData.session_time,
           player_id: sessionData.player_id,
-          notes: sessionData.notes || ''
+          notes: sessionData.notes || '',
+          location: sessionData.location || '',
+          meeting_type: sessionData.meeting_type || 'in_person'
         });
       }
       setIsLoading(false);
@@ -116,14 +125,17 @@ const EditSessionForm = () => {
           session_date: formData.session_date,
           session_time: formData.session_time,
           player_id: formData.player_id,
-          notes: formData.notes
+          notes: formData.notes,
+          location: formData.location,
+          meeting_type: formData.meeting_type
         })
         .eq('id', sessionId);
 
       if (error) throw error;
 
       const playerName = players.find(p => p.id === formData.player_id)?.full_name;
-      toast.success(`המפגש עם ${playerName} עודכן בהצלחה!`);
+      const meetingTypeText = formData.meeting_type === 'in_person' ? 'פרונטלי' : 'בזום';
+      toast.success(`המפגש ${meetingTypeText} עם ${playerName} עודכן בהצלחה!`);
       navigate('/sessions-list');
     } catch (error) {
       toast.error('שגיאה בעדכון המפגש');
@@ -202,6 +214,41 @@ const EditSessionForm = () => {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>סוג מפגש</Label>
+                <RadioGroup 
+                  value={formData.meeting_type} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_type: value as 'in_person' | 'zoom' }))}
+                  className="flex space-x-4 rtl:space-x-reverse"
+                >
+                  <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                    <RadioGroupItem value="in_person" id="r-in_person" />
+                    <Label htmlFor="r-in_person" className="cursor-pointer">פרונטלי</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                    <RadioGroupItem value="zoom" id="r-zoom" />
+                    <Label htmlFor="r-zoom" className="cursor-pointer">זום</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">
+                  {formData.meeting_type === 'in_person' ? 'מיקום' : 'קישור לזום (אופציונלי)'}
+                </Label>
+                <Input
+                  id="location"
+                  name="location"
+                  type="text"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  placeholder={formData.meeting_type === 'in_person' 
+                    ? "הכנס את מיקום המפגש" 
+                    : "הכנס קישור לפגישת זום (אופציונלי)"
+                  }
+                />
               </div>
 
               <div className="space-y-2">

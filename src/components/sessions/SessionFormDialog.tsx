@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/calendar/Calendar';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Form, FormField, FormItem, FormControl } from '@/components/ui/form';
 
 interface SessionFormDialogProps {
   open: boolean;
@@ -15,6 +18,7 @@ interface SessionFormDialogProps {
     session_time: string;
     location?: string;
     notes?: string;
+    meeting_type: 'in_person' | 'zoom';
   }) => Promise<void>;
 }
 
@@ -26,6 +30,7 @@ export function SessionFormDialog({
   const [events, setEvents] = React.useState([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [meetingType, setMeetingType] = useState<'in_person' | 'zoom'>('in_person');
 
   React.useEffect(() => {
     // Here you would typically fetch events
@@ -52,7 +57,8 @@ export function SessionFormDialog({
         session_date: eventData.start.split('T')[0],
         session_time: eventData.start.split('T')[1].substring(0, 5), // Ensure HH:MM format
         location: eventData.extendedProps.location || '',
-        notes: eventData.extendedProps.notes || ''
+        notes: eventData.extendedProps.notes || '',
+        meeting_type: meetingType
       };
       
       console.log('Sending session data to parent:', sessionData);
@@ -82,7 +88,26 @@ export function SessionFormDialog({
             בחר תאריך, שעה ומלא את הפרטים הנדרשים
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
+        
+        <div className="py-4 space-y-4">
+          <div className="space-y-2">
+            <Label className="block text-sm font-medium">סוג מפגש</Label>
+            <RadioGroup 
+              value={meetingType} 
+              onValueChange={(value) => setMeetingType(value as 'in_person' | 'zoom')}
+              className="flex space-x-4 rtl:space-x-reverse"
+            >
+              <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                <RadioGroupItem value="in_person" id="in_person" />
+                <Label htmlFor="in_person" className="cursor-pointer">פרונטלי</Label>
+              </div>
+              <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                <RadioGroupItem value="zoom" id="zoom" />
+                <Label htmlFor="zoom" className="cursor-pointer">זום</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
           {loading ? (
             <div className="text-center py-4">טוען...</div>
           ) : (
