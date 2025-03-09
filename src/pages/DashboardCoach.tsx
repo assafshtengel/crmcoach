@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
@@ -1133,6 +1133,26 @@ const DashboardCoach = () => {
               >
                 <ClipboardCheck className="h-4 w-4 mr-2" />
                 הערך שחקן
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB] cursor-pointer"
+            onClick={() => navigate('/mental-library')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">הספרייה המנטאלית</CardTitle>
+              <BookOpen className="h-5 w-5 text-[#3498DB]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">רשימת ספרים מומלצים בתחום הפסיכולוגיה של הספורט</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#3498DB] hover:bg-[#2980b9]"
+              >
+                <BookOpen className="h-4 w-4 mr-2" />
+                צפה בספרייה
               </Button>
             </CardContent>
           </Card>
