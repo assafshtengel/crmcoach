@@ -28,12 +28,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
+  AlertCircle,
   ArrowLeft, 
   Calendar, 
   CheckCircle, 
@@ -41,7 +52,8 @@ import {
   Film, 
   ListChecks, 
   RefreshCw,
-  Send
+  Send,
+  Trash2,
 } from "lucide-react";
 
 type VideoWithSchedule = {
@@ -79,6 +91,7 @@ export default function AutoVideoManagement() {
   const [loading, setLoading] = useState(true);
   const [processingVideos, setProcessingVideos] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<VideoWithSchedule | null>(null);
   const [stats, setStats] = useState({
     totalScheduled: 0,
@@ -103,7 +116,28 @@ export default function AutoVideoManagement() {
         .order('auto_sequence_order', { ascending: true, nullsFirst: true });
 
       if (videosError) throw videosError;
-      setVideos(videosData || []);
+      
+      // Check for duplicates and log them for debugging
+      const videoIds = new Set();
+      const duplicates = [];
+      videosData?.forEach(video => {
+        if (videoIds.has(video.id)) {
+          duplicates.push(video);
+        } else {
+          videoIds.add(video.id);
+        }
+      });
+      
+      if (duplicates.length > 0) {
+        console.log("Found duplicate videos:", duplicates);
+      }
+      
+      // Remove duplicates from the data
+      const uniqueVideos = videosData?.filter((video, index, self) =>
+        index === self.findIndex((v) => v.id === video.id)
+      );
+      
+      setVideos(uniqueVideos || []);
 
       // Fetch auto assignments history
       const { data: assignmentsData, error: assignmentsError } = await supabase
@@ -162,6 +196,76 @@ export default function AutoVideoManagement() {
   const handleEditSchedule = (video: VideoWithSchedule) => {
     setSelectedVideo(video);
     setOpenEditDialog(true);
+  };
+
+  const handleDeleteVideo = (video: VideoWithSchedule) => {
+    setSelectedVideo(video);
+    setOpenDeleteDialog(true);
+  };
+
+  const confirmDeleteVideo = async () => {
+    if (!selectedVideo) return;
+    
+    try {
+      // First delete any auto assignments
+      const { error: autoAssignError } = await supabase
+        .from('auto_video_assignments')
+        .delete()
+        .eq('video_id', selectedVideo.id);
+        
+      if (autoAssignError) throw autoAssignError;
+      
+      // Then check if we need to remove player video assignments
+      const { data: playerVideos, error: pvError } = await supabase
+        .from('player_videos')
+        .select('id, player_id')
+        .eq('video_id', selectedVideo.id);
+        
+      if (pvError) throw pvError;
+      
+      // Decrement player video count for each assignment
+      for (const pv of (playerVideos || [])) {
+        await supabase.rpc('decrement_player_video_count', { 
+          player_id_param: pv.player_id 
+        });
+      }
+      
+      // Delete player video assignments
+      if (playerVideos && playerVideos.length > 0) {
+        const { error: deleteAssignError } = await supabase
+          .from('player_videos')
+          .delete()
+          .eq('video_id', selectedVideo.id);
+          
+        if (deleteAssignError) throw deleteAssignError;
+      }
+      
+      // Finally delete the video itself
+      const { error: deleteError } = await supabase
+        .from('videos')
+        .delete()
+        .eq('id', selectedVideo.id);
+        
+      if (deleteError) throw deleteError;
+      
+      toast({
+        title: "הסרטון נמחק בהצלחה",
+        description: "הסרטון ותזמוניו האוטומטיים הוסרו מהמערכת",
+      });
+      
+      // Refresh data
+      fetchData();
+      
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה במחיקת הסרטון",
+        description: "לא ניתן למחוק את הסרטון. נסה שוב מאוחר יותר.",
+      });
+    } finally {
+      setOpenDeleteDialog(false);
+    }
   };
 
   const handleScheduleSave = async () => {
@@ -322,7 +426,7 @@ export default function AutoVideoManagement() {
                         <TableHead>כותרת הסרטון</TableHead>
                         <TableHead className="w-32 text-center">ימים לאחר רישום</TableHead>
                         <TableHead className="w-32 text-center">סטטוס</TableHead>
-                        <TableHead className="w-20 text-center">פעולות</TableHead>
+                        <TableHead className="w-24 text-center">פעולות</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -357,15 +461,26 @@ export default function AutoVideoManagement() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => handleEditSchedule(video)}
-                            >
-                              <span className="sr-only">ערוך תזמון</span>
-                              <Calendar className="h-4 w-4" />
-                            </Button>
+                            <div className="flex justify-center space-x-2 rtl:space-x-reverse">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => handleEditSchedule(video)}
+                              >
+                                <span className="sr-only">ערוך תזמון</span>
+                                <Calendar className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-100"
+                                onClick={() => handleDeleteVideo(video)}
+                              >
+                                <span className="sr-only">מחק סרטון</span>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -560,6 +675,36 @@ export default function AutoVideoManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* דיאלוג אישור מחיקה */}
+      <AlertDialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>האם אתה בטוח שברצונך למחוק את הסרטון?</AlertDialogTitle>
+            <AlertDialogDescription>
+              פעולה זו תמחק את הסרטון מכל התזמונים האוטומטיים וגם מהשחקנים שהסרטון הוקצה להם. פעולה זו אינה ניתנת לביטול.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {selectedVideo && (
+            <div className="bg-gray-50 p-3 rounded-md my-2">
+              <div className="font-semibold">{selectedVideo.title}</div>
+              {selectedVideo.description && (
+                <p className="text-sm text-gray-600 mt-1">{selectedVideo.description}</p>
+              )}
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteVideo}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              <Trash2 className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
+              מחק סרטון
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
