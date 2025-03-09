@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send } from "lucide-react";
+import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { AdminMessageForm } from "@/components/admin/AdminMessageForm";
+import { BeliefBreakingCard } from "@/components/ui/BeliefBreakingCard";
 
 const Index = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -47,7 +48,6 @@ const Index = () => {
     try {
       console.log("Fetching videos for player:", userId);
       
-      // Fetch assigned videos for this player
       const { data: assignedVideoData, error: assignedError } = await supabase
         .from('player_videos')
         .select(`
@@ -72,7 +72,6 @@ const Index = () => {
       console.log("Assigned videos fetched:", assignedVideoData);
       setAssignedVideos(assignedVideoData || []);
       
-      // Fetch all videos (admin + coach videos)
       const { data: allVideoData, error: allError } = await supabase
         .from('videos')
         .select('*')
@@ -116,7 +115,6 @@ const Index = () => {
         throw error;
       }
       
-      // Update the local state
       setAssignedVideos(prev => 
         prev.map(video => 
           video.id === playerVideoId 
@@ -187,7 +185,8 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Add AdminMessageForm in a card before the Video Card */}
+          <BeliefBreakingCard />
+          
           <Card className="bg-white/90 shadow-md">
             <CardHeader className="bg-primary/10 py-4 rounded-t-lg border-b border-primary/10">
               <div className="flex items-center justify-between">
@@ -200,7 +199,6 @@ const Index = () => {
             </CardContent>
           </Card>
           
-          {/* Video Card */}
           <Card className="bg-white shadow-lg border-primary/20 overflow-visible">
             <CardHeader className="bg-primary/10 py-4 rounded-t-lg border-b border-primary/10">
               <div className="flex items-center justify-between">
