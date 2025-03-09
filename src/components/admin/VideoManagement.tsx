@@ -47,6 +47,7 @@ export default function VideoManagement() {
   const [players, setPlayers] = useState<any[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addingVideo, setAddingVideo] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -86,25 +87,38 @@ export default function VideoManagement() {
     setLoading(true);
 
     try {
+      console.log("Fetching videos...");
+      
       // Fetch admin videos
       const { data: adminVideoData, error: adminError } = await supabase
         .from('videos')
         .select('*')
         .eq('is_admin_video', true);
 
-      if (adminError) throw adminError;
+      if (adminError) {
+        console.error("Error fetching admin videos:", adminError);
+        throw adminError;
+      }
+      
+      console.log("Admin videos fetched:", adminVideoData);
       setAdminVideos(adminVideoData || []);
 
       // Fetch coach's own videos
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        console.log("Current user ID:", user.id);
         const { data: coachVideoData, error: coachError } = await supabase
           .from('videos')
           .select('*')
           .eq('coach_id', user.id)
           .eq('is_admin_video', false);
 
-        if (coachError) throw coachError;
+        if (coachError) {
+          console.error("Error fetching coach videos:", coachError);
+          throw coachError;
+        }
+        
+        console.log("Coach videos fetched:", coachVideoData);
         setVideos(coachVideoData || []);
       }
     } catch (error) {
@@ -163,9 +177,20 @@ export default function VideoManagement() {
   };
 
   const handleAddVideo = async () => {
+    if (addingVideo) return; // Prevent multiple submissions
+    setAddingVideo(true);
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not logged in');
+      if (!user) {
+        console.error("No authenticated user found");
+        toast({
+          title: "שגיאה בהוספת סרטון",
+          description: "חובה להיות מחובר למערכת",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Validate required fields
       if (!formData.title || !formData.url) {
@@ -193,8 +218,8 @@ export default function VideoManagement() {
       const videoData = {
         title: formData.title,
         url: formData.url,
-        description: formData.description,
-        category: formData.category,
+        description: formData.description || null,
+        category: formData.category || null,
         is_admin_video: isAdmin && currentTab === "admin",
         coach_id: user.id, // Explicitly set the coach_id to the current user's ID
       };
@@ -220,7 +245,7 @@ export default function VideoManagement() {
 
       resetForm();
       setOpenAddDialog(false);
-      fetchVideos();
+      await fetchVideos(); // Refresh the videos list
     } catch (error: any) {
       console.error('Error adding video:', error);
       toast({
@@ -228,6 +253,8 @@ export default function VideoManagement() {
         description: error.message || "לא ניתן להוסיף את הסרטון",
         variant: "destructive",
       });
+    } finally {
+      setAddingVideo(false);
     }
   };
 
@@ -602,7 +629,12 @@ export default function VideoManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenAddDialog(false)}>ביטול</Button>
-            <Button onClick={handleAddVideo}>הוסף סרטון</Button>
+            <Button 
+              onClick={handleAddVideo}
+              disabled={addingVideo}
+            >
+              {addingVideo ? 'מוסיף...' : 'הוסף סרטון'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
