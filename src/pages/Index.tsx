@@ -1,9 +1,10 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink } from "lucide-react";
+import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -178,12 +179,39 @@ const Index = () => {
         </div>
         
         <div className="grid grid-cols-1 gap-6">
+          {/* Mental Prep Form */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl transform -rotate-1"></div>
             <div className="relative">
               <MentalPrepForm />
             </div>
           </div>
+          
+          {/* New Belief Breaking Techniques Card */}
+          <Card className="bg-white shadow-md overflow-hidden border border-purple-100">
+            <CardHeader className="bg-purple-50 py-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-semibold text-purple-800">
+                  שבירת אמונות מגבילות
+                </CardTitle>
+                <BrainCircuit className="h-6 w-6 text-purple-600" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-col gap-4 items-center">
+                <p className="text-gray-700 text-center">
+                  למד כיצד לזהות ולשבור אמונות מגבילות שמונעות ממך להתקדם
+                </p>
+                <Button 
+                  className="bg-purple-600 hover:bg-purple-700 transition-colors w-full"
+                  onClick={() => window.open("https://thework.com/wp-content/uploads/2019/02/hebrew_JYT.pdf", "_blank")}
+                >
+                  פתיחת טופס שבירת אמונות
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
           
           <BeliefBreakingCard />
           
@@ -196,6 +224,31 @@ const Index = () => {
             </CardHeader>
             <CardContent className="pt-6">
               <AdminMessageForm />
+            </CardContent>
+          </Card>
+          
+          {/* New Mental Assessment Card */}
+          <Card className="bg-white shadow-md overflow-hidden border border-indigo-100">
+            <CardHeader className="bg-indigo-50 py-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-semibold text-indigo-800">
+                  הערכת שחקן מנטלית
+                </CardTitle>
+                <FileCheck className="h-6 w-6 text-indigo-600" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex flex-col gap-4 items-center">
+                <p className="text-gray-700 text-center">
+                  בצע הערכה מנטלית ומדוד את התקדמותך בתחומים השונים
+                </p>
+                <Button 
+                  className="bg-indigo-600 hover:bg-indigo-700 transition-colors w-full"
+                  onClick={() => navigate("/player-evaluation")}
+                >
+                  בצע הערכת שחקן חדשה
+                </Button>
+              </div>
             </CardContent>
           </Card>
           
