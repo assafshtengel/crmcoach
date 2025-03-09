@@ -1204,31 +1204,12 @@ const DashboardCoach = () => {
         <Card className="bg-white/90 shadow-lg">
           <CardHeader className="bg-primary/10 py-4 rounded-t-lg border-b border-primary/10">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-semibold text-primary">סרטוני וידאו</CardTitle>
-              <Film className="h-6 w-6 text-primary" />
+              <CardTitle className="text-xl font-semibold text-primary">שליחת הודעה למנהלים</CardTitle>
+              <Send className="h-6 w-6 text-primary" />
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            <Tabs defaultValue="assigned" className="w-full">
-              <TabsList className="w-full mb-4">
-                <TabsTrigger value="assigned" className="flex-1">סרטונים שהוקצו לי</TabsTrigger>
-                <TabsTrigger value="all" className="flex-1">כל הסרטונים</TabsTrigger>
-              </TabsList>
-              <TabsContent value="assigned" className="space-y-4">
-                <div className="text-center py-6 text-gray-500">
-                  <Film className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                  <p>אין סרטונים שהוקצו לך כרגע</p>
-                  <p className="text-sm mt-1">סרטונים שהמאמן יקצה לך יופיעו כאן</p>
-                </div>
-              </TabsContent>
-              <TabsContent value="all" className="space-y-4">
-                <div className="text-center py-6 text-gray-500">
-                  <Film className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                  <p>אין סרטונים זמינים כרגע</p>
-                  <p className="text-sm mt-1">סרטונים יתווספו למערכת בקרוב</p>
-                </div>
-              </TabsContent>
-            </Tabs>
+            <AdminMessageForm />
           </CardContent>
         </Card>
       </div>
