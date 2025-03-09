@@ -80,8 +80,8 @@ const Index = () => {
           </div>
           
           {/* Video Card */}
-          <Card className="bg-blue-50/30 hover:bg-blue-50/50 backdrop-blur-sm">
-            <CardHeader className="bg-primary/10 py-4">
+          <Card className="bg-blue-50/30 hover:bg-blue-50/50 backdrop-blur-sm shadow-md border-primary/20 md:col-span-2">
+            <CardHeader className="bg-primary/10 py-4 rounded-t-lg">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl font-semibold text-primary">סרטוני וידאו</CardTitle>
                 <Film className="h-6 w-6 text-primary" />
