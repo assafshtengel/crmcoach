@@ -70,10 +70,14 @@ const PlayerAuth = () => {
       });
 
       // Store player session data
-      localStorage.setItem('playerSession', JSON.stringify(playerData));
+      localStorage.setItem('playerSession', JSON.stringify({
+        id: playerData.id,
+        email: playerData.email,
+        password: playerData.password
+      }));
 
-      // Navigate to the new player profile view
-      navigate(`/player/profile`);
+      // Navigate to the player profile view
+      navigate('/player/profile');
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

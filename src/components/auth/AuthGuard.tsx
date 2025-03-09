@@ -27,6 +27,28 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             return;
           }
           
+          // Validate player session - check if the player exists in the database
+          try {
+            const playerData = JSON.parse(playerSession);
+            const { data, error } = await supabase
+              .from('players')
+              .select('id')
+              .eq('id', playerData.id)
+              .maybeSingle();
+              
+            if (error || !data) {
+              console.log("Invalid player session, redirecting to player login");
+              localStorage.removeItem('playerSession');
+              navigate("/player-auth");
+              return;
+            }
+          } catch (err) {
+            console.error("Error parsing player session:", err);
+            localStorage.removeItem('playerSession');
+            navigate("/player-auth");
+            return;
+          }
+          
           setIsLoading(false);
           return;
         }
