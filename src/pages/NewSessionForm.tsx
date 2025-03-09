@@ -8,7 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
-import { Home } from 'lucide-react';
+import { Home, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -17,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
 
 interface Player {
   id: string;
@@ -36,6 +44,7 @@ const NewSessionForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
   const [formData, setFormData] = useState<SessionFormData>({
     player_id: '',
@@ -45,6 +54,16 @@ const NewSessionForm = () => {
     notes: '',
     meeting_type: 'in_person'
   });
+
+  // Update the session_date in formData when selectedDate changes
+  useEffect(() => {
+    if (selectedDate) {
+      setFormData(prev => ({
+        ...prev,
+        session_date: format(selectedDate, 'yyyy-MM-dd')
+      }));
+    }
+  }, [selectedDate]);
 
   useEffect(() => {
     fetchPlayers();
@@ -189,15 +208,30 @@ const NewSessionForm = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="session_date">תאריך</Label>
-                <Input
-                  id="session_date"
-                  name="session_date"
-                  type="date"
-                  value={formData.session_date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, session_date: e.target.value }))}
-                  required
-                  dir="ltr"
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="session_date"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="ml-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, 'yyyy-MM-dd') : <span>בחר תאריך</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
