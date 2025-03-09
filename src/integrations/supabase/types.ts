@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      auto_video_assignments: {
+        Row: {
+          assigned_at: string
+          created_at: string
+          id: string
+          player_id: string
+          scheduled_for: string
+          sent: boolean | null
+          video_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          created_at?: string
+          id?: string
+          player_id: string
+          scheduled_for: string
+          sent?: boolean | null
+          video_id: string
+        }
+        Update: {
+          assigned_at?: string
+          created_at?: string
+          id?: string
+          player_id?: string
+          scheduled_for?: string
+          sent?: boolean | null
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_video_assignments_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auto_video_assignments_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_tools: {
         Row: {
           coach_id: string
@@ -1162,34 +1207,43 @@ export type Database = {
       }
       videos: {
         Row: {
+          auto_sequence_order: number | null
           category: string | null
           coach_id: string | null
           created_at: string
+          days_after_registration: number | null
           description: string | null
           id: string
           is_admin_video: boolean | null
+          is_auto_scheduled: boolean | null
           tags: string[] | null
           title: string
           url: string
         }
         Insert: {
+          auto_sequence_order?: number | null
           category?: string | null
           coach_id?: string | null
           created_at?: string
+          days_after_registration?: number | null
           description?: string | null
           id?: string
           is_admin_video?: boolean | null
+          is_auto_scheduled?: boolean | null
           tags?: string[] | null
           title: string
           url: string
         }
         Update: {
+          auto_sequence_order?: number | null
           category?: string | null
           coach_id?: string | null
           created_at?: string
+          days_after_registration?: number | null
           description?: string | null
           id?: string
           is_admin_video?: boolean | null
+          is_auto_scheduled?: boolean | null
           tags?: string[] | null
           title?: string
           url?: string
@@ -1254,6 +1308,10 @@ export type Database = {
         Args: {
           player_id_param: string
         }
+        Returns: undefined
+      }
+      process_auto_video_assignments: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
     }
