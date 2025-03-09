@@ -51,6 +51,61 @@ serve(async (req) => {
   try {
     console.log("Starting scheduled auto video processing");
     
+    // First, fix any assignments with NULL scheduled_for dates
+    const { data: nullAssignments, error: nullError } = await supabase
+      .from("auto_video_assignments")
+      .select("id, player_id, video_id, created_at")
+      .is("scheduled_for", null);
+      
+    if (nullError) {
+      console.error("Error fetching null scheduled_for assignments:", nullError);
+    } else if (nullAssignments && nullAssignments.length > 0) {
+      console.log(`Found ${nullAssignments.length} assignments with null scheduled_for dates, fixing...`);
+      
+      for (const assignment of nullAssignments) {
+        // Get video details to determine days_after_registration
+        const { data: videoData, error: videoError } = await supabase
+          .from("videos")
+          .select("days_after_registration")
+          .eq("id", assignment.video_id)
+          .single();
+          
+        if (videoError) {
+          console.error(`Error getting video data for ${assignment.video_id}:`, videoError);
+          continue;
+        }
+        
+        // Get player registration date
+        const { data: playerData, error: playerError } = await supabase
+          .from("players")
+          .select("created_at")
+          .eq("id", assignment.player_id)
+          .single();
+          
+        if (playerError) {
+          console.error(`Error getting player data for ${assignment.player_id}:`, playerError);
+          continue;
+        }
+        
+        const daysAfter = videoData.days_after_registration || 1; // Default to 1 day if not set
+        const playerCreatedAt = new Date(playerData.created_at);
+        const scheduledDate = new Date(playerCreatedAt);
+        scheduledDate.setDate(scheduledDate.getDate() + daysAfter);
+        
+        // Update the assignment with the calculated scheduled_for date
+        const { error: updateError } = await supabase
+          .from("auto_video_assignments")
+          .update({ scheduled_for: scheduledDate.toISOString() })
+          .eq("id", assignment.id);
+          
+        if (updateError) {
+          console.error(`Error updating assignment ${assignment.id}:`, updateError);
+        } else {
+          console.log(`Fixed scheduled_for date for assignment ${assignment.id}`);
+        }
+      }
+    }
+    
     // Call the database function to process auto video assignments
     const { data, error } = await supabase.rpc("process_auto_video_assignments");
     
@@ -79,7 +134,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: "Scheduled auto video processing completed successfully",
-        sent_in_last_24h: sentInLast24h
+        sent_in_last_24h: sentInLast24h,
+        fixed_null_dates: nullAssignments?.length || 0
       }),
       { 
         status: 200, 
