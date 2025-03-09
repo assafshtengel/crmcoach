@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -188,19 +187,31 @@ export default function VideoManagement() {
         return;
       }
 
+      console.log("Adding video with user ID:", user.id);
+      
+      // Create video object with explicit coach_id
+      const videoData = {
+        title: formData.title,
+        url: formData.url,
+        description: formData.description,
+        category: formData.category,
+        is_admin_video: isAdmin && currentTab === "admin",
+        coach_id: user.id, // Explicitly set the coach_id to the current user's ID
+      };
+      
+      console.log("Video data being inserted:", videoData);
+
       const { data, error } = await supabase
         .from('videos')
-        .insert({
-          title: formData.title,
-          url: formData.url,
-          description: formData.description,
-          category: formData.category,
-          is_admin_video: isAdmin && currentTab === "admin",
-          coach_id: user.id,
-        })
+        .insert(videoData)
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error);
+        throw error;
+      }
+
+      console.log("Video added successfully:", data);
 
       toast({
         title: "סרטון נוסף בהצלחה",
@@ -210,11 +221,11 @@ export default function VideoManagement() {
       resetForm();
       setOpenAddDialog(false);
       fetchVideos();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding video:', error);
       toast({
         title: "שגיאה בהוספת סרטון",
-        description: "לא ניתן להוסיף את הסרטון",
+        description: error.message || "לא ניתן להוסיף את הסרטון",
         variant: "destructive",
       });
     }
