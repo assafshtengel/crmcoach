@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -261,7 +262,7 @@ const DashboardCoach = () => {
             </CardContent>
           </Card>
           
-          {/* Mental Library Card */}
+          {/* Mental Library Card - ONLY NEW ADDITION */}
           <Card className="w-full md:w-64 bg-orange-50 hover:bg-orange-100 transition-colors cursor-pointer" onClick={() => navigate('/mental-library')}>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -324,11 +325,7 @@ const DashboardCoach = () => {
               <CardHeader>
                 <CardTitle>לוח שנה</CardTitle>
                 <CardContent>
-                  <CalendarComponent
-                    selectedDate={selectedDate}
-                    setSelectedDate={setSelectedDate}
-                    meetings={meetings}
-                  />
+                  <CalendarComponent />
                 </CardContent>
               </CardHeader>
             </Card>
@@ -362,7 +359,7 @@ const DashboardCoach = () => {
             <DialogHeader>
               <DialogTitle>סיכום פגישה</DialogTitle>
             </DialogHeader>
-            <SessionSummaryForm session={selectedSession} onClose={closeSessionSummaryDialog} />
+            <SessionSummaryForm sessionId={selectedSession?.id} onClose={closeSessionSummaryDialog} />
           </DialogContent>
         </Dialog>
       </div>
