@@ -1201,6 +1201,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_player_video_count: {
+        Args: {
+          player_id_param: string
+        }
+        Returns: undefined
+      }
       get_coach_statistics: {
         Args: {
           coach_id: string
@@ -1243,6 +1249,12 @@ export type Database = {
           user_id: string
         }
         Returns: Database["public"]["Enums"]["user_role"]
+      }
+      increment_player_video_count: {
+        Args: {
+          player_id_param: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
