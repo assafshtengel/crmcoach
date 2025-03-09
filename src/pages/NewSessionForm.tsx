@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -11,32 +10,19 @@ import { supabase } from '@/lib/supabase';
 import { Home, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-
 interface Player {
   id: string;
   full_name: string;
 }
-
 interface CoachProfile {
   id: string;
   default_zoom_link: string | null;
 }
-
 interface SessionFormData {
   player_id: string;
   session_date: string;
@@ -45,7 +31,6 @@ interface SessionFormData {
   notes: string;
   meeting_type: 'in_person' | 'zoom';
 }
-
 const NewSessionForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -53,7 +38,6 @@ const NewSessionForm = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [defaultZoomLink, setDefaultZoomLink] = useState('');
   const [useDefaultLink, setUseDefaultLink] = useState(false);
-  
   const [formData, setFormData] = useState<SessionFormData>({
     player_id: '',
     session_date: '',
@@ -72,7 +56,6 @@ const NewSessionForm = () => {
       }));
     }
   }, [selectedDate]);
-
   useEffect(() => {
     fetchPlayers();
     fetchDefaultZoomLink();
@@ -81,21 +64,20 @@ const NewSessionForm = () => {
   // Fetch the coach's default Zoom link if available
   const fetchDefaultZoomLink = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { data: profileData, error } = await supabase
-        .from('coach_profiles')
-        .select('default_zoom_link')
-        .eq('id', user.id)
-        .single();
-
+      const {
+        data: profileData,
+        error
+      } = await supabase.from('coach_profiles').select('default_zoom_link').eq('id', user.id).single();
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching default Zoom link:', error);
         return;
       }
-
       if (profileData?.default_zoom_link) {
         setDefaultZoomLink(profileData.default_zoom_link);
       }
@@ -118,33 +100,30 @@ const NewSessionForm = () => {
       }));
     }
   }, [useDefaultLink, defaultZoomLink, formData.meeting_type]);
-
   const fetchPlayers = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) {
         navigate('/auth');
         return;
       }
-
-      const { data, error } = await supabase
-        .from('players')
-        .select('id, full_name')
-        .eq('coach_id', user.id);
-
+      const {
+        data,
+        error
+      } = await supabase.from('players').select('id, full_name').eq('coach_id', user.id);
       if (error) throw error;
-
       setPlayers(data || []);
     } catch (error: any) {
       toast.error('שגיאה בטעינת רשימת השחקנים');
       console.error('Error fetching players:', error);
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.player_id || !formData.session_date || !formData.session_time) {
       toast.error('נא למלא את כל שדות החובה');
       return;
@@ -152,23 +131,23 @@ const NewSessionForm = () => {
 
     // If meeting_type is zoom but no location (which would be the zoom link),
     // we should set a default location
-    const locationValue = formData.meeting_type === 'zoom' && !formData.location
-      ? 'Zoom meeting link will be generated'
-      : formData.location;
-
+    const locationValue = formData.meeting_type === 'zoom' && !formData.location ? 'Zoom meeting link will be generated' : formData.location;
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) {
         toast.error('לא נמצא משתמש מחובר');
         navigate('/auth');
         return;
       }
-
       const selectedPlayer = players.find(p => p.id === formData.player_id);
-      
-      const { error: sessionError } = await supabase.from('sessions').insert({
+      const {
+        error: sessionError
+      } = await supabase.from('sessions').insert({
         coach_id: user.id,
         player_id: formData.player_id,
         session_date: formData.session_date,
@@ -177,23 +156,18 @@ const NewSessionForm = () => {
         notes: formData.notes,
         meeting_type: formData.meeting_type
       });
-
       if (sessionError) throw sessionError;
 
       // Save the default Zoom link if it's the first time the coach is using a Zoom link
       if (formData.meeting_type === 'zoom' && formData.location && !defaultZoomLink) {
-        const saveDefaultLink = window.confirm(
-          'האם ברצונך לשמור את קישור הזום כקישור ברירת מחדל לשימוש בפגישות עתידיות?'
-        );
-        
+        const saveDefaultLink = window.confirm('האם ברצונך לשמור את קישור הזום כקישור ברירת מחדל לשימוש בפגישות עתידיות?');
         if (saveDefaultLink) {
-          const { error: profileError } = await supabase
-            .from('coach_profiles')
-            .upsert({ 
-              id: user.id, 
-              default_zoom_link: formData.location 
-            });
-          
+          const {
+            error: profileError
+          } = await supabase.from('coach_profiles').upsert({
+            id: user.id,
+            default_zoom_link: formData.location
+          });
           if (profileError) {
             console.error('Error saving default Zoom link:', profileError);
           } else {
@@ -204,14 +178,14 @@ const NewSessionForm = () => {
       }
 
       // Create notification for new session
-      const { error: notificationError } = await supabase.from('notifications').insert({
+      const {
+        error: notificationError
+      } = await supabase.from('notifications').insert({
         coach_id: user.id,
         type: 'new_session',
         message: `נקבע מפגש חדש עם ${selectedPlayer?.full_name} בתאריך ${formData.session_date}`
       });
-
       if (notificationError) throw notificationError;
-
       const meetingTypeText = formData.meeting_type === 'in_person' ? 'פרונטלי' : 'בזום';
       toast.success(`המפגש ${meetingTypeText} עם ${selectedPlayer?.full_name} נקבע בהצלחה ל-${formData.session_date} בשעה ${formData.session_time}!`);
       navigate('/');
@@ -221,17 +195,10 @@ const NewSessionForm = () => {
       setLoading(false);
     }
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12">
+  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12">
       <div className="max-w-md mx-auto px-4">
         <div className="flex justify-end mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate('/')}
-            title="חזרה לדף הראשי"
-          >
+          <Button variant="outline" size="icon" onClick={() => navigate('/')} title="חזרה לדף הראשי">
             <Home className="h-4 w-4" />
           </Button>
         </div>
@@ -244,37 +211,31 @@ const NewSessionForm = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="player">בחר שחקן</Label>
-                <Select 
-                  value={formData.player_id} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, player_id: value }))}
-                >
+                <Select value={formData.player_id} onValueChange={value => setFormData(prev => ({
+                ...prev,
+                player_id: value
+              }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="בחר שחקן" />
                   </SelectTrigger>
                   <SelectContent>
-                    {players.map((player) => (
-                      <SelectItem key={player.id} value={player.id}>
+                    {players.map(player => <SelectItem key={player.id} value={player.id}>
                         {player.full_name}
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label>סוג מפגש</Label>
-                <RadioGroup 
-                  value={formData.meeting_type} 
-                  onValueChange={(value) => {
-                    setFormData(prev => ({ 
-                      ...prev, 
-                      meeting_type: value as 'in_person' | 'zoom',
-                      // Clear location when switching to in_person
-                      location: value === 'in_person' ? '' : prev.location
-                    }));
-                  }}
-                  className="flex space-x-4 rtl:space-x-reverse"
-                >
+                <RadioGroup value={formData.meeting_type} onValueChange={value => {
+                setFormData(prev => ({
+                  ...prev,
+                  meeting_type: value as 'in_person' | 'zoom',
+                  // Clear location when switching to in_person
+                  location: value === 'in_person' ? '' : prev.location
+                }));
+              }} className="flex space-x-4 rtl:space-x-reverse">
                   <div className="flex items-center space-x-2 rtl:space-x-reverse">
                     <RadioGroupItem value="in_person" id="r-in_person" />
                     <Label htmlFor="r-in_person" className="cursor-pointer">פרונטלי</Label>
@@ -290,109 +251,62 @@ const NewSessionForm = () => {
                 <Label htmlFor="session_date">תאריך</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      id="session_date"
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-right font-normal",
-                        !selectedDate && "text-muted-foreground"
-                      )}
-                    >
+                    <Button id="session_date" variant="outline" className={cn("w-full justify-start text-right font-normal", !selectedDate && "text-muted-foreground")}>
                       <CalendarIcon className="ml-2 h-4 w-4" />
                       {selectedDate ? format(selectedDate, 'yyyy-MM-dd') : <span>בחר תאריך</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
+                    <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus className="p-3 pointer-events-auto bg-gray-50" />
                   </PopoverContent>
                 </Popover>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="session_time">שעה</Label>
-                <Input
-                  id="session_time"
-                  name="session_time"
-                  type="time"
-                  value={formData.session_time}
-                  onChange={(e) => setFormData(prev => ({ ...prev, session_time: e.target.value }))}
-                  required
-                  dir="ltr"
-                />
+                <Input id="session_time" name="session_time" type="time" value={formData.session_time} onChange={e => setFormData(prev => ({
+                ...prev,
+                session_time: e.target.value
+              }))} required dir="ltr" />
               </div>
 
-              {formData.meeting_type === 'zoom' && (
-                <>
+              {formData.meeting_type === 'zoom' && <>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      <Checkbox 
-                        id="use-default-link" 
-                        checked={useDefaultLink} 
-                        onCheckedChange={(checked) => setUseDefaultLink(checked === true)}
-                        disabled={!defaultZoomLink}
-                      />
-                      <Label 
-                        htmlFor="use-default-link" 
-                        className={cn("cursor-pointer", !defaultZoomLink && "text-gray-400")}
-                      >
-                        {defaultZoomLink 
-                          ? 'השתמש בקישור זום קבוע' 
-                          : 'אין קישור זום קבוע (תוכל לשמור אחד לאחר יצירת המפגש)'}
+                      <Checkbox id="use-default-link" checked={useDefaultLink} onCheckedChange={checked => setUseDefaultLink(checked === true)} disabled={!defaultZoomLink} />
+                      <Label htmlFor="use-default-link" className={cn("cursor-pointer", !defaultZoomLink && "text-gray-400")}>
+                        {defaultZoomLink ? 'השתמש בקישור זום קבוע' : 'אין קישור זום קבוע (תוכל לשמור אחד לאחר יצירת המפגש)'}
                       </Label>
                     </div>
                   </div>
-                </>
-              )}
+                </>}
 
               <div className="space-y-2">
                 <Label htmlFor="location">
                   {formData.meeting_type === 'in_person' ? 'מיקום' : 'קישור לזום (אופציונלי)'}
                 </Label>
-                <Input
-                  id="location"
-                  name="location"
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, location: e.target.value }));
-                    // If using default link, uncheck when manually editing
-                    if (useDefaultLink) {
-                      setUseDefaultLink(false);
-                    }
-                  }}
-                  placeholder={formData.meeting_type === 'in_person' 
-                    ? "הכנס את מיקום המפגש" 
-                    : "הכנס קישור לפגישת זום (אופציונלי)"
-                  }
-                  required={formData.meeting_type === 'in_person'}
-                  disabled={formData.meeting_type === 'zoom' && useDefaultLink}
-                />
+                <Input id="location" name="location" type="text" value={formData.location} onChange={e => {
+                setFormData(prev => ({
+                  ...prev,
+                  location: e.target.value
+                }));
+                // If using default link, uncheck when manually editing
+                if (useDefaultLink) {
+                  setUseDefaultLink(false);
+                }
+              }} placeholder={formData.meeting_type === 'in_person' ? "הכנס את מיקום המפגש" : "הכנס קישור לפגישת זום (אופציונלי)"} required={formData.meeting_type === 'in_person'} disabled={formData.meeting_type === 'zoom' && useDefaultLink} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="notes">הערות</Label>
-                <Textarea
-                  id="notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  placeholder="הערות על המפגש..."
-                  className="h-24"
-                />
+                <Textarea id="notes" name="notes" value={formData.notes} onChange={e => setFormData(prev => ({
+                ...prev,
+                notes: e.target.value
+              }))} placeholder="הערות על המפגש..." className="h-24" />
               </div>
 
               <div className="flex gap-4 justify-end pt-4">
-                <Button 
-                  variant="outline" 
-                  type="button" 
-                  onClick={() => navigate(-1)}
-                >
+                <Button variant="outline" type="button" onClick={() => navigate(-1)}>
                   ביטול
                 </Button>
                 <Button type="submit" disabled={loading}>
@@ -403,8 +317,6 @@ const NewSessionForm = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default NewSessionForm;
