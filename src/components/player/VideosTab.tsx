@@ -13,14 +13,17 @@ interface Video {
   description: string;
   category?: string;
   created_at: string;
+  is_auto_scheduled?: boolean;
+  days_after_registration?: number;
 }
 
 interface VideosTabProps {
   coachId: string;
+  playerId?: string;
   onWatchVideo?: (videoId: string) => void;
 }
 
-export const VideosTab = ({ coachId, onWatchVideo }: VideosTabProps) => {
+export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
@@ -30,6 +33,89 @@ export const VideosTab = ({ coachId, onWatchVideo }: VideosTabProps) => {
       try {
         setLoading(true);
         
+        if (!playerId) {
+          // For coach view - show all videos
+          fetchAllVideos();
+          return;
+        }
+        
+        // For player view - show only appropriate videos based on scheduling
+        const { data: playerVideos, error: playerVideosError } = await supabase
+          .from("player_videos")
+          .select("video_id")
+          .eq("player_id", playerId);
+          
+        if (playerVideosError) throw playerVideosError;
+        
+        // Get auto-video assignments for this player that have been sent
+        const { data: autoAssignments, error: autoAssignmentsError } = await supabase
+          .from("auto_video_assignments")
+          .select("video_id, scheduled_for, sent")
+          .eq("player_id", playerId);
+          
+        if (autoAssignmentsError) throw autoAssignmentsError;
+        
+        // Extract video IDs that should be visible to the player
+        const sentAutoVideoIds = autoAssignments
+          ?.filter(assignment => 
+            assignment.sent || 
+            new Date(assignment.scheduled_for) <= new Date()
+          )
+          .map(assignment => assignment.video_id) || [];
+          
+        const manuallyAssignedVideoIds = playerVideos?.map(pv => pv.video_id) || [];
+        
+        // Combine all visible video IDs (both manually assigned and auto-scheduled)
+        const visibleVideoIds = [...new Set([...manuallyAssignedVideoIds, ...sentAutoVideoIds])];
+        
+        if (visibleVideoIds.length === 0) {
+          setVideos([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch coach videos that should be visible
+        const { data: coachVideos, error: coachVideosError } = await supabase
+          .from("videos")
+          .select("*")
+          .in("id", visibleVideoIds)
+          .order("created_at", { ascending: false });
+          
+        if (coachVideosError) throw coachVideosError;
+        
+        // Fetch admin videos
+        const { data: adminVideos, error: adminVideosError } = await supabase
+          .from("videos")
+          .select("*")
+          .eq("is_admin_video", true)
+          .order("created_at", { ascending: false });
+          
+        if (adminVideosError) throw adminVideosError;
+        
+        // Filter admin videos to only include those that have been assigned or sent
+        const visibleAdminVideos = adminVideos?.filter(video => 
+          visibleVideoIds.includes(video.id)
+        ) || [];
+        
+        // Combine and sort videos
+        const allVideos = [...(coachVideos || []), ...(visibleAdminVideos || [])];
+        allVideos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        setVideos(allVideos);
+        
+        // Set the first video as active if available
+        if (allVideos.length > 0) {
+          setActiveVideo(allVideos[0]);
+        }
+      } catch (error) {
+        console.error("Error fetching videos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    const fetchAllVideos = async () => {
+      try {
         // Fetch coach videos
         const { data: coachVideos, error: coachVideosError } = await supabase
           .from("videos")
@@ -69,7 +155,7 @@ export const VideosTab = ({ coachId, onWatchVideo }: VideosTabProps) => {
     if (coachId) {
       fetchVideos();
     }
-  }, [coachId]);
+  }, [coachId, playerId]);
   
   const handleWatchVideo = (video: Video) => {
     setActiveVideo(video);

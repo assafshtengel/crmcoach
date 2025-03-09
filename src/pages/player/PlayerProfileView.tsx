@@ -435,7 +435,8 @@ const PlayerProfileView = () => {
           
           <TabsContent value="videos">
             <VideosTab 
-              coachId={player.coach_id || ''} 
+              coachId={player?.coach_id || ''} 
+              playerId={player?.id}
               onWatchVideo={(videoId) => {
                 const notificationIndex = notifications.findIndex(n => n.id === videoId && !n.read);
                 if (notificationIndex !== -1) {
