@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideosTab } from "@/components/player/VideosTab";
-import { Bell, User, LogOut, Calendar, Target, FileText, Video, CheckSquare, PencilLine, Clock, ArrowRight } from 'lucide-react';
+import { Bell, User, LogOut, Calendar, Target, FileText, Video, CheckSquare, PencilLine, Clock, ArrowRight, ExternalLink } from 'lucide-react';
 import { 
   Popover, 
   PopoverContent, 
@@ -92,7 +91,6 @@ const PlayerProfileView = () => {
 
         setPlayer(data);
         
-        // Load videos and create notifications
         const { data: videosData, error: videosError } = await supabase
           .from("videos")
           .select("*")
@@ -115,7 +113,6 @@ const PlayerProfileView = () => {
           setNotifications(videoNotifications);
         }
 
-        // Load upcoming sessions
         if (data.coach_id) {
           const { data: sessionsData, error: sessionsError } = await supabase
             .from("sessions")
@@ -130,7 +127,6 @@ const PlayerProfileView = () => {
             setUpcomingSessions(sessionsData);
           }
 
-          // Load session summaries - Fix to prevent duplicates by adding unique session_id filter
           const { data: summariesData, error: summariesError } = await supabase
             .from("session_summaries")
             .select(`
@@ -146,7 +142,6 @@ const PlayerProfileView = () => {
             .limit(5);
 
           if (!summariesError && summariesData) {
-            // Make sure each session only appears once by using a Map with session_id as key
             const uniqueSummaries = new Map();
             
             summariesData.forEach(summary => {
@@ -390,6 +385,10 @@ const PlayerProfileView = () => {
               <FileText className="h-4 w-4 mr-2" />
               סיכומים
             </TabsTrigger>
+            <TabsTrigger value="belief-breaking" className="tab-trigger">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              שחרור אמונות מגבילות
+            </TabsTrigger>
             <TabsTrigger value="goals" className="tab-trigger">
               <Target className="h-4 w-4 mr-2" />
               מטרות
@@ -549,6 +548,53 @@ const PlayerProfileView = () => {
                     <p className="text-gray-500">אין סיכומי מפגשים זמינים כרגע</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="belief-breaking">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ExternalLink className="h-5 w-5 text-primary" />
+                  טופס לשחרור האמונות המגבילות
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center space-y-6 py-8">
+                <div className="max-w-2xl text-center space-y-4">
+                  <p className="text-lg text-gray-700">
+                    שיטת ביירון קייטי מאפשרת לך לזהות ולשחרר אמונות מגבילות שעלולות לעכב את הביצועים והפוטנציאל שלך.
+                  </p>
+                  <p className="text-gray-600">
+                    באמצעות ארבע שאלות פשוטות וסיבוב התודעה (היפוך), תוכל/י לבחון את האמונות והמחשבות שלך ולגלות אמיתות עמוקות יותר.
+                  </p>
+                </div>
+                
+                <div className="flex flex-col md:flex-row max-w-3xl w-full items-center gap-6 p-6 bg-primary/5 rounded-xl border border-primary/10">
+                  <div className="flex-shrink-0 bg-white p-4 rounded-full shadow-sm">
+                    <ExternalLink className="h-16 w-16 text-primary" />
+                  </div>
+                  <div className="flex-1 space-y-4 text-center md:text-right">
+                    <h3 className="text-xl font-medium text-primary">טופס "העבודה" של ביירון קייטי</h3>
+                    <p className="text-gray-600">
+                      לחץ על הכפתור מטה כדי לפתוח את הטופס המקוון ולהתחיל בתהליך השחרור של אמונות מגבילות.
+                    </p>
+                    <Button 
+                      size="lg"
+                      className="gap-2"
+                      onClick={() => window.open('https://belief-breaker.lovable.app/', '_blank')}
+                    >
+                      פתח את הטופס המקוון
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="mt-6 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm max-w-2xl">
+                  <p>
+                    <strong>טיפ:</strong> מומלץ להשתמש בטופס זה באופן קבוע, במיוחד לפני אירועים חשובים או כאשר מתמודדים עם מחשבות מגבילות ספציפיות.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
