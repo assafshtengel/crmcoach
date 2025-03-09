@@ -1014,12 +1014,12 @@ const DashboardCoach = () => {
 
           <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-medium">��זכורות שנשלחו</CardTitle>
-              <Bell className="h-5 w-5 text-[#F1C40F]" />
+              <CardTitle className="text-lg font-medium">סרטוני וידאו</CardTitle>
+              <Film className="h-5 w-5 text-[#F1C40F]" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-[#2C3E50]">{stats.totalReminders}</div>
-              <p className="text-sm text-gray-500">סה״כ תזכורות</p>
+              <p className="text-sm text-gray-500">סרטונים זמינים</p>
             </CardContent>
           </Card>
         </div>
