@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
 import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
