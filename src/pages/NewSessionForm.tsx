@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Player {
   id: string;
@@ -45,6 +46,8 @@ const NewSessionForm = () => {
   const [loading, setLoading] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [defaultZoomLink, setDefaultZoomLink] = useState('');
+  const [useDefaultLink, setUseDefaultLink] = useState(false);
   
   const [formData, setFormData] = useState<SessionFormData>({
     player_id: '',
@@ -67,7 +70,49 @@ const NewSessionForm = () => {
 
   useEffect(() => {
     fetchPlayers();
+    fetchDefaultZoomLink();
   }, []);
+
+  // Fetch the coach's default Zoom link if available
+  const fetchDefaultZoomLink = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
+      const { data: profileData, error } = await supabase
+        .from('coach_profiles')
+        .select('default_zoom_link')
+        .eq('id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching default Zoom link:', error);
+        return;
+      }
+
+      if (profileData?.default_zoom_link) {
+        setDefaultZoomLink(profileData.default_zoom_link);
+      }
+    } catch (error) {
+      console.error('Error fetching default Zoom link:', error);
+    }
+  };
+
+  // Apply default Zoom link to the location field when checkbox is checked
+  useEffect(() => {
+    if (formData.meeting_type === 'zoom' && useDefaultLink && defaultZoomLink) {
+      setFormData(prev => ({
+        ...prev,
+        location: defaultZoomLink
+      }));
+    } else if (formData.meeting_type === 'zoom' && !useDefaultLink) {
+      setFormData(prev => ({
+        ...prev,
+        location: ''
+      }));
+    }
+  }, [useDefaultLink, defaultZoomLink, formData.meeting_type]);
 
   const fetchPlayers = async () => {
     try {
@@ -129,6 +174,29 @@ const NewSessionForm = () => {
       });
 
       if (sessionError) throw sessionError;
+
+      // Save the default Zoom link if it's the first time the coach is using a Zoom link
+      if (formData.meeting_type === 'zoom' && formData.location && !defaultZoomLink) {
+        const saveDefaultLink = window.confirm(
+          'האם ברצונך לשמור את קישור הזום כקישור ברירת מחדל לשימוש בפגישות עתידיות?'
+        );
+        
+        if (saveDefaultLink) {
+          const { error: profileError } = await supabase
+            .from('coach_profiles')
+            .upsert({ 
+              id: user.id, 
+              default_zoom_link: formData.location 
+            });
+          
+          if (profileError) {
+            console.error('Error saving default Zoom link:', profileError);
+          } else {
+            toast.success('קישור הזום נשמר כברירת מחדל');
+            setDefaultZoomLink(formData.location);
+          }
+        }
+      }
 
       // Create notification for new session
       const { error: notificationError } = await supabase.from('notifications').insert({
@@ -192,7 +260,14 @@ const NewSessionForm = () => {
                 <Label>סוג מפגש</Label>
                 <RadioGroup 
                   value={formData.meeting_type} 
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, meeting_type: value as 'in_person' | 'zoom' }))}
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      meeting_type: value as 'in_person' | 'zoom',
+                      // Clear location when switching to in_person
+                      location: value === 'in_person' ? '' : prev.location
+                    }));
+                  }}
                   className="flex space-x-4 rtl:space-x-reverse"
                 >
                   <div className="flex items-center space-x-2 rtl:space-x-reverse">
@@ -247,6 +322,29 @@ const NewSessionForm = () => {
                 />
               </div>
 
+              {formData.meeting_type === 'zoom' && (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                      <Checkbox 
+                        id="use-default-link" 
+                        checked={useDefaultLink} 
+                        onCheckedChange={(checked) => setUseDefaultLink(checked === true)}
+                        disabled={!defaultZoomLink}
+                      />
+                      <Label 
+                        htmlFor="use-default-link" 
+                        className={cn("cursor-pointer", !defaultZoomLink && "text-gray-400")}
+                      >
+                        {defaultZoomLink 
+                          ? 'השתמש בקישור זום קבוע' 
+                          : 'אין קישור זום קבוע (תוכל לשמור אחד לאחר יצירת המפגש)'}
+                      </Label>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="location">
                   {formData.meeting_type === 'in_person' ? 'מיקום' : 'קישור לזום (אופציונלי)'}
@@ -256,12 +354,19 @@ const NewSessionForm = () => {
                   name="location"
                   type="text"
                   value={formData.location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, location: e.target.value }));
+                    // If using default link, uncheck when manually editing
+                    if (useDefaultLink) {
+                      setUseDefaultLink(false);
+                    }
+                  }}
                   placeholder={formData.meeting_type === 'in_person' 
                     ? "הכנס את מיקום המפגש" 
                     : "הכנס קישור לפגישת זום (אופציונלי)"
                   }
                   required={formData.meeting_type === 'in_person'}
+                  disabled={formData.meeting_type === 'zoom' && useDefaultLink}
                 />
               </div>
 
