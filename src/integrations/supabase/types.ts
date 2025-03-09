@@ -54,6 +54,27 @@ export type Database = {
           },
         ]
       }
+      coach_profiles: {
+        Row: {
+          created_at: string
+          default_zoom_link: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_zoom_link?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_zoom_link?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coach_tools: {
         Row: {
           coach_id: string

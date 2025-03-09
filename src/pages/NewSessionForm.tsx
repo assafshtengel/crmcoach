@@ -32,6 +32,11 @@ interface Player {
   full_name: string;
 }
 
+interface CoachProfile {
+  id: string;
+  default_zoom_link: string | null;
+}
+
 interface SessionFormData {
   player_id: string;
   session_date: string;
