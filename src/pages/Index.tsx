@@ -71,17 +71,17 @@ const Index = () => {
           </Button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="relative md:col-span-2">
+        <div className="grid grid-cols-1 gap-6">
+          <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl transform -rotate-1"></div>
             <div className="relative">
               <MentalPrepForm />
             </div>
           </div>
           
-          {/* Video Card */}
-          <Card className="bg-blue-50/30 hover:bg-blue-50/50 backdrop-blur-sm shadow-md border-primary/20 md:col-span-2">
-            <CardHeader className="bg-primary/10 py-4 rounded-t-lg">
+          {/* Video Card - Fixed styling to make it more visible */}
+          <Card className="bg-white shadow-lg border-primary/20 overflow-visible">
+            <CardHeader className="bg-primary/10 py-4 rounded-t-lg border-b border-primary/10">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl font-semibold text-primary">סרטוני וידאו</CardTitle>
                 <Film className="h-6 w-6 text-primary" />
