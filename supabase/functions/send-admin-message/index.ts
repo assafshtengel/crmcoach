@@ -37,9 +37,21 @@ const handler = async (req: Request): Promise<Response> => {
     // Log for debugging
     console.log("Processing request body");
     
-    // Parse the request body
-    const requestData = await req.json();
-    console.log("Request data:", requestData);
+    let requestData;
+    try {
+      // Parse the request body
+      requestData = await req.json();
+      console.log("Request data:", requestData);
+    } catch (parseError) {
+      console.error("Error parsing request body:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
     
     const { message, userEmail }: AdminMessageRequest = requestData;
 
@@ -52,41 +64,54 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Message cannot exceed 500 characters");
     }
 
+    if (!userEmail) {
+      throw new Error("User email is required");
+    }
+
     const formattedDate = new Date().toLocaleString("he-IL", {
       timeZone: "Asia/Jerusalem"
     });
 
     console.log("Sending email with Resend, API Key exists:", !!resendApiKey);
     
-    const emailResponse = await resend.emails.send({
-      from: "Sports Mental Coach <onboarding@resend.dev>",
-      to: [ADMIN_EMAIL],
-      subject: "הודעה חדשה מהמערכת",
-      html: `
-        <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6;">
-          <h2>הודעה חדשה מהמערכת</h2>
-          <p><strong>תאריך:</strong> ${formattedDate}</p>
-          <p><strong>שולח:</strong> ${userEmail}</p>
-          <p><strong>הודעה:</strong></p>
-          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-top: 10px;">
-            ${message.replace(/\n/g, '<br>')}
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY is not configured in environment variables");
+    }
+    
+    try {
+      const emailResponse = await resend.emails.send({
+        from: "Sports Mental Coach <onboarding@resend.dev>",
+        to: [ADMIN_EMAIL],
+        subject: "הודעה חדשה מהמערכת",
+        html: `
+          <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6;">
+            <h2>הודעה חדשה מהמערכת</h2>
+            <p><strong>תאריך:</strong> ${formattedDate}</p>
+            <p><strong>שולח:</strong> ${userEmail}</p>
+            <p><strong>הודעה:</strong></p>
+            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-top: 10px;">
+              ${message.replace(/\n/g, '<br>')}
+            </div>
+            <p style="color: #777; margin-top: 20px; font-size: 0.9em;">
+              הודעה זו נשלחה באופן אוטומטי ממערכת אימון מנטלי בספורט.
+            </p>
           </div>
-          <p style="color: #777; margin-top: 20px; font-size: 0.9em;">
-            הודעה זו נשלחה באופן אוטומטי ממערכת אימון מנטלי בספורט.
-          </p>
-        </div>
-      `,
-    });
+        `,
+      });
 
-    console.log("Email sent successfully:", emailResponse);
+      console.log("Email sent successfully:", emailResponse);
 
-    return new Response(JSON.stringify(emailResponse), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
+      return new Response(JSON.stringify(emailResponse), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    } catch (emailError: any) {
+      console.error("Error sending email with Resend:", emailError);
+      throw new Error(`Error sending email: ${emailError.message || "Unknown error with email service"}`);
+    }
   } catch (error: any) {
     console.error("Error in send-admin-message function:", error);
     return new Response(

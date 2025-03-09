@@ -1201,17 +1201,9 @@ const DashboardCoach = () => {
           </Card>
         </div>
 
-        <Card className="bg-white/90 shadow-lg">
-          <CardHeader className="bg-primary/10 py-4 rounded-t-lg border-b border-primary/10">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-semibold text-primary">שליחת הודעה למנהלים</CardTitle>
-              <Send className="h-6 w-6 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <AdminMessageForm />
-          </CardContent>
-        </Card>
+        <div className="max-w-full mt-6">
+          <AdminMessageForm />
+        </div>
       </div>
     </div>
   );
