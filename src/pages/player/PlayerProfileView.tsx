@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideosTab } from "@/components/player/VideosTab";
-import { Bell, User, LogOut, Calendar, Target, FileText, StickyNote, PencilLine, CheckSquare } from "lucide-react";
+import { Bell, User, LogOut, Calendar, Target, FileText, StickyNote, PencilLine, CheckSquare } from 'lucide-react';
 import { 
   Popover, 
   PopoverContent, 
@@ -129,7 +129,7 @@ const PlayerProfileView = () => {
             setUpcomingSessions(sessionsData);
           }
 
-          // Load session summaries
+          // Load session summaries - Fix to prevent duplicates by adding unique session_id filter
           const { data: summariesData, error: summariesError } = await supabase
             .from("session_summaries")
             .select(`
@@ -145,7 +145,16 @@ const PlayerProfileView = () => {
             .limit(5);
 
           if (!summariesError && summariesData) {
-            setSessionSummaries(summariesData);
+            // Make sure each session only appears once by using a Map with session_id as key
+            const uniqueSummaries = new Map();
+            
+            summariesData.forEach(summary => {
+              if (summary.session && summary.session.id && !uniqueSummaries.has(summary.session.id)) {
+                uniqueSummaries.set(summary.session.id, summary);
+              }
+            });
+            
+            setSessionSummaries(Array.from(uniqueSummaries.values()));
           }
         }
       } catch (error: any) {
