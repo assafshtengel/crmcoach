@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen, GraduationCap } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
@@ -24,6 +24,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
+import EducationalTab from '@/components/educational/EducationalTab';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -1210,6 +1211,15 @@ const DashboardCoach = () => {
                 </div>
               </TabsContent>
             </Tabs>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/90 shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-semibold text-[#2C3E50]">הכרטיסייה החינוכית</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EducationalTab />
           </CardContent>
         </Card>
 
