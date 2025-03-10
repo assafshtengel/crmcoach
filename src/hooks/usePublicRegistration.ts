@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from "react-hook-form";
@@ -56,12 +55,12 @@ export const usePublicRegistration = () => {
       try {
         console.log("Fetching link data for ID:", linkId);
         
-        // First, fetch the registration link details with coach included directly
+        // First, try to fetch the registration link with coach data
         const { data: linkData, error: linkError } = await supabase
           .from('registration_links')
           .select(`
             *,
-            coach:coaches(id, full_name, email)
+            coach_id
           `)
           .eq('id', linkId)
           .eq('is_active', true)
@@ -72,33 +71,26 @@ export const usePublicRegistration = () => {
           throw new Error('הקישור לא נמצא או שאינו פעיל');
         }
 
-        // Make sure we have coach data
-        if (!linkData.coach || !linkData.coach.id) {
-          console.error("Missing coach data in link:", linkData);
-          
-          // Try to fetch the coach directly using coach_id as fallback
-          if (linkData.coach_id) {
-            console.log("Attempting to fetch coach directly with coach_id:", linkData.coach_id);
-            const { data: coachData, error: coachError } = await supabase
-              .from('coaches')
-              .select('id, full_name, email')
-              .eq('id', linkData.coach_id)
-              .single();
-              
-            if (coachError || !coachData) {
-              console.error("Error fetching coach directly:", coachError);
-              throw new Error('לא ניתן למצוא את המאמן המשויך לקישור');
-            }
-            
-            // Rebuild the linkData with the coach info
-            linkData.coach = coachData;
-          } else {
-            throw new Error('מידע המאמן חסר בקישור');
-          }
+        // Now fetch the coach data separately
+        const { data: coachData, error: coachError } = await supabase
+          .from('coaches')
+          .select('id, full_name, email')
+          .eq('id', linkData.coach_id)
+          .single();
+
+        if (coachError || !coachData) {
+          console.error("Error fetching coach:", coachError);
+          throw new Error('לא ניתן למצוא את המאמן המשויך לקישור');
         }
 
-        console.log("Link data loaded:", linkData);
-        setLinkData(linkData);
+        // Combine the data
+        const combinedData = {
+          ...linkData,
+          coach: coachData
+        };
+
+        console.log("Combined data:", combinedData);
+        setLinkData(combinedData);
       } catch (error: any) {
         console.error("Error in useEffect:", error);
         showFeedback("שגיאה", error.message || "אירעה שגיאה בטעינת הטופס", true);

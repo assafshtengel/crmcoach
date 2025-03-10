@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { usePublicRegistration } from '@/hooks/usePublicRegistration';
 import { RegistrationFormContainer } from '@/components/public-registration/RegistrationFormContainer';
@@ -28,7 +27,6 @@ const PublicRegistrationForm = () => {
     return <LoadingSpinner />;
   }
 
-  // Make sure we have coach data before rendering
   if (!linkData || !linkData.coach) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

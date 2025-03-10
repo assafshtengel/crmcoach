@@ -17,7 +17,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if we're on the public registration route
+        // Always allow access to public registration routes
         if (location.pathname.startsWith('/register/')) {
           console.log("Public registration page - bypassing auth check");
           setIsLoading(false);
