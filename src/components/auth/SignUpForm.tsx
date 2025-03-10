@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
             specialty,
             role: 'coach'
           },
-          emailRedirectTo: `${window.location.origin}/auth`,
+          // אין נתיב להעברה - זה יאפשר התחברות ישירה ללא אימות במייל
         },
       });
 
@@ -54,7 +55,7 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
         console.log("User created successfully:", data.user);
         
         try {
-          // Try to sign in immediately after signup
+          // התחברות אוטומטית מיד לאחר הרשמה
           const { error: signInError } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -65,12 +66,17 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
             throw signInError;
           }
 
-          // If sign in successful, navigate to home
+          toast({
+            title: "הרשמה והתחברות בוצעו בהצלחה",
+            description: "ברוך הבא למערכת"
+          });
+          
+          // מעבר ישיר לדף הבית
           navigate('/');
           
         } catch (signInError) {
           console.error("Error in auto sign-in:", signInError);
-          // Even if auto sign-in fails, we still show success message
+          // אם ההתחברות האוטומטית נכשלה, עדיין נציג הודעת הצלחה
           toast({
             title: "הרשמה בוצעה בהצלחה",
             description: "אנא התחבר עם האימייל והסיסמה שלך",

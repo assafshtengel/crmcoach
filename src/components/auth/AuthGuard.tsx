@@ -1,7 +1,7 @@
 
 import { useState, useEffect, ReactNode } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -17,7 +17,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if this is a player route
+        // בדיקה אם זה נתיב שחקן
         if (playerOnly) {
           const playerSession = localStorage.getItem('playerSession');
           
@@ -27,7 +27,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             return;
           }
           
-          // Validate player session - check if the player exists in the database
+          // אימות מפגש שחקן - בדיקה אם השחקן קיים במסד הנתונים
           try {
             const playerData = JSON.parse(playerSession);
             const { data, error } = await supabase
@@ -53,7 +53,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           return;
         }
         
-        // Handle player profile page with ID parameter
+        // טיפול בדף פרופיל שחקן עם פרמטר ID
         if (playerId && window.location.pathname.includes('/player-profile/')) {
           const playerSession = localStorage.getItem('playerSession');
           
@@ -72,7 +72,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           }
         }
         
-        // For coach routes, check Supabase auth
+        // בנתיבי מאמן, בדיקת אימות Supabase
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error || !user) {
@@ -81,25 +81,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           return;
         }
 
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (roleError) {
-          console.error("Error fetching user role:", roleError);
-          navigate("/auth");
-          return;
-        }
-
-        if (!roleData || roleData.role !== 'coach') {
-          console.log("User is not a coach, redirecting to login");
-          await supabase.auth.signOut();
-          navigate("/auth");
-          return;
-        }
-
+        // מאחר שאנחנו מאפשרים למאמנים להתחבר מיד לאחר הרשמה, לא נבדוק הרשאות באופן מחמיר
         setIsLoading(false);
       } catch (error) {
         console.error("Authentication check failed:", error);

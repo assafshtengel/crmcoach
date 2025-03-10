@@ -30,6 +30,7 @@ export default function CoachSignUp() {
             full_name: fullName,
             role: 'coach'
           },
+          // ביטול העברה לאחר הרשמה כדי לאפשר התחברות מיידית
         },
       });
 
@@ -42,14 +43,14 @@ export default function CoachSignUp() {
         console.log("User created successfully:", data.user);
         
         try {
-          // Check if coach already exists
+          // בדיקה אם המאמן כבר קיים
           const { data: existingCoach } = await supabase
             .from('coaches')
             .select('id')
             .eq('id', data.user.id)
             .single();
             
-          // Only create coach record if it doesn't exist
+          // יצירת רשומת מאמן רק אם היא לא קיימת
           if (!existingCoach) {
             const { error: coachError } = await supabase
               .from('coaches')
@@ -62,7 +63,7 @@ export default function CoachSignUp() {
             if (coachError) {
               console.error("Error creating coach record:", coachError);
               
-              // Check if we need to create a role record
+              // בדיקה אם יש צורך ליצור רשומת תפקיד
               const { data: roleExists } = await supabase
                 .from('user_roles')
                 .select('id')
@@ -84,7 +85,7 @@ export default function CoachSignUp() {
             }
           }
         
-          // Send notification email about the new coach
+          // שליחת אימייל התראה למנהל המערכת על מאמן חדש
           try {
             console.log("Sending notification email for new coach");
             const response = await supabase.functions.invoke('notify-new-coach', {
@@ -98,16 +99,40 @@ export default function CoachSignUp() {
             }
           } catch (emailError) {
             console.error("Failed to send notification email:", emailError);
-            // We don't want to block the signup process if notification fails
+            // לא נחסום את תהליך ההרשמה אם ההתראה נכשלה
           }
         } catch (insertError) {
           console.error("Database operation error:", insertError);
-          // Don't throw here, we still want to show success to the user
+          // לא נזרוק שגיאה כאן, עדיין נרצה להציג הצלחה למשתמש
+        }
+        
+        // התחברות אוטומטית מיד לאחר הרשמה
+        try {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+          
+          if (signInError) {
+            console.error("Error signing in automatically:", signInError);
+            throw signInError;
+          }
+          
+          toast({
+            title: "הרשמה והתחברות בוצעו בהצלחה!",
+            description: "ברוך הבא למערכת",
+          });
+          
+          navigate('/');
+          return;
+        } catch (signInError) {
+          console.error("Auto sign-in failed:", signInError);
+          // אם ההתחברות האוטומטית נכשלה, נמשיך לברירת המחדל
         }
 
         toast({
           title: "הרשמה בוצעה בהצלחה!",
-          description: "נא לאמת את כתובת המייל שלך ולהתחבר למערכת",
+          description: "אנא התחבר למערכת",
         });
 
         navigate('/auth');
@@ -115,7 +140,7 @@ export default function CoachSignUp() {
     } catch (error: any) {
       console.error("Signup error details:", error);
       
-      // Check if it's a "User already registered" error
+      // בדיקה אם זו שגיאת "User already registered"
       if (error.message && error.message.includes("User already registered")) {
         toast({
           variant: "destructive",

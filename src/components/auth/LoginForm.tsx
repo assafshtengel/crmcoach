@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -49,27 +50,13 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
       if (data.user) {
         console.log("User authenticated:", data.user);
         
-        // בדיקת תפקיד המשתמש
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('id', data.user.id)
-          .maybeSingle();
-
-        console.log("Role query result:", { roleData, roleError });
-
-        if (roleError) {
-          console.error("Error fetching user role:", roleError);
-          toast({
-            variant: "destructive",
-            title: "שגיאה",
-            description: "לא ניתן לאמת את ההרשאות שלך. אנא נסה שוב.",
-          });
-          return;
-        }
-
-        // Allow login even if role is not yet set
+        // המשתמש התחבר בהצלחה, מעבר ישיר לדף הבית
         navigate('/');
+        
+        toast({
+          title: "התחברות בוצעה בהצלחה",
+          description: "ברוך הבא למערכת",
+        });
       }
 
     } catch (error: any) {
