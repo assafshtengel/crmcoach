@@ -456,16 +456,66 @@ export default function AutoVideoManagement() {
   };
 
   // Filter assignments based on search query
-  const filteredAssignments = allAssignments.filter(assignment => {
-    const playerName = assignment.players?.full_name?.toLowerCase() || "";
-    const playerEmail = assignment.players?.email?.toLowerCase() || "";
-    const videoTitle = assignment.videos?.title?.toLowerCase() || "";
-    const searchLower = searchQuery.toLowerCase();
-    
-    return playerName.includes(searchLower) || 
-           playerEmail.includes(searchLower) || 
-           videoTitle.includes(searchLower);
-  });
+  const filteredAssignments = useMemo(() => {
+    return allAssignments.filter(assignment => {
+      const playerName = assignment.players?.full_name?.toLowerCase() || "";
+      const playerEmail = assignment.players?.email?.toLowerCase() || "";
+      const videoTitle = assignment.videos?.title?.toLowerCase() || "";
+      const searchLower = searchQuery.toLowerCase();
+      
+      return playerName.includes(searchLower) || 
+            playerEmail.includes(searchLower) || 
+            videoTitle.includes(searchLower);
+    });
+  }, [allAssignments, searchQuery]);
+
+  // Check if auto video scheduling is working
+  const checkAutoVideoScheduling = async () => {
+    try {
+      const { data: dbFunction, error: dbFunctionError } = await supabase
+        .rpc('process_auto_video_assignments');
+      
+      if (dbFunctionError) {
+        console.error("Error checking auto video scheduling function:", dbFunctionError);
+      } else {
+        console.log("Auto video scheduling function exists and was called");
+      }
+
+      // Check for the database trigger
+      const { data: latestPlayers, error: playersError } = await supabase
+        .from('players')
+        .select('id, created_at, full_name')
+        .order('created_at', { ascending: false })
+        .limit(3);
+      
+      if (playersError) {
+        console.error("Error fetching latest players:", playersError);
+      } else {
+        console.log("Latest registered players:", latestPlayers);
+        
+        // For each of these players, check if they have auto assignments
+        for (const player of (latestPlayers || [])) {
+          const { data: playerAssignments, error: assignmentsError } = await supabase
+            .from('auto_video_assignments')
+            .select('*')
+            .eq('player_id', player.id);
+            
+          if (assignmentsError) {
+            console.error(`Error checking assignments for player ${player.id}:`, assignmentsError);
+          } else {
+            console.log(`Auto video assignments for player ${player.full_name} (${player.id}):`, playerAssignments);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error in checkAutoVideoScheduling:", error);
+    }
+  };
+
+  // Call the check function on component mount
+  useEffect(() => {
+    checkAutoVideoScheduling();
+  }, []);
 
   return (
     <div className="container mx-auto py-8">
