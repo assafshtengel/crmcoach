@@ -39,8 +39,10 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             const playerData = JSON.parse(playerSession);
             const { data, error } = await supabase
               .from('players')
-              .select('id')
+              .select('id, email, password')
               .eq('id', playerData.id)
+              .eq('email', playerData.email)
+              .eq('password', playerData.password)
               .maybeSingle();
               
             if (error || !data) {
@@ -62,6 +64,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         
         // טיפול בדף פרופיל שחקן עם פרמטר ID
         if (playerId && window.location.pathname.includes('/player-profile/')) {
+          // First check for player session
           const playerSession = localStorage.getItem('playerSession');
           
           if (playerSession) {
@@ -70,12 +73,16 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             if (playerData.id === playerId) {
               setIsLoading(false);
               return;
-            } else {
-              console.log("Player trying to access unauthorized profile");
-              localStorage.removeItem('playerSession');
-              navigate("/player-auth");
-              return;
             }
+          }
+
+          // If no valid player session, check for coach auth
+          const { data: { user }, error } = await supabase.auth.getUser();
+          
+          if (error || !user) {
+            console.log("No authenticated user found");
+            navigate("/auth");
+            return;
           }
         }
         
@@ -88,7 +95,6 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           return;
         }
 
-        // מאחר שאנחנו מאפשרים למאמנים להתחבר מיד לאחר הרשמה, לא נבדוק הרשאות באופן מחמיר
         setIsLoading(false);
       } catch (error) {
         console.error("Authentication check failed:", error);
