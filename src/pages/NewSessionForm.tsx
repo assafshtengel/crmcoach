@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -51,6 +50,7 @@ const NewSessionForm = () => {
     notes: '',
     meeting_type: 'in_person'
   });
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (selectedDate) {
@@ -149,7 +149,6 @@ const NewSessionForm = () => {
       }
       const selectedPlayer = players.find(p => p.id === formData.player_id);
       
-      // We need to remove the meeting_type field as it's causing database errors
       const sessionData = {
         coach_id: user.id,
         player_id: formData.player_id,
@@ -184,7 +183,6 @@ const NewSessionForm = () => {
         }
       }
 
-      // Create notification for the new session
       const notificationData = {
         coach_id: user.id,
         type: 'new_session',
@@ -206,6 +204,17 @@ const NewSessionForm = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setOpen(false);
+    setTimeout(() => {
+      const timeInput = document.getElementById('session_time');
+      if (timeInput) {
+        timeInput.focus();
+      }
+    }, 100);
   };
 
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12">
@@ -261,7 +270,7 @@ const NewSessionForm = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="session_date">תאריך</Label>
-                <Popover>
+                <Popover open={open} onOpenChange={setOpen}>
                   <PopoverTrigger asChild>
                     <Button id="session_date" variant="outline" className={cn("w-full justify-start text-right font-normal", !selectedDate && "text-muted-foreground")}>
                       <CalendarIcon className="ml-2 h-4 w-4" />
@@ -269,7 +278,13 @@ const NewSessionForm = () => {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus className="p-3 pointer-events-auto bg-gray-50" />
+                    <Calendar 
+                      mode="single" 
+                      selected={selectedDate} 
+                      onSelect={handleDateSelect}
+                      initialFocus 
+                      className="p-3 pointer-events-auto bg-gray-50" 
+                    />
                   </PopoverContent>
                 </Popover>
               </div>
