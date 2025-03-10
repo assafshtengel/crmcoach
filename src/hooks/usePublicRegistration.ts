@@ -55,12 +55,11 @@ export const usePublicRegistration = () => {
 
       try {
         console.log("Fetching link data for ID:", linkId);
+        
+        // First, fetch the registration link details
         const { data: linkData, error: linkError } = await supabase
           .from('registration_links')
-          .select(`
-            *,
-            coach:coaches(id, full_name, email)
-          `)
+          .select('*, coach_id')
           .eq('id', linkId)
           .eq('is_active', true)
           .single();
@@ -70,14 +69,31 @@ export const usePublicRegistration = () => {
           throw new Error('הקישור לא נמצא או שאינו פעיל');
         }
 
-        // Make sure we have coach data
-        if (!linkData.coach || !linkData.coach.id) {
-          console.error("Missing coach data in link:", linkData);
-          throw new Error('מידע המאמן חסר בקישור');
+        // Now fetch the coach details separately
+        if (!linkData.coach_id) {
+          console.error("Missing coach_id in link:", linkData);
+          throw new Error('מזהה המאמן חסר בקישור');
         }
 
-        console.log("Link data loaded:", linkData);
-        setLinkData(linkData);
+        const { data: coachData, error: coachError } = await supabase
+          .from('coaches')
+          .select('id, full_name, email')
+          .eq('id', linkData.coach_id)
+          .single();
+
+        if (coachError || !coachData) {
+          console.error("Error fetching coach:", coachError);
+          throw new Error('לא ניתן למצוא את המאמן המשויך לקישור');
+        }
+
+        // Combine the data
+        const completeData = {
+          ...linkData,
+          coach: coachData
+        };
+
+        console.log("Link data with coach loaded:", completeData);
+        setLinkData(completeData);
       } catch (error: any) {
         console.error("Error in useEffect:", error);
         showFeedback("שגיאה", error.message || "אירעה שגיאה בטעינת הטופס", true);
