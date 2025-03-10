@@ -62,29 +62,35 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
               navigate("/player-auth");
               return;
             }
+            
+            console.log("Player authenticated successfully");
+            setIsLoading(false);
+            return;
           } catch (err) {
             console.error("Error parsing player session:", err);
             localStorage.removeItem('playerSession');
             navigate("/player-auth");
             return;
           }
-          
-          setIsLoading(false);
-          return;
         }
         
-        // Route for viewing a specific player's profile - allow access for both
-        // the player themselves or the coach who manages this player
+        // Player profile view - allow access for both player or coach
         if (playerId && location.pathname.includes('/player-profile/')) {
           // First check for player session (player viewing their own profile)
           const playerSession = localStorage.getItem('playerSession');
           
           if (playerSession) {
-            const playerData = JSON.parse(playerSession);
-            
-            if (playerData.id === playerId) {
-              setIsLoading(false);
-              return;
+            try {
+              const playerData = JSON.parse(playerSession);
+              
+              if (playerData.id === playerId) {
+                console.log("Player viewing their own profile");
+                setIsLoading(false);
+                return;
+              }
+            } catch (err) {
+              console.error("Error parsing player session:", err);
+              // Continue with coach auth check below
             }
           }
 
@@ -97,6 +103,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             return;
           }
           
+          console.log("Coach authenticated for viewing player profile");
           setIsLoading(false);
           return;
         }
@@ -110,10 +117,16 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           return;
         }
 
+        console.log("Coach authenticated successfully");
         setIsLoading(false);
       } catch (error) {
         console.error("Authentication check failed:", error);
-        navigate("/auth");
+        // Redirect based on the route type
+        if (playerOnly) {
+          navigate("/player-auth");
+        } else {
+          navigate("/auth");
+        }
       }
     };
 

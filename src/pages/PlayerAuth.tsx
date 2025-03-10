@@ -24,6 +24,8 @@ const PlayerAuth = () => {
     setLoading(true);
 
     try {
+      console.log("Player attempting to log in with email:", email);
+      
       // Check if this email exists in the players table
       const { data: playerData, error: playerError } = await supabase
         .from('players')
@@ -31,8 +33,8 @@ const PlayerAuth = () => {
         .eq('email', email)
         .maybeSingle();
 
-      if (playerError && playerError.code !== 'PGRST116') {
-        console.error("Error checking player:", playerError);
+      if (playerError) {
+        console.error("Database error checking player credentials:", playerError);
         toast({
           variant: "destructive",
           title: "שגיאה במערכת",
@@ -44,6 +46,7 @@ const PlayerAuth = () => {
 
       // If no player found with this email
       if (!playerData) {
+        console.log("No player found with email:", email);
         toast({
           variant: "destructive",
           title: "כתובת אימייל לא קיימת",
@@ -55,6 +58,7 @@ const PlayerAuth = () => {
 
       // Email exists but password doesn't match
       if (playerData.password !== password) {
+        console.log("Password doesn't match for player:", email);
         toast({
           variant: "destructive",
           title: "סיסמה שגויה",
@@ -65,12 +69,13 @@ const PlayerAuth = () => {
       }
 
       // Login successful
+      console.log("Player login successful for:", email);
       toast({
         title: "התחברות הצליחה",
         description: "מיד תועבר לפרופיל השחקן",
       });
 
-      // Store player session data
+      // Store player session data in localStorage
       localStorage.setItem('playerSession', JSON.stringify({
         id: playerData.id,
         email: playerData.email,
@@ -80,7 +85,7 @@ const PlayerAuth = () => {
       // Navigate to the player profile view
       navigate('/player/profile');
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Unexpected error during player login:", error);
       toast({
         variant: "destructive",
         title: "שגיאה בהתחברות",

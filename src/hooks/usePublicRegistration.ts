@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from "react-hook-form";
@@ -56,7 +55,8 @@ export const usePublicRegistration = () => {
       try {
         console.log("Fetching registration link data for ID:", linkId);
         
-        // Fetch the registration link with limited coach info, without requiring a fully populated coach data
+        // Since we're using this function for public registration without coach authentication,
+        // we want to fetch data using the anon key without requiring coach auth
         const { data: link, error: linkError } = await supabase
           .from('registration_links')
           .select(`
