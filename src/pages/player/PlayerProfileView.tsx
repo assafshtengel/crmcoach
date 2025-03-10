@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +45,15 @@ interface Goal {
   status: "active" | "completed";
 }
 
+interface PlayerGoals {
+  id: string;
+  player_id: string;
+  short_term_goals: Goal[];
+  long_term_goals: Goal[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 const PlayerProfileView = () => {
   const navigate = useNavigate();
   const [player, setPlayer] = useState<PlayerData | null>(null);
@@ -53,18 +63,12 @@ const PlayerProfileView = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [sessionSummaries, setSessionSummaries] = useState([]);
-  const [shortTermGoals, setShortTermGoals] = useState<Goal[]>([
-    { id: "1", title: "לשפר דיוק בבעיטות חופשיות", term: "short", status: "active" },
-    { id: "2", title: "לעבוד על אסרטיביות בהגנה", term: "short", status: "active" },
-    { id: "3", title: "להגביר יכולות קבלת החלטות תחת לחץ", term: "short", status: "active" }
-  ]);
-  const [longTermGoals, setLongTermGoals] = useState<Goal[]>([
-    { id: "4", title: "להיות שחקן הרכב קבוע בקבוצה", term: "long", status: "active" },
-    { id: "5", title: "לשפר מדדים גופניים כלליים ב-15%", term: "long", status: "active" },
-    { id: "6", title: "להפוך למנהיג בקבוצה", term: "long", status: "active" }
-  ]);
+  const [shortTermGoals, setShortTermGoals] = useState<Goal[]>([]);
+  const [longTermGoals, setLongTermGoals] = useState<Goal[]>([]);
+  const [playerGoalsId, setPlayerGoalsId] = useState<string | null>(null);
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [editedGoalText, setEditedGoalText] = useState("");
+  const [savingGoals, setSavingGoals] = useState(false);
 
   useEffect(() => {
     const loadPlayerData = async () => {
@@ -90,6 +94,9 @@ const PlayerProfileView = () => {
         }
 
         setPlayer(data);
+        
+        // Load player goals
+        await loadPlayerGoals(data.id);
         
         const { data: videosData, error: videosError } = await supabase
           .from("videos")
@@ -165,6 +172,88 @@ const PlayerProfileView = () => {
     loadPlayerData();
   }, [navigate]);
 
+  const loadPlayerGoals = async (playerId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("player_goals")
+        .select("*")
+        .eq("player_id", playerId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching player goals:", error);
+        return;
+      }
+
+      if (data) {
+        setShortTermGoals(data.short_term_goals || []);
+        setLongTermGoals(data.long_term_goals || []);
+        setPlayerGoalsId(data.id);
+      } else {
+        // Default goals if none exist yet
+        const defaultShortTermGoals = [
+          { id: "1", title: "לשפר דיוק בבעיטות חופשיות", term: "short", status: "active" },
+          { id: "2", title: "לעבוד על אסרטיביות בהגנה", term: "short", status: "active" },
+          { id: "3", title: "להגביר יכולות קבלת החלטות תחת לחץ", term: "short", status: "active" }
+        ];
+        
+        const defaultLongTermGoals = [
+          { id: "4", title: "להיות שחקן הרכב קבוע בקבוצה", term: "long", status: "active" },
+          { id: "5", title: "לשפר מדדים גופניים כלליים ב-15%", term: "long", status: "active" },
+          { id: "6", title: "להפוך למנהיג בקבוצה", term: "long", status: "active" }
+        ];
+        
+        setShortTermGoals(defaultShortTermGoals);
+        setLongTermGoals(defaultLongTermGoals);
+        
+        // Create initial record in the database
+        await saveGoalsToDatabase(playerId, defaultShortTermGoals, defaultLongTermGoals);
+      }
+    } catch (error) {
+      console.error("Error in loadPlayerGoals:", error);
+    }
+  };
+
+  const saveGoalsToDatabase = async (playerId: string, shortGoals: Goal[], longGoals: Goal[]) => {
+    try {
+      setSavingGoals(true);
+      
+      if (playerGoalsId) {
+        // Update existing record
+        const { error } = await supabase
+          .from("player_goals")
+          .update({
+            short_term_goals: shortGoals,
+            long_term_goals: longGoals,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", playerGoalsId);
+          
+        if (error) throw error;
+      } else {
+        // Create new record
+        const { data, error } = await supabase
+          .from("player_goals")
+          .insert({
+            player_id: playerId,
+            short_term_goals: shortGoals,
+            long_term_goals: longGoals
+          })
+          .select("id")
+          .single();
+          
+        if (error) throw error;
+        if (data) setPlayerGoalsId(data.id);
+      }
+      
+    } catch (error) {
+      console.error("Error saving goals to database:", error);
+      toast.error("שגיאה בשמירת המטרות");
+    } finally {
+      setSavingGoals(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("playerSession");
     toast.success("התנתקת בהצלחה");
@@ -188,36 +277,55 @@ const PlayerProfileView = () => {
     setEditedGoalText(currentTitle);
   };
 
-  const handleSaveGoal = (goalId: string, term: "short" | "long") => {
+  const handleSaveGoal = async (goalId: string, term: "short" | "long") => {
+    if (!player) return;
+    
+    let updatedShortTermGoals = [...shortTermGoals];
+    let updatedLongTermGoals = [...longTermGoals];
+    
     if (term === "short") {
-      setShortTermGoals(prev => 
-        prev.map(goal => goal.id === goalId ? { ...goal, title: editedGoalText } : goal)
+      updatedShortTermGoals = shortTermGoals.map(goal => 
+        goal.id === goalId ? { ...goal, title: editedGoalText } : goal
       );
+      setShortTermGoals(updatedShortTermGoals);
     } else {
-      setLongTermGoals(prev => 
-        prev.map(goal => goal.id === goalId ? { ...goal, title: editedGoalText } : goal)
+      updatedLongTermGoals = longTermGoals.map(goal => 
+        goal.id === goalId ? { ...goal, title: editedGoalText } : goal
       );
+      setLongTermGoals(updatedLongTermGoals);
     }
+    
     setEditingGoal(null);
+    
+    // Save to database
+    await saveGoalsToDatabase(player.id, updatedShortTermGoals, updatedLongTermGoals);
     toast.success("המטרה עודכנה בהצלחה");
   };
 
-  const handleToggleGoalStatus = (goalId: string, term: "short" | "long") => {
+  const handleToggleGoalStatus = async (goalId: string, term: "short" | "long") => {
+    if (!player) return;
+    
+    let updatedShortTermGoals = [...shortTermGoals];
+    let updatedLongTermGoals = [...longTermGoals];
+    
     if (term === "short") {
-      setShortTermGoals(prev => 
-        prev.map(goal => goal.id === goalId 
+      updatedShortTermGoals = shortTermGoals.map(goal => 
+        goal.id === goalId 
           ? { ...goal, status: goal.status === "active" ? "completed" : "active" } 
           : goal
-        )
       );
+      setShortTermGoals(updatedShortTermGoals);
     } else {
-      setLongTermGoals(prev => 
-        prev.map(goal => goal.id === goalId 
+      updatedLongTermGoals = longTermGoals.map(goal => 
+        goal.id === goalId 
           ? { ...goal, status: goal.status === "active" ? "completed" : "active" } 
           : goal
-        )
       );
+      setLongTermGoals(updatedLongTermGoals);
     }
+    
+    // Save to database
+    await saveGoalsToDatabase(player.id, updatedShortTermGoals, updatedLongTermGoals);
     toast.success("סטטוס המטרה עודכן בהצלחה");
   };
 
@@ -363,7 +471,7 @@ const PlayerProfileView = () => {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 player-tabs modern-tabs">
-          <TabsList className="tabs-list w-full rounded-xl">
+          <TabsList className="tabs-list w-full rounded-xl flex flex-wrap">
             <TabsTrigger value="profile" className="tab-trigger">
               <User className="h-4 w-4 mr-2" />
               פרופיל
@@ -387,7 +495,7 @@ const PlayerProfileView = () => {
             </TabsTrigger>
             <TabsTrigger value="belief-breaking" className="tab-trigger">
               <ExternalLink className="h-4 w-4 mr-2" />
-              שחרור אמונות מגבילות
+              שחרור אמונות
             </TabsTrigger>
             <TabsTrigger value="goals" className="tab-trigger">
               <Target className="h-4 w-4 mr-2" />
@@ -637,8 +745,9 @@ const PlayerProfileView = () => {
                             <Button 
                               size="sm" 
                               onClick={() => handleSaveGoal(goal.id, "short")}
+                              disabled={savingGoals}
                             >
-                              שמור
+                              {savingGoals ? "שומר..." : "שמור"}
                             </Button>
                           ) : (
                             <>
@@ -655,6 +764,7 @@ const PlayerProfileView = () => {
                                 variant={goal.status === 'completed' ? 'default' : 'outline'}
                                 onClick={() => handleToggleGoalStatus(goal.id, "short")}
                                 className={goal.status === 'completed' ? '' : 'hover:bg-primary/5'}
+                                disabled={savingGoals}
                               >
                                 {goal.status === 'completed' ? 'הושלם' : 'סמן כהושלם'}
                               </Button>
@@ -695,8 +805,9 @@ const PlayerProfileView = () => {
                             <Button 
                               size="sm" 
                               onClick={() => handleSaveGoal(goal.id, "long")}
+                              disabled={savingGoals}
                             >
-                              שמור
+                              {savingGoals ? "שומר..." : "שמור"}
                             </Button>
                           ) : (
                             <>
@@ -713,6 +824,7 @@ const PlayerProfileView = () => {
                                 variant={goal.status === 'completed' ? 'default' : 'outline'}
                                 onClick={() => handleToggleGoalStatus(goal.id, "long")}
                                 className={goal.status === 'completed' ? '' : 'hover:bg-primary/5'}
+                                disabled={savingGoals}
                               >
                                 {goal.status === 'completed' ? 'הושלם' : 'סמן כהושלם'}
                               </Button>
