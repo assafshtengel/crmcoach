@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -34,7 +33,6 @@ import {
 } from "lucide-react";
 import { format, isAfter, parseISO } from "date-fns";
 
-// Define clearer types for the assignments
 interface VideoAssignment {
   id: string;
   player_id: string;
@@ -46,6 +44,8 @@ interface VideoAssignment {
     id: string;
     title: string;
     days_after_registration: number;
+    url?: string;
+    description?: string;
   };
   players?: {
     id: string;
@@ -81,7 +81,6 @@ export default function AutoVideoManagement() {
       setLoading(true);
       console.log("Fetching auto video assignments...");
 
-      // Use the correct joining syntax with the exclamation point for inner join
       const { data, error } = await supabase
         .from("auto_video_assignments")
         .select(`
@@ -98,7 +97,6 @@ export default function AutoVideoManagement() {
 
       console.log("Assignments data:", data);
       
-      // Check for null or undefined player names
       const nullPlayerNames = data?.filter(a => !a.players?.full_name);
       if (nullPlayerNames && nullPlayerNames.length > 0) {
         console.warn("Found assignments with null player names:", nullPlayerNames);
@@ -131,18 +129,15 @@ export default function AutoVideoManagement() {
 
   const getPlayerStats = async () => {
     try {
-      // Get total player count
       const { count: totalCount, error: totalError } = await supabase
         .from("players")
         .select("*", { count: "exact", head: true });
 
-      // Get count of players with auto video assignments
       const { data: playersWithVideos, error: videoError } = await supabase
         .from("auto_video_assignments")
         .select("player_id", { count: "exact" })
         .is("player_id", "not.null");
 
-      // Get unique player ids with assignments
       const uniquePlayerIds = new Set(playersWithVideos?.map(a => a.player_id));
 
       if (totalError || videoError) {
@@ -164,7 +159,6 @@ export default function AutoVideoManagement() {
     try {
       setProcessResult(null);
       
-      // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('process-auto-videos', {
         method: 'POST',
         body: {}
@@ -178,7 +172,6 @@ export default function AutoVideoManagement() {
       console.log("Process result:", data);
       setProcessResult(data);
       
-      // Refresh the list
       await fetchAssignments();
       
       toast({
@@ -195,7 +188,6 @@ export default function AutoVideoManagement() {
     }
   };
 
-  // Add a new test player
   const addTestPlayer = async () => {
     if (!newPlayerName || !newPlayerEmail) {
       toast({
@@ -207,7 +199,6 @@ export default function AutoVideoManagement() {
     }
 
     try {
-      // Get the current user (coach)
       const { data: userData } = await supabase.auth.getUser();
       const coachId = userData.user?.id;
 
@@ -215,7 +206,6 @@ export default function AutoVideoManagement() {
         throw new Error("לא נמצא מזהה מאמן");
       }
 
-      // Insert the new player
       const { data: newPlayer, error } = await supabase
         .from('players')
         .insert([
@@ -223,7 +213,7 @@ export default function AutoVideoManagement() {
             full_name: newPlayerName,
             email: newPlayerEmail,
             coach_id: coachId,
-            phone: "000-0000000" // Placeholder
+            phone: "000-0000000"
           }
         ])
         .select();
@@ -241,10 +231,8 @@ export default function AutoVideoManagement() {
       setNewPlayerEmail("");
       setShowAddPlayerDialog(false);
 
-      // Wait a moment and then refresh to see the new assignments
       setTimeout(async () => {
         await refreshAssignments();
-        // Explicitly check the new player's auto video assignments
         checkNewPlayerAssignments(newPlayer?.[0]?.id);
       }, 2000);
 
@@ -258,7 +246,6 @@ export default function AutoVideoManagement() {
     }
   };
 
-  // Check specific player's auto video assignments
   const checkNewPlayerAssignments = async (playerId: string) => {
     if (!playerId) return;
     
@@ -270,7 +257,7 @@ export default function AutoVideoManagement() {
           videos:video_id (title, days_after_registration),
           players:player_id (full_name, email)
         `)
-        .eq("player_id", playerId);
+        .filter('player_id', 'eq', playerId);
         
       if (error) {
         console.error(`Error checking assignments for player ${playerId}:`, error);
@@ -291,7 +278,6 @@ export default function AutoVideoManagement() {
           variant: "destructive",
         });
         
-        // Call the process function to see if it helps
         await handleProcess();
       }
     } catch (error) {
@@ -299,11 +285,9 @@ export default function AutoVideoManagement() {
     }
   };
 
-  // Apply filters based on search query and active tab
   const applyFilters = (assignments: VideoAssignment[], query: string, tab: string) => {
     let filtered = [...assignments];
     
-    // Apply search query filter
     if (query) {
       const searchLower = query.toLowerCase();
       filtered = filtered.filter(assignment => {
@@ -317,7 +301,6 @@ export default function AutoVideoManagement() {
       });
     }
     
-    // Apply tab filter
     if (tab === "pending") {
       filtered = filtered.filter(assignment => !assignment.sent);
     } else if (tab === "sent") {
@@ -334,7 +317,6 @@ export default function AutoVideoManagement() {
     setFilteredAssignments(filtered);
   };
 
-  // Update filters when search query or active tab changes
   useEffect(() => {
     applyFilters(allAssignments, searchQuery, activeTab);
   }, [searchQuery, activeTab, allAssignments]);
@@ -352,12 +334,10 @@ export default function AutoVideoManagement() {
     setShowDetailsDialog(true);
   };
 
-  // Check if auto video scheduling is working correctly
   const checkAutoVideoScheduling = async () => {
     try {
       console.log("Checking auto video scheduling functionality...");
       
-      // Check if there are videos configured for auto-scheduling
       const { data: autoVideos, error: videosError } = await supabase
         .from('videos')
         .select('id, title, is_auto_scheduled, days_after_registration')
@@ -373,7 +353,6 @@ export default function AutoVideoManagement() {
         }
       }
 
-      // Check for the database trigger
       const { data: latestPlayers, error: playersError } = await supabase
         .from('players')
         .select('id, created_at, full_name')
@@ -385,7 +364,6 @@ export default function AutoVideoManagement() {
       } else {
         console.log("Latest registered players:", latestPlayers);
         
-        // For each of these players, check if they have auto assignments
         for (const player of (latestPlayers || [])) {
           const { data: playerAssignments, error: assignmentsError } = await supabase
             .from('auto_video_assignments')
@@ -403,7 +381,6 @@ export default function AutoVideoManagement() {
         }
       }
 
-      // Call the database function directly
       const { error: dbFunctionError } = await supabase
         .rpc('process_auto_video_assignments');
       
@@ -417,12 +394,10 @@ export default function AutoVideoManagement() {
     }
   };
 
-  // Call the check function on component mount
   useEffect(() => {
     checkAutoVideoScheduling();
   }, []);
 
-  // Format date for display
   const formatDate = (dateString: string) => {
     if (!dateString) return "לא צוין";
     try {
@@ -472,7 +447,6 @@ export default function AutoVideoManagement() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Stats cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <Card>
                 <CardContent className="pt-6">
@@ -504,7 +478,6 @@ export default function AutoVideoManagement() {
               </Card>
             </div>
             
-            {/* Search and filters */}
             <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
               <div className="relative max-w-md">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
@@ -529,7 +502,6 @@ export default function AutoVideoManagement() {
               </Tabs>
             </div>
             
-            {/* Assignment results */}
             {loading ? (
               <div className="text-center py-12">
                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
@@ -607,7 +579,6 @@ export default function AutoVideoManagement() {
               </div>
             )}
 
-            {/* Process result info */}
             {processResult && (
               <Card className="mt-4 bg-blue-50 border-blue-200">
                 <CardContent className="pt-4">
@@ -632,7 +603,6 @@ export default function AutoVideoManagement() {
         </CardContent>
       </Card>
 
-      {/* Assignment Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -712,7 +682,6 @@ export default function AutoVideoManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Test Player Dialog */}
       <Dialog open={showAddPlayerDialog} onOpenChange={setShowAddPlayerDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -756,3 +725,4 @@ export default function AutoVideoManagement() {
     </div>
   );
 }
+
