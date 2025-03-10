@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -120,22 +121,26 @@ const DashboardCoach = () => {
 
       setUpcomingSessions(upcomingSessionsData || []);
 
-      // Fetch statistics
+      // Fetch coach statistics using the get_coach_statistics function
       const { data: statsData, error: statsError } = await supabase
-        .from('coach_stats')
-        .select('*')
-        .eq('coach_id', coachId)
+        .rpc('get_coach_statistics', { coach_id: coachId })
         .single();
 
       if (statsError) {
-        throw statsError;
+        console.error("Error fetching coach statistics:", statsError);
+        // Fallback to default values if RPC fails
+        setStats({
+          totalSessions: 0,
+          successfulReminders: 0,
+          activePlayersCount: 0
+        });
+      } else {
+        setStats({
+          totalSessions: statsData?.totalsessions || 0,
+          successfulReminders: statsData?.successfulreminders || 0,
+          activePlayersCount: statsData?.activeplayerscount || 0
+        });
       }
-
-      setStats(statsData || {
-        totalSessions: 0,
-        successfulReminders: 0,
-        activePlayersCount: 0
-      });
 
     } catch (error) {
       console.error("Error fetching data:", error);
