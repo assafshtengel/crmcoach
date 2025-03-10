@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -83,6 +82,39 @@ const recommendedBooks: Book[] = [
     category: "תפיסה מנטלית",
     rating: 5,
     price: "₪70"
+  },
+  {
+    id: 7,
+    title: "כוחו של הרגל",
+    author: "צ'רלס דוהיג",
+    description: "נדמה לנו שרוב הבחירות הן תוצאה של החלטות שקולות, אבל האמת היא שהן תוצר של הרגלים. בספר הזה לוקח אותנו צ'רלס דוהיג להבנת המנגנונים מאחורי ההרגלים, איך אפשר לשנותם וליצור מהפך במפעלים, קהילות וחיינו שלנו.",
+    imageUrl: "public/lovable-uploads/588ce253-8b3c-4b72-8cd5-afdbec6685bd.png",
+    purchaseUrl: "https://www.steimatzky.co.il/011373421",
+    category: "התפתחות אישית",
+    rating: 5,
+    price: "₪78.40"
+  },
+  {
+    id: 8,
+    title: "GRIT",
+    author: "אנג'לה דאקוורת",
+    description: "בספר גריט, שהגיע בן לילה לרשימת רבי המכר של הניו יורק טיימס, מראה הפסיכולוגית פורצת הדרך אנג'לה דאקוורת לכל מי ששואף להצליח – הורים, תלמידים, מחנכים, ספורטאים ואנשי עסקים או בעצם כל אחד - שהסוד מאחורי הצלחות יוצאות דופן אינו הכישרון שאנו ניחנים בו אלא שילוב מיוחד של להט והתמדה שאותו היא מכנה \"גריט\".",
+    imageUrl: "public/lovable-uploads/fc3e00d8-a91a-4bc3-bef2-0fbe02a2c298.png",
+    purchaseUrl: "https://www.danibooks.co.il/%D7%A2%D7%99%D7%95%D7%9F/%D7%A4%D7%A1%D7%99%D7%9B%D7%95%D7%9C%D7%95%D7%92%D7%99%D7%94-%D7%97%D7%99%D7%A0%D7%95%D7%9A/%D7%92%D7%A8%D7%99%D7%98-GRIT",
+    category: "פסיכולוגיה",
+    rating: 5,
+    price: "₪59"
+  },
+  {
+    id: 9,
+    title: "דחיפות קלות",
+    author: "קאס סאנסטיין וריצ'רד תיילר",
+    description: "בכל יום אנחנו עומדים בפני אינספור בחירות ועלינו לקבל החלטה – מה לאכול, מה לקנות, כמה לחסוך, איפה להשקיע כסף, איך לשמור על הבריאות, מה לעשות כדי לשמור על הסביבה ועוד. הספר דחיפות קלות חושף בדרך משעשעת ומוחשית מאוד את הסיבות לבחירות הגרועות שלנו – ומראה מה ניתן לעשות כדי לשפר את בחירותינו.",
+    imageUrl: "public/lovable-uploads/28c4f376-4c2a-4c95-860d-febc4be278b2.png",
+    purchaseUrl: "https://www.danibooks.co.il/%D7%A2%D7%99%D7%95%D7%9F/%D7%9B%D7%9C%D7%9B%D7%9C%D7%94-%D7%A9%D7%99%D7%95%D7%95%D7%A7-%D7%95%D7%A2%D7%A1%D7%A7%D7%99%D7%9D1/%D7%93%D7%97%D7%99%D7%A4%D7%95%D7%AA-%D7%A7%D7%9C%D7%95%D7%AA-Nudge",
+    category: "קבלת החלטות",
+    rating: 5,
+    price: "₪69"
   }
 ];
 
