@@ -41,48 +41,68 @@ export default function CoachSignUp() {
       if (data.user) {
         console.log("User created successfully:", data.user);
         
-        // יצירת רשומת מאמן מפורשת
-        const { error: coachError } = await supabase
-          .from('coaches')
-          .insert([{ 
-            id: data.user.id,
-            full_name: fullName,
-            email: email
-          }]);
-
-        if (coachError) {
-          console.error("Error creating coach record:", coachError);
-          
-          // אם יש שגיאה בשמירת המאמן, ננסה ליצור את רשומת התפקיד
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert([{ 
-              id: data.user.id,
-              role: 'coach'
-            }]);
-            
-          if (roleError) {
-            console.error("Error creating role record:", roleError);
-          }
-          
-          throw new Error("שגיאה בשמירת נתוני המאמן");
-        }
-
-        // Send notification email about the new coach
         try {
-          console.log("Sending notification email for new coach");
-          const response = await supabase.functions.invoke('notify-new-coach', {
-            body: { coachId: data.user.id }
-          });
+          // Check if coach already exists
+          const { data: existingCoach } = await supabase
+            .from('coaches')
+            .select('id')
+            .eq('id', data.user.id)
+            .single();
+            
+          // Only create coach record if it doesn't exist
+          if (!existingCoach) {
+            const { error: coachError } = await supabase
+              .from('coaches')
+              .insert([{ 
+                id: data.user.id,
+                full_name: fullName,
+                email: email
+              }]);
 
-          if (response.error) {
-            console.error("Error sending notification email:", response.error);
-          } else {
-            console.log("Notification email sent successfully");
+            if (coachError) {
+              console.error("Error creating coach record:", coachError);
+              
+              // Check if we need to create a role record
+              const { data: roleExists } = await supabase
+                .from('user_roles')
+                .select('id')
+                .eq('id', data.user.id)
+                .single();
+                
+              if (!roleExists) {
+                const { error: roleError } = await supabase
+                  .from('user_roles')
+                  .insert([{ 
+                    id: data.user.id,
+                    role: 'coach'
+                  }]);
+                  
+                if (roleError) {
+                  console.error("Error creating role record:", roleError);
+                }
+              }
+            }
           }
-        } catch (emailError) {
-          console.error("Failed to send notification email:", emailError);
-          // We don't want to block the signup process if notification fails
+        
+          // Send notification email about the new coach
+          try {
+            console.log("Sending notification email for new coach");
+            const response = await supabase.functions.invoke('notify-new-coach', {
+              body: { coachId: data.user.id }
+            });
+
+            if (response.error) {
+              console.error("Error sending notification email:", response.error);
+            } else {
+              console.log("Notification email sent successfully");
+            }
+          } catch (emailError) {
+            console.error("Failed to send notification email:", emailError);
+            // We don't want to block the signup process if notification fails
+          }
+        } catch (insertError) {
+          console.error("Database operation error:", insertError);
+          // Don't throw here, we still want to show success to the user
         }
 
         toast({
@@ -95,11 +115,20 @@ export default function CoachSignUp() {
     } catch (error: any) {
       console.error("Signup error details:", error);
       
-      toast({
-        variant: "destructive",
-        title: "שגיאה בהרשמה",
-        description: error.message,
-      });
+      // Check if it's a "User already registered" error
+      if (error.message && error.message.includes("User already registered")) {
+        toast({
+          variant: "destructive",
+          title: "כתובת האימייל כבר רשומה במערכת",
+          description: "נא להשתמש בכתובת אימייל אחרת או להתחבר עם החשבון הקיים",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "שגיאה בהרשמה",
+          description: error.message,
+        });
+      }
     } finally {
       setLoading(false);
     }

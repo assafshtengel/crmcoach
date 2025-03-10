@@ -41,42 +41,30 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
 
       if (error) {
         console.error("Signup error:", error);
+        
+        // Check if it's a "User already registered" error
+        if (error.message && error.message.includes("User already registered")) {
+          throw new Error("כתובת האימייל כבר רשומה במערכת. נא להשתמש בכתובת אימייל אחרת או להתחבר עם החשבון הקיים");
+        }
+        
         throw error;
       }
 
       if (data.user) {
         console.log("User created successfully:", data.user);
         
-        // בדיקה שהתפקיד נוצר בהצלחה
-        const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('id', data.user.id)
-          .maybeSingle();
-
-        if (roleError) {
-          console.error("Error verifying coach role:", roleError);
-        } else {
-          console.log("User role verified:", roleData);
-        }
-        
-        // וידוא שהמאמן נרשם בטבלת המאמנים
-        const { data: coachData, error: coachError } = await supabase
-          .from('coaches')
-          .select('id')
-          .eq('id', data.user.id)
-          .maybeSingle();
-          
-        if (coachError) {
-          console.error("Error verifying coach entry:", coachError);
-        } else {
-          console.log("Coach entry verified:", coachData);
-          
-          // אם לא קיים, ניצור אותו באופן מפורש
-          if (!coachData) {
-            console.log("Creating coach entry explicitly");
+        try {
+          // Check if coach already exists first
+          const { data: existingCoach } = await supabase
+            .from('coaches')
+            .select('id')
+            .eq('id', data.user.id)
+            .single();
             
-            const { error: insertError } = await supabase
+          // Only insert if not exists
+          if (!existingCoach) {
+            // וידוא שהמאמן נרשם בטבלת המאמנים
+            const { error: coachError } = await supabase
               .from('coaches')
               .insert({
                 id: data.user.id,
@@ -84,30 +72,33 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
                 email: email,
                 specialty: specialty
               });
-              
-            if (insertError) {
-              console.error("Error creating coach entry:", insertError);
+                
+            if (coachError) {
+              console.error("Error creating coach entry:", coachError);
             } else {
               console.log("Coach entry created successfully");
             }
           }
-        }
 
-        // Send notification email about the new coach
-        try {
-          console.log("Sending notification email for new coach");
-          const response = await supabase.functions.invoke('notify-new-coach', {
-            body: { coachId: data.user.id }
-          });
+          // Send notification email about the new coach
+          try {
+            console.log("Sending notification email for new coach");
+            const response = await supabase.functions.invoke('notify-new-coach', {
+              body: { coachId: data.user.id }
+            });
 
-          if (response.error) {
-            console.error("Error sending notification email:", response.error);
-          } else {
-            console.log("Notification email sent successfully");
+            if (response.error) {
+              console.error("Error sending notification email:", response.error);
+            } else {
+              console.log("Notification email sent successfully");
+            }
+          } catch (emailError) {
+            console.error("Failed to send notification email:", emailError);
+            // We don't want to block the signup process if notification fails
           }
-        } catch (emailError) {
-          console.error("Failed to send notification email:", emailError);
-          // We don't want to block the signup process if notification fails
+        } catch (dbError) {
+          console.error("Database operation error:", dbError);
+          // Don't throw here so signup can still proceed
         }
       }
 
