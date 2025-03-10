@@ -28,8 +28,8 @@ const PublicRegistrationForm = () => {
     return <LoadingSpinner />;
   }
 
-  // Check if we have both link data and coach data
-  if (!linkData || !linkData.coach) {
+  // Make sure we have at least the coach_id from the link data
+  if (!linkData || !linkData.coach_id) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
@@ -42,11 +42,14 @@ const PublicRegistrationForm = () => {
     );
   }
 
+  // Get the coach name from the link data, default to "המאמן" if not available
+  const coachName = linkData.coach?.full_name || "המאמן";
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
         <FormHeader 
-          coachName={linkData.coach.full_name} 
+          coachName={coachName} 
           customMessage={linkData.custom_message} 
         />
 
@@ -67,9 +70,9 @@ const PublicRegistrationForm = () => {
         feedbackMessage={feedbackMessage}
         showSuccessDialog={showSuccessDialog}
         setShowSuccessDialog={setShowSuccessDialog}
-        coachName={linkData.coach.full_name}
+        coachName={coachName}
         handleCloseWindow={handleCloseWindow}
-        onFeedbackClose={() => setShowSuccessDialog(true)}
+        onFeedbackClose={() => setShowFeedbackDialog(false)}
         generatedPassword={generatedPassword}
       />
     </div>

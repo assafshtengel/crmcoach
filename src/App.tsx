@@ -98,8 +98,10 @@ function App() {
             <Route path="/edit-player" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
             <Route path="/edit-player/:playerId" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
             <Route path="/registration-links" element={<AuthGuard><RegistrationLinks /></AuthGuard>} />
-            {/* Important: This route should NOT have AuthGuard */}
+            
+            {/* Public registration form - explicitly WITHOUT AuthGuard */}
             <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
+            
             <Route path="/tool-management" element={<AuthGuard><ToolManagement /></AuthGuard>} />
             <Route path="/auto-video-management" element={<AuthGuard><AutoVideoManagement /></AuthGuard>} />
             <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />

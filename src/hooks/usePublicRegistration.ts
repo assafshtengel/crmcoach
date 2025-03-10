@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from "react-hook-form";
@@ -53,9 +54,16 @@ export const usePublicRegistration = () => {
       }
 
       try {
+        // Fetch the registration link with limited coach info, without requiring a fully populated coach data
         const { data: link, error: linkError } = await supabase
           .from('registration_links')
-          .select('*')
+          .select(`
+            id, 
+            is_active, 
+            coach_id, 
+            custom_message,
+            coach:coach_id (full_name)
+          `)
           .eq('id', linkId)
           .maybeSingle();
 
@@ -69,12 +77,18 @@ export const usePublicRegistration = () => {
           throw new Error('קישור זה אינו פעיל יותר');
         }
 
-        setLinkData(link);
+        // Make sure we have at least the coach_id for later form submission
+        // even if the coach's name isn't available
+        if (!link.coach_id) {
+          throw new Error('הקישור לא תקין - נא לפנות למנהל המערכת');
+        }
 
+        console.log("Link data fetched successfully:", link);
+        setLinkData(link);
       } catch (error: any) {
         console.error("Error in fetchLinkData:", error);
         showFeedback("שגיאה", error.message || "אירעה שגיאה בטעינת הטופס", true);
-        navigate('/');
+        // Stay on the page and don't navigate away
       } finally {
         setIsLoading(false);
       }
