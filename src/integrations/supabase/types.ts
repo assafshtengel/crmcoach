@@ -1128,6 +1128,7 @@ export type Database = {
         Row: {
           coach_id: string
           created_at: string
+          has_started: boolean | null
           id: string
           location: string | null
           notes: string | null
@@ -1139,6 +1140,7 @@ export type Database = {
         Insert: {
           coach_id: string
           created_at?: string
+          has_started?: boolean | null
           id?: string
           location?: string | null
           notes?: string | null
@@ -1150,6 +1152,7 @@ export type Database = {
         Update: {
           coach_id?: string
           created_at?: string
+          has_started?: boolean | null
           id?: string
           location?: string | null
           notes?: string | null
@@ -1297,6 +1300,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_and_transition_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cron_job_exists: {
+        Args: {
+          job_name: string
+        }
+        Returns: {
+          jobid: number
+          schedule: string
+          command: string
+        }[]
+      }
       decrement_player_video_count: {
         Args: {
           player_id_param: string
@@ -1355,6 +1372,10 @@ export type Database = {
       process_auto_video_assignments: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      schedule_session_transition_checks: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
     }
     Enums: {
