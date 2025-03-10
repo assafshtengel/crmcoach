@@ -1,4 +1,4 @@
-
+<lov-code>
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +26,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -55,12 +54,14 @@ import {
   Calendar, 
   CheckCircle, 
   ClockIcon, 
+  EyeIcon,
   Film, 
   Info,
   ListChecks, 
   RefreshCw,
   Send,
   Trash2,
+  UserIcon,
 } from "lucide-react";
 
 type VideoWithSchedule = {
@@ -99,12 +100,14 @@ export default function AutoVideoManagement() {
   const [processingVideos, setProcessingVideos] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openAllAssignmentsDialog, setOpenAllAssignmentsDialog] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<VideoWithSchedule | null>(null);
   const [stats, setStats] = useState({
     totalScheduled: 0,
     totalSent: 0,
     sentLast24h: 0
   });
+  const [assignmentsLimit, setAssignmentsLimit] = useState(50);
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -161,7 +164,7 @@ export default function AutoVideoManagement() {
           videos:video_id (title, days_after_registration)
         `)
         .order('scheduled_for', { ascending: false })
-        .limit(50);
+        .limit(assignmentsLimit);
 
       if (assignmentsError) throw assignmentsError;
       setAssignments(assignmentsData || []);
@@ -198,6 +201,48 @@ export default function AutoVideoManagement() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMoreAssignments = async () => {
+    const newLimit = assignmentsLimit + 50;
+    setAssignmentsLimit(newLimit);
+    
+    try {
+      const { data: assignmentsData, error: assignmentsError } = await supabase
+        .from('auto_video_assignments')
+        .select(`
+          id, 
+          player_id,
+          video_id,
+          assigned_at,
+          scheduled_for,
+          sent,
+          created_at,
+          players:player_id (full_name, email),
+          videos:video_id (title, days_after_registration)
+        `)
+        .order('scheduled_for', { ascending: false })
+        .limit(newLimit);
+
+      if (assignmentsError) throw assignmentsError;
+      setAssignments(assignmentsData || []);
+      
+      toast({
+        title: "נטענו עוד תזמונים",
+        description: `מציג ${assignmentsData?.length || 0} תזמונים`,
+      });
+    } catch (error) {
+      console.error('Error loading more assignments:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת תזמונים נוספים",
+        description: "לא ניתן לטעון נתונים נוספים",
+      });
+    }
+  };
+
+  const showAllAssignments = () => {
+    setOpenAllAssignmentsDialog(true);
   };
 
   const handleEditSchedule = (video: VideoWithSchedule) => {
@@ -535,14 +580,22 @@ export default function AutoVideoManagement() {
 
           {/* היסטוריית שליחות אוטומטיות */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ListChecks className="h-5 w-5" />
-                היסטוריית שליחה אוטומטית
-              </CardTitle>
-              <CardDescription>
-                רשימת הסרטונים שנשלחו אוטומטית לשחקנים
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <ListChecks className="h-5 w-5" />
+                  היסטוריית שליחה אוטומטית
+                </CardTitle>
+                <CardDescription>
+                  רשימת הסרטונים שנשלחו אוטומטית לשחקנים
+                </CardDescription>
+              </div>
+              {assignments.length > 0 && (
+                <Button variant="outline" size="sm" onClick={showAllAssignments} className="flex gap-1">
+                  <EyeIcon className="h-4 w-4" />
+                  <span>הצג הכל</span>
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -555,22 +608,28 @@ export default function AutoVideoManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>שחקן</TableHead>
+                        <TableHead className="min-w-[140px]">שחקן</TableHead>
                         <TableHead>סרטון</TableHead>
                         <TableHead className="text-center">תאריך תזמון</TableHead>
-                        <TableHead className="text-center">תאריך שליחה</TableHead>
                         <TableHead className="text-center">סטטוס</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {assignments.map((assignment) => (
                         <TableRow key={assignment.id}>
-                          <TableCell className="font-medium">{assignment.players?.full_name || "לא ידוע"}</TableCell>
-                          <TableCell>{assignment.videos?.title || "סרטון לא קיים"}</TableCell>
-                          <TableCell className="text-center">{formatDate(assignment.scheduled_for)}</TableCell>
-                          <TableCell className="text-center">
-                            {assignment.sent ? formatDate(assignment.scheduled_for) : "-"}
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <UserIcon className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <div className="font-medium">{assignment.players?.full_name || "לא ידוע"}</div>
+                                <div className="text-xs text-gray-500 truncate max-w-[150px]">
+                                  {assignment.players?.email || ""}
+                                </div>
+                              </div>
+                            </div>
                           </TableCell>
+                          <TableCell>{assignment.videos?.title || "סרטון לא קיים"}</TableCell>
+                          <TableCell className="text-center whitespace-nowrap">{formatDate(assignment.scheduled_for)}</TableCell>
                           <TableCell className="text-center">
                             {assignment.sent ? (
                               <Badge variant="outline" className="bg-green-100 text-green-800">
@@ -589,7 +648,7 @@ export default function AutoVideoManagement() {
 
                       {assignments.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={5} className="h-24 text-center">
+                          <TableCell colSpan={4} className="h-24 text-center">
                             <div className="flex flex-col items-center gap-2">
                               <ListChecks className="h-8 w-8 text-muted-foreground" />
                               <p>אין היסטוריית שליחות אוטומטיות</p>
@@ -605,9 +664,81 @@ export default function AutoVideoManagement() {
                 </ScrollArea>
               )}
             </CardContent>
+            {assignments.length > 0 && (
+              <CardFooter className="flex justify-center p-2 border-t">
+                <Button variant="ghost" size="sm" onClick={loadMoreAssignments}>
+                  טען עוד תזמונים
+                </Button>
+              </CardFooter>
+            )}
           </Card>
         </div>
       </div>
+
+      {/* Dialog for viewing all assignments */}
+      <Dialog open={openAllAssignmentsDialog} onOpenChange={setOpenAllAssignmentsDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>כל התזמונים האוטומטיים</DialogTitle>
+            <DialogDescription>
+              רשימת כל התזמונים האוטומטיים במערכת
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh]">
+            <Table>
+              <TableHeader className="sticky top-0 bg-white z-10">
+                <TableRow>
+                  <TableHead className="min-w-[160px]">שחקן</TableHead>
+                  <TableHead className="min-w-[160px]">סרטון</TableHead>
+                  <TableHead className="text-center">ימים אחרי הרשמה</TableHead>
+                  <TableHead className="text-center">תאריך תזמון</TableHead>
+                  <TableHead className="text-center">תאריך שליחה</TableHead>
+                  <TableHead className="text-center">סטטוס</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {assignments.map((assignment) => (
+                  <TableRow key={assignment.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <UserIcon className="h-4 w-4 text-gray-400" />
+                        <div>
+                          <div className="font-medium">{assignment.players?.full_name || "לא ידוע"}</div>
+                          <div className="text-xs text-gray-500 truncate max-w-[150px]">
+                            {assignment.players?.email || ""}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{assignment.videos?.title || "סרטון לא קיים"}</TableCell>
+                    <TableCell className="text-center">{assignment.videos?.days_after_registration || "-"} ימים</TableCell>
+                    <TableCell className="text-center whitespace-nowrap">{formatDate(assignment.scheduled_for)}</TableCell>
+                    <TableCell className="text-center whitespace-nowrap">
+                      {assignment.sent ? formatDate(assignment.scheduled_for) : "-"}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {assignment.sent ? (
+                        <Badge variant="outline" className="bg-green-100 text-green-800">
+                          <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                          נשלח
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                          <ClockIcon className="h-3.5 w-3.5 mr-1" />
+                          ממתין
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+          <DialogFooter>
+            <Button onClick={() => setOpenAllAssignmentsDialog(false)}>סגור</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* דיאלוג עריכת תזמון */}
       <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
@@ -722,14 +853,4 @@ export default function AutoVideoManagement() {
             <AlertDialogCancel>ביטול</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDeleteVideo}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
-              <Trash2 className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
-              מחק סרטון
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}
+              className="bg
