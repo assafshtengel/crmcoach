@@ -1,4 +1,4 @@
-<lov-code>
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,10 +55,12 @@ import {
   CheckCircle, 
   ClockIcon, 
   EyeIcon,
+  Filter,
   Film, 
   Info,
   ListChecks, 
   RefreshCw,
+  Search,
   Send,
   Trash2,
   UserIcon,
@@ -96,11 +98,15 @@ type Assignment = {
 export default function AutoVideoManagement() {
   const [videos, setVideos] = useState<VideoWithSchedule[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [allAssignments, setAllAssignments] = useState<Assignment[]>([]); 
   const [loading, setLoading] = useState(true);
+  const [loadingAllAssignments, setLoadingAllAssignments] = useState(false);
   const [processingVideos, setProcessingVideos] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openAllAssignmentsDialog, setOpenAllAssignmentsDialog] = useState(false);
+  const [openFullDetailsDialog, setOpenFullDetailsDialog] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<VideoWithSchedule | null>(null);
   const [stats, setStats] = useState({
     totalScheduled: 0,
@@ -108,6 +114,7 @@ export default function AutoVideoManagement() {
     sentLast24h: 0
   });
   const [assignmentsLimit, setAssignmentsLimit] = useState(50);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -203,6 +210,44 @@ export default function AutoVideoManagement() {
     }
   };
 
+  const fetchAllAssignments = async () => {
+    setLoadingAllAssignments(true);
+    try {
+      // Fetch all assignments without limit
+      const { data: allAssignmentsData, error: allAssignmentsError } = await supabase
+        .from('auto_video_assignments')
+        .select(`
+          id, 
+          player_id,
+          video_id,
+          assigned_at,
+          scheduled_for,
+          sent,
+          created_at,
+          players:player_id (full_name, email),
+          videos:video_id (title, days_after_registration)
+        `)
+        .order('scheduled_for', { ascending: false });
+
+      if (allAssignmentsError) throw allAssignmentsError;
+      setAllAssignments(allAssignmentsData || []);
+      
+      toast({
+        title: "נטענו כל התזמונים",
+        description: `מציג ${allAssignmentsData?.length || 0} תזמונים בסך הכל`,
+      });
+    } catch (error) {
+      console.error('Error loading all assignments:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת כל התזמונים",
+        description: "לא ניתן לטעון את כל נתוני התזמונים",
+      });
+    } finally {
+      setLoadingAllAssignments(false);
+    }
+  };
+
   const loadMoreAssignments = async () => {
     const newLimit = assignmentsLimit + 50;
     setAssignmentsLimit(newLimit);
@@ -242,7 +287,16 @@ export default function AutoVideoManagement() {
   };
 
   const showAllAssignments = () => {
+    // First time we open the dialog, fetch all assignments
+    if (allAssignments.length === 0) {
+      fetchAllAssignments();
+    }
     setOpenAllAssignmentsDialog(true);
+  };
+
+  const showAssignmentDetails = (assignment: Assignment) => {
+    setSelectedAssignment(assignment);
+    setOpenFullDetailsDialog(true);
   };
 
   const handleEditSchedule = (video: VideoWithSchedule) => {
@@ -384,6 +438,18 @@ export default function AutoVideoManagement() {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('he-IL');
   };
+
+  // Filter assignments based on search query
+  const filteredAssignments = allAssignments.filter(assignment => {
+    const playerName = assignment.players?.full_name?.toLowerCase() || "";
+    const playerEmail = assignment.players?.email?.toLowerCase() || "";
+    const videoTitle = assignment.videos?.title?.toLowerCase() || "";
+    const searchLower = searchQuery.toLowerCase();
+    
+    return playerName.includes(searchLower) || 
+           playerEmail.includes(searchLower) || 
+           videoTitle.includes(searchLower);
+  });
 
   return (
     <div className="container mx-auto py-8">
@@ -591,10 +657,12 @@ export default function AutoVideoManagement() {
                 </CardDescription>
               </div>
               {assignments.length > 0 && (
-                <Button variant="outline" size="sm" onClick={showAllAssignments} className="flex gap-1">
-                  <EyeIcon className="h-4 w-4" />
-                  <span>הצג הכל</span>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={showAllAssignments} className="flex gap-1">
+                    <EyeIcon className="h-4 w-4" />
+                    <span>הצג הכל</span>
+                  </Button>
+                </div>
               )}
             </CardHeader>
             <CardContent>
@@ -608,10 +676,11 @@ export default function AutoVideoManagement() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[140px]">שחקן</TableHead>
+                        <TableHead className="min-w-[180px]">שחקן</TableHead>
                         <TableHead>סרטון</TableHead>
                         <TableHead className="text-center">תאריך תזמון</TableHead>
                         <TableHead className="text-center">סטטוס</TableHead>
+                        <TableHead className="w-16 text-center">פעולות</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -643,12 +712,23 @@ export default function AutoVideoManagement() {
                               </Badge>
                             )}
                           </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => showAssignmentDetails(assignment)}
+                            >
+                              <span className="sr-only">פרטים נוספים</span>
+                              <Info className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
 
                       {assignments.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={4} className="h-24 text-center">
+                          <TableCell colSpan={5} className="h-24 text-center">
                             <div className="flex flex-col items-center gap-2">
                               <ListChecks className="h-8 w-8 text-muted-foreground" />
                               <p>אין היסטוריית שליחות אוטומטיות</p>
@@ -675,67 +755,189 @@ export default function AutoVideoManagement() {
         </div>
       </div>
 
-      {/* Dialog for viewing all assignments */}
+      {/* Dialog for viewing all assignments with search */}
       <Dialog open={openAllAssignmentsDialog} onOpenChange={setOpenAllAssignmentsDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
+        <DialogContent className="max-w-5xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>כל התזמונים האוטומטיים</DialogTitle>
+            <DialogTitle className="text-xl">כל התזמונים האוטומטיים</DialogTitle>
             <DialogDescription>
               רשימת כל התזמונים האוטומטיים במערכת
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-[60vh]">
-            <Table>
-              <TableHeader className="sticky top-0 bg-white z-10">
-                <TableRow>
-                  <TableHead className="min-w-[160px]">שחקן</TableHead>
-                  <TableHead className="min-w-[160px]">סרטון</TableHead>
-                  <TableHead className="text-center">ימים אחרי הרשמה</TableHead>
-                  <TableHead className="text-center">תאריך תזמון</TableHead>
-                  <TableHead className="text-center">תאריך שליחה</TableHead>
-                  <TableHead className="text-center">סטטוס</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assignments.map((assignment) => (
-                  <TableRow key={assignment.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <UserIcon className="h-4 w-4 text-gray-400" />
-                        <div>
-                          <div className="font-medium">{assignment.players?.full_name || "לא ידוע"}</div>
-                          <div className="text-xs text-gray-500 truncate max-w-[150px]">
-                            {assignment.players?.email || ""}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{assignment.videos?.title || "סרטון לא קיים"}</TableCell>
-                    <TableCell className="text-center">{assignment.videos?.days_after_registration || "-"} ימים</TableCell>
-                    <TableCell className="text-center whitespace-nowrap">{formatDate(assignment.scheduled_for)}</TableCell>
-                    <TableCell className="text-center whitespace-nowrap">
-                      {assignment.sent ? formatDate(assignment.scheduled_for) : "-"}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {assignment.sent ? (
-                        <Badge variant="outline" className="bg-green-100 text-green-800">
-                          <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                          נשלח
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
-                          <ClockIcon className="h-3.5 w-3.5 mr-1" />
-                          ממתין
-                        </Badge>
-                      )}
-                    </TableCell>
+          
+          <div className="flex items-center mb-4 gap-2">
+            <div className="relative flex-grow">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="חיפוש לפי שם שחקן או כותרת סרטון..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 w-full"
+              />
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setSearchQuery("")} className="whitespace-nowrap">
+              <Filter className="h-4 w-4 mr-1" />
+              נקה סינון
+            </Button>
+          </div>
+          
+          {loadingAllAssignments ? (
+            <div className="text-center py-12">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em]"></div>
+              <p className="mt-2 text-gray-500">טוען את כל התזמונים...</p>
+            </div>
+          ) : (
+            <ScrollArea className="h-[60vh]">
+              <Table>
+                <TableHeader className="sticky top-0 bg-white z-10">
+                  <TableRow>
+                    <TableHead className="min-w-[200px]">שחקן</TableHead>
+                    <TableHead className="min-w-[200px]">סרטון</TableHead>
+                    <TableHead className="text-center">ימים אחרי הרשמה</TableHead>
+                    <TableHead className="text-center">תאריך תזמון</TableHead>
+                    <TableHead className="text-center">תאריך שליחה</TableHead>
+                    <TableHead className="text-center">סטטוס</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
+                </TableHeader>
+                <TableBody>
+                  {filteredAssignments.length > 0 ? (
+                    filteredAssignments.map((assignment) => (
+                      <TableRow key={assignment.id} className="cursor-pointer hover:bg-gray-50" onClick={() => showAssignmentDetails(assignment)}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <UserIcon className="h-4 w-4 text-gray-400" />
+                            <div>
+                              <div className="font-medium">{assignment.players?.full_name || "לא ידוע"}</div>
+                              <div className="text-xs text-gray-500 truncate max-w-[200px]">
+                                {assignment.players?.email || ""}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{assignment.videos?.title || "סרטון לא קיים"}</TableCell>
+                        <TableCell className="text-center">{assignment.videos?.days_after_registration || "-"} ימים</TableCell>
+                        <TableCell className="text-center whitespace-nowrap">{formatDate(assignment.scheduled_for)}</TableCell>
+                        <TableCell className="text-center whitespace-nowrap">
+                          {assignment.sent ? formatDate(assignment.scheduled_for) : "-"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {assignment.sent ? (
+                            <Badge variant="outline" className="bg-green-100 text-green-800">
+                              <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                              נשלח
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                              <ClockIcon className="h-3.5 w-3.5 mr-1" />
+                              ממתין
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-32 text-center">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Search className="h-8 w-8 text-gray-300" />
+                          <p>לא נמצאו תוצאות שתואמות את החיפוש</p>
+                          <Button variant="outline" size="sm" onClick={() => setSearchQuery("")}>
+                            נקה סינון
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          )}
           <DialogFooter>
             <Button onClick={() => setOpenAllAssignmentsDialog(false)}>סגור</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for assignment full details */}
+      <Dialog open={openFullDetailsDialog} onOpenChange={setOpenFullDetailsDialog}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>פרטי תזמון מלאים</DialogTitle>
+            <DialogDescription>
+              מידע מלא על תזמון הסרטון לשחקן
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAssignment && (
+            <div className="py-4 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">פרטי השחקן</h3>
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <div className="flex items-center gap-2 mb-2">
+                      <UserIcon className="h-5 w-5 text-gray-500" />
+                      <div className="font-semibold text-lg">{selectedAssignment.players?.full_name || "לא ידוע"}</div>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {selectedAssignment.players?.email || "אין אימייל"}
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">פרטי הסרטון</h3>
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Film className="h-5 w-5 text-gray-500" />
+                      <div className="font-semibold text-lg">{selectedAssignment.videos?.title || "סרטון לא קיים"}</div>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {selectedAssignment.videos?.days_after_registration || "-"} ימים אחרי הרשמה
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">פרטי התזמון</h3>
+                <div className="bg-gray-50 p-3 rounded-md">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-500">מזהה תזמון</div>
+                      <div className="font-mono text-xs text-gray-600 bg-gray-100 p-1 rounded">{selectedAssignment.id}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-500">נוצר בתאריך</div>
+                      <div className="font-medium">{formatDate(selectedAssignment.created_at)}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-500">מתוזמן לתאריך</div>
+                      <div className="font-medium">{formatDate(selectedAssignment.scheduled_for)}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-500">סטטוס</div>
+                      <div>
+                        {selectedAssignment.sent ? (
+                          <Badge variant="outline" className="bg-green-100 text-green-800">
+                            <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                            נשלח בהצלחה
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                            <ClockIcon className="h-3.5 w-3.5 mr-1" />
+                            ממתין לשליחה
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button onClick={() => setOpenFullDetailsDialog(false)}>סגור</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -853,4 +1055,13 @@ export default function AutoVideoManagement() {
             <AlertDialogCancel>ביטול</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDeleteVideo}
-              className="bg
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              מחק סרטון
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
