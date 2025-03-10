@@ -38,8 +38,8 @@ export const RegistrationDialogs = ({
       />
       
       <SuccessDialog
-        open={showSuccessDialog}
-        setOpen={setShowSuccessDialog}
+        showSuccessDialog={showSuccessDialog}
+        setShowSuccessDialog={setShowSuccessDialog}
         coachName={coachName || "המאמן"}
         handleCloseWindow={handleCloseWindow}
         generatedPassword={generatedPassword}
