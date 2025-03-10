@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -26,6 +26,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -156,7 +157,8 @@ export default function AutoVideoManagement() {
       
       setVideos(uniqueVideos || []);
 
-      // Fetch auto assignments history
+      // Fetch auto assignments history - Updated the query to use proper foreign key relationship
+      console.log("Fetching video assignments...");
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('auto_video_assignments')
         .select(`
@@ -167,13 +169,27 @@ export default function AutoVideoManagement() {
           scheduled_for,
           sent,
           created_at,
-          players:player_id (full_name, email),
-          videos:video_id (title, days_after_registration)
+          players!player_id (full_name, email),
+          videos!video_id (title, days_after_registration)
         `)
         .order('scheduled_for', { ascending: false })
         .limit(assignmentsLimit);
 
-      if (assignmentsError) throw assignmentsError;
+      if (assignmentsError) {
+        console.error('Error fetching assignments:', assignmentsError);
+        throw assignmentsError;
+      }
+      
+      console.log("Assignments fetched:", assignmentsData);
+      
+      if (assignmentsData) {
+        // Log any assignments with missing player data
+        const missingPlayerData = assignmentsData.filter(a => !a.players || !a.players.full_name);
+        if (missingPlayerData.length > 0) {
+          console.log("Assignments with missing player data:", missingPlayerData);
+        }
+      }
+      
       setAssignments(assignmentsData || []);
 
       // Get statistics
@@ -213,7 +229,7 @@ export default function AutoVideoManagement() {
   const fetchAllAssignments = async () => {
     setLoadingAllAssignments(true);
     try {
-      // Fetch all assignments without limit
+      // Fetch all assignments without limit - Updated the query to use proper foreign key relationship
       const { data: allAssignmentsData, error: allAssignmentsError } = await supabase
         .from('auto_video_assignments')
         .select(`
@@ -224,8 +240,8 @@ export default function AutoVideoManagement() {
           scheduled_for,
           sent,
           created_at,
-          players:player_id (full_name, email),
-          videos:video_id (title, days_after_registration)
+          players!player_id (full_name, email),
+          videos!video_id (title, days_after_registration)
         `)
         .order('scheduled_for', { ascending: false });
 
@@ -263,8 +279,8 @@ export default function AutoVideoManagement() {
           scheduled_for,
           sent,
           created_at,
-          players:player_id (full_name, email),
-          videos:video_id (title, days_after_registration)
+          players!player_id (full_name, email),
+          videos!video_id (title, days_after_registration)
         `)
         .order('scheduled_for', { ascending: false })
         .limit(newLimit);
