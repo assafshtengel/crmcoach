@@ -595,6 +595,7 @@ const DashboardCoach = () => {
                         sessionDate={session.session_date}
                         onSubmit={(data) => handleSaveSessionSummary(session.id, data)}
                         onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()}
+                        forceEnable={!isPastSession}
                       />
                     </div>
                   </DialogContent>
@@ -1166,7 +1167,8 @@ const DashboardCoach = () => {
             <Tabs defaultValue="unsummarized" className="w-full" onValueChange={setActiveTab}>
               <TabsList className="mb-4">
                 <TabsTrigger value="unsummarized">ממתינים לסיכום ({pastSessionsToSummarize.length})</TabsTrigger>
-                <TabsTrigger value="summarized">��סוכמים ({summarizedSessions.length})</TabsTrigger>
+                <TabsTrigger value="summarized">מסוכמים ({summarizedSessions.length})</TabsTrigger>
+                <TabsTrigger value="upcoming">מפגשים קרובים ({upcomingSessions.length})</TabsTrigger>
               </TabsList>
               <TabsContent value="unsummarized" className="mt-0">
                 <div className="space-y-4">
@@ -1190,6 +1192,19 @@ const DashboardCoach = () => {
                       <FileText className="h-10 w-10 text-gray-400 mx-auto mb-2" />
                       <h3 className="text-lg font-medium text-gray-800">אין סיכומים</h3>
                       <p className="text-gray-500 mt-1">לא נמצאו מפגשים מסוכמים</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="upcoming" className="mt-0">
+                <div className="space-y-4">
+                  {upcomingSessions.length > 0 ? (
+                    upcomingSessions.map(session => renderSessionCard(session))
+                  ) : (
+                    <div className="text-center p-6 bg-gray-50 rounded-lg">
+                      <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                      <h3 className="text-lg font-medium text-gray-800">אין מפגשים קרובים</h3>
+                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים מתוכננים בשבוע הקרוב</p>
                     </div>
                   )}
                 </div>
