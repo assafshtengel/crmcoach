@@ -17,14 +17,17 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Always allow access to public registration routes without any checks
-        if (location.pathname.includes('/register/')) {
-          console.log("Public registration page - bypassing all auth checks");
+        // Public routes - always allow access without any authentication
+        if (
+          location.pathname.includes('/register/') || 
+          location.pathname === '/player-auth'
+        ) {
+          console.log("Public route - bypassing all auth checks");
           setIsLoading(false);
           return;
         }
 
-        // בדיקה אם זה נתיב שחקן
+        // Player-only routes - check player authentication
         if (playerOnly) {
           const playerSession = localStorage.getItem('playerSession');
           
@@ -34,11 +37,10 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             return;
           }
           
-          // אימות מפגש שחקן - בדיקה אם השחקן קיים במסד הנתונים
           try {
             const playerData = JSON.parse(playerSession);
             
-            // Verify player credentials in database
+            // Verify player credentials directly in the database, without requiring coach authentication
             const { data, error } = await supabase
               .from('players')
               .select('id, email, password')
@@ -71,9 +73,10 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           return;
         }
         
-        // טיפול בדף פרופיל שחקן עם פרמטר ID
-        if (playerId && window.location.pathname.includes('/player-profile/')) {
-          // First check for player session
+        // Route for viewing a specific player's profile - allow access for both
+        // the player themselves or the coach who manages this player
+        if (playerId && location.pathname.includes('/player-profile/')) {
+          // First check for player session (player viewing their own profile)
           const playerSession = localStorage.getItem('playerSession');
           
           if (playerSession) {
@@ -89,17 +92,20 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           const { data: { user }, error } = await supabase.auth.getUser();
           
           if (error || !user) {
-            console.log("No authenticated user found");
+            console.log("No authenticated user found, redirecting to auth");
             navigate("/auth");
             return;
           }
+          
+          setIsLoading(false);
+          return;
         }
         
-        // בנתיבי מאמן, בדיקת אימות Supabase
+        // For all other coach routes, require Supabase authentication
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error || !user) {
-          console.log("No authenticated Supabase user found");
+          console.log("No authenticated Supabase user found, redirecting to auth");
           navigate("/auth");
           return;
         }

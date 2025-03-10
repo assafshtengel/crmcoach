@@ -49,7 +49,7 @@ import AllMeetingSummaries from '@/pages/AllMeetingSummaries';
 import Goals from '@/pages/Goals';
 import PlayerProfileView from '@/pages/player/PlayerProfileView';
 import NotFound from '@/pages/NotFound';
-import MentalLibrary from '@/pages/MentalLibrary'; // Import the new MentalLibrary page
+import MentalLibrary from '@/pages/MentalLibrary';
 
 import "./App.css";
 
@@ -91,7 +91,10 @@ function App() {
             <Route path="/game-prep" element={<AuthGuard><GamePreparation /></AuthGuard>} />
             <Route path="/notifications" element={<AuthGuard><NotificationsDashboard /></AuthGuard>} />
             <Route path="/auth" element={<AuthPage />} />
+            
+            {/* Player auth route - explicitly WITHOUT AuthGuard */}
             <Route path="/player-auth" element={<PlayerAuth />} />
+            
             <Route path="/action-plan" element={<AuthGuard><ActionPlan /></AuthGuard>} />
             <Route path="/session-summaries" element={<AuthGuard><SessionSummaries /></AuthGuard>} />
             <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />
@@ -106,7 +109,7 @@ function App() {
             <Route path="/auto-video-management" element={<AuthGuard><AutoVideoManagement /></AuthGuard>} />
             <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
             <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} />
-            <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} /> {/* Add the new route for the Mental Library */}
+            <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} />
             
             <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
             
