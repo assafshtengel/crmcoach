@@ -9,9 +9,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CheckCircle, Copy } from "lucide-react";
+import { CheckCircle, Copy, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface SuccessDialogProps {
   showSuccessDialog: boolean;
@@ -29,6 +30,7 @@ export const SuccessDialog = ({
   generatedPassword,
 }: SuccessDialogProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const copyPassword = () => {
     if (!generatedPassword) return;
@@ -48,6 +50,11 @@ export const SuccessDialog = ({
           description: "לא ניתן להעתיק את הסיסמה",
         });
       });
+  };
+
+  const handleGoHome = () => {
+    setShowSuccessDialog(false);
+    navigate('/');
   };
 
   return (
@@ -85,13 +92,21 @@ export const SuccessDialog = ({
             <p className="mt-4 text-sm text-gray-500">המאמן יצור איתך קשר בהקדם.</p>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex justify-center">
+        <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
           <AlertDialogAction 
             onClick={handleCloseWindow}
-            className="bg-green-500 hover:bg-green-600 text-white px-8"
+            className="bg-green-500 hover:bg-green-600 text-white order-1 sm:order-2"
           >
             סיום
           </AlertDialogAction>
+          <Button 
+            variant="outline" 
+            onClick={handleGoHome}
+            className="flex items-center justify-center gap-2 order-2 sm:order-1"
+          >
+            <Home className="h-4 w-4" />
+            <span>מעבר לדף הבית</span>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
