@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -57,7 +56,6 @@ const RegistrationLinks = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('משתמש לא מחובר');
 
-      // Fetch registration links
       const { data: linksData, error: linksError } = await supabase
         .from('registration_links')
         .select('*')
@@ -66,11 +64,9 @@ const RegistrationLinks = () => {
 
       if (linksError) throw linksError;
       
-      // If we have links, fetch the registration count for each link
       if (linksData && linksData.length > 0) {
         const linksWithCounts = await Promise.all(
           linksData.map(async (link) => {
-            // Count how many players registered using this link
             const { count, error: countError } = await supabase
               .from('players')
               .select('*', { count: 'exact', head: true })
@@ -105,6 +101,30 @@ const RegistrationLinks = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('משתמש לא מחובר');
+      
+      const { data: coachData, error: coachError } = await supabase
+        .from('coaches')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+        
+      if (coachError || !coachData) {
+        console.error("Error finding coach record:", coachError);
+        
+        const { data: newCoach, error: createError } = await supabase
+          .from('coaches')
+          .insert([{
+            id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Coach'
+          }])
+          .select()
+          .single();
+          
+        if (createError || !newCoach) {
+          throw new Error('לא ניתן ליצור רשומת מאמן, אנא פנה למנהל המערכת');
+        }
+      }
 
       const newLinkData = {
         coach_id: user.id,

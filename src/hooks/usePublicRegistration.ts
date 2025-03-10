@@ -56,10 +56,13 @@ export const usePublicRegistration = () => {
       try {
         console.log("Fetching link data for ID:", linkId);
         
-        // First, fetch the registration link details
+        // First, fetch the registration link details with coach included directly
         const { data: linkData, error: linkError } = await supabase
           .from('registration_links')
-          .select('*, coach_id')
+          .select(`
+            *,
+            coach:coaches(id, full_name, email)
+          `)
           .eq('id', linkId)
           .eq('is_active', true)
           .single();
@@ -69,31 +72,33 @@ export const usePublicRegistration = () => {
           throw new Error('הקישור לא נמצא או שאינו פעיל');
         }
 
-        // Now fetch the coach details separately
-        if (!linkData.coach_id) {
-          console.error("Missing coach_id in link:", linkData);
-          throw new Error('מזהה המאמן חסר בקישור');
+        // Make sure we have coach data
+        if (!linkData.coach || !linkData.coach.id) {
+          console.error("Missing coach data in link:", linkData);
+          
+          // Try to fetch the coach directly using coach_id as fallback
+          if (linkData.coach_id) {
+            console.log("Attempting to fetch coach directly with coach_id:", linkData.coach_id);
+            const { data: coachData, error: coachError } = await supabase
+              .from('coaches')
+              .select('id, full_name, email')
+              .eq('id', linkData.coach_id)
+              .single();
+              
+            if (coachError || !coachData) {
+              console.error("Error fetching coach directly:", coachError);
+              throw new Error('לא ניתן למצוא את המאמן המשויך לקישור');
+            }
+            
+            // Rebuild the linkData with the coach info
+            linkData.coach = coachData;
+          } else {
+            throw new Error('מידע המאמן חסר בקישור');
+          }
         }
 
-        const { data: coachData, error: coachError } = await supabase
-          .from('coaches')
-          .select('id, full_name, email')
-          .eq('id', linkData.coach_id)
-          .single();
-
-        if (coachError || !coachData) {
-          console.error("Error fetching coach:", coachError);
-          throw new Error('לא ניתן למצוא את המאמן המשויך לקישור');
-        }
-
-        // Combine the data
-        const completeData = {
-          ...linkData,
-          coach: coachData
-        };
-
-        console.log("Link data with coach loaded:", completeData);
-        setLinkData(completeData);
+        console.log("Link data loaded:", linkData);
+        setLinkData(linkData);
       } catch (error: any) {
         console.error("Error in useEffect:", error);
         showFeedback("שגיאה", error.message || "אירעה שגיאה בטעינת הטופס", true);
