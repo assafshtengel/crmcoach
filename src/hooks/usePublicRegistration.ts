@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from "react-hook-form";
@@ -53,44 +54,63 @@ export const usePublicRegistration = () => {
       }
 
       try {
-        console.log("Fetching registration link data for ID:", linkId);
-        
-        // Query registration_links and join with coaches table to get all needed data at once
-        const { data: linkWithCoach, error: linkError } = await supabase
+        // First, get the registration link
+        const { data: link, error: linkError } = await supabase
           .from('registration_links')
-          .select(`
-            *,
-            coach:coaches (
-              id,
-              full_name,
-              email
-            )
-          `)
+          .select('*')
           .eq('id', linkId)
-          .single();
-
-        console.log("Fetched link data:", linkWithCoach);
+          .maybeSingle();
 
         if (linkError) {
           console.error("Error fetching link:", linkError);
           throw new Error('הקישור לא נמצא או שאינו פעיל');
         }
 
-        if (!linkWithCoach) {
+        if (!link) {
           throw new Error('הקישור לא נמצא');
         }
 
-        if (!linkWithCoach.is_active) {
+        if (!link.is_active) {
           throw new Error('קישור זה אינו פעיל יותר');
         }
 
-        if (!linkWithCoach.coach) {
-          throw new Error('לא נמצא מאמן המשויך לקישור זה');
+        // Then get the coach details
+        const { data: coach, error: coachError } = await supabase
+          .from('coaches')
+          .select('id, full_name, email')
+          .eq('id', link.coach_id)
+          .maybeSingle();
+
+        if (coachError) {
+          console.error("Error fetching coach:", coachError);
+          throw new Error('שגיאה בטעינת פרטי המאמן');
         }
 
-        // Update state with the complete data
-        setLinkData(linkWithCoach);
-        console.log("Link data set successfully:", linkWithCoach);
+        if (!coach) {
+          // If no coach found, create a temporary coach record for registration
+          const tempCoach = {
+            id: link.coach_id,
+            full_name: 'מאמן זמני',
+            email: 'temp@coach.com'
+          };
+
+          console.log("Creating temporary coach record:", tempCoach);
+          
+          const { error: createError } = await supabase
+            .from('coaches')
+            .insert([tempCoach]);
+
+          if (createError) {
+            console.error("Error creating temp coach:", createError);
+            throw new Error('שגיאה בטעינת פרטי המאמן');
+          }
+
+          // Set the data with temporary coach
+          setLinkData({ ...link, coach: tempCoach });
+        } else {
+          // Set the data with actual coach
+          setLinkData({ ...link, coach });
+        }
 
       } catch (error: any) {
         console.error("Error in fetchLinkData:", error);
