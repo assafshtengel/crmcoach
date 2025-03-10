@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { format, isAfter } from 'date-fns';
+import { format } from 'date-fns';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface RegistrationLink {

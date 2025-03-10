@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from "react-hook-form";
@@ -68,10 +67,6 @@ export const usePublicRegistration = () => {
         if (linkError || !linkData) {
           console.error("Error fetching link:", linkError);
           throw new Error('הקישור לא נמצא או שאינו פעיל');
-        }
-
-        if (linkData.expires_at && new Date(linkData.expires_at) < new Date()) {
-          throw new Error('הקישור פג תוקף');
         }
 
         console.log("Link data loaded:", linkData);
