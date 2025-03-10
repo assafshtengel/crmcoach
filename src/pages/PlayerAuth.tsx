@@ -35,8 +35,8 @@ const PlayerAuth = () => {
         console.error("Error checking player:", playerError);
         toast({
           variant: "destructive",
-          title: "שגיאה",
-          description: "אירעה שגיאה בבדיקת פרטי השחקן",
+          title: "שגיאה במערכת",
+          description: "אירעה שגיאה בבדיקת פרטי השחקן. נא לנסות שוב מאוחר יותר.",
         });
         setLoading(false);
         return;
@@ -46,8 +46,8 @@ const PlayerAuth = () => {
       if (!playerData) {
         toast({
           variant: "destructive",
-          title: "שגיאה בהתחברות",
-          description: "לא נמצא שחקן עם כתובת האימייל הזו",
+          title: "כתובת אימייל לא קיימת",
+          description: "לא נמצא שחקן רשום עם כתובת האימייל שהוזנה",
         });
         setLoading(false);
         return;
@@ -57,8 +57,8 @@ const PlayerAuth = () => {
       if (playerData.password !== password) {
         toast({
           variant: "destructive",
-          title: "שגיאה בהתחברות",
-          description: "הסיסמה שהוזנה אינה נכונה עבור המייל הזה",
+          title: "סיסמה שגויה",
+          description: "הסיסמה שהוזנה אינה מתאימה לחשבון זה",
         });
         setLoading(false);
         return;
