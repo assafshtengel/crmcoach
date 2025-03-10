@@ -55,23 +55,29 @@ export const usePublicRegistration = () => {
       try {
         console.log("Fetching link data for ID:", linkId);
         
-        // First, try to fetch the registration link with coach data
+        // First, fetch just the registration link info
         const { data: linkData, error: linkError } = await supabase
           .from('registration_links')
-          .select(`
-            *,
-            coach_id
-          `)
+          .select('id, coach_id, custom_message, is_active, created_at')
           .eq('id', linkId)
-          .eq('is_active', true)
           .single();
 
         if (linkError || !linkData) {
           console.error("Error fetching link:", linkError);
           throw new Error('הקישור לא נמצא או שאינו פעיל');
         }
+        
+        if (!linkData.is_active) {
+          throw new Error('קישור זה אינו פעיל יותר');
+        }
 
-        // Now fetch the coach data separately
+        if (!linkData.coach_id) {
+          throw new Error('חסר מידע מאמן בקישור');
+        }
+
+        console.log("Link found with coach_id:", linkData.coach_id);
+
+        // Then, fetch the coach data separately
         const { data: coachData, error: coachError } = await supabase
           .from('coaches')
           .select('id, full_name, email')
@@ -79,29 +85,30 @@ export const usePublicRegistration = () => {
           .single();
 
         if (coachError || !coachData) {
-          console.error("Error fetching coach:", coachError);
+          console.error("Error fetching coach data:", coachError);
           throw new Error('לא ניתן למצוא את המאמן המשויך לקישור');
         }
 
+        console.log("Coach data found:", coachData);
+
         // Combine the data
-        const combinedData = {
+        const completeData = {
           ...linkData,
           coach: coachData
         };
 
-        console.log("Combined data:", combinedData);
-        setLinkData(combinedData);
+        console.log("Combined registration data:", completeData);
+        setLinkData(completeData);
       } catch (error: any) {
-        console.error("Error in useEffect:", error);
+        console.error("Error in fetchLinkData:", error);
         showFeedback("שגיאה", error.message || "אירעה שגיאה בטעינת הטופס", true);
-        navigate('/');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchLinkData();
-  }, [linkId, navigate, toast]);
+  }, [linkId, navigate]);
 
   const generatePassword = (length: number = 8): string => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -197,16 +204,12 @@ export const usePublicRegistration = () => {
       };
 
       console.log("Inserting player data for coach ID:", linkData.coach.id);
-      console.log("Player data to insert:", playerData);
       
       // Use insert instead of upsert to avoid conflicts
       const { data, error } = await supabase
         .from('players')
         .insert([playerData])
         .select();
-
-      console.log("Insert response:", data);
-      console.log("Insert error:", error);
 
       if (error) {
         console.error("Database error details:", JSON.stringify(error, null, 2));

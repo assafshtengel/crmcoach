@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { usePublicRegistration } from '@/hooks/usePublicRegistration';
 import { RegistrationFormContainer } from '@/components/public-registration/RegistrationFormContainer';

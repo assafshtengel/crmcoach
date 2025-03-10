@@ -1,4 +1,3 @@
-
 import { useState, useEffect, ReactNode } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -17,9 +16,9 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Always allow access to public registration routes
-        if (location.pathname.startsWith('/register/')) {
-          console.log("Public registration page - bypassing auth check");
+        // Always allow access to public registration routes - this is high priority
+        if (location.pathname.includes('/register/')) {
+          console.log("Public registration page detected - bypassing auth check");
           setIsLoading(false);
           return;
         }

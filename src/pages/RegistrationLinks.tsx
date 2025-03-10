@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -102,45 +103,60 @@ const RegistrationLinks = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('משתמש לא מחובר');
       
-      const { data: coachData, error: coachError } = await supabase
+      // Always check if coach exists first and create if missing
+      console.log("Checking for coach record with ID:", user.id);
+      const { data: existingCoach, error: coachCheckError } = await supabase
         .from('coaches')
         .select('id')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
         
-      if (coachError || !coachData) {
-        console.error("Error finding coach record:", coachError);
+      // If coach doesn't exist, create a new coach record
+      if (!existingCoach) {
+        console.log("Coach not found, creating a new coach record");
         
-        const { data: newCoach, error: createError } = await supabase
+        const userData = {
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Coach'
+        };
+        
+        const { data: newCoach, error: createCoachError } = await supabase
           .from('coaches')
-          .insert([{
-            id: user.id,
-            email: user.email,
-            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Coach'
-          }])
+          .insert([userData])
           .select()
           .single();
           
-        if (createError || !newCoach) {
+        if (createCoachError) {
+          console.error("Error creating coach record:", createCoachError);
           throw new Error('לא ניתן ליצור רשומת מאמן, אנא פנה למנהל המערכת');
         }
+        
+        console.log("Created new coach record:", newCoach);
+      } else {
+        console.log("Found existing coach record:", existingCoach);
       }
 
+      // Now create the registration link
       const newLinkData = {
         coach_id: user.id,
         custom_message: newLinkMessage || null,
         is_active: true
       };
 
-      const { data, error } = await supabase
+      const { data: newLink, error: linkError } = await supabase
         .from('registration_links')
         .insert([newLinkData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (linkError) {
+        console.error("Error creating link:", linkError);
+        throw linkError;
+      }
 
-      setLinks([{ ...data, registered_count: 0 }, ...links]);
+      console.log("New registration link created:", newLink);
+      setLinks([{ ...newLink, registered_count: 0 }, ...links]);
       setNewLinkMessage('');
       setIsCreatingLink(false);
       
