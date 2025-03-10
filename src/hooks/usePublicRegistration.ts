@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from "react-hook-form";
@@ -67,6 +68,12 @@ export const usePublicRegistration = () => {
         if (linkError || !linkData) {
           console.error("Error fetching link:", linkError);
           throw new Error('הקישור לא נמצא או שאינו פעיל');
+        }
+
+        // Make sure we have coach data
+        if (!linkData.coach || !linkData.coach.id) {
+          console.error("Missing coach data in link:", linkData);
+          throw new Error('מידע המאמן חסר בקישור');
         }
 
         console.log("Link data loaded:", linkData);
