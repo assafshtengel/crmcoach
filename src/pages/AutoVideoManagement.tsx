@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -136,7 +137,7 @@ export default function AutoVideoManagement() {
       const { data: playersWithVideos, error: videoError } = await supabase
         .from("auto_video_assignments")
         .select("player_id", { count: "exact" })
-        .is("player_id", "not.null");
+        .not("player_id", "is", null);
 
       const uniquePlayerIds = new Set(playersWithVideos?.map(a => a.player_id));
 
@@ -257,7 +258,7 @@ export default function AutoVideoManagement() {
           videos:video_id (title, days_after_registration),
           players:player_id (full_name, email)
         `)
-        .filter('player_id', 'eq', playerId);
+        .eq('player_id', playerId);
         
       if (error) {
         console.error(`Error checking assignments for player ${playerId}:`, error);
