@@ -54,6 +54,8 @@ export const usePublicRegistration = () => {
       }
 
       try {
+        console.log("Fetching registration link data for ID:", linkId);
+        
         // Fetch the registration link with limited coach info, without requiring a fully populated coach data
         const { data: link, error: linkError } = await supabase
           .from('registration_links')
@@ -67,19 +69,24 @@ export const usePublicRegistration = () => {
           .eq('id', linkId)
           .maybeSingle();
 
-        if (linkError) throw linkError;
+        if (linkError) {
+          console.error("Error fetching link data:", linkError);
+          throw linkError;
+        }
         
         if (!link) {
+          console.error("Link not found for ID:", linkId);
           throw new Error('הקישור לא נמצא');
         }
 
         if (!link.is_active) {
+          console.error("Link is not active:", linkId);
           throw new Error('קישור זה אינו פעיל יותר');
         }
 
         // Make sure we have at least the coach_id for later form submission
-        // even if the coach's name isn't available
         if (!link.coach_id) {
+          console.error("Link has no coach_id:", linkId);
           throw new Error('הקישור לא תקין - נא לפנות למנהל המערכת');
         }
 
@@ -184,6 +191,7 @@ export const usePublicRegistration = () => {
       };
 
       console.log("Inserting player data for coach ID:", linkData.coach_id);
+      console.log("Registration link ID:", linkId);
       
       const { data, error } = await supabase
         .from('players')
@@ -206,18 +214,24 @@ export const usePublicRegistration = () => {
 
       const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
       
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert([
-          {
-            coach_id: linkData.coach_id,
-            message: notificationMessage,
-            type: 'new_player'
-          }
-        ]);
-        
-      if (notificationError) {
-        console.error("Error creating notification:", notificationError);
+      // Try to create notification but don't fail if it doesn't work
+      try {
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert([
+            {
+              coach_id: linkData.coach_id,
+              message: notificationMessage,
+              type: 'new_player'
+            }
+          ]);
+          
+        if (notificationError) {
+          console.error("Error creating notification:", notificationError);
+        }
+      } catch (notifyError) {
+        console.error("Error trying to create notification:", notifyError);
+        // Continue with success flow even if notification fails
       }
 
       showFeedback(
