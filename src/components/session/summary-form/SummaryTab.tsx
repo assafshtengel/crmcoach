@@ -17,9 +17,9 @@ export function SummaryTab({
       <FormField control={form.control} name="summary_text" render={({
       field
     }) => <FormItem>
-            <FormLabel className="text-center w-full block">סיכום המפגש</FormLabel>
+            <FormLabel className="text-center w-full block font-semibold">סיכום המפגש</FormLabel>
             <FormControl>
-              <Textarea placeholder="תאר את המפגש..." {...field} className="h-24 resize-none" />
+              <Textarea placeholder="תאר את המפגש..." {...field} className="h-24 resize-none" dir="rtl" />
             </FormControl>
             <FormMessage />
           </FormItem>} />
@@ -27,9 +27,9 @@ export function SummaryTab({
       <FormField control={form.control} name="achieved_goals" render={({
       field
     }) => <FormItem>
-            <FormLabel className="text-center w-full block">מטרות שהושגו</FormLabel>
+            <FormLabel className="text-center w-full block font-semibold">מטרות שהושגו</FormLabel>
             <FormControl>
-              <Textarea placeholder="פרט את המטרות שהושגו במפגש..." {...field} className="h-20 resize-none" />
+              <Textarea placeholder="פרט את המטרות שהושגו במפגש..." {...field} className="h-20 resize-none" dir="rtl" />
             </FormControl>
             <FormMessage />
           </FormItem>} />
@@ -37,9 +37,9 @@ export function SummaryTab({
       <FormField control={form.control} name="future_goals" render={({
       field
     }) => <FormItem>
-            <FormLabel className="text-center w-full block">מטרות להמשך</FormLabel>
+            <FormLabel className="text-center w-full block font-semibold">מטרות להמשך</FormLabel>
             <FormControl>
-              <Textarea placeholder="הגדר מטרות להמשך..." {...field} className="h-20 resize-none" />
+              <Textarea placeholder="הגדר מטרות להמשך..." {...field} className="h-20 resize-none" dir="rtl" />
             </FormControl>
             <FormMessage />
           </FormItem>} />
@@ -47,7 +47,7 @@ export function SummaryTab({
       <FormField control={form.control} name="progress_rating" render={({
       field
     }) => <FormItem>
-            <FormLabel className="text-center w-full block">דירוג התקדמות (1-5)</FormLabel>
+            <FormLabel className="text-center w-full block font-semibold">דירוג התקדמות (1-5)</FormLabel>
             <FormControl>
               <Slider min={1} max={5} step={1} value={[field.value]} onValueChange={([value]) => field.onChange(value)} />
             </FormControl>
@@ -57,9 +57,9 @@ export function SummaryTab({
       <FormField control={form.control} name="next_session_focus" render={({
       field
     }) => <FormItem>
-            <FormLabel className="text-center w-full block">מיקוד למפגש הבא</FormLabel>
+            <FormLabel className="text-center w-full block font-semibold">מיקוד למפגש הבא</FormLabel>
             <FormControl>
-              <Textarea placeholder="על מה נתמקד במפגש הבא..." {...field} className="h-20 resize-none" />
+              <Textarea placeholder="על מה נתמקד במפגש הבא..." {...field} className="h-20 resize-none" dir="rtl" />
             </FormControl>
             <FormMessage />
           </FormItem>} />
@@ -67,9 +67,9 @@ export function SummaryTab({
       <FormField control={form.control} name="additional_notes" render={({
       field
     }) => <FormItem>
-            <FormLabel className="text-center w-full block">הערות נוספות</FormLabel>
+            <FormLabel className="text-center w-full block font-semibold">הערות נוספות</FormLabel>
             <FormControl>
-              <Textarea placeholder="הערות נוספות..." {...field} className="h-20 resize-none" />
+              <Textarea placeholder="הערות נוספות..." {...field} className="h-20 resize-none" dir="rtl" />
             </FormControl>
             <FormMessage />
           </FormItem>} />
