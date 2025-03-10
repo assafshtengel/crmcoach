@@ -53,52 +53,45 @@ export const usePublicRegistration = () => {
       }
 
       try {
-        console.log("Fetching link data for ID:", linkId);
+        console.log("Fetching registration link data for ID:", linkId);
         
-        // First, fetch just the registration link info
-        const { data: linkData, error: linkError } = await supabase
+        // Query registration_links and join with coaches table to get all needed data at once
+        const { data: linkWithCoach, error: linkError } = await supabase
           .from('registration_links')
-          .select('id, coach_id, custom_message, is_active, created_at')
+          .select(`
+            *,
+            coach:coaches (
+              id,
+              full_name,
+              email
+            )
+          `)
           .eq('id', linkId)
           .single();
 
-        if (linkError || !linkData) {
+        console.log("Fetched link data:", linkWithCoach);
+
+        if (linkError) {
           console.error("Error fetching link:", linkError);
           throw new Error('הקישור לא נמצא או שאינו פעיל');
         }
-        
-        if (!linkData.is_active) {
+
+        if (!linkWithCoach) {
+          throw new Error('הקישור לא נמצא');
+        }
+
+        if (!linkWithCoach.is_active) {
           throw new Error('קישור זה אינו פעיל יותר');
         }
 
-        if (!linkData.coach_id) {
-          throw new Error('חסר מידע מאמן בקישור');
+        if (!linkWithCoach.coach) {
+          throw new Error('לא נמצא מאמן המשויך לקישור זה');
         }
 
-        console.log("Link found with coach_id:", linkData.coach_id);
+        // Update state with the complete data
+        setLinkData(linkWithCoach);
+        console.log("Link data set successfully:", linkWithCoach);
 
-        // Then, fetch the coach data separately
-        const { data: coachData, error: coachError } = await supabase
-          .from('coaches')
-          .select('id, full_name, email')
-          .eq('id', linkData.coach_id)
-          .single();
-
-        if (coachError || !coachData) {
-          console.error("Error fetching coach data:", coachError);
-          throw new Error('לא ניתן למצוא את המאמן המשויך לקישור');
-        }
-
-        console.log("Coach data found:", coachData);
-
-        // Combine the data
-        const completeData = {
-          ...linkData,
-          coach: coachData
-        };
-
-        console.log("Combined registration data:", completeData);
-        setLinkData(completeData);
       } catch (error: any) {
         console.error("Error in fetchLinkData:", error);
         showFeedback("שגיאה", error.message || "אירעה שגיאה בטעינת הטופס", true);
@@ -161,8 +154,8 @@ export const usePublicRegistration = () => {
     setIsSubmitting(true);
 
     try {
-      if (!linkData || !linkData.coach || !linkData.coach.id) {
-        console.error("Missing coach data:", linkData);
+      if (!linkData || !linkData.coach) {
+        console.error("Missing link or coach data:", linkData);
         throw new Error('מידע המאמן חסר');
       }
 

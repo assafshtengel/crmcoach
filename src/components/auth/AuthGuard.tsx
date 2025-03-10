@@ -16,13 +16,13 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Always allow access to public registration routes - this is high priority
+        // Always allow access to public registration routes without any checks
         if (location.pathname.includes('/register/')) {
-          console.log("Public registration page detected - bypassing auth check");
+          console.log("Public registration page - bypassing all auth checks");
           setIsLoading(false);
           return;
         }
-        
+
         // בדיקה אם זה נתיב שחקן
         if (playerOnly) {
           const playerSession = localStorage.getItem('playerSession');
