@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideosTab } from "@/components/player/VideosTab";
@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import type { Json } from "@/integrations/supabase/types";
 
 interface PlayerData {
   id: string;
@@ -39,7 +40,6 @@ interface Notification {
 interface Goal {
   id: string;
   title: string;
-  description?: string;
   term: "short" | "long";
   status: "active" | "completed";
 }
@@ -185,8 +185,8 @@ const PlayerProfileView = () => {
       }
 
       if (data) {
-        setShortTermGoals(data.short_term_goals as Goal[] || []);
-        setLongTermGoals(data.long_term_goals as Goal[] || []);
+        setShortTermGoals(data.short_term_goals as unknown as Goal[]);
+        setLongTermGoals(data.long_term_goals as unknown as Goal[]);
         setPlayerGoalsId(data.id);
       } else {
         const defaultShortTermGoals: Goal[] = [
@@ -219,8 +219,8 @@ const PlayerProfileView = () => {
         const { error } = await supabase
           .from("player_goals")
           .update({
-            short_term_goals: shortGoals,
-            long_term_goals: longGoals,
+            short_term_goals: shortGoals as unknown as Json,
+            long_term_goals: longGoals as unknown as Json,
             updated_at: new Date().toISOString()
           })
           .eq("id", playerGoalsId);
@@ -231,8 +231,8 @@ const PlayerProfileView = () => {
           .from("player_goals")
           .insert({
             player_id: playerId,
-            short_term_goals: shortGoals,
-            long_term_goals: longGoals
+            short_term_goals: shortGoals as unknown as Json,
+            long_term_goals: longGoals as unknown as Json
           })
           .select("id")
           .single();
@@ -356,7 +356,7 @@ const PlayerProfileView = () => {
   };
 
   const renderTabs = () => (
-    <TabsList className="tabs-list w-full rounded-xl grid grid-cols-2 md:grid-cols-4">
+    <TabsList className="tabs-list w-full rounded-xl grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
       <TabsTrigger value="profile" className="tab-trigger">
         <User className="h-4 w-4 mr-2" />
         פרופיל
