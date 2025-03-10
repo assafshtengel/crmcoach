@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,39 +49,6 @@ const recommendedBooks: Book[] = [
     category: "פסיכולוגיה",
     rating: 5,
     price: "₪64"
-  },
-  {
-    id: 4,
-    title: "המיינד של האלוף",
-    author: "ג'ים אפלמאט",
-    description: "כיצד אלופים חושבים, מתאמנים ומנצחים - ספר מוביל בתחום הפסיכולוגיה של הספורט שמציג גישות מנטליות של אלופים.",
-    imageUrl: "https://via.placeholder.com/150",
-    purchaseUrl: "https://www.booknet.co.il/",
-    category: "ביצועי שיא",
-    rating: 5,
-    price: "₪75"
-  },
-  {
-    id: 5,
-    title: "הזור המנטלי",
-    author: "ד״ר בוב רוטלה",
-    description: "מדריך פרקטי לשליטה מנטלית והתמודדות עם לחץ בספורט התחרותי.",
-    imageUrl: "https://via.placeholder.com/150",
-    purchaseUrl: "https://www.steimatzky.co.il/",
-    category: "התמודדות עם לחץ",
-    rating: 4,
-    price: "₪85"
-  },
-  {
-    id: 6,
-    title: "פסיכולוגיה של הישגיות",
-    author: "קרול דווק",
-    description: "על מיינדסט מקדם צמיחה ומיינדסט מקובע וכיצד הם משפיעים על הישגים אתלטיים ואחרים.",
-    imageUrl: "https://via.placeholder.com/150",
-    purchaseUrl: "https://www.bookdepository.com/",
-    category: "תפיסה מנטלית",
-    rating: 5,
-    price: "₪70"
   },
   {
     id: 7,
