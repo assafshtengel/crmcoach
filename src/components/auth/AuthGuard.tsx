@@ -37,16 +37,25 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           // אימות מפגש שחקן - בדיקה אם השחקן קיים במסד הנתונים
           try {
             const playerData = JSON.parse(playerSession);
+            
+            // Verify player credentials in database
             const { data, error } = await supabase
               .from('players')
               .select('id, email, password')
-              .eq('id', playerData.id)
               .eq('email', playerData.email)
               .eq('password', playerData.password)
-              .maybeSingle();
+              .single();
               
             if (error || !data) {
-              console.log("Invalid player session, redirecting to player login");
+              console.log("Invalid player session, redirecting to player login", error);
+              localStorage.removeItem('playerSession');
+              navigate("/player-auth");
+              return;
+            }
+            
+            // Make sure the session ID matches the database ID
+            if (data.id !== playerData.id) {
+              console.log("Player ID mismatch, redirecting to player login");
               localStorage.removeItem('playerSession');
               navigate("/player-auth");
               return;

@@ -24,30 +24,30 @@ const PlayerAuth = () => {
     setLoading(true);
 
     try {
-      // First, check if this email belongs to a player
+      // Check if this email belongs to a player
       const { data: playerData, error: playerError } = await supabase
         .from('players')
         .select('id, email, password')
         .eq('email', email)
-        .maybeSingle();
+        .single();
 
       if (playerError) {
         console.error("Error checking player:", playerError);
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "אירעה שגיאה בבדיקת פרטי השחקן",
-        });
-        setLoading(false);
-        return;
-      }
-
-      if (!playerData) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה בהתחברות",
-          description: "לא נמצא שחקן עם כתובת האימייל הזו",
-        });
+        
+        if (playerError.code === 'PGRST116') {
+          toast({
+            variant: "destructive",
+            title: "שגיאה בהתחברות",
+            description: "לא נמצא שחקן עם כתובת האימייל הזו",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "שגיאה",
+            description: "אירעה שגיאה בבדיקת פרטי השחקן",
+          });
+        }
+        
         setLoading(false);
         return;
       }
