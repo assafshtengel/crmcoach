@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useNavigate } from "react-router-dom";
 
 interface SignUpFormProps {
   onLoginClick: () => void;
@@ -18,6 +18,7 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
   const [specialty, setSpecialty] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +27,6 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
     try {
       console.log("Starting coach signup process");
       
-      // הרשמת המשתמש עם metadata שכולל את תפקיד המאמן
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -34,15 +34,15 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
           data: {
             full_name: fullName,
             specialty,
-            role: 'coach' // מסמן את המשתמש כמאמן
+            role: 'coach'
           },
+          emailRedirectTo: `${window.location.origin}/auth`,
         },
       });
 
       if (error) {
         console.error("Signup error:", error);
         
-        // Check if it's a "User already registered" error
         if (error.message && error.message.includes("User already registered")) {
           throw new Error("כתובת האימייל כבר רשומה במערכת. נא להשתמש בכתובת אימייל אחרת או להתחבר עם החשבון הקיים");
         }
@@ -54,61 +54,30 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
         console.log("User created successfully:", data.user);
         
         try {
-          // Check if coach already exists first
-          const { data: existingCoach } = await supabase
-            .from('coaches')
-            .select('id')
-            .eq('id', data.user.id)
-            .single();
-            
-          // Only insert if not exists
-          if (!existingCoach) {
-            // וידוא שהמאמן נרשם בטבלת המאמנים
-            const { error: coachError } = await supabase
-              .from('coaches')
-              .insert({
-                id: data.user.id,
-                full_name: fullName,
-                email: email,
-                specialty: specialty
-              });
-                
-            if (coachError) {
-              console.error("Error creating coach entry:", coachError);
-            } else {
-              console.log("Coach entry created successfully");
-            }
+          // Try to sign in immediately after signup
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (signInError) {
+            console.error("Auto sign-in error:", signInError);
+            throw signInError;
           }
 
-          // Send notification email about the new coach
-          try {
-            console.log("Sending notification email for new coach");
-            const response = await supabase.functions.invoke('notify-new-coach', {
-              body: { coachId: data.user.id }
-            });
-
-            if (response.error) {
-              console.error("Error sending notification email:", response.error);
-            } else {
-              console.log("Notification email sent successfully");
-            }
-          } catch (emailError) {
-            console.error("Failed to send notification email:", emailError);
-            // We don't want to block the signup process if notification fails
-          }
-        } catch (dbError) {
-          console.error("Database operation error:", dbError);
-          // Don't throw here so signup can still proceed
+          // If sign in successful, navigate to home
+          navigate('/');
+          
+        } catch (signInError) {
+          console.error("Error in auto sign-in:", signInError);
+          // Even if auto sign-in fails, we still show success message
+          toast({
+            title: "הרשמה בוצעה בהצלחה",
+            description: "אנא התחבר עם האימייל והסיסמה שלך",
+          });
+          onLoginClick();
         }
       }
-
-      toast({
-        title: "הרשמה בוצעה בהצלחה",
-        description: "נשלח אליך מייל לאימות החשבון. אנא בדוק את תיבת הדואר שלך ולחץ על הקישור לאימות המייל לפני שתנסה להתחבר.",
-        duration: 6000,
-      });
-      
-      onLoginClick();
     } catch (error: any) {
       console.error("Signup error details:", error);
       

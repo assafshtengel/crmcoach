@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,12 +36,6 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
             title: "שגיאת התחברות",
             description: "האימייל או הסיסמה שגויים",
           });
-        } else if (error.message.includes("Email not confirmed")) {
-          toast({
-            variant: "destructive",
-            title: "המייל לא אומת",
-            description: "אנא בדוק את תיבת הדואר שלך ולחץ על קישור האימות שנשלח אליך",
-          });
         } else {
           toast({
             variant: "destructive",
@@ -75,31 +68,8 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
           return;
         }
 
-        if (!roleData) {
-          console.log("No role found for user");
-          toast({
-            variant: "destructive",
-            title: "גישה נדחתה",
-            description: "ממשק זה מיועד למאמנים בלבד",
-          });
-          await supabase.auth.signOut();
-          return;
-        }
-
-        console.log("User role data:", roleData);
-
-        if (roleData.role === 'coach') {
-          console.log("User is a coach, navigating to home");
-          navigate('/');
-        } else {
-          console.log("User is not a coach, showing error");
-          toast({
-            variant: "destructive",
-            title: "גישה נדחתה",
-            description: "ממשק זה מיועד למאמנים בלבד",
-          });
-          await supabase.auth.signOut();
-        }
+        // Allow login even if role is not yet set
+        navigate('/');
       }
 
     } catch (error: any) {
