@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -186,18 +185,17 @@ const PlayerProfileView = () => {
       }
 
       if (data) {
-        setShortTermGoals(data.short_term_goals || []);
-        setLongTermGoals(data.long_term_goals || []);
+        setShortTermGoals(data.short_term_goals as Goal[] || []);
+        setLongTermGoals(data.long_term_goals as Goal[] || []);
         setPlayerGoalsId(data.id);
       } else {
-        // Default goals if none exist yet
-        const defaultShortTermGoals = [
+        const defaultShortTermGoals: Goal[] = [
           { id: "1", title: "לשפר דיוק בבעיטות חופשיות", term: "short", status: "active" },
           { id: "2", title: "לעבוד על אסרטיביות בהגנה", term: "short", status: "active" },
           { id: "3", title: "להגביר יכולות קבלת החלטות תחת לחץ", term: "short", status: "active" }
         ];
         
-        const defaultLongTermGoals = [
+        const defaultLongTermGoals: Goal[] = [
           { id: "4", title: "להיות שחקן הרכב קבוע בקבוצה", term: "long", status: "active" },
           { id: "5", title: "לשפר מדדים גופניים כלליים ב-15%", term: "long", status: "active" },
           { id: "6", title: "להפוך למנהיג בקבוצה", term: "long", status: "active" }
@@ -206,7 +204,6 @@ const PlayerProfileView = () => {
         setShortTermGoals(defaultShortTermGoals);
         setLongTermGoals(defaultLongTermGoals);
         
-        // Create initial record in the database
         await saveGoalsToDatabase(playerId, defaultShortTermGoals, defaultLongTermGoals);
       }
     } catch (error) {
@@ -219,7 +216,6 @@ const PlayerProfileView = () => {
       setSavingGoals(true);
       
       if (playerGoalsId) {
-        // Update existing record
         const { error } = await supabase
           .from("player_goals")
           .update({
@@ -231,7 +227,6 @@ const PlayerProfileView = () => {
           
         if (error) throw error;
       } else {
-        // Create new record
         const { data, error } = await supabase
           .from("player_goals")
           .insert({
@@ -246,6 +241,7 @@ const PlayerProfileView = () => {
         if (data) setPlayerGoalsId(data.id);
       }
       
+      toast.success("המטרות נשמרו בהצלחה");
     } catch (error) {
       console.error("Error saving goals to database:", error);
       toast.error("שגיאה בשמירת המטרות");
@@ -297,7 +293,6 @@ const PlayerProfileView = () => {
     
     setEditingGoal(null);
     
-    // Save to database
     await saveGoalsToDatabase(player.id, updatedShortTermGoals, updatedLongTermGoals);
     toast.success("המטרה עודכנה בהצלחה");
   };
@@ -324,7 +319,6 @@ const PlayerProfileView = () => {
       setLongTermGoals(updatedLongTermGoals);
     }
     
-    // Save to database
     await saveGoalsToDatabase(player.id, updatedShortTermGoals, updatedLongTermGoals);
     toast.success("סטטוס המטרה עודכן בהצלחה");
   };
@@ -360,6 +354,44 @@ const PlayerProfileView = () => {
     const date = new Date(dateString);
     return date.toLocaleDateString('he-IL');
   };
+
+  const renderTabs = () => (
+    <TabsList className="tabs-list w-full rounded-xl grid grid-cols-2 md:grid-cols-4">
+      <TabsTrigger value="profile" className="tab-trigger">
+        <User className="h-4 w-4 mr-2" />
+        פרופיל
+      </TabsTrigger>
+      <TabsTrigger value="videos" className="tab-trigger">
+        <Video className="h-4 w-4 mr-2" />
+        סרטונים
+        {unreadCount > 0 && (
+          <Badge variant="default" className="ml-2 bg-red-500 h-5 min-w-5 flex items-center justify-center">
+            {unreadCount}
+          </Badge>
+        )}
+      </TabsTrigger>
+      <TabsTrigger value="sessions" className="tab-trigger">
+        <Calendar className="h-4 w-4 mr-2" />
+        מפגשים
+      </TabsTrigger>
+      <TabsTrigger value="summaries" className="tab-trigger">
+        <FileText className="h-4 w-4 mr-2" />
+        סיכומים
+      </TabsTrigger>
+      <TabsTrigger value="belief-breaking" className="tab-trigger">
+        <ExternalLink className="h-4 w-4 mr-2" />
+        שחרור אמונות
+      </TabsTrigger>
+      <TabsTrigger value="goals" className="tab-trigger">
+        <Target className="h-4 w-4 mr-2" />
+        מטרות
+      </TabsTrigger>
+      <TabsTrigger value="game-prep" className="tab-trigger">
+        <CheckSquare className="h-4 w-4 mr-2" />
+        הכנה למשחק
+      </TabsTrigger>
+    </TabsList>
+  );
 
   return (
     <div className="page-container">
@@ -471,41 +503,7 @@ const PlayerProfileView = () => {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 player-tabs modern-tabs">
-          <TabsList className="tabs-list w-full rounded-xl flex flex-wrap">
-            <TabsTrigger value="profile" className="tab-trigger">
-              <User className="h-4 w-4 mr-2" />
-              פרופיל
-            </TabsTrigger>
-            <TabsTrigger value="videos" className="tab-trigger">
-              <Video className="h-4 w-4 mr-2" />
-              סרטונים
-              {unreadCount > 0 && (
-                <Badge variant="default" className="ml-2 bg-red-500 h-5 min-w-5 flex items-center justify-center">
-                  {unreadCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="sessions" className="tab-trigger">
-              <Calendar className="h-4 w-4 mr-2" />
-              מפגשים
-            </TabsTrigger>
-            <TabsTrigger value="summaries" className="tab-trigger">
-              <FileText className="h-4 w-4 mr-2" />
-              סיכומים
-            </TabsTrigger>
-            <TabsTrigger value="belief-breaking" className="tab-trigger">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              שחרור אמונות
-            </TabsTrigger>
-            <TabsTrigger value="goals" className="tab-trigger">
-              <Target className="h-4 w-4 mr-2" />
-              מטרות
-            </TabsTrigger>
-            <TabsTrigger value="game-prep" className="tab-trigger">
-              <CheckSquare className="h-4 w-4 mr-2" />
-              הכנה למשחק
-            </TabsTrigger>
-          </TabsList>
+          {renderTabs()}
           
           <TabsContent value="profile" className="space-y-4">
             <Card>

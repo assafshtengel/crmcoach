@@ -880,6 +880,41 @@ export type Database = {
         }
         Relationships: []
       }
+      player_goals: {
+        Row: {
+          created_at: string | null
+          id: string
+          long_term_goals: Json | null
+          player_id: string
+          short_term_goals: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          long_term_goals?: Json | null
+          player_id: string
+          short_term_goals?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          long_term_goals?: Json | null
+          player_id?: string
+          short_term_goals?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_goals_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_videos: {
         Row: {
           assigned_by: string | null
