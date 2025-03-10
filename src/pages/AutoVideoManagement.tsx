@@ -371,7 +371,7 @@ export default function AutoVideoManagement() {
               *,
               videos:video_id (title, days_after_registration)
             `)
-            .eq('player_id', player.id);
+            .filter('player_id', 'eq', player.id);
             
           if (assignmentsError) {
             console.error(`Error checking assignments for player ${player.id}:`, assignmentsError);
@@ -687,7 +687,7 @@ export default function AutoVideoManagement() {
           <DialogHeader>
             <DialogTitle>הוסף שחקן ניסיון</DialogTitle>
             <DialogDescription>
-              הוסף שחקן חדש לבדיקת מערכת שליחת הסרטונים האוטומטית
+              הוסף שחקן חדש לבדיקת מערכת שליחת הסרטונים האוטומטיים
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -725,4 +725,3 @@ export default function AutoVideoManagement() {
     </div>
   );
 }
-
