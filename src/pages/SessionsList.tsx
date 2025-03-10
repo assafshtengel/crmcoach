@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +23,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SessionSummaryForm } from '@/components/session/SessionSummaryForm';
 
 interface Session {
   id: string;
@@ -33,6 +33,7 @@ interface Session {
   has_started: boolean;
   player: {
     full_name: string;
+    id: string;
   };
 }
 
@@ -45,6 +46,7 @@ interface RawSession {
   has_started: boolean;
   player: {
     full_name: string;
+    id: string;
   };
 }
 
@@ -54,6 +56,8 @@ const SessionsList = () => {
   const navigate = useNavigate();
   const [sessionToDelete, setSessionToDelete] = useState<{ id: string; playerName: string } | null>(null);
   const [activeTab, setActiveTab] = useState("table");
+  const [summarySession, setSummarySession] = useState<Session | null>(null);
+  const [showSummaryForm, setShowSummaryForm] = useState(false);
 
   useEffect(() => {
     fetchSessions();
@@ -93,7 +97,7 @@ const SessionsList = () => {
           session_time,
           notes,
           has_started,
-          player:players!inner(full_name)
+          player:players!inner(id, full_name)
         `)
         .eq('coach_id', user.id);
 
@@ -108,6 +112,7 @@ const SessionsList = () => {
         notes: session.notes,
         has_started: session.has_started ?? false,
         player: {
+          id: session.player.id,
           full_name: session.player.full_name
         }
       }));
@@ -125,8 +130,57 @@ const SessionsList = () => {
     navigate('/edit-session', { state: { sessionId } });
   };
 
-  const handleSummarizeSession = (sessionId: string, hasStarted: boolean) => {
-    navigate('/edit-session', { state: { sessionId, needsSummary: true, forceEnable: !hasStarted } });
+  const handleSummarizeSession = (session: Session) => {
+    setSummarySession(session);
+    setShowSummaryForm(true);
+  };
+
+  const handleSummarySubmit = async (data: any) => {
+    if (!summarySession) return;
+    
+    try {
+      console.log('Saving session summary:', data);
+      
+      // First, save the summary data to the session_summaries table
+      const { data: summaryData, error: summaryError } = await supabase
+        .from('session_summaries')
+        .upsert({
+          session_id: summarySession.id,
+          player_id: summarySession.player.id,
+          summary_text: data.summary_text,
+          achieved_goals: data.achieved_goals,
+          future_goals: data.future_goals,
+          progress_rating: data.progress_rating,
+          next_session_focus: data.next_session_focus,
+          additional_notes: data.additional_notes,
+          tools_used: data.tools_used || []
+        })
+        .select();
+      
+      if (summaryError) throw summaryError;
+
+      // Then, update the session to mark it as summarized
+      const { error: sessionError } = await supabase
+        .from('sessions')
+        .update({ has_started: true, has_summary: true })
+        .eq('id', summarySession.id);
+      
+      if (sessionError) throw sessionError;
+      
+      // Update the local state
+      setSessions(sessions.map(session => 
+        session.id === summarySession.id 
+          ? { ...session, has_started: true } 
+          : session
+      ));
+      
+      toast.success('סיכום המפגש נשמר בהצלחה');
+      setShowSummaryForm(false);
+      setSummarySession(null);
+    } catch (error: any) {
+      console.error('Error saving session summary:', error);
+      toast.error('שגיאה בשמירת סיכום המפגש');
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -157,7 +211,6 @@ const SessionsList = () => {
     );
   }
 
-  // Filter sessions by whether they've started or not
   const upcomingSessions = sessions.filter(session => !session.has_started);
   const pastSessions = sessions.filter(session => session.has_started);
 
@@ -236,7 +289,7 @@ const SessionsList = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleSummarizeSession(session.id, false)}
+                                  onClick={() => handleSummarizeSession(session)}
                                   className="text-blue-600 hover:text-blue-700"
                                 >
                                   סכם מפגש
@@ -301,7 +354,7 @@ const SessionsList = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleSummarizeSession(session.id, false)}
+                            onClick={() => handleSummarizeSession(session)}
                             className="text-blue-600 hover:text-blue-700"
                           >
                             סכם מפגש
@@ -351,7 +404,7 @@ const SessionsList = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleSummarizeSession(session.id, true)}
+                                  onClick={() => handleSummarizeSession(session)}
                                 >
                                   סכם מפגש
                                 </Button>
@@ -377,7 +430,7 @@ const SessionsList = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleSummarizeSession(session.id, true)}
+                              onClick={() => handleSummarizeSession(session)}
                               className="text-orange-600 hover:text-orange-700"
                             >
                               סכם מפגש
@@ -419,6 +472,40 @@ const SessionsList = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {showSummaryForm && summarySession && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+              <div className="bg-[#1A1F2C] text-white p-4 flex items-center justify-between">
+                <h2 className="text-xl font-semibold">סיכום מפגש</h2>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => {
+                    setShowSummaryForm(false);
+                    setSummarySession(null);
+                  }}
+                  className="text-white hover:bg-white/20"
+                >
+                  סגור
+                </Button>
+              </div>
+              <div className="flex-1 overflow-auto">
+                <SessionSummaryForm
+                  sessionId={summarySession.id}
+                  playerName={summarySession.player.full_name}
+                  sessionDate={summarySession.session_date}
+                  onSubmit={handleSummarySubmit}
+                  onCancel={() => {
+                    setShowSummaryForm(false);
+                    setSummarySession(null);
+                  }}
+                  forceEnable={!summarySession.has_started}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
