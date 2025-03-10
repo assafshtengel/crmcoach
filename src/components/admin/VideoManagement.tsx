@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -44,7 +43,9 @@ import {
   ExternalLink, 
   Clock, 
   Calendar,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle,
+  Info
 } from "lucide-react";
 
 export default function VideoManagement() {
@@ -418,6 +419,7 @@ export default function VideoManagement() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not logged in');
 
+      // Filter out players who already have this video assigned
       const newAssignments = selectedPlayers.filter(
         playerId => !playersWithAssignments[playerId]
       );
@@ -432,6 +434,7 @@ export default function VideoManagement() {
         return;
       }
 
+      // Insert new player-video assignments
       const assignmentsToInsert = newAssignments.map(playerId => ({
         player_id: playerId,
         video_id: selectedVideo.id,
@@ -443,8 +446,21 @@ export default function VideoManagement() {
         .from('player_videos')
         .insert(assignmentsToInsert);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error assigning video:', error);
+        if (error.code === '23505') {
+          // Specific handling for duplicate key violation
+          toast({
+            title: "סרטון כבר הוקצה לשחקן",
+            description: "חלק מהשחקנים כבר קיבלו את הסרטון הזה",
+            variant: "warning",
+          });
+        } else {
+          throw error;
+        }
+      }
 
+      // Update video count for each player
       for (const playerId of newAssignments) {
         const { error: incrementError } = await supabase.rpc(
           'increment_player_video_count',
@@ -498,12 +514,16 @@ export default function VideoManagement() {
     setOpenAssignDialog(true);
     
     try {
+      // Get existing assignments for this video
       const { data, error } = await supabase
         .from('player_videos')
         .select('player_id')
         .eq('video_id', video.id);
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching video assignments:', error);
+        throw error;
+      }
       
       const assignmentsMap: Record<string, boolean> = {};
       (data || []).forEach(assignment => {
@@ -515,6 +535,11 @@ export default function VideoManagement() {
       
     } catch (error) {
       console.error('Error fetching video assignments:', error);
+      toast({
+        title: "שגיאה בטעינת נתונים",
+        description: "לא ניתן לטעון את רשימת השחקנים שכבר הוקצו להם הסרטון",
+        variant: "destructive",
+      });
     }
   };
 
@@ -541,10 +566,8 @@ export default function VideoManagement() {
     }
   };
 
-  // פונקציה חדשה לפעולת התהליך ידנית - תשלחף למערכת עיבוד התהליכים האוטומטיים
   const triggerProcessAutoAssignments = async () => {
     try {
-      // קריאה לפונקציה בבסיס הנתונים לעיבוד משימות אוטומטיות
       const { error } = await supabase.rpc('process_auto_video_assignments');
       
       if (error) throw error;
@@ -563,7 +586,6 @@ export default function VideoManagement() {
     }
   };
 
-  // פונקציה לזיהוי אם סרטון מוגדר כאוטומטי
   const isAutoScheduled = useMemo(() => {
     return (video: any) => {
       return video.is_auto_scheduled === true;
@@ -919,27 +941,47 @@ export default function VideoManagement() {
           <div className="py-4">
             {selectedVideo && (
               <div className="bg-gray-50 p-3 rounded-md mb-4">
-                <p className="font-semibold">{selectedVideo.title}</p>
+                <p className="font-medium">{selectedVideo.title}</p>
                 {selectedVideo.description && (
                   <p className="text-sm text-gray-600 mt-1">{selectedVideo.description}</p>
                 )}
               </div>
             )}
+
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4 flex items-start gap-2">
+              <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-700">
+                <p>שחקנים שכבר קיבלו את הסרטון מסומנים ב"הוקצה".</p>
+                <p className="mt-1">לא ניתן להקצות את אותו הסרטון מספר פעמים לאותו שחקן.</p>
+              </div>
+            </div>
+
             <div className="space-y-1">
               <Label>שחקנים</Label>
               <ScrollArea className="h-60 mt-2 border rounded-md p-2">
                 {players.length > 0 ? (
                   <div className="space-y-2">
                     {players.map((player) => (
-                      <div key={player.id} className="flex items-center">
+                      <div 
+                        key={player.id} 
+                        className={`flex items-center ${
+                          playersWithAssignments[player.id] ? 'bg-gray-50' : ''
+                        } p-2 rounded-md`}
+                      >
                         <input
                           type="checkbox"
                           id={`player-${player.id}`}
                           checked={selectedPlayers.includes(player.id)}
                           onChange={() => togglePlayerSelection(player.id)}
                           className="mr-2 rounded border-gray-300"
+                          disabled={playersWithAssignments[player.id]}
                         />
-                        <Label htmlFor={`player-${player.id}`} className="flex-1 cursor-pointer">
+                        <Label 
+                          htmlFor={`player-${player.id}`} 
+                          className={`flex-1 cursor-pointer ${
+                            playersWithAssignments[player.id] ? 'text-gray-500' : ''
+                          }`}
+                        >
                           {player.full_name}
                         </Label>
                         {playersWithAssignments[player.id] && (
@@ -956,6 +998,13 @@ export default function VideoManagement() {
                     <p className="text-gray-500 text-center">אין שחקנים זמינים</p>
                   </div>
                 )}
+                
+                {players.length > 0 && players.every(p => playersWithAssignments[p.id]) && (
+                  <div className="flex items-center mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2" />
+                    <p className="text-sm text-yellow-700">כל השחקנים כבר קיבלו את הסרטון הזה</p>
+                  </div>
+                )}
               </ScrollArea>
             </div>
           </div>
@@ -965,10 +1014,14 @@ export default function VideoManagement() {
             </Button>
             <Button 
               onClick={handleAssignVideo} 
-              disabled={selectedPlayers.length === 0 || players.length === 0}
+              disabled={
+                selectedPlayers.length === 0 || 
+                players.length === 0 || 
+                selectedPlayers.every(id => playersWithAssignments[id])
+              }
             >
               <User className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
-              הקצה ל-{selectedPlayers.length} שחקנים
+              הקצה ל-{selectedPlayers.filter(id => !playersWithAssignments[id]).length} שחקנים
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -979,7 +1032,7 @@ export default function VideoManagement() {
           <DialogHeader>
             <DialogTitle>הגדרת תזמון אוטומטי</DialogTitle>
             <DialogDescription>
-              הגדר מתי הסרטון יישלח אוטומטית לשחקנים חדשים
+              הגדר מתי הסרטון יישלח אוטומatically לשחקנים חדשים
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -992,7 +1045,7 @@ export default function VideoManagement() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="auto-schedule">הפעל תזמון אוטומטי</Label>
-                  <p className="text-sm text-muted-foreground">שלח סרטון זה אוטומטית לכל שחקן חדש</p>
+                  <p className="text-sm text-muted-foreground">שלח סרטון זה אוטומatically לכל שחקן חדש</p>
                 </div>
                 <Switch 
                   id="auto-schedule" 
@@ -1050,3 +1103,4 @@ export default function VideoManagement() {
     </div>
   );
 }
+
