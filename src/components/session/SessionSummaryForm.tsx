@@ -21,6 +21,7 @@ interface SessionSummaryFormProps {
   sessionDate: string;
   onSubmit: (data: FormValues & { tools_used: string[] }) => Promise<void>;
   onCancel: () => void;
+  forceEnable?: boolean;
 }
 
 export function SessionSummaryForm({ 
@@ -28,7 +29,8 @@ export function SessionSummaryForm({
   playerName, 
   sessionDate, 
   onSubmit, 
-  onCancel 
+  onCancel,
+  forceEnable = false
 }: SessionSummaryFormProps) {
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -58,8 +60,12 @@ export function SessionSummaryForm({
       await onSubmit({ ...data, tools_used: selectedTools });
       console.log("Form submitted successfully");
       
-      // Update the session status in the frontend
-      updateSessionSummaryStatus(sessionId);
+      // If the session is being force-enabled (summarizing an upcoming session),
+      // we don't need to update the session status since it's not started yet
+      if (!forceEnable) {
+        // Update the session status in the frontend
+        updateSessionSummaryStatus(sessionId);
+      }
       
       // Show success feedback dialog
       setFeedbackData({
@@ -233,4 +239,3 @@ export function SessionSummaryForm({
     </Form>
   );
 }
-

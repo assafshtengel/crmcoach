@@ -1,12 +1,15 @@
+
 import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { UseFormReturn } from "react-hook-form";
 import { FormValues } from "./schemaValidation";
+
 interface SummaryTabProps {
   form: UseFormReturn<FormValues>;
 }
+
 export function SummaryTab({
   form
 }: SummaryTabProps) {

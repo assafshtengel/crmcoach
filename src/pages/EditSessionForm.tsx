@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -34,9 +33,12 @@ interface SessionFormData {
 const EditSessionForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const sessionId = location.state?.sessionId;
   const [players, setPlayers] = useState<Player[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<any>(null);
+  const [needsSummary, setNeedsSummary] = useState(false);
+  const [forceEnable, setForceEnable] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<SessionFormData>({
     session_date: '',
@@ -47,7 +49,6 @@ const EditSessionForm = () => {
     meeting_type: 'in_person'
   });
 
-  // Fetch players
   useEffect(() => {
     const fetchPlayers = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -72,14 +73,8 @@ const EditSessionForm = () => {
     fetchPlayers();
   }, [navigate]);
 
-  // Fetch session data
   useEffect(() => {
-    const fetchSession = async () => {
-      if (!sessionId) {
-        navigate('/sessions-list');
-        return;
-      }
-
+    const fetchSession = async (id: string) => {
       const { data: sessionData, error } = await supabase
         .from('sessions')
         .select(`
@@ -90,7 +85,7 @@ const EditSessionForm = () => {
           location,
           meeting_type
         `)
-        .eq('id', sessionId)
+        .eq('id', id)
         .single();
 
       if (error) {
@@ -100,6 +95,7 @@ const EditSessionForm = () => {
       }
 
       if (sessionData) {
+        setSession(sessionData);
         setFormData({
           session_date: sessionData.session_date,
           session_time: sessionData.session_time,
@@ -112,8 +108,17 @@ const EditSessionForm = () => {
       setIsLoading(false);
     };
 
-    fetchSession();
-  }, [sessionId, navigate]);
+    const state = location.state as { sessionId?: string; needsSummary?: boolean; forceEnable?: boolean } | null;
+    
+    if (state?.sessionId) {
+      setSessionId(state.sessionId);
+      setNeedsSummary(state.needsSummary || false);
+      setForceEnable(state.forceEnable || false);
+      fetchSession(state.sessionId);
+    } else {
+      navigate('/');
+    }
+  }, [navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

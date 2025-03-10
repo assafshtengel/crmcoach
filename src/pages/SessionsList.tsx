@@ -125,6 +125,10 @@ const SessionsList = () => {
     navigate('/edit-session', { state: { sessionId } });
   };
 
+  const handleSummarizeSession = (sessionId: string, hasStarted: boolean) => {
+    navigate('/edit-session', { state: { sessionId, needsSummary: true, forceEnable: !hasStarted } });
+  };
+
   const handleDeleteConfirm = async () => {
     if (!sessionToDelete) return;
 
@@ -232,6 +236,14 @@ const SessionsList = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  onClick={() => handleSummarizeSession(session.id, false)}
+                                  className="text-blue-600 hover:text-blue-700"
+                                >
+                                  סכם מפגש
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   onClick={() => setSessionToDelete({ 
                                     id: session.id, 
                                     playerName: session.player.full_name 
@@ -285,6 +297,16 @@ const SessionsList = () => {
                             <p className="line-clamp-2">{session.notes}</p>
                           </div>
                         )}
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSummarizeSession(session.id, false)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            סכם מפגש
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -329,7 +351,7 @@ const SessionsList = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => navigate('/edit-session', { state: { sessionId: session.id, needsSummary: true } })}
+                                  onClick={() => handleSummarizeSession(session.id, true)}
                                 >
                                   סכם מפגש
                                 </Button>
@@ -355,7 +377,7 @@ const SessionsList = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate('/edit-session', { state: { sessionId: session.id, needsSummary: true } })}
+                              onClick={() => handleSummarizeSession(session.id, true)}
                               className="text-orange-600 hover:text-orange-700"
                             >
                               סכם מפגש
