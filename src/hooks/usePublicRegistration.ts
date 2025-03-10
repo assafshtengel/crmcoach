@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from "react-hook-form";
@@ -54,18 +53,14 @@ export const usePublicRegistration = () => {
       }
 
       try {
-        // First, get the registration link
         const { data: link, error: linkError } = await supabase
           .from('registration_links')
           .select('*')
           .eq('id', linkId)
           .maybeSingle();
 
-        if (linkError) {
-          console.error("Error fetching link:", linkError);
-          throw new Error('הקישור לא נמצא או שאינו פעיל');
-        }
-
+        if (linkError) throw linkError;
+        
         if (!link) {
           throw new Error('הקישור לא נמצא');
         }
@@ -74,47 +69,12 @@ export const usePublicRegistration = () => {
           throw new Error('קישור זה אינו פעיל יותר');
         }
 
-        // Then get the coach details
-        const { data: coach, error: coachError } = await supabase
-          .from('coaches')
-          .select('id, full_name, email')
-          .eq('id', link.coach_id)
-          .maybeSingle();
-
-        if (coachError) {
-          console.error("Error fetching coach:", coachError);
-          throw new Error('שגיאה בטעינת פרטי המאמן');
-        }
-
-        if (!coach) {
-          // If no coach found, create a temporary coach record for registration
-          const tempCoach = {
-            id: link.coach_id,
-            full_name: 'מאמן זמני',
-            email: 'temp@coach.com'
-          };
-
-          console.log("Creating temporary coach record:", tempCoach);
-          
-          const { error: createError } = await supabase
-            .from('coaches')
-            .insert([tempCoach]);
-
-          if (createError) {
-            console.error("Error creating temp coach:", createError);
-            throw new Error('שגיאה בטעינת פרטי המאמן');
-          }
-
-          // Set the data with temporary coach
-          setLinkData({ ...link, coach: tempCoach });
-        } else {
-          // Set the data with actual coach
-          setLinkData({ ...link, coach });
-        }
+        setLinkData(link);
 
       } catch (error: any) {
         console.error("Error in fetchLinkData:", error);
         showFeedback("שגיאה", error.message || "אירעה שגיאה בטעינת הטופס", true);
+        navigate('/');
       } finally {
         setIsLoading(false);
       }
@@ -140,7 +100,6 @@ export const usePublicRegistration = () => {
     });
     setShowFeedbackDialog(true);
     
-    // Also show toast for immediate feedback
     toast({
       variant: isError ? "destructive" : "default",
       title: title,
@@ -153,7 +112,6 @@ export const usePublicRegistration = () => {
     form.setValue('sportField', value);
     setShowOtherSportField(value === 'other');
     
-    // Clear otherSportField if not needed
     if (value !== 'other') {
       form.setValue('otherSportField', '');
     }
@@ -174,30 +132,25 @@ export const usePublicRegistration = () => {
     setIsSubmitting(true);
 
     try {
-      if (!linkData || !linkData.coach) {
-        console.error("Missing link or coach data:", linkData);
-        throw new Error('מידע המאמן חסר');
+      if (!linkData) {
+        throw new Error('מידע הקישור חסר');
       }
 
-      // Validate sport field
       if (!values.sportField) {
         throw new Error('יש לבחור ענף ספורט');
       }
 
-      // Determine final sport field value
       const finalSportField = values.sportField === 'other' && values.otherSportField
         ? values.otherSportField
         : values.sportField === 'other'
           ? 'אחר'
           : values.sportField;
 
-      // Generate a random password for the player
       const password = generatePassword(10);
       setGeneratedPassword(password);
 
-      // Prepare player data
       const playerData = {
-        coach_id: linkData.coach.id,
+        coach_id: linkData.coach_id,
         full_name: `${values.firstName} ${values.lastName}`,
         email: values.email,
         phone: values.phone,
@@ -213,12 +166,11 @@ export const usePublicRegistration = () => {
         sport_field: finalSportField,
         registration_link_id: linkId,
         registration_timestamp: values.registrationTimestamp,
-        password: password // Store the generated password
+        password: password
       };
 
-      console.log("Inserting player data for coach ID:", linkData.coach.id);
+      console.log("Inserting player data for coach ID:", linkData.coach_id);
       
-      // Use insert instead of upsert to avoid conflicts
       const { data, error } = await supabase
         .from('players')
         .insert([playerData])
@@ -227,11 +179,8 @@ export const usePublicRegistration = () => {
       if (error) {
         console.error("Database error details:", JSON.stringify(error, null, 2));
         
-        // Provide specific error messages based on error code
         if (error.code === '23505') {
           throw new Error("כתובת האימייל כבר קיימת במערכת");
-        } else if (error.code === '23503') {
-          throw new Error("שגיאה בקישור למאמן, אנא צור קשר עם המאמן");
         } else {
           throw new Error(error.message || "שגיאה בשמירת הנתונים");
         }
@@ -241,14 +190,13 @@ export const usePublicRegistration = () => {
         throw new Error("שגיאה בשמירת הנתונים - לא התקבל אישור מהשרת");
       }
 
-      // Send notification to coach
       const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
       
       const { error: notificationError } = await supabase
         .from('notifications')
         .insert([
           {
-            coach_id: linkData.coach.id,
+            coach_id: linkData.coach_id,
             message: notificationMessage,
             type: 'new_player'
           }
@@ -256,25 +204,20 @@ export const usePublicRegistration = () => {
         
       if (notificationError) {
         console.error("Error creating notification:", notificationError);
-        // Continue even if notification creation fails
       }
 
-      // Show success feedback with password info
       showFeedback(
         "נרשמת בהצלחה!",
-        `תודה על הרישום! פרטיך נשלחו למאמן ${linkData.coach.full_name} בהצלחה.`,
+        "תודה על הרישום! פרטיך נשלחו למאמן בהצלחה.",
         false
       );
 
-      // After feedback is shown, we'll show the success dialog
       setTimeout(() => {
         setShowSuccessDialog(true);
       }, 2000);
       
     } catch (error: any) {
       console.error('Error in form submission:', error);
-      
-      // Display error feedback
       showFeedback(
         "שגיאה ברישום",
         error.message || "אירעה שגיאה ברישום. אנא נסה שוב.",
