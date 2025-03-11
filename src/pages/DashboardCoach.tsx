@@ -1158,6 +1158,26 @@ const DashboardCoach = () => {
               </Button>
             </CardContent>
           </Card>
+
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#8e44ad] cursor-pointer"
+            onClick={() => navigate('/game-summary')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">סיכומי משחק</CardTitle>
+              <FileText className="h-5 w-5 text-[#8e44ad]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">צפה וצור סיכומי משחק אישיים עבור השחקנים</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#8e44ad] hover:bg-[#6c3483]"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                מלא טופס סיכום משחק
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="bg-white/90 shadow-lg">
@@ -1255,3 +1275,4 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
+
