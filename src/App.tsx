@@ -49,6 +49,7 @@ import AllMeetingSummaries from '@/pages/AllMeetingSummaries';
 import Goals from '@/pages/Goals';
 import PlayerProfileView from '@/pages/player/PlayerProfileView';
 import PlayerGameSummary from '@/pages/player/PlayerGameSummary';
+import PlayerTrainingSummary from '@/pages/player/PlayerTrainingSummary';
 import GameSummary from '@/pages/GameSummary';
 import PlayerGameSummaryView from '@/components/game-summary/PlayerGameSummaryView';
 import NotFound from '@/pages/NotFound';
@@ -73,6 +74,11 @@ function App() {
             {/* PLAYER ROUTES - These routes require player authentication */}
             <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
             <Route path="/player/game-summary" element={<AuthGuard playerOnly={true}><PlayerGameSummary /></AuthGuard>} />
+            <Route path="/player/training-summary" element={<AuthGuard playerOnly={true}><PlayerTrainingSummary /></AuthGuard>} />
+            <Route path="/player/training-videos" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
+            <Route path="/player/meetings" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
+            <Route path="/player/goals" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
+            <Route path="/player/game-preparation" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
             
             {/* COACH ROUTES - These routes require coach authentication */}
             <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />

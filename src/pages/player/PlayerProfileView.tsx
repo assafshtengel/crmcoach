@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, User, Calendar, PenTool, Video, Activity, FileText } from "lucide-react";
+import { LogOut, User, Calendar, PenTool, Video, Activity, FileText, Notebook } from "lucide-react";
 
 export default function PlayerProfileView() {
   const [playerData, setPlayerData] = useState<any>(null);
@@ -151,6 +151,23 @@ export default function PlayerProfileView() {
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
+                <Notebook className="h-5 w-5" />
+                סיכומי אימונים
+              </CardTitle>
+              <CardDescription>
+                סיכומי ביצועים אישיים באימונים
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={() => navigate('/player/training-summary')}>
+                צפה והוסף סיכומי אימונים
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Video className="h-5 w-5" />
                 סרטוני אימון
               </CardTitle>
@@ -159,7 +176,7 @@ export default function PlayerProfileView() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" onClick={() => navigate('/player/training-videos')}>
                 צפה בסרטונים
               </Button>
             </CardContent>
@@ -176,7 +193,7 @@ export default function PlayerProfileView() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" onClick={() => navigate('/player/meetings')}>
                 צפה ביומן
               </Button>
             </CardContent>
@@ -193,7 +210,7 @@ export default function PlayerProfileView() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" onClick={() => navigate('/player/goals')}>
                 צפה במטרות
               </Button>
             </CardContent>
@@ -210,7 +227,7 @@ export default function PlayerProfileView() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" onClick={() => navigate('/player/game-preparation')}>
                 מלא טופס הכנה
               </Button>
             </CardContent>
