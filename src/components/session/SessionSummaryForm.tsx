@@ -223,7 +223,7 @@ export function SessionSummaryForm({
         </form>
       </ScrollArea>
       <FormActions
-        onSubmit={form.handleSubmit(handleSubmit)}
+        onSubmit={() => form.handleSubmit(handleSubmit)()}
         onExportPDF={handleExportPDF}
         isSaving={isSaving}
       />
