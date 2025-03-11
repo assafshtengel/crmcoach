@@ -20,7 +20,8 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         // Public routes - always allow access without any authentication
         if (
           location.pathname.includes('/register/') || 
-          location.pathname === '/player-auth'
+          location.pathname === '/player-auth' ||
+          location.pathname === '/auth'
         ) {
           console.log("Public route - bypassing all auth checks");
           setIsLoading(false);
@@ -40,7 +41,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           try {
             const playerData = JSON.parse(playerSession);
             
-            // Verify player credentials directly in the database, without requiring coach authentication
+            // Verify player credentials directly in the database
             const { data, error } = await supabase
               .from('players')
               .select('id, email, password')

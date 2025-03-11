@@ -29,7 +29,7 @@ const PlayerAuth = () => {
       // Check if this email exists in the players table
       const { data: playerData, error: playerError } = await supabase
         .from('players')
-        .select('id, email, password')
+        .select('id, email, password, full_name')
         .eq('email', email)
         .maybeSingle();
 
@@ -72,14 +72,15 @@ const PlayerAuth = () => {
       console.log("Player login successful for:", email);
       toast({
         title: "התחברות הצליחה",
-        description: "מיד תועבר לפרופיל השחקן",
+        description: `ברוך הבא, ${playerData.full_name || 'שחקן יקר'}!`,
       });
 
       // Store player session data in localStorage
       localStorage.setItem('playerSession', JSON.stringify({
         id: playerData.id,
         email: playerData.email,
-        password: playerData.password
+        password: playerData.password,
+        fullName: playerData.full_name
       }));
 
       // Navigate to the player profile view

@@ -60,6 +60,15 @@ function App() {
         <ThemeProvider attribute="class">
           <Toaster />
           <Routes>
+            {/* Public routes - accessible without any authentication */}
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/player-auth" element={<PlayerAuth />} />
+            <Route path="/signup-coach" element={<CoachSignUp />} />
+            <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
+            
+            {/* Player-only routes - require player authentication */}
+            <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
+            
             {/* Coach routes - require coach authentication */}
             <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
             <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
@@ -101,15 +110,6 @@ function App() {
             <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
             <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} />
             <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} />
-            
-            {/* Public routes - accessible without authentication */}
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/player-auth" element={<PlayerAuth />} />
-            <Route path="/signup-coach" element={<CoachSignUp />} />
-            <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
-            
-            {/* Player-only routes - require player authentication */}
-            <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
