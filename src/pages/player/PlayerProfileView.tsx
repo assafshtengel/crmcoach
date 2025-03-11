@@ -12,6 +12,8 @@ export default function PlayerProfileView() {
   const [playerData, setPlayerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [mentalStateToday, setMentalStateToday] = useState<boolean>(false);
+  const [upcomingMeetings, setUpcomingMeetings] = useState<any[]>([]);
+  const [pastMeetings, setPastMeetings] = useState<any[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -55,6 +57,51 @@ export default function PlayerProfileView() {
         } else {
           setMentalStateToday(mentalStateData && mentalStateData.length > 0);
         }
+
+        // Load meetings
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Fetch upcoming meetings
+        const { data: upcomingData, error: upcomingError } = await supabase
+          .from('player_meetings')
+          .select(`
+            *,
+            coaches (
+              full_name
+            )
+          `)
+          .eq('player_id', playerSession.id)
+          .gte('meeting_date', today)
+          .order('meeting_date', { ascending: true })
+          .order('meeting_time', { ascending: true })
+          .limit(5);
+
+        if (upcomingError) throw upcomingError;
+        setUpcomingMeetings(upcomingData || []);
+
+        // Fetch past meetings with summaries
+        const { data: pastData, error: pastError } = await supabase
+          .from('player_meetings')
+          .select(`
+            *,
+            coaches (
+              full_name
+            ),
+            meeting_logs (
+              summary,
+              achievements,
+              next_steps
+            )
+          `)
+          .eq('player_id', playerSession.id)
+          .lt('meeting_date', today)
+          .order('meeting_date', { ascending: false })
+          .order('meeting_time', { ascending: false })
+          .limit(5);
+
+        if (pastError) throw pastError;
+        setPastMeetings(pastData || []);
+
       } catch (error: any) {
         console.error('Error loading player data:', error);
         toast({
@@ -311,17 +358,106 @@ export default function PlayerProfileView() {
             <TabsTrigger value="upcoming" className="flex-1">פגישות קרובות</TabsTrigger>
             <TabsTrigger value="past" className="flex-1">פגישות קודמות</TabsTrigger>
           </TabsList>
+
           <TabsContent value="upcoming" className="mt-4">
             <Card>
               <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">אין לך פגישות קרובות</p>
+                {upcomingMeetings.length === 0 ? (
+                  <p className="text-center text-muted-foreground">אין לך פגישות קרובות</p>
+                ) : (
+                  <div className="space-y-4">
+                    {upcomingMeetings.map((meeting) => (
+                      <Card key={meeting.id} className="shadow-sm">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">
+                            {new Date(meeting.meeting_date).toLocaleDateString('he-IL')}
+                          </CardTitle>
+                          <CardDescription>
+                            {meeting.meeting_time.slice(0, 5)} - {meeting.meeting_type === 'training' ? 'אימון' : 'פגישה'}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2">
+                            {meeting.location && (
+                              <p className="text-sm">
+                                <span className="font-medium">מיקום:</span> {meeting.location}
+                              </p>
+                            )}
+                            {meeting.coaches?.full_name && (
+                              <p className="text-sm">
+                                <span className="font-medium">מאמן:</span> {meeting.coaches.full_name}
+                              </p>
+                            )}
+                            {meeting.notes && (
+                              <p className="text-sm">
+                                <span className="font-medium">הערות:</span> {meeting.notes}
+                              </p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
+
           <TabsContent value="past" className="mt-4">
             <Card>
               <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">אין פגישות קודמות</p>
+                {pastMeetings.length === 0 ? (
+                  <p className="text-center text-muted-foreground">אין פגישות קודמות</p>
+                ) : (
+                  <div className="space-y-4">
+                    {pastMeetings.map((meeting) => (
+                      <Card key={meeting.id} className="shadow-sm">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-lg">
+                            {new Date(meeting.meeting_date).toLocaleDateString('he-IL')}
+                          </CardTitle>
+                          <CardDescription>
+                            {meeting.meeting_time.slice(0, 5)} - {meeting.meeting_type === 'training' ? 'אימון' : 'פגישה'}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {meeting.location && (
+                              <p className="text-sm">
+                                <span className="font-medium">מיקום:</span> {meeting.location}
+                              </p>
+                            )}
+                            {meeting.coaches?.full_name && (
+                              <p className="text-sm">
+                                <span className="font-medium">מאמן:</span> {meeting.coaches.full_name}
+                              </p>
+                            )}
+                            {meeting.meeting_logs?.[0] && (
+                              <>
+                                <div className="border-t pt-2">
+                                  <h4 className="font-medium mb-1">סיכום האימון:</h4>
+                                  <p className="text-sm whitespace-pre-line">{meeting.meeting_logs[0].summary}</p>
+                                </div>
+                                {meeting.meeting_logs[0].achievements && (
+                                  <div>
+                                    <h4 className="font-medium mb-1">הישגים:</h4>
+                                    <p className="text-sm">{meeting.meeting_logs[0].achievements}</p>
+                                  </div>
+                                )}
+                                {meeting.meeting_logs[0].next_steps && (
+                                  <div>
+                                    <h4 className="font-medium mb-1">צעדים הבאים:</h4>
+                                    <p className="text-sm">{meeting.meeting_logs[0].next_steps}</p>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
