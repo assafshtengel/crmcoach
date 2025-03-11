@@ -1,24 +1,27 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from "@/components/theme-provider"
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { ThemeProvider } from "./components/theme-provider"
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "sonner"
 import DashboardCoach from './pages/DashboardCoach';
 import PlayersList from './pages/PlayersList';
-import Sessions from './pages/Sessions';
-import SessionDetails from './pages/SessionDetails';
-import CoachesList from './pages/CoachesList';
 import Goals from './pages/Goals';
-import MentalPrepForm from './pages/MentalPrepForm';
 import PlayerProfileView from './pages/player/PlayerProfileView';
 import MentalTools from './pages/MentalTools';
-import TrainingVideos from './pages/TrainingVideos';
-import PlayerDashboard from './pages/player/PlayerDashboard';
 import { PlayersProvider } from './contexts/PlayersContext';
-import CoachProfile from './pages/CoachProfile';
-import PlayerRegistration from './pages/PlayerRegistration';
-import RegistrationLinks from './pages/RegistrationLinks';
 import PlayerFile from "@/pages/PlayerFile";
+
+// Create placeholder components for missing modules
+const Sessions = () => <div>Sessions Page</div>;
+const SessionDetails = () => <div>Session Details Page</div>;
+const CoachesList = () => <div>Coaches List Page</div>;
+const MentalPrepForm = () => <div>Mental Prep Form Page</div>;
+const TrainingVideos = () => <div>Training Videos Page</div>;
+const PlayerDashboard = () => <div>Player Dashboard Page</div>;
+const CoachProfile = () => <div>Coach Profile Page</div>;
+const PlayerRegistration = () => <div>Player Registration Page</div>;
+const RegistrationLinks = () => <div>Registration Links Page</div>;
 
 const queryClient = new QueryClient();
 

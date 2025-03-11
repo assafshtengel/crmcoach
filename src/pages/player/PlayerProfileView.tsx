@@ -296,7 +296,7 @@ export default function PlayerProfileView() {
               <p className="text-sm text-muted-foreground mb-4">
                 צפו בתיק השחקן שלכם המכיל את כל המידע על פעילותכם, מטרות והתקדמות.
               </p>
-              <Link to={`/player-file/${user?.id}`}>
+              <Link to={`/player-file/${playerData?.id}`}>
                 <Button className="w-full" variant="outline">
                   <Folder className="mr-2 h-4 w-4" />
                   צפייה בתיק השחקן שלי

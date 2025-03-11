@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
+import { Layout } from "@/components/layout/Layout";
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen, GraduationCap } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
