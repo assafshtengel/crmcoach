@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -56,9 +57,9 @@ import GameSummary from '@/pages/GameSummary';
 import PlayerGameSummaryView from '@/components/game-summary/PlayerGameSummaryView';
 import NotFound from '@/pages/NotFound';
 import MentalLibrary from '@/pages/MentalLibrary';
-import PlayerVideos from '@/pages/PlayerVideos';
-import PlayerMeetings from '@/pages/PlayerMeetings';
-import PlayerGoals from '@/pages/PlayerGoals';
+import PlayerVideos from '@/pages/player/PlayerVideos';
+import PlayerMeetings from '@/pages/player/PlayerMeetings';
+import PlayerGoals from '@/pages/player/PlayerGoals';
 
 import "./App.css";
 
