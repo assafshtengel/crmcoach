@@ -17,19 +17,27 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Get the current path for easier reference
+        const currentPath = location.pathname;
+        console.log("Current path:", currentPath);
+
         // Public routes - always allow access without any authentication
-        if (
-          location.pathname.includes('/register/') || 
-          location.pathname === '/player-auth' ||
-          location.pathname === '/auth'
-        ) {
-          console.log("Public route - bypassing all auth checks");
+        const publicRoutes = [
+          '/auth',
+          '/player-auth',
+          '/signup-coach'
+        ];
+        
+        // Check if current path is a public route or registration path
+        if (publicRoutes.includes(currentPath) || currentPath.includes('/register/')) {
+          console.log("Public route detected - bypassing all auth checks");
           setIsLoading(false);
           return;
         }
 
         // Player-only routes - check player authentication
         if (playerOnly) {
+          console.log("Player-only route - checking player authentication");
           const playerSession = localStorage.getItem('playerSession');
           
           if (!playerSession) {
@@ -44,13 +52,13 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             // Verify player credentials directly in the database
             const { data, error } = await supabase
               .from('players')
-              .select('id, email, password')
+              .select('id, email, password, full_name')
               .eq('email', playerData.email)
               .eq('password', playerData.password)
               .single();
               
             if (error || !data) {
-              console.log("Invalid player session, redirecting to player login", error);
+              console.error("Invalid player session, redirecting to player login", error);
               localStorage.removeItem('playerSession');
               navigate("/player-auth");
               return;
@@ -58,7 +66,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             
             // Make sure the session ID matches the database ID
             if (data.id !== playerData.id) {
-              console.log("Player ID mismatch, redirecting to player login");
+              console.error("Player ID mismatch, redirecting to player login");
               localStorage.removeItem('playerSession');
               navigate("/player-auth");
               return;
@@ -76,7 +84,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         }
         
         // Player profile view - allow access for both player or coach
-        if (playerId && location.pathname.includes('/player-profile/')) {
+        if (playerId && currentPath.includes('/player-profile/')) {
           // First check for player session (player viewing their own profile)
           const playerSession = localStorage.getItem('playerSession');
           

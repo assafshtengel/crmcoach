@@ -60,16 +60,17 @@ function App() {
         <ThemeProvider attribute="class">
           <Toaster />
           <Routes>
-            {/* Public routes - accessible without any authentication */}
+            {/* PUBLIC ROUTES - These routes are accessible without any authentication */}
+            {/* Important: These routes DO NOT use the AuthGuard component */}
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/player-auth" element={<PlayerAuth />} />
             <Route path="/signup-coach" element={<CoachSignUp />} />
             <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
             
-            {/* Player-only routes - require player authentication */}
+            {/* PLAYER ROUTES - These routes require player authentication */}
             <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
             
-            {/* Coach routes - require coach authentication */}
+            {/* COACH ROUTES - These routes require coach authentication */}
             <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
             <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
             <Route path="/new" element={<AuthGuard><NewIndex /></AuthGuard>} />
