@@ -15,7 +15,6 @@ export default function PlayerGoals() {
         <h1 className="text-3xl font-bold">מטרות אימון</h1>
       </div>
       
-      {/* Placeholder content - to be implemented */}
       <div className="text-center py-12">
         <p className="text-gray-500">תוכן זה יתווסף בקרוב</p>
       </div>

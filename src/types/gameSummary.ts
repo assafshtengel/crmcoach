@@ -4,19 +4,23 @@ export interface GameSummary {
   player_id: string;
   coach_id?: string;
   created_at?: string;
+  match_date: string;
   opponent_name: string;
   performance_rating: number;
-  match_date: string;
-  highlights: string;
-  improvement_areas: string;
-  notes: string;
+  concentration_level: number;
+  goals_met: boolean;
+  strongest_point: string;
+  improvement_notes: string;
+  fatigue_level: number;
 }
 
 export interface GameSummaryFormValues {
-  opponent_name: string;
   match_date: string;
+  opponent_name: string;
   performance_rating: number;
-  highlights: string;
-  improvement_areas: string;
-  notes: string;
+  concentration_level: number;
+  goals_met: boolean;
+  strongest_point: string;
+  improvement_notes: string;
+  fatigue_level: number;
 }

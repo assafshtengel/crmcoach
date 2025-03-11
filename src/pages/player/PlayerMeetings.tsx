@@ -15,7 +15,6 @@ export default function PlayerMeetings() {
         <h1 className="text-3xl font-bold">יומן פגישות</h1>
       </div>
       
-      {/* Placeholder content - to be implemented */}
       <div className="text-center py-12">
         <p className="text-gray-500">תוכן זה יתווסף בקרוב</p>
       </div>

@@ -70,7 +70,6 @@ function App() {
           <Toaster />
           <Routes>
             {/* PUBLIC ROUTES - These routes are accessible without any authentication */}
-            {/* Important: These routes DO NOT use the AuthGuard component */}
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/player-auth" element={<PlayerAuth />} />
             <Route path="/signup-coach" element={<CoachSignUp />} />
@@ -82,11 +81,10 @@ function App() {
             <Route path="/player/training-summary" element={<AuthGuard playerOnly={true}><PlayerTrainingSummary /></AuthGuard>} />
             <Route path="/player/daily-mental-state" element={<AuthGuard playerOnly={true}><DailyMentalState /></AuthGuard>} />
             <Route path="/player/mental-state-history" element={<AuthGuard playerOnly={true}><MentalStateHistory /></AuthGuard>} />
-            <Route path="/player/training-videos" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
+            <Route path="/player/videos" element={<AuthGuard playerOnly={true}><PlayerVideos /></AuthGuard>} />
             <Route path="/player/meetings" element={<AuthGuard playerOnly={true}><PlayerMeetings /></AuthGuard>} />
             <Route path="/player/goals" element={<AuthGuard playerOnly={true}><PlayerGoals /></AuthGuard>} />
             <Route path="/player/game-preparation" element={<AuthGuard playerOnly={true}><GamePreparation /></AuthGuard>} />
-            <Route path="/player/videos" element={<AuthGuard playerOnly={true}><PlayerVideos /></AuthGuard>} />
             
             {/* COACH ROUTES - These routes require coach authentication */}
             <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
