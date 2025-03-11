@@ -383,6 +383,60 @@ export type Database = {
         }
         Relationships: []
       }
+      game_summaries: {
+        Row: {
+          coach_id: string | null
+          concentration_level: number | null
+          created_at: string | null
+          fatigue_level: number | null
+          goals_met: boolean | null
+          id: string
+          improvement_notes: string | null
+          performance_rating: number | null
+          player_id: string
+          strongest_point: string | null
+        }
+        Insert: {
+          coach_id?: string | null
+          concentration_level?: number | null
+          created_at?: string | null
+          fatigue_level?: number | null
+          goals_met?: boolean | null
+          id?: string
+          improvement_notes?: string | null
+          performance_rating?: number | null
+          player_id: string
+          strongest_point?: string | null
+        }
+        Update: {
+          coach_id?: string | null
+          concentration_level?: number | null
+          created_at?: string | null
+          fatigue_level?: number | null
+          goals_met?: boolean | null
+          id?: string
+          improvement_notes?: string | null
+          performance_rating?: number | null
+          player_id?: string
+          strongest_point?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_summaries_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_summaries_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goal_messages: {
         Row: {
           created_at: string | null

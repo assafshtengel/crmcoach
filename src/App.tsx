@@ -48,6 +48,9 @@ import PublicRegistrationForm from '@/pages/PublicRegistrationForm';
 import AllMeetingSummaries from '@/pages/AllMeetingSummaries';
 import Goals from '@/pages/Goals';
 import PlayerProfileView from '@/pages/player/PlayerProfileView';
+import PlayerGameSummary from '@/pages/player/PlayerGameSummary';
+import GameSummary from '@/pages/GameSummary';
+import PlayerGameSummaryView from '@/components/game-summary/PlayerGameSummaryView';
 import NotFound from '@/pages/NotFound';
 import MentalLibrary from '@/pages/MentalLibrary';
 
@@ -69,6 +72,7 @@ function App() {
             
             {/* PLAYER ROUTES - These routes require player authentication */}
             <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
+            <Route path="/player/game-summary" element={<AuthGuard playerOnly={true}><PlayerGameSummary /></AuthGuard>} />
             
             {/* COACH ROUTES - These routes require coach authentication */}
             <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
@@ -111,6 +115,8 @@ function App() {
             <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
             <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} />
             <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} />
+            <Route path="/game-summary" element={<AuthGuard><GameSummary /></AuthGuard>} />
+            <Route path="/player-game-summaries/:playerId" element={<AuthGuard><PlayerGameSummaryView /></AuthGuard>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
