@@ -969,6 +969,60 @@ export type Database = {
           },
         ]
       }
+      player_mental_states: {
+        Row: {
+          coach_id: string | null
+          concerns_details: string | null
+          created_at: string
+          feeling_score: number
+          has_concerns: boolean
+          id: string
+          improvement_focus: string | null
+          mental_fatigue_level: number
+          motivation_level: number
+          player_id: string
+        }
+        Insert: {
+          coach_id?: string | null
+          concerns_details?: string | null
+          created_at?: string
+          feeling_score: number
+          has_concerns?: boolean
+          id?: string
+          improvement_focus?: string | null
+          mental_fatigue_level: number
+          motivation_level: number
+          player_id: string
+        }
+        Update: {
+          coach_id?: string | null
+          concerns_details?: string | null
+          created_at?: string
+          feeling_score?: number
+          has_concerns?: boolean
+          id?: string
+          improvement_focus?: string | null
+          mental_fatigue_level?: number
+          motivation_level?: number
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_mental_states_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_mental_states_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_videos: {
         Row: {
           assigned_by: string | null

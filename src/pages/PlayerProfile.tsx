@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
-import { ArrowRight, Pencil, Settings, Activity } from 'lucide-react';
+import { ArrowRight, Pencil, Settings, Activity, Brain } from 'lucide-react';
 
 export default function PlayerProfile() {
   const { playerId } = useParams<{ playerId: string }>();
@@ -16,6 +16,7 @@ export default function PlayerProfile() {
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
+  const [hasMentalStates, setHasMentalStates] = useState(false);
 
   useEffect(() => {
     const fetchPlayer = async () => {
@@ -32,6 +33,19 @@ export default function PlayerProfile() {
         }
 
         setPlayer(data);
+
+        // Check if player has any mental state submissions
+        const { data: mentalStatesData, error: mentalStatesError } = await supabase
+          .from('player_mental_states')
+          .select('id')
+          .eq('player_id', playerId)
+          .limit(1);
+
+        if (mentalStatesError) {
+          console.error('Error checking mental states:', mentalStatesError);
+        } else {
+          setHasMentalStates(mentalStatesData && mentalStatesData.length > 0);
+        }
       } catch (error: any) {
         console.error('Error fetching player:', error);
         toast({
@@ -163,6 +177,28 @@ export default function PlayerProfile() {
                       onClick={() => navigate(`/player-game-summaries/${playerId}`)}
                     >
                       צפה בסיכומי משחק
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Mental State Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Brain className="h-5 w-5 mr-2" />
+                      מצב מנטלי
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      צפה בדיווחי המצב המנטלי היומיים של השחקן
+                    </p>
+                    <Button 
+                      className="w-full" 
+                      onClick={() => navigate(`/player-mental-states/${playerId}`)}
+                      disabled={!hasMentalStates}
+                    >
+                      {hasMentalStates ? 'צפה בדיווחי מצב מנטלי' : 'אין דיווחי מצב מנטלי'}
                     </Button>
                   </CardContent>
                 </Card>

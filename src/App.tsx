@@ -50,6 +50,9 @@ import Goals from '@/pages/Goals';
 import PlayerProfileView from '@/pages/player/PlayerProfileView';
 import PlayerGameSummary from '@/pages/player/PlayerGameSummary';
 import PlayerTrainingSummary from '@/pages/player/PlayerTrainingSummary';
+import DailyMentalState from '@/pages/player/DailyMentalState';
+import MentalStateHistory from '@/pages/player/MentalStateHistory';
+import PlayerMentalStateView from '@/pages/PlayerMentalStateView';
 import GameSummary from '@/pages/GameSummary';
 import PlayerGameSummaryView from '@/components/game-summary/PlayerGameSummaryView';
 import NotFound from '@/pages/NotFound';
@@ -75,6 +78,8 @@ function App() {
             <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
             <Route path="/player/game-summary" element={<AuthGuard playerOnly={true}><PlayerGameSummary /></AuthGuard>} />
             <Route path="/player/training-summary" element={<AuthGuard playerOnly={true}><PlayerTrainingSummary /></AuthGuard>} />
+            <Route path="/player/daily-mental-state" element={<AuthGuard playerOnly={true}><DailyMentalState /></AuthGuard>} />
+            <Route path="/player/mental-state-history" element={<AuthGuard playerOnly={true}><MentalStateHistory /></AuthGuard>} />
             <Route path="/player/training-videos" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
             <Route path="/player/meetings" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
             <Route path="/player/goals" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
@@ -99,6 +104,7 @@ function App() {
             <Route path="/new-session" element={<AuthGuard><NewSessionForm /></AuthGuard>} />
             <Route path="/edit-session" element={<AuthGuard><EditSessionForm /></AuthGuard>} />
             <Route path="/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
+            <Route path="/player-mental-states/:playerId" element={<AuthGuard><PlayerMentalStateView /></AuthGuard>} />
             <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
             <Route path="/goal-details-questions" element={<AuthGuard><GoalDetailsQuestions /></AuthGuard>} />
             <Route path="/profile-coach" element={<AuthGuard><ProfileCoach /></AuthGuard>} />

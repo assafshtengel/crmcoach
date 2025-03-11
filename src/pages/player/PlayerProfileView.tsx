@@ -6,11 +6,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, User, Calendar, PenTool, Video, Activity, FileText, Notebook } from "lucide-react";
+import { LogOut, User, Calendar, PenTool, Video, Activity, FileText, Notebook, Brain } from "lucide-react";
 
 export default function PlayerProfileView() {
   const [playerData, setPlayerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [mentalStateToday, setMentalStateToday] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -37,6 +38,23 @@ export default function PlayerProfileView() {
         }
         
         setPlayerData(data);
+
+        // Check if player has submitted mental state form today
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: mentalStateData, error: mentalStateError } = await supabase
+          .from('player_mental_states')
+          .select('id')
+          .eq('player_id', playerSession.id)
+          .gte('created_at', `${today}T00:00:00`)
+          .lt('created_at', `${today}T23:59:59`)
+          .limit(1);
+          
+        if (mentalStateError) {
+          console.error('Error checking mental state:', mentalStateError);
+        } else {
+          setMentalStateToday(mentalStateData && mentalStateData.length > 0);
+        }
       } catch (error: any) {
         console.error('Error loading player data:', error);
         toast({
@@ -131,6 +149,42 @@ export default function PlayerProfileView() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Brain className="h-5 w-5" />
+                מצב מנטלי יומי
+              </CardTitle>
+              <CardDescription>
+                שתף את המאמן במצב המנטלי שלך
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <div className={`h-3 w-3 rounded-full ${mentalStateToday ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                <span className="text-sm text-muted-foreground">
+                  {mentalStateToday ? 'מילאת את השאלון היום' : 'לא מילאת את השאלון היום'}
+                </span>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  className="flex-1" 
+                  onClick={() => navigate('/player/daily-mental-state')}
+                  variant={mentalStateToday ? "outline" : "default"}
+                >
+                  {mentalStateToday ? 'מילוי שאלון חדש' : 'מלא שאלון'}
+                </Button>
+                <Button 
+                  className="flex-1" 
+                  variant="outline"
+                  onClick={() => navigate('/player/mental-state-history')}
+                >
+                  היסטוריה
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
