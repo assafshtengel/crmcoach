@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -168,7 +169,7 @@ export default function PlayerProfile() {
               </div>
             </div>
 
-            <Tabs defaultvalue="sessions" className="w-full">
+            <Tabs defaultValue="sessions" className="w-full">
               <TabsList>
                 <TabsTrigger value="sessions">פגישות</TabsTrigger>
                 <TabsTrigger value="goals">מטרות</TabsTrigger>
