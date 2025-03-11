@@ -14,6 +14,7 @@ export interface TrainingSummary {
 }
 
 export interface TrainingSummaryFormValues {
+  training_date: string;
   performance_rating: number;
   effort_level: number;
   techniques_practiced: string;

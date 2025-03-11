@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -230,7 +229,7 @@ export default function PlayerProfileView() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => navigate('/player/training-videos')}>
+              <Button className="w-full" onClick={() => navigate('/player/videos')}>
                 צפה בסרטונים
               </Button>
             </CardContent>
@@ -288,7 +287,6 @@ export default function PlayerProfileView() {
           </Card>
         </div>
 
-        {/* Additional tabs or sections can be added here */}
         <Tabs defaultValue="upcoming" className="mb-8">
           <TabsList className="w-full">
             <TabsTrigger value="upcoming" className="flex-1">פגישות קרובות</TabsTrigger>

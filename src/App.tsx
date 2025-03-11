@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -57,6 +56,9 @@ import GameSummary from '@/pages/GameSummary';
 import PlayerGameSummaryView from '@/components/game-summary/PlayerGameSummaryView';
 import NotFound from '@/pages/NotFound';
 import MentalLibrary from '@/pages/MentalLibrary';
+import PlayerVideos from '@/pages/PlayerVideos';
+import PlayerMeetings from '@/pages/PlayerMeetings';
+import PlayerGoals from '@/pages/PlayerGoals';
 
 import "./App.css";
 
@@ -81,9 +83,10 @@ function App() {
             <Route path="/player/daily-mental-state" element={<AuthGuard playerOnly={true}><DailyMentalState /></AuthGuard>} />
             <Route path="/player/mental-state-history" element={<AuthGuard playerOnly={true}><MentalStateHistory /></AuthGuard>} />
             <Route path="/player/training-videos" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-            <Route path="/player/meetings" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-            <Route path="/player/goals" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-            <Route path="/player/game-preparation" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
+            <Route path="/player/meetings" element={<AuthGuard playerOnly={true}><PlayerMeetings /></AuthGuard>} />
+            <Route path="/player/goals" element={<AuthGuard playerOnly={true}><PlayerGoals /></AuthGuard>} />
+            <Route path="/player/game-preparation" element={<AuthGuard playerOnly={true}><GamePreparation /></AuthGuard>} />
+            <Route path="/player/videos" element={<AuthGuard playerOnly={true}><PlayerVideos /></AuthGuard>} />
             
             {/* COACH ROUTES - These routes require coach authentication */}
             <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
