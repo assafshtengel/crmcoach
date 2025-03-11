@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -59,7 +60,7 @@ export default function PlayerProfileView() {
         }
 
         // Load meetings
-        const today = new Date().toISOString().split('T')[0];
+        // Remove the duplicate 'today' declaration since we already have it above
         
         // Fetch upcoming meetings
         const { data: upcomingData, error: upcomingError } = await supabase
