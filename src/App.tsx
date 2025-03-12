@@ -11,6 +11,7 @@ import PlayerProfileView from './pages/player/PlayerProfileView';
 import MentalTools from './pages/MentalTools';
 import { PlayersProvider } from './contexts/PlayersContext';
 import PlayerFile from "@/pages/PlayerFile";
+import ChatPage from './pages/ChatPage';
 
 // Create placeholder components for missing modules
 const Sessions = () => <div>Sessions Page</div>;
@@ -58,6 +59,7 @@ const App = () => {
               <Route path="/player-registration" element={<PlayerRegistration />} />
               <Route path="/registration-links" element={<RegistrationLinks />} />
               <Route path="/player-file/:playerId" element={<PlayerFile />} />
+              <Route path="/chat" element={<ChatPage />} />
               
               {/* Player routes */}
               <Route path="/player-dashboard" element={<PlayerDashboard />} />
@@ -73,6 +75,7 @@ const App = () => {
               <Route path="/player/meetings" element={<div>Player Meetings Page</div>} />
               <Route path="/player/goals" element={<div>Player Goals Page</div>} />
               <Route path="/player/game-preparation" element={<div>Game Preparation Page</div>} />
+              <Route path="/player/chat" element={<ChatPage />} />
             </Routes>
             <Toaster />
           </PlayersProvider>
