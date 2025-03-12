@@ -1,274 +1,214 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Form } from "@/components/ui/form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { supabase } from '@/integrations/supabase/client';
-import { formSchema, PlayerFormValues, sportFields } from '@/components/new-player/PlayerFormSchema';
-import { PlayerPersonalInfo } from '@/components/new-player/PlayerPersonalInfo';
-import { PlayerClubInfo } from '@/components/new-player/PlayerClubInfo';
-import { PlayerParentInfo } from '@/components/new-player/PlayerParentInfo';
-import { PlayerAdditionalInfo } from '@/components/new-player/PlayerAdditionalInfo';
-import { ImageUpload } from '@/components/new-player/ImageUpload';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Layout } from "@/components/layout/Layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+
+interface PlayerData {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  birthdate: string | null;
+  club: string | null;
+  city: string | null;
+  sport_field: string | null;
+}
 
 const EditPlayerForm = () => {
+  const { playerId } = useParams<{ playerId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
-  const [initialSportField, setInitialSportField] = useState('');
-  const [initialOtherSportField, setInitialOtherSportField] = useState('');
-
-  const playerData = location.state?.playerData;
-
-  useEffect(() => {
-    if (!playerData) {
-      toast({
-        variant: "destructive",
-        title: "שגיאה",
-        description: "לא נמצאו פרטי שחקן לעריכה",
-      });
-      navigate('/players-list');
-      return;
-    }
-    
-    if (playerData.profile_image) {
-      setPreviewUrl(playerData.profile_image);
-    }
-    
-    // Handle sport field initialization
-    const sportFieldValue = playerData?.sport_field || '';
-    const isKnownSport = sportFields.some(sport => sport.value === sportFieldValue || sport.label === sportFieldValue);
-    
-    if (isKnownSport) {
-      // If it's a known sport, set it directly
-      const matchingSport = sportFields.find(sport => 
-        sport.value === sportFieldValue || sport.label === sportFieldValue
-      );
-      setInitialSportField(matchingSport?.value || 'football');
-    } else if (sportFieldValue) {
-      // If it's not a known sport but has a value, set it as "other"
-      setInitialSportField('other');
-      setInitialOtherSportField(sportFieldValue);
-    } else {
-      // Default to empty
-      setInitialSportField('');
-    }
-    
-  }, [playerData, navigate, toast]);
-
-  const form = useForm<PlayerFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      firstName: playerData?.full_name?.split(' ')[0] || '',
-      lastName: playerData?.full_name?.split(' ')[1] || '',
-      playerEmail: playerData?.email || '',
-      playerPhone: playerData?.phone || '',
-      birthDate: playerData?.birthdate || '',
-      city: playerData?.city || '',
-      club: playerData?.club || '',
-      yearGroup: playerData?.year_group || '',
-      injuries: playerData?.injuries || '',
-      parentName: playerData?.parent_name || '',
-      parentPhone: playerData?.parent_phone || '',
-      parentEmail: playerData?.parent_email || '',
-      notes: playerData?.notes || '',
-      sportField: initialSportField,
-      otherSportField: initialOtherSportField
-    },
+  const [loading, setLoading] = useState(true);
+  const [player, setPlayer] = useState<PlayerData>({
+    id: '',
+    full_name: '',
+    email: '',
+    phone: '',
+    birthdate: '',
+    club: '',
+    city: '',
+    sport_field: ''
   });
-  
-  // Update form values when initialSportField changes
+
   useEffect(() => {
-    if (initialSportField) {
-      form.setValue('sportField', initialSportField);
+    if (playerId) {
+      fetchPlayerData(playerId);
     }
-    if (initialOtherSportField) {
-      form.setValue('otherSportField', initialOtherSportField);
-    }
-  }, [initialSportField, initialOtherSportField, form]);
+  }, [playerId]);
 
-  const handleImageUpload = (file: File) => {
-    setProfileImage(file);
-    setPreviewUrl(URL.createObjectURL(file));
-  };
-
-  const handleImageRemove = () => {
-    setProfileImage(null);
-    setPreviewUrl('');
-  };
-
-  const uploadProfileImage = async (playerId: string, file: File): Promise<string> => {
+  const fetchPlayerData = async (id: string) => {
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${playerId}/${crypto.randomUUID()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('player-avatars')
-        .upload(filePath, file);
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('players')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-      if (uploadError) {
-        throw uploadError;
+      if (error) {
+        throw error;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('player-avatars')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
+      if (data) {
+        setPlayer(data as PlayerData);
+      }
     } catch (error) {
-      console.error('Error uploading image:', error);
-      throw new Error('Failed to upload profile image');
+      console.error('Error fetching player data:', error);
+      toast.error('Failed to load player data.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const updatePlayer = async (values: PlayerFormValues, imageUrl?: string) => {
-    if (!playerData?.id) return;
-
-    // Determine the final sport field value
-    const finalSportField = values.sportField === 'other' && values.otherSportField
-      ? values.otherSportField
-      : values.sportField === 'other'
-        ? 'אחר'
-        : values.sportField;
-
-    const updateData = {
-      full_name: `${values.firstName} ${values.lastName}`,
-      email: values.playerEmail,
-      phone: values.playerPhone,
-      birthdate: values.birthDate,
-      city: values.city,
-      club: values.club,
-      year_group: values.yearGroup,
-      injuries: values.injuries,
-      parent_name: values.parentName,
-      parent_phone: values.parentPhone,
-      parent_email: values.parentEmail,
-      notes: values.notes,
-      sport_field: finalSportField,
-      position: null, // Set position to null to clear it
-      ...(imageUrl && { profile_image: imageUrl })
-      // Remove registration_timestamp since it doesn't exist in the DB schema
-    };
-
-    const { error } = await supabase
-      .from('players')
-      .update(updateData)
-      .eq('id', playerData.id);
-
-    if (error) throw error;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPlayer(prev => ({ ...prev, [name]: value }));
   };
 
-  async function onSubmit(values: PlayerFormValues) {
-    if (isSubmitting) return;
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     try {
-      setIsSubmitting(true);
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('players')
+        .update({
+          full_name: player.full_name,
+          email: player.email,
+          phone: player.phone,
+          birthdate: player.birthdate,
+          club: player.club,
+          city: player.city,
+          sport_field: player.sport_field
+        })
+        .eq('id', player.id);
 
-      let imageUrl: string | undefined;
-      if (profileImage) {
-        try {
-          imageUrl = await uploadProfileImage(playerData.id, profileImage);
-        } catch (error) {
-          console.error('Error uploading image:', error);
-          toast({
-            variant: "destructive",
-            title: "שגיאה בהעלאת התמונה",
-            description: "לא הצלחנו להעלות את התמונה החדשה. השחקן יישמר עם התמונה הקיימת.",
-          });
-        }
+      if (error) {
+        throw error;
       }
 
-      await updatePlayer(values, imageUrl);
-
-      toast({
-        title: "השחקן עודכן בהצלחה!",
-        description: "פרטי השחקן עודכנו בהצלחה.",
-      });
-
-      navigate(`/player-profile/${playerData.id}`);
-
-    } catch (error: any) {
+      toast.success('Player updated successfully');
+      navigate('/players-list');
+    } catch (error) {
       console.error('Error updating player:', error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בעדכון השחקן",
-        description: error.message || "אירעה שגיאה בעדכון פרטי השחקן. אנא נסה שוב.",
-      });
+      toast.error('Failed to update player');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
-  }
+  };
 
-  if (!playerData) {
-    return null;
+  if (loading && !player.id) {
+    return (
+      <Layout>
+        <div className="container mx-auto py-6">
+          <p className="text-center">Loading player data...</p>
+        </div>
+      </Layout>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <div className="max-w-2xl mx-auto p-6 animate-in slide-in-from-bottom-4 duration-500">
-        <div className="flex items-center gap-2 mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate(-1)}
-            title="חזור לדף הקודם"
-            className="hover:scale-105 transition-transform"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <div className="mb-6 animate-in fade-in-50 duration-500">
-          <h1 className="text-2xl font-bold text-gray-900">עריכת פרטי שחקן</h1>
-          <p className="text-gray-600">עדכן את פרטי השחקן כאן</p>
-        </div>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <h2 className="text-lg font-semibold mb-4">תמונת פרופיל</h2>
-              <ImageUpload
-                onImageUpload={handleImageUpload}
-                onImageRemove={handleImageRemove}
-                previewUrl={previewUrl}
-              />
-            </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <h2 className="text-lg font-semibold mb-4">פרטים אישיים</h2>
-              <PlayerPersonalInfo form={form} />
-            </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <PlayerClubInfo form={form} />
-            </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <PlayerAdditionalInfo form={form} />
-            </div>
-
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <PlayerParentInfo form={form} />
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full font-medium text-base py-3"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'שומר שינויים...' : 'שמור שינויים'}
-            </Button>
+    <Layout>
+      <div className="container mx-auto py-6">
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle>עריכת פרטי שחקן</CardTitle>
+          </CardHeader>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="full_name">שם מלא</Label>
+                <Input
+                  id="full_name"
+                  name="full_name"
+                  value={player.full_name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">דוא"ל</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={player.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="phone">טלפון</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  value={player.phone || ''}
+                  onChange={handleChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="birthdate">תאריך לידה</Label>
+                <Input
+                  id="birthdate"
+                  name="birthdate"
+                  type="date"
+                  value={player.birthdate || ''}
+                  onChange={handleChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="club">מועדון</Label>
+                <Input
+                  id="club"
+                  name="club"
+                  value={player.club || ''}
+                  onChange={handleChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="city">עיר</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  value={player.city || ''}
+                  onChange={handleChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="sport_field">תחום ספורט</Label>
+                <Input
+                  id="sport_field"
+                  name="sport_field"
+                  value={player.sport_field || ''}
+                  onChange={handleChange}
+                />
+              </div>
+            </CardContent>
+            
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" type="button" onClick={() => navigate('/players-list')}>
+                ביטול
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'שומר שינויים...' : 'שמור שינויים'}
+              </Button>
+            </CardFooter>
           </form>
-        </Form>
+        </Card>
       </div>
-    </div>
+    </Layout>
   );
 };
 

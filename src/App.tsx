@@ -12,6 +12,7 @@ import MentalTools from './pages/MentalTools';
 import { PlayersProvider } from './contexts/PlayersContext';
 import PlayerFile from "@/pages/PlayerFile";
 import ChatPage from './pages/ChatPage';
+import EditPlayerForm from './pages/EditPlayerForm';
 
 // Create placeholder components for missing modules
 const Sessions = () => <div>Sessions Page</div>;
@@ -60,6 +61,7 @@ const App = () => {
               <Route path="/registration-links" element={<RegistrationLinks />} />
               <Route path="/player-file/:playerId" element={<PlayerFile />} />
               <Route path="/chat" element={<ChatPage />} />
+              <Route path="/edit-player/:playerId" element={<EditPlayerForm />} />
               
               {/* Player routes */}
               <Route path="/player-dashboard" element={<PlayerDashboard />} />
