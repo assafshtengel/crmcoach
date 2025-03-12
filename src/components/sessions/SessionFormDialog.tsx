@@ -140,7 +140,7 @@ export function SessionFormDialog({
                 // Open calendar view for creating the meeting
                 setLoading(false);
               }}
-              className="bg-primary text-white hover:bg-primary/90"
+              className="bg-blue-600 text-white hover:bg-blue-700"
             >
               המשך
             </Button>
