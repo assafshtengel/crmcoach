@@ -13,6 +13,7 @@ import PlayerFile from "@/pages/PlayerFile";
 import ChatPage from './pages/ChatPage';
 import EditPlayerForm from './pages/EditPlayerForm';
 import AddPlayerForm from './pages/AddPlayerForm';
+import PlayerAuth from './pages/PlayerAuth';
 
 const Sessions = () => <div>Sessions Page</div>;
 const SessionDetails = () => <div>Session Details Page</div>;
@@ -51,29 +52,19 @@ const App = () => {
                 element={isPlayer() ? <Navigate to="/player-profile" /> : <DashboardCoach />} 
               />
               
+              <Route path="/player-auth" element={<PlayerAuth />} />
+              
               <Route path="/dashboard-coach" element={<DashboardCoach />} />
               <Route path="/players-list" element={<PlayersList />} />
-              <Route path="/sessions" element={<Sessions />} />
-              <Route path="/sessions/:sessionId" element={<SessionDetails />} />
-              <Route path="/coaches-list" element={<CoachesList />} />
               <Route path="/goals" element={<Goals />} />
-              <Route path="/mental-prep-form" element={<MentalPrepForm />} />
               <Route path="/mental-tools" element={<MentalTools />} />
-              <Route path="/training-videos" element={<TrainingVideos />} />
-              <Route path="/coach-profile" element={<CoachProfile />} />
-              <Route path="/player-registration" element={<PlayerRegistration />} />
-              <Route path="/registration-links" element={<RegistrationLinks />} />
               <Route path="/player-file/:playerId" element={<PlayerFile />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/edit-player/:playerId" element={<EditPlayerForm />} />
               <Route path="/add-player" element={<AddPlayerForm />} />
-              {/* Add redirect from new-player to add-player */}
               <Route path="/new-player" element={<Navigate to="/add-player" />} />
               
-              <Route path="/player-dashboard" element={<PlayerDashboard />} />
               <Route path="/player-profile" element={<PlayerProfileView />} />
-              
-              {/* Player Routes */}
               <Route path="/player/profile" element={<PlayerProfileView />} />
               <Route path="/player/daily-mental-state" element={<DailyMentalState />} />
               <Route path="/player/mental-state-history" element={<MentalStateHistory />} />
@@ -86,6 +77,18 @@ const App = () => {
               <Route path="/player/chat" element={<ChatPage />} />
               <Route path="/player/contract" element={<Contract />} />
               <Route path="/player-file/:playerId" element={<PlayerFile />} />
+              
+              <Route path="/sessions" element={<Sessions />} />
+              <Route path="/sessions/:sessionId" element={<SessionDetails />} />
+              <Route path="/coaches-list" element={<CoachesList />} />
+              <Route path="/mental-prep-form" element={<MentalPrepForm />} />
+              <Route path="/training-videos" element={<TrainingVideos />} />
+              <Route path="/coach-profile" element={<CoachProfile />} />
+              <Route path="/player-registration" element={<PlayerRegistration />} />
+              <Route path="/registration-links" element={<RegistrationLinks />} />
+              <Route path="/player-dashboard" element={<PlayerDashboard />} />
+              
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
             <Toaster />
           </PlayersProvider>
