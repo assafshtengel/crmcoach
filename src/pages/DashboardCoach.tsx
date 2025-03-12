@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Layout } from "@/components/layout/Layout";
 import { Button } from '@/components/ui/button';
@@ -981,7 +980,7 @@ const DashboardCoach = () => {
                     variant="outline" 
                     size="sm" 
                     className="flex items-center gap-1 text-[#3498DB] border-[#3498DB] hover:bg-[#3498DB]/10"
-                    onClick={() => navigate('/new-session')}
+                    onClick={() => setIsSessionFormOpen(true)}
                   >
                     <Plus className="h-4 w-4" />
                     הוסף מפגש
@@ -1298,4 +1297,3 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
-

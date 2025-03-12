@@ -58,6 +58,8 @@ const App = () => {
               <Route path="/player-registration" element={<PlayerRegistration />} />
               <Route path="/registration-links" element={<RegistrationLinks />} />
               <Route path="/player-file/:playerId" element={<PlayerFile />} />
+              <Route path="/new-session" element={<NewSessionForm />} />
+              <Route path="/edit-session" element={<EditSessionForm />} />
               
               {/* Player routes */}
               <Route path="/player-dashboard" element={<PlayerDashboard />} />
