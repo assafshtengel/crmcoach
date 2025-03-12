@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "./components/theme-provider"
@@ -59,6 +60,8 @@ const App = () => {
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/edit-player/:playerId" element={<EditPlayerForm />} />
               <Route path="/add-player" element={<AddPlayerForm />} />
+              {/* Add redirect from new-player to add-player */}
+              <Route path="/new-player" element={<Navigate to="/add-player" />} />
               
               <Route path="/player-dashboard" element={<PlayerDashboard />} />
               <Route path="/player-profile" element={<PlayerProfileView />} />
