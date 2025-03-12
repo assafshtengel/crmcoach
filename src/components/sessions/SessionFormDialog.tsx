@@ -1,13 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/calendar/Calendar';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Form, FormField, FormItem, FormControl } from '@/components/ui/form';
 
 interface SessionFormDialogProps {
   open: boolean;
@@ -31,7 +29,6 @@ export function SessionFormDialog({
   const [loading, setLoading] = useState(true);
   const [meetingType, setMeetingType] = useState<'in_person' | 'zoom'>('in_person');
   const [players, setPlayers] = useState<Array<{id: string, full_name: string}>>([]);
-  const [showCalendar, setShowCalendar] = useState(false);
 
   // Fetch players for the dropdown
   useEffect(() => {
@@ -57,7 +54,6 @@ export function SessionFormDialog({
 
     if (open) {
       fetchPlayers();
-      setShowCalendar(false); // Reset calendar view when dialog opens
     }
   }, [open]);
 
@@ -111,11 +107,6 @@ export function SessionFormDialog({
     }
   };
 
-  const handleContinueClick = () => {
-    setShowCalendar(true);
-    setLoading(false);
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -126,50 +117,36 @@ export function SessionFormDialog({
           </DialogDescription>
         </DialogHeader>
         
-        {!showCalendar ? (
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <Label className="block text-sm font-medium">סוג מפגש</Label>
-              <RadioGroup 
-                value={meetingType} 
-                onValueChange={(value) => setMeetingType(value as 'in_person' | 'zoom')}
-                className="flex space-x-4 rtl:space-x-reverse"
-              >
-                <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                  <RadioGroupItem value="in_person" id="in_person" />
-                  <Label htmlFor="in_person" className="cursor-pointer">פרונטלי</Label>
-                </div>
-                <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                  <RadioGroupItem value="zoom" id="zoom" />
-                  <Label htmlFor="zoom" className="cursor-pointer">זום</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button 
-                variant="default" 
-                onClick={handleContinueClick}
-                className="bg-blue-600 text-white hover:bg-blue-700"
-              >
-                המשך
-              </Button>
-            </div>
+        <div className="py-4 space-y-4">
+          <div className="space-y-2">
+            <Label className="block text-sm font-medium">סוג מפגש</Label>
+            <RadioGroup 
+              value={meetingType} 
+              onValueChange={(value) => setMeetingType(value as 'in_person' | 'zoom')}
+              className="flex space-x-4 rtl:space-x-reverse"
+            >
+              <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                <RadioGroupItem value="in_person" id="in_person" />
+                <Label htmlFor="in_person" className="cursor-pointer">פרונטלי</Label>
+              </div>
+              <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                <RadioGroupItem value="zoom" id="zoom" />
+                <Label htmlFor="zoom" className="cursor-pointer">זום</Label>
+              </div>
+            </RadioGroup>
           </div>
-        ) : (
-          <div className="py-4 space-y-4">
-            {!loading && (
-              <Calendar
-                events={events}
-                onEventClick={handleEventClick}
-                onEventAdd={handleAddEvent}
-                selectedPlayerId={selectedPlayerId}
-                players={players}
-                setSelectedPlayerId={setSelectedPlayerId}
-              />
-            )}
-          </div>
-        )}
+          
+          {!loading && (
+            <Calendar
+              events={events}
+              onEventClick={handleEventClick}
+              onEventAdd={handleAddEvent}
+              selectedPlayerId={selectedPlayerId}
+              players={players}
+              setSelectedPlayerId={setSelectedPlayerId}
+            />
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
