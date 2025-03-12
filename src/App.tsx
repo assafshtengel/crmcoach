@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "./components/theme-provider"
@@ -13,8 +12,8 @@ import { PlayersProvider } from './contexts/PlayersContext';
 import PlayerFile from "@/pages/PlayerFile";
 import ChatPage from './pages/ChatPage';
 import EditPlayerForm from './pages/EditPlayerForm';
+import AddPlayerForm from './pages/AddPlayerForm';
 
-// Create placeholder components for missing modules
 const Sessions = () => <div>Sessions Page</div>;
 const SessionDetails = () => <div>Session Details Page</div>;
 const CoachesList = () => <div>Coaches List Page</div>;
@@ -28,7 +27,6 @@ const RegistrationLinks = () => <div>Registration Links Page</div>;
 const queryClient = new QueryClient();
 
 const App = () => {
-  // Determine if user is a player (simplified check)
   const isPlayer = () => {
     const playerSession = localStorage.getItem('playerSession');
     return !!playerSession;
@@ -40,13 +38,11 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <PlayersProvider>
             <Routes>
-              {/* Default route - redirect based on user type */}
               <Route 
                 path="/" 
                 element={isPlayer() ? <Navigate to="/player-profile" /> : <DashboardCoach />} 
               />
               
-              {/* Coach routes */}
               <Route path="/dashboard-coach" element={<DashboardCoach />} />
               <Route path="/players-list" element={<PlayersList />} />
               <Route path="/sessions" element={<Sessions />} />
@@ -62,12 +58,11 @@ const App = () => {
               <Route path="/player-file/:playerId" element={<PlayerFile />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/edit-player/:playerId" element={<EditPlayerForm />} />
+              <Route path="/add-player" element={<AddPlayerForm />} />
               
-              {/* Player routes */}
               <Route path="/player-dashboard" element={<PlayerDashboard />} />
               <Route path="/player-profile" element={<PlayerProfileView />} />
               
-              {/* Additional player routes with correct paths */}
               <Route path="/player/profile" element={<PlayerProfileView />} />
               <Route path="/player/daily-mental-state" element={<div>Daily Mental State Page</div>} />
               <Route path="/player/mental-state-history" element={<div>Mental State History Page</div>} />
