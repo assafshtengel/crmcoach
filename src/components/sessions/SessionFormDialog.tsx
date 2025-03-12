@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Calendar } from '@/components/calendar/Calendar';
@@ -24,38 +23,82 @@ export function SessionFormDialog({
   open, 
   onOpenChange,
 }: SessionFormDialogProps) {
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [meetingType, setMeetingType] = useState<'in_person' | 'zoom'>('in_person');
   const [players, setPlayers] = useState<Array<{id: string, full_name: string}>>([]);
 
-  // Fetch players for the dropdown
+  // Fetch players and existing sessions
   useEffect(() => {
-    async function fetchPlayers() {
+    async function fetchData() {
       try {
+        setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data, error } = await supabase
+        // Fetch players
+        const { data: playersData, error: playersError } = await supabase
           .from('players')
           .select('id, full_name')
           .eq('coach_id', user.id);
 
-        if (error) throw error;
-        setPlayers(data || []);
-        setLoading(false);
+        if (playersError) throw playersError;
+        setPlayers(playersData || []);
+
+        // Fetch existing sessions
+        await fetchSessions(user.id);
       } catch (error) {
-        console.error('Error fetching players:', error);
-        toast.error('שגיאה בטעינת רשימת שחקנים');
+        console.error('Error fetching data:', error);
+        toast.error('שגיאה בטעינת נתונים');
+      } finally {
         setLoading(false);
       }
     }
 
     if (open) {
-      fetchPlayers();
+      fetchData();
     }
   }, [open]);
+
+  // Function to fetch sessions and convert them to calendar events
+  const fetchSessions = async (coachId: string) => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('sessions')
+        .select(`
+          *,
+          players (full_name)
+        `)
+        .eq('coach_id', coachId)
+        .gte('session_date', today.toISOString().split('T')[0]);
+
+      if (sessionsError) throw sessionsError;
+
+      // Convert sessions to calendar events
+      const formattedEvents = (sessionsData || []).map(session => ({
+        id: session.id,
+        title: session.players?.full_name || 'מפגש',
+        start: `${session.session_date}T${session.session_time}:00`,
+        extendedProps: {
+          playerName: session.players?.full_name || 'מפגש',
+          player_id: session.player_id,
+          location: session.location,
+          reminderSent: session.reminder_sent,
+          notes: session.notes,
+          eventType: 'meeting'
+        }
+      }));
+
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+      toast.error('שגיאה בטעינת המפגשים');
+    }
+  };
 
   const handleEventClick = (eventId: string) => {
     console.log('Event clicked:', eventId);
@@ -99,8 +142,14 @@ export function SessionFormDialog({
         throw error;
       }
 
+      // Refresh the sessions list after adding a new one
+      await fetchSessions(user.id);
+      
       toast.success('המפגש נוצר בהצלחה');
-      onOpenChange(false);
+      
+      // Keep the dialog open to show the updated list
+      // Only close if explicitly requested
+      // onOpenChange(false);
     } catch (error) {
       console.error('Error processing event data:', error);
       toast.error('אירעה שגיאה בשמירת המפגש');
@@ -109,11 +158,11 @@ export function SessionFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>הוסף מפגש חדש</DialogTitle>
           <DialogDescription>
-            בחר תאריך, שעה ומלא את הפרטים הנדרשים
+            בחר סוג מפגש, תאריך, שעה ומלא את הפרטים הנדרשים
           </DialogDescription>
         </DialogHeader>
         

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -13,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 interface CalendarEvent {
   id: string;
   title: string;
@@ -28,6 +30,7 @@ interface CalendarEvent {
     player_id?: string;
   };
 }
+
 interface SessionData {
   player_id: string;
   coach_id?: string;
@@ -36,6 +39,7 @@ interface SessionData {
   location?: string;
   notes?: string;
 }
+
 interface CalendarProps {
   events: CalendarEvent[];
   onEventClick: (eventId: string) => void;
@@ -47,6 +51,7 @@ interface CalendarProps {
   }>;
   setSelectedPlayerId?: React.Dispatch<React.SetStateAction<string | undefined>>;
 }
+
 interface EventFormData {
   title: string;
   date: string;
@@ -55,6 +60,7 @@ interface EventFormData {
   player_id?: string;
   location?: string;
 }
+
 export const Calendar: React.FC<CalendarProps> = ({
   events,
   onEventClick,
@@ -68,6 +74,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   const [selectedView, setSelectedView] = useState<'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'>('dayGridMonth');
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const form = useForm<EventFormData>({
     defaultValues: {
       title: '',
@@ -78,47 +85,58 @@ export const Calendar: React.FC<CalendarProps> = ({
       location: ''
     }
   });
+  
   React.useEffect(() => {
     if (selectedPlayerId) {
       form.setValue('player_id', selectedPlayerId);
     }
   }, [selectedPlayerId, form]);
+  
   const handleEventClick = (info: any) => {
     const event = events.find(e => e.id === info.event.id);
     if (event) {
       setSelectedEvent(event);
     }
   };
+  
   const closeDialog = () => {
     setSelectedEvent(null);
   };
+  
   const handleEditClick = () => {
     if (selectedEvent) {
       onEventClick(selectedEvent.id);
       setSelectedEvent(null);
     }
   };
+  
   const onAddEvent = async (data: EventFormData) => {
     if (!onEventAdd) return;
     if (!data.player_id && !selectedPlayerId) {
       toast.error('נא לבחור שחקן לפני הוספת מפגש');
       return;
     }
+    
     try {
       setIsSubmitting(true);
       const playerIdToUse = data.player_id || selectedPlayerId;
+      
+      const selectedPlayer = players?.find(p => p.id === playerIdToUse);
+      const playerName = selectedPlayer ? selectedPlayer.full_name : data.title;
+      
       console.log('Saving event with player_id:', playerIdToUse);
       const eventData = {
-        title: data.title,
+        title: playerName || data.title,
         start: `${data.date}T${data.time}:00`,
         extendedProps: {
           notes: data.notes,
           eventType: 'meeting',
           player_id: playerIdToUse,
           location: data.location,
-          playerName: data.title
+          playerName: playerName || data.title
         }
       };
+      
       console.log('Submitting event data:', eventData);
       await onEventAdd(eventData);
       setIsAddEventOpen(false);
@@ -137,9 +155,11 @@ export const Calendar: React.FC<CalendarProps> = ({
       setIsSubmitting(false);
     }
   };
+  
   const getEventColor = () => {
     return '#1E3A8A'; // Dark blue for meetings
   };
+  
   return <>
       <div className="flex gap-2">
         <Button variant="ghost" className="flex items-center gap-2 text-white hover:bg-white/10" onClick={() => setIsOpen(true)}>
@@ -160,49 +180,70 @@ export const Calendar: React.FC<CalendarProps> = ({
           </DialogHeader>
           
           <div className="flex-1 overflow-auto">
-            <FullCalendar plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]} initialView={selectedView} headerToolbar={{
-            start: 'prev,next today',
-            center: 'title',
-            end: ''
-          }} views={{
-            timeGridDay: {
-              type: 'timeGrid',
-              duration: {
-                days: 1
-              }
-            },
-            timeGridWeek: {
-              type: 'timeGrid',
-              duration: {
-                weeks: 1
-              }
-            },
-            dayGridMonth: {
-              type: 'dayGrid',
-              duration: {
-                months: 1
-              }
-            }
-          }} events={events} eventClick={handleEventClick} locale="he" direction="rtl" firstDay={0} allDaySlot={false} slotMinTime="07:00:00" slotMaxTime="22:00:00" eventTimeFormat={{
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          }} slotLabelFormat={{
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          }} eventContent={eventInfo => <div className="p-1 text-sm" style={{
-            backgroundColor: getEventColor()
-          }}>
+            <FullCalendar 
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]} 
+              initialView={selectedView} 
+              headerToolbar={{
+                start: 'prev,next today',
+                center: 'title',
+                end: ''
+              }} 
+              views={{
+                timeGridDay: {
+                  type: 'timeGrid',
+                  duration: {
+                    days: 1
+                  }
+                },
+                timeGridWeek: {
+                  type: 'timeGrid',
+                  duration: {
+                    weeks: 1
+                  }
+                },
+                dayGridMonth: {
+                  type: 'dayGrid',
+                  duration: {
+                    months: 1
+                  }
+                }
+              }} 
+              events={events} 
+              eventClick={handleEventClick} 
+              locale="he" 
+              direction="rtl" 
+              firstDay={0} 
+              allDaySlot={false} 
+              slotMinTime="07:00:00" 
+              slotMaxTime="22:00:00" 
+              eventTimeFormat={{
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }} 
+              slotLabelFormat={{
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }} 
+              eventContent={eventInfo => 
+                <div className="p-1 text-sm" style={{
+                  backgroundColor: getEventColor()
+                }}>
                   <div className="font-bold text-white">{eventInfo.timeText}</div>
                   <div className="text-white">{eventInfo.event.extendedProps.playerName}</div>
-                  {eventInfo.event.extendedProps.location && <div className="text-xs text-white/80">{eventInfo.event.extendedProps.location}</div>}
-                </div>} />
+                  {eventInfo.event.extendedProps.location && 
+                    <div className="text-xs text-white/80">{eventInfo.event.extendedProps.location}</div>
+                  }
+                </div>
+              } 
+            />
           </div>
         </DialogContent>
       </Dialog>
 
-      {selectedEvent && <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
+      {selectedEvent && 
+        <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>פרטי מפגש</DialogTitle>
@@ -217,35 +258,43 @@ export const Calendar: React.FC<CalendarProps> = ({
                 <h3 className="font-bold mb-1">תאריך ושעה</h3>
                 <p className="text-lg">{format(new Date(selectedEvent.start), 'dd/MM/yyyy HH:mm')}</p>
               </div>
-              {selectedEvent.extendedProps.location && <div>
+              {selectedEvent.extendedProps.location && 
+                <div>
                   <h3 className="font-bold mb-1">מיקום</h3>
                   <p className="text-lg">{selectedEvent.extendedProps.location}</p>
-                </div>}
-              {selectedEvent.extendedProps.notes && <div>
+                </div>
+              }
+              {selectedEvent.extendedProps.notes && 
+                <div>
                   <h3 className="font-bold mb-1">הערות</h3>
                   <p className="text-lg whitespace-pre-wrap">{selectedEvent.extendedProps.notes}</p>
-                </div>}
+                </div>
+              }
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={closeDialog}>סגור</Button>
               <Button onClick={handleEditClick}>ערוך</Button>
             </div>
           </DialogContent>
-        </Dialog>}
-
-      <Dialog open={isAddEventOpen} onOpenChange={open => {
-      if (!open) {
-        form.reset({
-          title: '',
-          date: new Date().toISOString().split('T')[0],
-          time: '12:00',
-          notes: '',
-          player_id: selectedPlayerId,
-          location: ''
-        });
+        </Dialog>
       }
-      setIsAddEventOpen(open);
-    }}>
+
+      <Dialog 
+        open={isAddEventOpen} 
+        onOpenChange={open => {
+          if (!open) {
+            form.reset({
+              title: '',
+              date: new Date().toISOString().split('T')[0],
+              time: '12:00',
+              notes: '',
+              player_id: selectedPlayerId,
+              location: ''
+            });
+          }
+          setIsAddEventOpen(open);
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>הוספת מפגש חדש</DialogTitle>
@@ -253,71 +302,106 @@ export const Calendar: React.FC<CalendarProps> = ({
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onAddEvent)} className="space-y-4">
-              {players && setSelectedPlayerId && <FormField control={form.control} name="player_id" render={({
-              field
-            }) => <FormItem>
+              {players && setSelectedPlayerId && 
+                <FormField
+                  control={form.control}
+                  name="player_id"
+                  render={({ field }) => (
+                    <FormItem>
                       <FormLabel>שחקן</FormLabel>
-                      <Select onValueChange={value => {
-                field.onChange(value);
-                setSelectedPlayerId(value);
-              }} value={field.value || selectedPlayerId}>
+                      <Select
+                        onValueChange={value => {
+                          field.onChange(value);
+                          setSelectedPlayerId(value);
+                        }}
+                        value={field.value || selectedPlayerId}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="בחר שחקן" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {players.map(player => <SelectItem key={player.id} value={player.id}>
+                          {players.map(player => (
+                            <SelectItem key={player.id} value={player.id}>
                               {player.full_name}
-                            </SelectItem>)}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                    </FormItem>} />}
-              <FormField control={form.control} name="title" render={({
-              field
-            }) => <FormItem>
+                    </FormItem>
+                  )}
+                />
+              }
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
                     <FormLabel>כותרת</FormLabel>
                     <FormControl>
                       <Input {...field} required />
                     </FormControl>
-                  </FormItem>} />
-              <FormField control={form.control} name="date" render={({
-              field
-            }) => <FormItem>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
                     <FormLabel>תאריך</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} required />
                     </FormControl>
-                  </FormItem>} />
-              <FormField control={form.control} name="time" render={({
-              field
-            }) => <FormItem>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="time"
+                render={({ field }) => (
+                  <FormItem>
                     <FormLabel>שעה</FormLabel>
                     <FormControl>
                       <Input type="time" {...field} required />
                     </FormControl>
-                  </FormItem>} />
-              <FormField control={form.control} name="location" render={({
-              field
-            }) => <FormItem>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
                     <FormLabel>מיקום</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="הוסף מיקום למפגש..." />
                     </FormControl>
-                  </FormItem>} />
-              <FormField control={form.control} name="notes" render={({
-              field
-            }) => <FormItem>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
                     <FormLabel>הערות</FormLabel>
                     <FormControl>
                       <Textarea {...field} />
                     </FormControl>
-                  </FormItem>} />
+                  </FormItem>
+                )}
+              />
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => {
-                form.reset();
-                setIsAddEventOpen(false);
-              }}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    form.reset();
+                    setIsAddEventOpen(false);
+                  }}
+                >
                   ביטול
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
