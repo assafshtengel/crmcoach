@@ -2,12 +2,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, User, Calendar, PenTool, Video, Activity, FileText, Notebook, Brain, Folder } from "lucide-react";
-import { Link } from "react-router-dom";
+import { LogOut, User, Calendar, PenTool, Video, Activity, FileText, Notebook, Brain, Folder, MessageSquare } from "lucide-react";
+import { toast } from "sonner";
 
 const PlayerProfileView = () => {
   const [playerData, setPlayerData] = useState<any>(null);
@@ -16,7 +15,6 @@ const PlayerProfileView = () => {
   const [upcomingMeetings, setUpcomingMeetings] = useState<any[]>([]);
   const [pastMeetings, setPastMeetings] = useState<any[]>([]);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     const loadPlayerData = async () => {
@@ -103,22 +101,36 @@ const PlayerProfileView = () => {
 
       } catch (error: any) {
         console.error('Error loading player data:', error);
-        toast({
-          variant: "destructive",
-          title: "שגיאה בטעינת פרופיל",
-          description: error.message || "אירעה שגיאה בטעינת נתוני השחקן"
-        });
+        toast.error(error.message || "אירעה שגיאה בטעינת נתוני השחקן");
       } finally {
         setLoading(false);
       }
     };
     
     loadPlayerData();
-  }, [navigate, toast]);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('playerSession');
     navigate('/player-auth');
+  };
+
+  const handleNavigation = (path: string) => {
+    // For empty pages, show toast instead of navigating
+    const implementedPages = [
+      '/player/daily-mental-state', 
+      '/player/mental-state-history',
+      '/player/chat',
+      '/player/contract'
+    ];
+    
+    if (implementedPages.includes(path)) {
+      navigate(path);
+    } else if (path.startsWith('/player-file/') && playerData?.id) {
+      navigate(path);
+    } else {
+      toast.info("עמוד זה בפיתוח, יהיה זמין בקרוב");
+    }
   };
 
   if (loading) {
@@ -216,7 +228,7 @@ const PlayerProfileView = () => {
               <div className="flex gap-2 mt-4">
                 <Button 
                   className="flex-1" 
-                  onClick={() => navigate('/player/daily-mental-state')}
+                  onClick={() => handleNavigation('/player/daily-mental-state')}
                   variant={mentalStateToday ? "outline" : "default"}
                 >
                   {mentalStateToday ? 'מילוי שאלון חדש' : 'מלא שאלון'}
@@ -224,7 +236,7 @@ const PlayerProfileView = () => {
                 <Button 
                   className="flex-1" 
                   variant="outline"
-                  onClick={() => navigate('/player/mental-state-history')}
+                  onClick={() => handleNavigation('/player/mental-state-history')}
                 >
                   היסטוריה
                 </Button>
@@ -244,7 +256,10 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => navigate('/player/game-summary')}>
+              <Button 
+                className="w-full" 
+                onClick={() => handleNavigation('/player/game-summary')}
+              >
                 צפה והוסף סיכומי משחק
               </Button>
             </CardContent>
@@ -262,7 +277,10 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => navigate('/player/training-summary')}>
+              <Button 
+                className="w-full" 
+                onClick={() => handleNavigation('/player/training-summary')}
+              >
                 צפה והוסף סיכומי אימונים
               </Button>
             </CardContent>
@@ -280,7 +298,10 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => navigate('/player/videos')}>
+              <Button 
+                className="w-full" 
+                onClick={() => handleNavigation('/player/videos')}
+              >
                 צפה בסרטונים
               </Button>
             </CardContent>
@@ -298,7 +319,10 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => navigate('/player/meetings')}>
+              <Button 
+                className="w-full" 
+                onClick={() => handleNavigation('/player/meetings')}
+              >
                 צפה ביומן
               </Button>
             </CardContent>
@@ -316,7 +340,10 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => navigate('/player/goals')}>
+              <Button 
+                className="w-full" 
+                onClick={() => handleNavigation('/player/goals')}
+              >
                 צפה במטרות
               </Button>
             </CardContent>
@@ -334,7 +361,10 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => navigate('/player/game-preparation')}>
+              <Button 
+                className="w-full" 
+                onClick={() => handleNavigation('/player/game-preparation')}
+              >
                 מלא טופס הכנה
               </Button>
             </CardContent>
@@ -352,8 +382,32 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => navigate('/player/contract')}>
+              <Button 
+                className="w-full" 
+                onClick={() => handleNavigation('/player/contract')}
+              >
                 צפה בחוזה
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Chat */}
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <MessageSquare className="h-5 w-5" />
+                צ'אט עם המאמן
+              </CardTitle>
+              <CardDescription>
+                תקשורת ישירה עם המאמן האישי
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                className="w-full" 
+                onClick={() => handleNavigation('/player/chat')}
+              >
+                פתח צ'אט
               </Button>
             </CardContent>
           </Card>
@@ -371,7 +425,7 @@ const PlayerProfileView = () => {
               <Button 
                 className="w-full" 
                 variant="outline"
-                onClick={() => navigate(`/player-file/${playerData?.id}`)}
+                onClick={() => handleNavigation(`/player-file/${playerData?.id}`)}
               >
                 <Folder className="mr-2 h-4 w-4" />
                 צפייה בתיק השחקן שלי
