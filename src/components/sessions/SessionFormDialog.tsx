@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SessionFormDialogProps {
   open: boolean;
@@ -29,7 +30,6 @@ export function SessionFormDialog({
   const [meetingType, setMeetingType] = useState<'in_person' | 'zoom'>('in_person');
   const [players, setPlayers] = useState<Array<{id: string, full_name: string}>>([]);
 
-  // Fetch players and existing sessions
   useEffect(() => {
     async function fetchData() {
       try {
@@ -37,7 +37,6 @@ export function SessionFormDialog({
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Fetch players
         const { data: playersData, error: playersError } = await supabase
           .from('players')
           .select('id, full_name')
@@ -46,7 +45,6 @@ export function SessionFormDialog({
         if (playersError) throw playersError;
         setPlayers(playersData || []);
 
-        // Fetch existing sessions
         await fetchSessions(user.id);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -61,7 +59,6 @@ export function SessionFormDialog({
     }
   }, [open]);
 
-  // Function to fetch sessions and convert them to calendar events
   const fetchSessions = async (coachId: string) => {
     try {
       const today = new Date();
@@ -78,7 +75,6 @@ export function SessionFormDialog({
 
       if (sessionsError) throw sessionsError;
 
-      // Convert sessions to calendar events
       const formattedEvents = (sessionsData || []).map(session => ({
         id: session.id,
         title: session.players?.full_name || 'מפגש',
@@ -117,12 +113,11 @@ export function SessionFormDialog({
         return;
       }
 
-      // Make sure all required fields exist and are formatted correctly
       const sessionData = {
         player_id: eventData.extendedProps.player_id,
         coach_id: user.id,
         session_date: eventData.start.split('T')[0],
-        session_time: eventData.start.split('T')[1].substring(0, 5), // Ensure HH:MM format
+        session_time: eventData.start.split('T')[1].substring(0, 5),
         location: eventData.extendedProps.location || '',
         notes: eventData.extendedProps.notes || '',
         reminder_sent: false,
@@ -142,14 +137,11 @@ export function SessionFormDialog({
         throw error;
       }
 
-      // Refresh the sessions list after adding a new one
       await fetchSessions(user.id);
       
       toast.success('המפגש נוצר בהצלחה');
       
-      // Keep the dialog open to show the updated list
-      // Only close if explicitly requested
-      // onOpenChange(false);
+      onOpenChange(false);
     } catch (error) {
       console.error('Error processing event data:', error);
       toast.error('אירעה שגיאה בשמירת המפגש');
@@ -158,7 +150,7 @@ export function SessionFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] h-[80vh]">
         <DialogHeader>
           <DialogTitle>הוסף מפגש חדש</DialogTitle>
           <DialogDescription>
@@ -166,36 +158,38 @@ export function SessionFormDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4 space-y-4">
-          <div className="space-y-2">
-            <Label className="block text-sm font-medium">סוג מפגש</Label>
-            <RadioGroup 
-              value={meetingType} 
-              onValueChange={(value) => setMeetingType(value as 'in_person' | 'zoom')}
-              className="flex space-x-4 rtl:space-x-reverse"
-            >
-              <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                <RadioGroupItem value="in_person" id="in_person" />
-                <Label htmlFor="in_person" className="cursor-pointer">פרונטלי</Label>
-              </div>
-              <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                <RadioGroupItem value="zoom" id="zoom" />
-                <Label htmlFor="zoom" className="cursor-pointer">זום</Label>
-              </div>
-            </RadioGroup>
+        <ScrollArea className="h-full pr-4">
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label className="block text-sm font-medium">סוג מפגש</Label>
+              <RadioGroup 
+                value={meetingType} 
+                onValueChange={(value) => setMeetingType(value as 'in_person' | 'zoom')}
+                className="flex space-x-4 rtl:space-x-reverse"
+              >
+                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                  <RadioGroupItem value="in_person" id="in_person" />
+                  <Label htmlFor="in_person" className="cursor-pointer">פרונטלי</Label>
+                </div>
+                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                  <RadioGroupItem value="zoom" id="zoom" />
+                  <Label htmlFor="zoom" className="cursor-pointer">זום</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            {!loading && (
+              <Calendar
+                events={events}
+                onEventClick={handleEventClick}
+                onEventAdd={handleAddEvent}
+                selectedPlayerId={selectedPlayerId}
+                players={players}
+                setSelectedPlayerId={setSelectedPlayerId}
+              />
+            )}
           </div>
-          
-          {!loading && (
-            <Calendar
-              events={events}
-              onEventClick={handleEventClick}
-              onEventAdd={handleAddEvent}
-              selectedPlayerId={selectedPlayerId}
-              players={players}
-              setSelectedPlayerId={setSelectedPlayerId}
-            />
-          )}
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
