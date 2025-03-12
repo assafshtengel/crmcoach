@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -51,6 +50,8 @@ interface CalendarProps {
   onEventClick: (eventId: string) => void;
   onEventAdd?: (eventData: any) => Promise<void>;
   selectedPlayerId?: string;
+  players?: Array<{id: string, full_name: string}>;
+  setSelectedPlayerId?: React.Dispatch<React.SetStateAction<string | undefined>>;
 }
 
 interface EventFormData {
@@ -63,7 +64,7 @@ interface EventFormData {
   location?: string;
 }
 
-export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEventAdd, selectedPlayerId }) => {
+export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEventAdd, selectedPlayerId, players, setSelectedPlayerId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedView, setSelectedView] = useState<'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'>('dayGridMonth');
@@ -82,7 +83,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
     }
   });
 
-  // Update form values when selectedPlayerId changes
   React.useEffect(() => {
     if (selectedPlayerId) {
       form.setValue('player_id', selectedPlayerId);
@@ -110,7 +110,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
   const onAddEvent = async (data: EventFormData) => {
     if (!onEventAdd) return;
     
-    // Check if player_id exists, if not, show an error
     if (!data.player_id && !selectedPlayerId) {
       toast.error('נא לבחור שחקן לפני הוספת אירוע');
       return;
@@ -123,7 +122,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       
       console.log('Saving event with player_id:', playerIdToUse);
       
-      // Format the data for the fullcalendar event format first
       const eventData = {
         title: data.title,
         start: `${data.date}T${data.time}:00`,
@@ -132,7 +130,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
           eventType: data.eventType,
           player_id: playerIdToUse,
           location: data.location,
-          playerName: data.title // Use the title as playerName for display
+          playerName: data.title
         }
       };
       
@@ -162,13 +160,13 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
   const getEventColor = (eventType?: 'reminder' | 'task' | 'other') => {
     switch (eventType) {
       case 'reminder':
-        return '#F59E0B'; // כתום
+        return '#F59E0B';
       case 'task':
-        return '#10B981'; // ירוק
+        return '#10B981';
       case 'other':
-        return '#6B7280'; // אפור
+        return '#6B7280';
       default:
-        return '#F59E0B'; // Default to reminder color (orange)
+        return '#F59E0B';
     }
   };
 
@@ -323,6 +321,37 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onAddEvent)} className="space-y-4">
+              {players && setSelectedPlayerId && (
+                <FormField
+                  control={form.control}
+                  name="player_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>שחקן</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          setSelectedPlayerId(value);
+                        }}
+                        value={field.value || selectedPlayerId}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="בחר שחקן" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {players.map((player) => (
+                            <SelectItem key={player.id} value={player.id}>
+                              {player.full_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="eventType"
