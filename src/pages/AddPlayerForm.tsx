@@ -33,6 +33,13 @@ const AddPlayerForm = () => {
     try {
       setLoading(true);
       
+      // Get the authenticated user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('You must be logged in to add a player');
+      }
+      
       const { data, error } = await supabase
         .from('players')
         .insert([
@@ -43,7 +50,8 @@ const AddPlayerForm = () => {
             birthdate: player.birthdate || null,
             club: player.club || null,
             city: player.city || null,
-            sport_field: player.sport_field || null
+            sport_field: player.sport_field || null,
+            coach_id: user.id // Add the coach_id from the authenticated user
           }
         ])
         .select();
@@ -52,11 +60,11 @@ const AddPlayerForm = () => {
         throw error;
       }
 
-      toast.success('Player added successfully');
+      toast.success('שחקן נוסף בהצלחה');
       navigate('/players-list');
     } catch (error) {
       console.error('Error adding player:', error);
-      toast.error('Failed to add player');
+      toast.error('שגיאה בהוספת שחקן');
     } finally {
       setLoading(false);
     }
