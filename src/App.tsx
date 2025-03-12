@@ -62,6 +62,17 @@ const App = () => {
               {/* Player routes */}
               <Route path="/player-dashboard" element={<PlayerDashboard />} />
               <Route path="/player-profile" element={<PlayerProfileView />} />
+              
+              {/* Additional player routes with correct paths */}
+              <Route path="/player/profile" element={<PlayerProfileView />} />
+              <Route path="/player/daily-mental-state" element={<div>Daily Mental State Page</div>} />
+              <Route path="/player/mental-state-history" element={<div>Mental State History Page</div>} />
+              <Route path="/player/game-summary" element={<div>Game Summary Page</div>} />
+              <Route path="/player/training-summary" element={<div>Training Summary Page</div>} />
+              <Route path="/player/videos" element={<div>Player Videos Page</div>} />
+              <Route path="/player/meetings" element={<div>Player Meetings Page</div>} />
+              <Route path="/player/goals" element={<div>Player Goals Page</div>} />
+              <Route path="/player/game-preparation" element={<div>Game Preparation Page</div>} />
             </Routes>
             <Toaster />
           </PlayersProvider>

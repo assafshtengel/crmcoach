@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -42,9 +41,10 @@ export default function PlayerProfileView() {
         
         setPlayerData(data);
 
-        // Check if player has submitted mental state form today
+        // Get today's date in ISO format for all queries
         const today = new Date().toISOString().split('T')[0];
         
+        // Check if player has submitted mental state form today
         const { data: mentalStateData, error: mentalStateError } = await supabase
           .from('player_mental_states')
           .select('id')
@@ -59,9 +59,6 @@ export default function PlayerProfileView() {
           setMentalStateToday(mentalStateData && mentalStateData.length > 0);
         }
 
-        // Load meetings
-        // Remove the duplicate 'today' declaration since we already have it above
-        
         // Fetch upcoming meetings
         const { data: upcomingData, error: upcomingError } = await supabase
           .from('player_meetings')
