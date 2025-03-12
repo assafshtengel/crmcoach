@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -21,7 +21,6 @@ type FormData = z.infer<typeof formSchema>;
 const PlayerAuth = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -38,7 +37,7 @@ const PlayerAuth = () => {
       const { data: playerData, error: playerError } = await supabase
         .from('players')
         .select('*')
-        .eq('username', data.username)
+        .eq('email', data.username)
         .eq('password', data.password)
         .single();
 
@@ -49,19 +48,12 @@ const PlayerAuth = () => {
       // Store player session in localStorage
       localStorage.setItem('playerSession', JSON.stringify(playerData));
       
-      toast({
-        title: "התחברת בהצלחה",
-        description: `ברוך הבא, ${playerData.full_name}`,
-      });
+      toast.success(`התחברת בהצלחה - ברוך הבא ${playerData.full_name}`);
       
       navigate('/player-profile');
     } catch (error: any) {
       console.error("Error logging in:", error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בהתחברות",
-        description: error.message || "אירעה שגיאה בהתחברות, אנא נסה שנית",
-      });
+      toast.error(error.message || "אירעה שגיאה בהתחברות, אנא נסה שנית");
     } finally {
       setIsLoading(false);
     }
@@ -82,9 +74,9 @@ const PlayerAuth = () => {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>שם משתמש</FormLabel>
+                    <FormLabel>דוא"ל</FormLabel>
                     <FormControl>
-                      <Input placeholder="הזן שם משתמש" {...field} />
+                      <Input placeholder="הזן את הדוא״ל שלך" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
