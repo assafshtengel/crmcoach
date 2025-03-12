@@ -194,6 +194,7 @@ export default function PlayerProfileView() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          {/* Daily Mental State */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -230,6 +231,7 @@ export default function PlayerProfileView() {
             </CardContent>
           </Card>
 
+          {/* Game Summary */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -247,6 +249,7 @@ export default function PlayerProfileView() {
             </CardContent>
           </Card>
 
+          {/* Training Summary */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -264,6 +267,7 @@ export default function PlayerProfileView() {
             </CardContent>
           </Card>
 
+          {/* Videos */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -281,6 +285,7 @@ export default function PlayerProfileView() {
             </CardContent>
           </Card>
 
+          {/* Meetings */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -298,6 +303,7 @@ export default function PlayerProfileView() {
             </CardContent>
           </Card>
 
+          {/* Goals */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -315,6 +321,7 @@ export default function PlayerProfileView() {
             </CardContent>
           </Card>
 
+          {/* Game Preparation */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -332,6 +339,25 @@ export default function PlayerProfileView() {
             </CardContent>
           </Card>
 
+          {/* Contract */}
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileText className="h-5 w-5" />
+                חוזה לחתימה
+              </CardTitle>
+              <CardDescription>
+                חוזה התקשרות עם המאמן
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={() => navigate('/player/contract')}>
+                צפה בחוזה
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Player File */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">תיק שחקן</CardTitle>
@@ -341,12 +367,14 @@ export default function PlayerProfileView() {
               <p className="text-sm text-muted-foreground mb-4">
                 צפו בתיק השחקן שלכם המכיל את כל המידע על פעילותכם, מטרות והתקדמות.
               </p>
-              <Link to={`/player-file/${playerData?.id}`}>
-                <Button className="w-full" variant="outline">
-                  <Folder className="mr-2 h-4 w-4" />
-                  צפייה בתיק השחקן שלי
-                </Button>
-              </Link>
+              <Button 
+                className="w-full" 
+                variant="outline"
+                onClick={() => navigate(`/player-file/${playerData?.id}`)}
+              >
+                <Folder className="mr-2 h-4 w-4" />
+                צפייה בתיק השחקן שלי
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -463,4 +491,6 @@ export default function PlayerProfileView() {
       </div>
     </div>
   );
-}
+};
+
+export default PlayerProfileView;

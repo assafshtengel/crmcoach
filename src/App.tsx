@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "./components/theme-provider"
@@ -24,6 +23,14 @@ const PlayerDashboard = () => <div>Player Dashboard Page</div>;
 const CoachProfile = () => <div>Coach Profile Page</div>;
 const PlayerRegistration = () => <div>Player Registration Page</div>;
 const RegistrationLinks = () => <div>Registration Links Page</div>;
+const DailyMentalState = () => <div>Daily Mental State Page</div>;
+const MentalStateHistory = () => <div>Mental State History Page</div>;
+const PlayerGameSummary = () => <div>Game Summary Page</div>;
+const PlayerTrainingSummary = () => <div>Training Summary Page</div>;
+const PlayerVideos = () => <div>Player Videos Page</div>;
+const PlayerMeetings = () => <div>Player Meetings Page</div>;
+const PlayerGoals = () => <div>Player Goals Page</div>;
+const Contract = () => <div>Contract Page</div>;
 
 const queryClient = new QueryClient();
 
@@ -66,16 +73,19 @@ const App = () => {
               <Route path="/player-dashboard" element={<PlayerDashboard />} />
               <Route path="/player-profile" element={<PlayerProfileView />} />
               
+              {/* Player Routes */}
               <Route path="/player/profile" element={<PlayerProfileView />} />
-              <Route path="/player/daily-mental-state" element={<div>Daily Mental State Page</div>} />
-              <Route path="/player/mental-state-history" element={<div>Mental State History Page</div>} />
-              <Route path="/player/game-summary" element={<div>Game Summary Page</div>} />
-              <Route path="/player/training-summary" element={<div>Training Summary Page</div>} />
-              <Route path="/player/videos" element={<div>Player Videos Page</div>} />
-              <Route path="/player/meetings" element={<div>Player Meetings Page</div>} />
-              <Route path="/player/goals" element={<div>Player Goals Page</div>} />
+              <Route path="/player/daily-mental-state" element={<DailyMentalState />} />
+              <Route path="/player/mental-state-history" element={<MentalStateHistory />} />
+              <Route path="/player/game-summary" element={<PlayerGameSummary />} />
+              <Route path="/player/training-summary" element={<PlayerTrainingSummary />} />
+              <Route path="/player/videos" element={<PlayerVideos />} />
+              <Route path="/player/meetings" element={<PlayerMeetings />} />
+              <Route path="/player/goals" element={<PlayerGoals />} />
               <Route path="/player/game-preparation" element={<div>Game Preparation Page</div>} />
               <Route path="/player/chat" element={<ChatPage />} />
+              <Route path="/player/contract" element={<Contract />} />
+              <Route path="/player-file/:playerId" element={<PlayerFile />} />
             </Routes>
             <Toaster />
           </PlayersProvider>
