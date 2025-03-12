@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Form, FormField, FormItem, FormControl } from '@/components/ui/form';
-import { useQuery } from '@tanstack/react-query';
 
 interface SessionFormDialogProps {
   open: boolean;
@@ -65,7 +64,7 @@ export function SessionFormDialog({
   const handleAddEvent = async (eventData: any) => {
     try {
       if (!eventData.extendedProps?.player_id) {
-        toast.error('נא לבחור שחקן לפני הוספת אירוע');
+        toast.error('נא לבחור שחקן לפני הוספת מפגש');
         return;
       }
       
@@ -83,7 +82,8 @@ export function SessionFormDialog({
         session_time: eventData.start.split('T')[1].substring(0, 5), // Ensure HH:MM format
         location: eventData.extendedProps.location || '',
         notes: eventData.extendedProps.notes || '',
-        reminder_sent: false
+        reminder_sent: false,
+        meeting_type: meetingType
       };
       
       console.log('Creating new session:', sessionData);
@@ -133,9 +133,20 @@ export function SessionFormDialog({
             </RadioGroup>
           </div>
           
-          {loading ? (
-            <div className="text-center py-4">טוען...</div>
-          ) : (
+          <div className="flex justify-end">
+            <Button 
+              variant="default" 
+              onClick={() => {
+                // Open calendar view for creating the meeting
+                setLoading(false);
+              }}
+              className="bg-primary text-white hover:bg-primary/90"
+            >
+              המשך
+            </Button>
+          </div>
+          
+          {!loading && (
             <Calendar
               events={events}
               onEventClick={handleEventClick}

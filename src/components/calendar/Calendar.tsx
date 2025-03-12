@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -31,7 +32,7 @@ interface CalendarEvent {
     location?: string;
     reminderSent: boolean;
     notes?: string;
-    eventType?: 'reminder' | 'task' | 'other';
+    eventType?: 'meeting';
     player_id?: string; 
   };
 }
@@ -59,7 +60,6 @@ interface EventFormData {
   date: string;
   time: string;
   notes?: string;
-  eventType: 'reminder' | 'task' | 'other';
   player_id?: string;
   location?: string;
 }
@@ -77,7 +77,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       date: new Date().toISOString().split('T')[0],
       time: '12:00',
       notes: '',
-      eventType: 'reminder',
       player_id: selectedPlayerId,
       location: ''
     }
@@ -111,7 +110,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
     if (!onEventAdd) return;
     
     if (!data.player_id && !selectedPlayerId) {
-      toast.error('נא לבחור שחקן לפני הוספת אירוע');
+      toast.error('נא לבחור שחקן לפני הוספת מפגש');
       return;
     }
     
@@ -127,7 +126,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
         start: `${data.date}T${data.time}:00`,
         extendedProps: {
           notes: data.notes,
-          eventType: data.eventType,
+          eventType: 'meeting',
           player_id: playerIdToUse,
           location: data.location,
           playerName: data.title
@@ -144,7 +143,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
         date: new Date().toISOString().split('T')[0],
         time: '12:00',
         notes: '',
-        eventType: 'reminder',
         player_id: selectedPlayerId,
         location: ''
       });
@@ -157,17 +155,8 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
     }
   };
 
-  const getEventColor = (eventType?: 'reminder' | 'task' | 'other') => {
-    switch (eventType) {
-      case 'reminder':
-        return '#F59E0B';
-      case 'task':
-        return '#10B981';
-      case 'other':
-        return '#6B7280';
-      default:
-        return '#F59E0B';
-    }
+  const getEventColor = () => {
+    return '#1E3A8A'; // Dark blue for meetings
   };
 
   return (
@@ -188,7 +177,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
             onClick={() => setIsAddEventOpen(true)}
           >
             <Plus className="h-5 w-5" />
-            <span>הוסף אירוע</span>
+            <span>הוסף מפגש</span>
           </Button>
         )}
       </div>
@@ -196,8 +185,8 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-6xl h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">לוח אירועים</DialogTitle>
-            <DialogDescription>צפה באירועים מתוכננים</DialogDescription>
+            <DialogTitle className="text-2xl font-bold">לוח מפגשים</DialogTitle>
+            <DialogDescription>צפה במפגשים מתוכננים</DialogDescription>
           </DialogHeader>
           
           <div className="flex-1 overflow-auto">
@@ -244,7 +233,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
               eventContent={(eventInfo) => (
                 <div 
                   className="p-1 text-sm"
-                  style={{ backgroundColor: getEventColor(eventInfo.event.extendedProps.eventType) }}
+                  style={{ backgroundColor: getEventColor() }}
                 >
                   <div className="font-bold text-white">{eventInfo.timeText}</div>
                   <div className="text-white">{eventInfo.event.extendedProps.playerName}</div>
@@ -262,8 +251,8 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
         <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>פרטי אירוע</DialogTitle>
-              <DialogDescription>מידע מפורט על האירוע</DialogDescription>
+              <DialogTitle>פרטי מפגש</DialogTitle>
+              <DialogDescription>מידע מפורט על המפגש</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div>
@@ -286,11 +275,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
                   <p className="text-lg whitespace-pre-wrap">{selectedEvent.extendedProps.notes}</p>
                 </div>
               )}
-              <div>
-                <h3 className="font-bold mb-1">סוג אירוע</h3>
-                <p className="text-lg">{selectedEvent.extendedProps.eventType === 'reminder' ? 'תזכורת' :
-                  selectedEvent.extendedProps.eventType === 'task' ? 'משימה' : 'אחר'}</p>
-              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={closeDialog}>סגור</Button>
@@ -307,7 +291,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
             date: new Date().toISOString().split('T')[0],
             time: '12:00',
             notes: '',
-            eventType: 'reminder',
             player_id: selectedPlayerId,
             location: ''
           });
@@ -316,8 +299,8 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>הוספת אירוע חדש</DialogTitle>
-            <DialogDescription>מלא את הפרטים להוספת אירוע חדש</DialogDescription>
+            <DialogTitle>הוספת מפגש חדש</DialogTitle>
+            <DialogDescription>מלא את הפרטים להוספת מפגש חדש</DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onAddEvent)} className="space-y-4">
@@ -352,30 +335,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
                   )}
                 />
               )}
-              <FormField
-                control={form.control}
-                name="eventType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>סוג אירוע</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="בחר סוג אירוע" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="reminder">תזכורת</SelectItem>
-                        <SelectItem value="task">משימה</SelectItem>
-                        <SelectItem value="other">אחר</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
               <FormField
                 control={form.control}
                 name="title"
