@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, User, Calendar, PenTool, Video, Activity, FileText, Notebook, Brain, Folder } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export default function PlayerProfileView() {
+const PlayerProfileView = () => {
   const [playerData, setPlayerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [mentalStateToday, setMentalStateToday] = useState<boolean>(false);
