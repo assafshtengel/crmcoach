@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "./components/theme-provider"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "sonner"
@@ -26,13 +26,25 @@ const RegistrationLinks = () => <div>Registration Links Page</div>;
 const queryClient = new QueryClient();
 
 const App = () => {
+  // Determine if user is a player (simplified check)
+  const isPlayer = () => {
+    const playerSession = localStorage.getItem('playerSession');
+    return !!playerSession;
+  };
+
   return (
     <BrowserRouter>
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
         <QueryClientProvider client={queryClient}>
           <PlayersProvider>
             <Routes>
-              <Route path="/" element={<PlayerDashboard />} />
+              {/* Default route - redirect based on user type */}
+              <Route 
+                path="/" 
+                element={isPlayer() ? <Navigate to="/player-profile" /> : <DashboardCoach />} 
+              />
+              
+              {/* Coach routes */}
               <Route path="/dashboard-coach" element={<DashboardCoach />} />
               <Route path="/players-list" element={<PlayersList />} />
               <Route path="/sessions" element={<Sessions />} />
@@ -40,13 +52,16 @@ const App = () => {
               <Route path="/coaches-list" element={<CoachesList />} />
               <Route path="/goals" element={<Goals />} />
               <Route path="/mental-prep-form" element={<MentalPrepForm />} />
-              <Route path="/player-profile" element={<PlayerProfileView />} />
               <Route path="/mental-tools" element={<MentalTools />} />
               <Route path="/training-videos" element={<TrainingVideos />} />
               <Route path="/coach-profile" element={<CoachProfile />} />
               <Route path="/player-registration" element={<PlayerRegistration />} />
               <Route path="/registration-links" element={<RegistrationLinks />} />
               <Route path="/player-file/:playerId" element={<PlayerFile />} />
+              
+              {/* Player routes */}
+              <Route path="/player-dashboard" element={<PlayerDashboard />} />
+              <Route path="/player-profile" element={<PlayerProfileView />} />
             </Routes>
             <Toaster />
           </PlayersProvider>
