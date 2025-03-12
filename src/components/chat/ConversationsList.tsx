@@ -3,25 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-interface Conversation {
+interface Participant {
   id: string;
-  participantId: string;
-  participantName: string;
-  lastMessage: string;
-  timestamp: string;
-  unread: boolean;
+  name: string;
   isCoach: boolean;
+  hasUnread: boolean;
 }
 
 interface ConversationsListProps {
   currentUserId: string;
   isCoach: boolean;
-  onSelectConversation: (participantId: string, participantName: string, isCoach: boolean) => void;
+  onSelectConversation: (participantId: string, participantName: string, participantIsCoach: boolean) => void;
 }
 
 export function ConversationsList({ 
@@ -29,28 +25,48 @@ export function ConversationsList({
   isCoach, 
   onSelectConversation 
 }: ConversationsListProps) {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [participants, setParticipants] = useState<{id: string, full_name: string, isCoach: boolean}[]>([]);
 
   useEffect(() => {
-    // First, fetch all possible participants (coaches or players)
     const fetchParticipants = async () => {
       try {
-        let data;
+        setLoading(true);
+        
         if (isCoach) {
-          // Coach sees their players
-          const { data: playersData, error: playersError } = await supabase
+          // Coach: fetch all players assigned to this coach
+          const { data: players, error } = await supabase
             .from('players')
             .select('id, full_name')
             .eq('coach_id', currentUserId);
             
-          if (playersError) throw playersError;
-          data = (playersData || []).map(p => ({ ...p, isCoach: false }));
+          if (error) throw error;
+          
+          // Check for unread messages for each player
+          const participantsWithUnread = await Promise.all(
+            players.map(async (player) => {
+              const { data: unreadMessages, error: unreadError } = await supabase
+                .from('chat_messages')
+                .select('id')
+                .eq('sender_id', player.id)
+                .eq('receiver_id', currentUserId)
+                .eq('is_read', false);
+                
+              if (unreadError) throw unreadError;
+              
+              return {
+                id: player.id,
+                name: player.full_name,
+                isCoach: false,
+                hasUnread: unreadMessages && unreadMessages.length > 0
+              };
+            })
+          );
+          
+          setParticipants(participantsWithUnread);
         } else {
-          // Player sees their coach
-          const { data: playerData, error: playerError } = await supabase
+          // Player: fetch coach
+          const { data: player, error: playerError } = await supabase
             .from('players')
             .select('coach_id')
             .eq('id', currentUserId)
@@ -58,115 +74,46 @@ export function ConversationsList({
             
           if (playerError) throw playerError;
           
-          if (playerData?.coach_id) {
-            const { data: coachData, error: coachError } = await supabase
+          if (player?.coach_id) {
+            const { data: coach, error: coachError } = await supabase
               .from('coaches')
               .select('id, full_name')
-              .eq('id', playerData.coach_id)
+              .eq('id', player.coach_id)
               .single();
               
             if (coachError) throw coachError;
-            data = coachData ? [{ ...coachData, isCoach: true }] : [];
-          } else {
-            data = [];
+            
+            // Check for unread messages from coach
+            const { data: unreadMessages, error: unreadError } = await supabase
+              .from('chat_messages')
+              .select('id')
+              .eq('sender_id', coach.id)
+              .eq('receiver_id', currentUserId)
+              .eq('is_read', false);
+              
+            if (unreadError) throw unreadError;
+            
+            setParticipants([{
+              id: coach.id,
+              name: coach.full_name,
+              isCoach: true,
+              hasUnread: unreadMessages && unreadMessages.length > 0
+            }]);
           }
         }
-        
-        setParticipants(data || []);
       } catch (error) {
         console.error('Error fetching participants:', error);
-        toast.error('שגיאה בטעינת המשתתפים');
-      }
-    };
-
-    fetchParticipants();
-  }, [currentUserId, isCoach]);
-
-  // Fetch latest messages when participants change
-  useEffect(() => {
-    const fetchLatestMessages = async () => {
-      if (!participants.length) return;
-      
-      try {
-        setLoading(true);
-        
-        // Get last message for each participant
-        const participantIds = participants.map(p => p.id);
-        
-        const { data: messagesData, error: messagesError } = await supabase
-          .from('chat_messages')
-          .select('*')
-          .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
-          .or(`sender_id.in.(${participantIds.join(',')}),receiver_id.in.(${participantIds.join(',')})`)
-          .order('created_at', { ascending: false });
-          
-        if (messagesError) throw messagesError;
-        
-        // Process messages into conversations
-        const convMap = new Map<string, Conversation>();
-        
-        // Initialize with all participants (even if no messages yet)
-        participants.forEach(participant => {
-          convMap.set(participant.id, {
-            id: `${currentUserId}-${participant.id}`,
-            participantId: participant.id,
-            participantName: participant.full_name,
-            lastMessage: '',
-            timestamp: '',
-            unread: false,
-            isCoach: participant.isCoach
-          });
-        });
-        
-        // Update with message data if available
-        if (messagesData && messagesData.length > 0) {
-          messagesData.forEach(message => {
-            const otherPartyId = message.sender_id === currentUserId ? message.receiver_id : message.sender_id;
-            
-            // Skip if not a direct participant
-            if (!participantIds.includes(otherPartyId)) return;
-            
-            const participant = participants.find(p => p.id === otherPartyId);
-            if (!participant) return;
-            
-            // Only update if this is a more recent message
-            const existing = convMap.get(otherPartyId);
-            if (!existing || !existing.timestamp || new Date(message.created_at) > new Date(existing.timestamp)) {
-              convMap.set(otherPartyId, {
-                id: `${currentUserId}-${otherPartyId}`,
-                participantId: otherPartyId,
-                participantName: participant.full_name,
-                lastMessage: message.content,
-                timestamp: message.created_at,
-                unread: message.receiver_id === currentUserId && !message.is_read,
-                isCoach: participant.isCoach
-              });
-            }
-          });
-        }
-        
-        // Convert map to array and sort by timestamp (newest first)
-        const conversationsArray = Array.from(convMap.values())
-          .sort((a, b) => {
-            if (!a.timestamp) return 1;
-            if (!b.timestamp) return -1;
-            return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-          });
-          
-        setConversations(conversationsArray);
-      } catch (error) {
-        console.error('Error fetching conversations:', error);
-        toast.error('שגיאה בטעינת השיחות');
+        toast.error('שגיאה בטעינת אנשי קשר');
       } finally {
         setLoading(false);
       }
     };
-
-    fetchLatestMessages();
     
-    // Subscribe to new messages
+    fetchParticipants();
+    
+    // Subscribe to new messages for real-time updates
     const channel = supabase
-      .channel('chat_changes')
+      .channel('chat_subscription')
       .on('postgres_changes', 
         { 
           event: 'INSERT', 
@@ -175,81 +122,56 @@ export function ConversationsList({
           filter: `receiver_id=eq.${currentUserId}`
         }, 
         () => {
-          // Refresh conversations on new message
-          fetchLatestMessages();
+          fetchParticipants();
         }
       )
       .subscribe();
-
+      
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [participants, currentUserId]);
-
-  const filteredConversations = conversations.filter(conv => 
-    conv.participantName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  }, [currentUserId, isCoach]);
 
   return (
-    <Card className="flex flex-col h-full">
+    <Card className="h-full flex flex-col">
       <div className="p-4 border-b">
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="חיפוש..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        <h3 className="text-lg font-medium">אנשי קשר</h3>
       </div>
-      
-      <ScrollArea className="flex-1">
-        <div className="p-2">
-          {loading ? (
-            <div className="flex justify-center p-4">
-              <p>טוען שיחות...</p>
-            </div>
-          ) : filteredConversations.length === 0 ? (
-            <div className="flex justify-center p-4 text-muted-foreground">
-              <p>לא נמצאו שיחות</p>
-            </div>
-          ) : (
-            filteredConversations.map((conversation) => (
+      <ScrollArea className="flex-1 p-2">
+        {loading ? (
+          <div className="p-4 text-center">
+            <p>טוען אנשי קשר...</p>
+          </div>
+        ) : participants.length === 0 ? (
+          <div className="p-4 text-center text-muted-foreground">
+            <p>אין אנשי קשר זמינים</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {participants.map((participant) => (
               <div
-                key={conversation.id}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer"
-                onClick={() => onSelectConversation(
-                  conversation.participantId, 
-                  conversation.participantName,
-                  conversation.isCoach
-                )}
+                key={participant.id}
+                className="flex items-center gap-3 p-3 rounded-md hover:bg-muted cursor-pointer"
+                onClick={() => onSelectConversation(participant.id, participant.name, participant.isCoach)}
               >
                 <Avatar>
-                  <AvatarFallback>{conversation.participantName.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start">
-                    <h4 className="font-medium truncate">{conversation.participantName}</h4>
-                    {conversation.timestamp && (
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(conversation.timestamp).toLocaleDateString('he-IL')}
-                      </span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">{participant.name}</p>
+                    {participant.hasUnread && (
+                      <Badge variant="destructive" className="h-2 w-2 rounded-full p-0" />
                     )}
                   </div>
-                  {conversation.lastMessage && (
-                    <p className={`text-sm truncate ${conversation.unread ? 'font-medium' : 'text-muted-foreground'}`}>
-                      {conversation.lastMessage}
-                    </p>
-                  )}
+                  <p className="text-sm text-muted-foreground">
+                    {participant.isCoach ? 'מאמן' : 'שחקן'}
+                  </p>
                 </div>
-                {conversation.unread && (
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                )}
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </ScrollArea>
     </Card>
   );
