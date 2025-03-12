@@ -98,7 +98,10 @@ export function SessionFormDialog({
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Session creation error:', error);
+        throw error;
+      }
 
       toast.success('המפגש נוצר בהצלחה');
       onOpenChange(false);

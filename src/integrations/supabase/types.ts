@@ -1389,6 +1389,7 @@ export type Database = {
           has_started: boolean | null
           id: string
           location: string | null
+          meeting_type: string
           notes: string | null
           player_id: string
           reminder_sent: boolean | null
@@ -1401,6 +1402,7 @@ export type Database = {
           has_started?: boolean | null
           id?: string
           location?: string | null
+          meeting_type?: string
           notes?: string | null
           player_id: string
           reminder_sent?: boolean | null
@@ -1413,6 +1415,7 @@ export type Database = {
           has_started?: boolean | null
           id?: string
           location?: string | null
+          meeting_type?: string
           notes?: string | null
           player_id?: string
           reminder_sent?: boolean | null
