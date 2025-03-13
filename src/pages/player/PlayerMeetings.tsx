@@ -57,7 +57,7 @@ const PlayerMeetings = () => {
           .from('player_meetings')
           .select(`
             *,
-            coaches (
+            coach (
               full_name
             )
           `)
@@ -74,7 +74,7 @@ const PlayerMeetings = () => {
           .from('player_meetings')
           .select(`
             *,
-            coaches (
+            coach (
               full_name
             ),
             meeting_logs (
@@ -199,10 +199,10 @@ const PlayerMeetings = () => {
                           </div>
                         )}
                         
-                        {meeting.coaches?.full_name && (
+                        {meeting.coach?.full_name && (
                           <div>
                             <Label className="text-sm text-muted-foreground">מאמן:</Label>
-                            <p className="text-sm font-medium">{meeting.coaches.full_name}</p>
+                            <p className="text-sm font-medium">{meeting.coach.full_name}</p>
                           </div>
                         )}
                         
@@ -268,10 +268,10 @@ const PlayerMeetings = () => {
                           </div>
                         )}
                         
-                        {meeting.coaches?.full_name && (
+                        {meeting.coach?.full_name && (
                           <div>
                             <Label className="text-sm text-muted-foreground">מאמן:</Label>
-                            <p className="text-sm font-medium">{meeting.coaches.full_name}</p>
+                            <p className="text-sm font-medium">{meeting.coach.full_name}</p>
                           </div>
                         )}
                         
