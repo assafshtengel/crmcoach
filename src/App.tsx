@@ -22,6 +22,7 @@ import DailyMentalState from './pages/player/DailyMentalState';
 import MentalStateHistory from './pages/player/MentalStateHistory';
 import TrainingForecasts from './pages/player/TrainingForecasts';
 import PlayerVideosPage from './pages/player/PlayerVideos';
+import PlayerGoals from './pages/player/PlayerGoals';
 
 const Sessions = () => <div>Sessions Page</div>;
 const SessionDetails = () => <div>Session Details Page</div>;
@@ -33,7 +34,6 @@ const CoachProfile = () => <div>Coach Profile Page</div>;
 const PlayerRegistration = () => <div>Player Registration Page</div>;
 const RegistrationLinks = () => <div>Registration Links Page</div>;
 const PlayerVideosPlaceholder = () => <div>Player Videos Page</div>;
-const PlayerGoals = () => <div>Player Goals Page</div>;
 const Contract = () => <div>Contract Page</div>;
 
 const queryClient = new QueryClient();

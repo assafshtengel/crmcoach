@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -116,7 +115,7 @@ const PlayerProfileView = () => {
   };
 
   const handleNavigation = (path: string) => {
-    // Update implemented pages list to include our new pages
+    // Update implemented pages list to include our player/goals page
     const implementedPages = [
       '/player/daily-mental-state', 
       '/player/mental-state-history',
@@ -124,7 +123,8 @@ const PlayerProfileView = () => {
       '/player/contract',
       '/player/training-summary',
       '/player/game-summary',
-      '/player/meetings'
+      '/player/meetings',
+      '/player/goals',
     ];
     
     if (implementedPages.includes(path)) {
