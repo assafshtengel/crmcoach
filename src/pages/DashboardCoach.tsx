@@ -78,14 +78,16 @@ const DashboardCoach = () => {
     queryKey: ["tools"],
     queryFn: () => getTools(),
     retry: 1,
-    onError: (error) => {
-      console.error("Error fetching tools:", error);
+    onSettled: (data, error) => {
+      if (error) {
+        console.error("Error fetching tools:", error);
+      }
     }
   });
 
   useEffect(() => {
     if (toolsData) {
-      setTools(toolsData);
+      setTools(toolsData as Tool[]);
     }
   }, [toolsData]);
 
