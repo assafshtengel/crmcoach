@@ -42,7 +42,8 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const defaultValues: GameSummaryFormValues = {
+  // Define defaultValues with the right types
+  const defaultValues = {
     performance_rating: 5,
     concentration_level: 5,
     goals_met: false,
@@ -95,6 +96,7 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
         description: "הנתונים נשמרו במערכת",
       });
       
+      // Reset form with the right types
       form.reset(defaultValues);
 
       if (onSuccess) {

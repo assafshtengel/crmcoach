@@ -21,6 +21,6 @@ export interface GameSummaryFormValues {
   strongest_point: string;
   improvement_notes: string;
   fatigue_level: number;
-  game_date?: string;
+  game_date?: Date;  // Changed from string to Date for the form values
   opponent_team?: string;
 }

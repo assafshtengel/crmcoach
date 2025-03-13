@@ -6,11 +6,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 
-interface GameSummaryListProps {
+export interface GameSummaryListProps {
   playerId: string;
+  coachView?: boolean;
 }
 
-export function GameSummaryList({ playerId }: GameSummaryListProps) {
+export function GameSummaryList({ playerId, coachView }: GameSummaryListProps) {
   const [summaries, setSummaries] = useState<GameSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
