@@ -23,6 +23,7 @@ import MentalStateHistory from './pages/player/MentalStateHistory';
 import TrainingForecasts from './pages/player/TrainingForecasts';
 import PlayerVideosPage from './pages/player/PlayerVideos';
 import PlayerGoals from './pages/player/PlayerGoals';
+import GamePreparation from './pages/GamePreparation';
 
 const Sessions = () => <div>Sessions Page</div>;
 const SessionDetails = () => <div>Session Details Page</div>;
@@ -76,7 +77,7 @@ const App = () => {
               <Route path="/player/videos" element={<PlayerVideosPage />} />
               <Route path="/player/meetings" element={<PlayerMeetings />} />
               <Route path="/player/goals" element={<PlayerGoals />} />
-              <Route path="/player/game-preparation" element={<div>Game Preparation Page</div>} />
+              <Route path="/player/game-preparation" element={<GamePreparation />} />
               <Route path="/player/chat" element={<ChatPage />} />
               <Route path="/player/contract" element={<Contract />} />
               <Route path="/player-file/:playerId" element={<PlayerFile />} />

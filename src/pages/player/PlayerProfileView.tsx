@@ -125,6 +125,7 @@ const PlayerProfileView = () => {
       '/player/game-summary',
       '/player/meetings',
       '/player/goals',
+      '/player/game-preparation',
     ];
     
     if (implementedPages.includes(path)) {
