@@ -82,7 +82,7 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
           strongest_point: values.strongest_point,
           improvement_notes: values.improvement_notes,
           fatigue_level: values.fatigue_level,
-          game_date: values.game_date ? format(values.game_date, 'yyyy-MM-dd') : null,
+          game_date: values.game_date ? values.game_date.toISOString().split('T')[0] : null,
           opponent_team: values.opponent_team || null,
         })
         .select();

@@ -389,9 +389,11 @@ export type Database = {
           concentration_level: number | null
           created_at: string | null
           fatigue_level: number | null
+          game_date: string | null
           goals_met: boolean | null
           id: string
           improvement_notes: string | null
+          opponent_team: string | null
           performance_rating: number | null
           player_id: string
           strongest_point: string | null
@@ -401,9 +403,11 @@ export type Database = {
           concentration_level?: number | null
           created_at?: string | null
           fatigue_level?: number | null
+          game_date?: string | null
           goals_met?: boolean | null
           id?: string
           improvement_notes?: string | null
+          opponent_team?: string | null
           performance_rating?: number | null
           player_id: string
           strongest_point?: string | null
@@ -413,9 +417,11 @@ export type Database = {
           concentration_level?: number | null
           created_at?: string | null
           fatigue_level?: number | null
+          game_date?: string | null
           goals_met?: boolean | null
           id?: string
           improvement_notes?: string | null
+          opponent_team?: string | null
           performance_rating?: number | null
           player_id?: string
           strongest_point?: string | null
