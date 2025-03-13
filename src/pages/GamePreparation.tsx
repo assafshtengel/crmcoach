@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, FilePlus, FileText } from 'lucide-react';
+import { ArrowLeft, Save, FilePlus, FileText, MessageSquare } from 'lucide-react';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +14,10 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Form schema for validation
 const gamePreparationSchema = z.object({
@@ -27,9 +31,27 @@ const gamePreparationSchema = z.object({
   confidence_level: z.string().min(1, { message: 'רמת ביטחון היא חובה' }),
   concerns: z.string().optional(),
   additional_notes: z.string().optional(),
+  emotions: z.array(z.string()).optional(),
+  sleep_quality: z.string().optional(),
+  nutrition_plan: z.string().optional(),
+  pre_game_routine: z.string().optional(),
 });
 
 type GamePreparationForm = z.infer<typeof gamePreparationSchema>;
+
+// List of emotions for selection
+const emotionsList = [
+  'התרגשות', 'שמחה', 'אופטימיות', 'ביטחון', 'מוטיבציה',
+  'חרדה', 'לחץ', 'פחד', 'ספק', 'תסכול',
+  'רוגע', 'ריכוז', 'נחישות', 'אדישות', 'עייפות'
+];
+
+// Group emotions by type
+const emotionGroups = {
+  positive: ['התרגשות', 'שמחה', 'אופטימיות', 'ביטחון', 'מוטיבציה'],
+  negative: ['חרדה', 'לחץ', 'פחד', 'ספק', 'תסכול'],
+  neutral: ['רוגע', 'ריכוז', 'נחישות', 'אדישות', 'עייפות']
+};
 
 const GamePreparation = () => {
   const navigate = useNavigate();
@@ -37,6 +59,10 @@ const GamePreparation = () => {
   const [selectedForm, setSelectedForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedEmotions, setSelectedEmotions] = useState([]);
+  const [isAiSummaryOpen, setIsAiSummaryOpen] = useState(false);
+  const [aiSummary, setAiSummary] = useState('');
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
   // Initialize form
   const form = useForm<GamePreparationForm>({
@@ -52,6 +78,10 @@ const GamePreparation = () => {
       confidence_level: '3',
       concerns: '',
       additional_notes: '',
+      emotions: [],
+      sleep_quality: '',
+      nutrition_plan: '',
+      pre_game_routine: '',
     },
   });
 
@@ -88,6 +118,11 @@ const GamePreparation = () => {
     fetchPlayerData();
   }, [navigate]);
 
+  // Update emotions field when selectedEmotions changes
+  useEffect(() => {
+    form.setValue('emotions', selectedEmotions);
+  }, [selectedEmotions, form]);
+
   const onSubmit = async (data: GamePreparationForm) => {
     try {
       setSubmitting(true);
@@ -114,6 +149,10 @@ const GamePreparation = () => {
           confidence_level: data.confidence_level,
           concerns: data.concerns,
           additional_notes: data.additional_notes,
+          emotions: data.emotions,
+          sleep_quality: data.sleep_quality,
+          nutrition_plan: data.nutrition_plan,
+          pre_game_routine: data.pre_game_routine,
         });
       
       if (error) throw error;
@@ -131,6 +170,7 @@ const GamePreparation = () => {
       
       setPreviousForms(updatedForms || []);
       form.reset();
+      setSelectedEmotions([]);
       
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -147,6 +187,73 @@ const GamePreparation = () => {
   const startNewForm = () => {
     setSelectedForm(null);
     form.reset();
+    setSelectedEmotions([]);
+  };
+
+  const toggleEmotion = (emotion) => {
+    setSelectedEmotions(prev => 
+      prev.includes(emotion)
+        ? prev.filter(e => e !== emotion)
+        : [...prev, emotion]
+    );
+  };
+
+  const generateAiSummary = async () => {
+    try {
+      setIsGeneratingSummary(true);
+      const formData = form.getValues();
+      
+      // Simulating AI summary generation
+      // In a real implementation, you would call an AI service here
+      setTimeout(() => {
+        const emotionsText = selectedEmotions.length > 0 
+          ? `אתה מרגיש ${selectedEmotions.join(', ')} לקראת המשחק.` 
+          : 'לא ציינת תחושות ספציפיות לקראת המשחק.';
+        
+        const confidenceText = {
+          '1': 'רמת הביטחון שלך נמוכה מאוד.',
+          '2': 'רמת הביטחון שלך נמוכה.',
+          '3': 'רמת הביטחון שלך בינונית.',
+          '4': 'רמת הביטחון שלך גבוהה.',
+          '5': 'רמת הביטחון שלך גבוהה מאוד.',
+        }[formData.confidence_level] || '';
+        
+        // Generate a personalized summary
+        const summary = `
+# סיכום הכנה למשחק נגד ${formData.opponent}
+
+## תחושות ומצב רוח
+${emotionsText}
+${confidenceText}
+
+## מטרות למשחק
+${formData.personal_goals}
+
+## תוכנית הכנה
+עליך להתמקד בהכנה מנטלית הכוללת ${formData.mental_preparation}.
+
+## המלצות לשיפור הביצועים
+1. הקפד על שינה טובה לפני המשחק
+2. בצע תרגילי נשימה ודמיון מודרך
+3. חזור על ההצלחות האחרונות שלך במשחקים קודמים
+4. התמקד במטרות הספציפיות שהצבת לעצמך
+
+## טיפים נוספים
+התייחס לחששות שציינת: "${formData.concerns || 'לא צוינו חששות ספציפיים'}" - נסה להפוך אותם לאתגרים חיוביים ומוטיבציה.
+
+בהצלחה במשחק!
+        `;
+        
+        setAiSummary(summary);
+        setIsAiSummaryOpen(true);
+        setIsGeneratingSummary(false);
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error generating AI summary:', error);
+      toast.error('שגיאה ביצירת סיכום AI');
+      setIsGeneratingSummary(false);
+    }
   };
 
   if (loading) {
@@ -267,6 +374,89 @@ const GamePreparation = () => {
                       />
                     </div>
 
+                    {/* Emotions Selection */}
+                    <div>
+                      <FormLabel>תחושות לקראת המשחק</FormLabel>
+                      <FormDescription className="mb-2">
+                        בחר את התחושות שמתארות את מצבך לקראת המשחק
+                      </FormDescription>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">תחושות חיוביות:</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {emotionGroups.positive.map((emotion) => (
+                              <Badge 
+                                key={emotion}
+                                variant={selectedEmotions.includes(emotion) ? "default" : "outline"}
+                                className="cursor-pointer"
+                                onClick={() => toggleEmotion(emotion)}
+                              >
+                                {emotion}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">תחושות שליליות:</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {emotionGroups.negative.map((emotion) => (
+                              <Badge 
+                                key={emotion}
+                                variant={selectedEmotions.includes(emotion) ? "destructive" : "outline"}
+                                className="cursor-pointer"
+                                onClick={() => toggleEmotion(emotion)}
+                              >
+                                {emotion}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">תחושות נייטרליות:</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {emotionGroups.neutral.map((emotion) => (
+                              <Badge 
+                                key={emotion}
+                                variant={selectedEmotions.includes(emotion) ? "secondary" : "outline"}
+                                className="cursor-pointer"
+                                onClick={() => toggleEmotion(emotion)}
+                              >
+                                {emotion}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="sleep_quality"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>איכות השינה שלך בימים האחרונים</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="בחר את איכות השינה" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="excellent">מצוינת</SelectItem>
+                              <SelectItem value="good">טובה</SelectItem>
+                              <SelectItem value="average">בינונית</SelectItem>
+                              <SelectItem value="poor">לא טובה</SelectItem>
+                              <SelectItem value="very_poor">גרועה</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     <FormField
                       control={form.control}
                       name="personal_goals"
@@ -301,6 +491,48 @@ const GamePreparation = () => {
                               {...field}
                             />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="nutrition_plan"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>תכנון תזונה לפני המשחק</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="מה התכנון התזונתי שלך לפני המשחק?"
+                              className="min-h-24"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            פרט את התכנון התזונתי שלך ב-24 השעות שלפני המשחק
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="pre_game_routine"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>שגרה לפני משחק</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="תאר את השגרה שלך בשעות שלפני המשחק"
+                              className="min-h-24"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            התייחס לפעולות ספציפיות שאתה מבצע כדי להתכונן (לדוגמה: האזנה למוזיקה, מתיחות, וכו')
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -384,7 +616,18 @@ const GamePreparation = () => {
                       )}
                     />
 
-                    <div className="flex justify-end">
+                    <div className="flex flex-col md:flex-row justify-end gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={generateAiSummary}
+                        disabled={isGeneratingSummary}
+                        className="flex items-center gap-2"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        {isGeneratingSummary ? 'מייצר סיכום...' : 'קבל סיכום AI'}
+                      </Button>
+                      
                       <Button
                         type="submit"
                         disabled={submitting}
@@ -430,6 +673,20 @@ const GamePreparation = () => {
                             <div className="space-y-2">
                               <p className="text-sm"><span className="font-medium">מיקום:</span> {form.location}</p>
                               <p className="text-sm"><span className="font-medium">רמת ביטחון:</span> {form.confidence_level}/5</p>
+                              
+                              {form.emotions && form.emotions.length > 0 && (
+                                <div className="mt-1">
+                                  <p className="text-sm font-medium">תחושות:</p>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {form.emotions.map(emotion => (
+                                      <Badge key={emotion} variant="secondary" className="text-xs">
+                                        {emotion}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
                               <div className="space-y-1 mt-2">
                                 <p className="text-sm font-medium">מטרות אישיות:</p>
                                 <p className="text-sm whitespace-pre-line">{form.personal_goals}</p>
@@ -485,6 +742,26 @@ const GamePreparation = () => {
                         </div>
                       </div>
 
+                      {selectedForm.emotions && selectedForm.emotions.length > 0 && (
+                        <div>
+                          <h3 className="font-medium mb-1">תחושות לקראת המשחק</h3>
+                          <div className="flex flex-wrap gap-1">
+                            {selectedForm.emotions.map(emotion => (
+                              <Badge 
+                                key={emotion} 
+                                variant={
+                                  emotionGroups.positive.includes(emotion) ? "default" :
+                                  emotionGroups.negative.includes(emotion) ? "destructive" : 
+                                  "secondary"
+                                }
+                              >
+                                {emotion}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div>
                         <h3 className="font-medium mb-1">מטרות אישיות</h3>
                         <p className="whitespace-pre-line">{selectedForm.personal_goals}</p>
@@ -494,6 +771,20 @@ const GamePreparation = () => {
                         <div>
                           <h3 className="font-medium mb-1">מטרות קבוצתיות</h3>
                           <p className="whitespace-pre-line">{selectedForm.team_goals}</p>
+                        </div>
+                      )}
+
+                      {selectedForm.pre_game_routine && (
+                        <div>
+                          <h3 className="font-medium mb-1">שגרה לפני משחק</h3>
+                          <p className="whitespace-pre-line">{selectedForm.pre_game_routine}</p>
+                        </div>
+                      )}
+
+                      {selectedForm.nutrition_plan && (
+                        <div>
+                          <h3 className="font-medium mb-1">תכנון תזונה</h3>
+                          <p className="whitespace-pre-line">{selectedForm.nutrition_plan}</p>
                         </div>
                       )}
 
@@ -539,6 +830,17 @@ const GamePreparation = () => {
                           <p className="whitespace-pre-line">{selectedForm.additional_notes}</p>
                         </div>
                       )}
+                      
+                      <div className="flex justify-center mt-4">
+                        <Button 
+                          variant="outline" 
+                          className="flex items-center gap-2"
+                          onClick={generateAiSummary}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          קבל סיכום AI למשחק זה
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -547,6 +849,36 @@ const GamePreparation = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* AI Summary Dialog */}
+      <Dialog open={isAiSummaryOpen} onOpenChange={setIsAiSummaryOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>סיכום AI - הכנה למשחק</DialogTitle>
+            <DialogDescription>
+              סיכום אישי המבוסס על המידע שהזנת
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="bg-gray-50 p-4 rounded-md">
+            <div 
+              className="prose max-w-none" 
+              dangerouslySetInnerHTML={{ 
+                __html: aiSummary.replace(/\n/g, '<br>').replace(/^# (.*)/gm, '<h2>$1</h2>').replace(/^## (.*)/gm, '<h3>$1</h3>') 
+              }}
+            />
+          </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAiSummaryOpen(false)}
+            >
+              סגור
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
