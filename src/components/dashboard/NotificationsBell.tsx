@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   Popover, 
@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/popover";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface Notification {
   id: string;
@@ -31,6 +32,7 @@ export function NotificationsBell() {
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const fetchNotifications = async () => {
     try {
@@ -138,8 +140,49 @@ export function NotificationsBell() {
       
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       setUnreadCount(0);
+      
+      toast({
+        title: "כל ההתראות סומנו כנקראו",
+        description: "הפעולה בוצעה בהצלחה",
+      });
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
+    }
+  };
+
+  const deleteNotification = async (notificationId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // מניעת התפשטות האירוע לתדות המכיל
+    
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", notificationId);
+        
+      if (error) {
+        console.error("Error deleting notification:", error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה במחיקת התראה",
+          description: "אנא נסה שוב מאוחר יותר",
+        });
+        return;
+      }
+      
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      
+      // עדכון ספירת ההתראות שלא נקראו אם ההתראה שנמחקה לא נקראה
+      const wasUnread = notifications.find(n => n.id === notificationId)?.is_read === false;
+      if (wasUnread) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+      
+      toast({
+        title: "ההתראה נמחקה",
+        description: "ההתראה נמחקה בהצלחה",
+      });
+    } catch (error) {
+      console.error("Error deleting notification:", error);
     }
   };
 
@@ -171,9 +214,10 @@ export function NotificationsBell() {
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-xs h-7"
+              className="text-xs h-7 flex items-center gap-1"
               onClick={markAllAsRead}
             >
+              <Check size={12} />
               סמן הכל כנקרא
             </Button>
           )}
@@ -187,20 +231,45 @@ export function NotificationsBell() {
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-3 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                className={`p-3 border-b hover:bg-gray-50 transition-colors ${
                   !notification.is_read ? "bg-blue-50" : ""
                 }`}
-                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex justify-between items-start">
-                  <span className="text-sm">{notification.message}</span>
-                  {!notification.is_read && (
-                    <span className="h-2 w-2 bg-blue-500 rounded-full flex-shrink-0"></span>
-                  )}
+                  <span 
+                    className="text-sm cursor-pointer"
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    {notification.message}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {!notification.is_read && (
+                      <span className="h-2 w-2 bg-blue-500 rounded-full flex-shrink-0"></span>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-gray-500 hover:text-red-500"
+                      onClick={(e) => deleteNotification(notification.id, e)}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
                   {new Date(notification.timestamp).toLocaleString('he-IL')}
                 </div>
+                {!notification.is_read && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 h-6 text-xs w-full"
+                    onClick={() => markAsRead(notification.id)}
+                  >
+                    <Check size={12} className="mr-1" />
+                    סמן כנקרא
+                  </Button>
+                )}
               </div>
             ))
           )}
