@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -220,7 +219,7 @@ const DashboardCoach = () => {
       <div className="flex flex-wrap gap-4 mb-8">
         <Button 
           className="bg-green-500 hover:bg-green-600 flex items-center gap-2"
-          onClick={() => navigate("/new-player-form")}
+          onClick={() => navigate("/add-player")}
         >
           <UserPlus className="h-5 w-5" />
           הוסף משתתף חדש
