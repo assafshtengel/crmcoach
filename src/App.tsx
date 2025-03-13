@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "./components/theme-provider"
@@ -21,6 +20,7 @@ import PlayerMeetings from './pages/player/PlayerMeetings';
 import DailyMentalState from './pages/player/DailyMentalState';
 import MentalStateHistory from './pages/player/MentalStateHistory';
 import TrainingForecasts from './pages/player/TrainingForecasts';
+import PlayerVideos from './pages/player/PlayerVideos';
 
 const Sessions = () => <div>Sessions Page</div>;
 const SessionDetails = () => <div>Session Details Page</div>;
