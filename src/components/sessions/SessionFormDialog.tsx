@@ -292,7 +292,7 @@ export function SessionFormDialog({
                           onSelect={field.onChange}
                           disabled={(date) => date < new Date()}
                           initialFocus
-                          className="p-3 pointer-events-auto"
+                          className="p-3 pointer-events-auto bg-white"
                         />
                       </PopoverContent>
                     </Popover>
