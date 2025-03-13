@@ -18,6 +18,9 @@ import PlayerAuth from './pages/PlayerAuth';
 import PlayerTrainingSummary from './pages/player/PlayerTrainingSummary';
 import PlayerGameSummary from './pages/player/PlayerGameSummary';
 import PlayerMeetings from './pages/player/PlayerMeetings';
+import DailyMentalState from './pages/player/DailyMentalState';
+import MentalStateHistory from './pages/player/MentalStateHistory';
+import TrainingForecasts from './pages/player/TrainingForecasts';
 
 const Sessions = () => <div>Sessions Page</div>;
 const SessionDetails = () => <div>Session Details Page</div>;
@@ -28,8 +31,6 @@ const PlayerDashboard = () => <div>Player Dashboard Page</div>;
 const CoachProfile = () => <div>Coach Profile Page</div>;
 const PlayerRegistration = () => <div>Player Registration Page</div>;
 const RegistrationLinks = () => <div>Registration Links Page</div>;
-const DailyMentalState = () => <div>Daily Mental State Page</div>;
-const MentalStateHistory = () => <div>Mental State History Page</div>;
 const PlayerVideos = () => <div>Player Videos Page</div>;
 const PlayerGoals = () => <div>Player Goals Page</div>;
 const Contract = () => <div>Contract Page</div>;
@@ -78,6 +79,7 @@ const App = () => {
               <Route path="/player/chat" element={<ChatPage />} />
               <Route path="/player/contract" element={<Contract />} />
               <Route path="/player-file/:playerId" element={<PlayerFile />} />
+              <Route path="/player/training-forecasts" element={<TrainingForecasts />} />
               
               <Route path="/sessions" element={<Sessions />} />
               <Route path="/sessions/:sessionId" element={<SessionDetails />} />

@@ -1,35 +1,37 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Calendar, Activity, LineChart } from "lucide-react";
-import { format } from "date-fns";
-import { MentalState, MentalStateChartData } from "@/types/mentalState";
-import { 
-  LineChart as RechartsLineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
-} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/lib/supabase";
+import { ArrowLeft } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { format, parseISO, subDays } from "date-fns";
+import { he } from "date-fns/locale";
+import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function MentalStateHistory() {
-  const [mentalStates, setMentalStates] = useState<MentalState[]>([]);
-  const [chartData, setChartData] = useState<MentalStateChartData[]>([]);
-  const [loading, setLoading] = useState(true);
+interface MentalState {
+  id: string;
+  player_id: string;
+  feeling_score: number;
+  motivation_level: number;
+  mental_fatigue_level: number;
+  has_concerns: boolean;
+  concerns_details?: string;
+  improvement_focus?: string;
+  created_at: string;
+}
+
+const MentalStateHistory = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [mentalStates, setMentalStates] = useState<MentalState[]>([]);
+  const [timeRange, setTimeRange] = useState<"week" | "month" | "year">("week");
 
   useEffect(() => {
-    const loadMentalStates = async () => {
+    const fetchMentalStates = async () => {
       try {
-        setLoading(true);
         const playerSessionStr = localStorage.getItem('playerSession');
         
         if (!playerSessionStr) {
@@ -38,187 +40,263 @@ export default function MentalStateHistory() {
         }
         
         const playerSession = JSON.parse(playerSessionStr);
+
+        // Get cutoff date based on selected time range
+        let cutoffDate = new Date();
+        if (timeRange === "week") {
+          cutoffDate = subDays(new Date(), 7);
+        } else if (timeRange === "month") {
+          cutoffDate = subDays(new Date(), 30);
+        } else {
+          cutoffDate = subDays(new Date(), 365);
+        }
         
         const { data, error } = await supabase
           .from('player_mental_states')
           .select('*')
           .eq('player_id', playerSession.id)
-          .order('created_at', { ascending: false })
-          .limit(20);
-          
-        if (error) {
-          throw error;
-        }
+          .gte('created_at', cutoffDate.toISOString())
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
         
         setMentalStates(data || []);
-        
-        // Transform the data for the chart - we take the last 10 entries and reverse them for chronological display
-        if (data && data.length > 0) {
-          const chartEntries = [...data]
-            .sort((a, b) => new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime())
-            .slice(-10)
-            .map(entry => ({
-              date: format(new Date(entry.created_at || ''), 'dd/MM'),
-              feeling: entry.feeling_score,
-              motivation: entry.motivation_level,
-              fatigue: entry.mental_fatigue_level
-            }));
-          
-          setChartData(chartEntries);
-        }
       } catch (error: any) {
         console.error('Error loading mental states:', error);
-        toast({
-          variant: "destructive",
-          title: "שגיאה בטעינת הנתונים",
-          description: error.message || "אירעה שגיאה בטעינת היסטוריית המצב המנטלי"
-        });
+        toast.error(error.message || "אירעה שגיאה בטעינת הנתונים");
       } finally {
         setLoading(false);
       }
     };
     
-    loadMentalStates();
-  }, [navigate, toast]);
+    fetchMentalStates();
+  }, [navigate, timeRange]);
 
-  const getScoreColor = (score: number): string => {
-    if (score >= 8) return 'text-green-600';
-    if (score >= 5) return 'text-yellow-600';
-    return 'text-red-600';
+  const formatChartData = () => {
+    return mentalStates.map((state) => ({
+      date: format(parseISO(state.created_at), 'dd/MM', { locale: he }),
+      הרגשה: state.feeling_score,
+      מוטיבציה: state.motivation_level,
+      "עייפות מנטלית": state.mental_fatigue_level,
+    }));
   };
 
-  const getFeelingEmoji = (score: number) => {
-    if (score <= 3) return "😟";
-    if (score <= 6) return "😐";
-    return "😄";
+  // Get latest entries for each metric
+  const getLatestAverages = () => {
+    if (mentalStates.length === 0) return { feeling: 0, motivation: 0, fatigue: 0 };
+    
+    const recentStates = mentalStates.slice(-7); // Last 7 entries
+    
+    const feeling = recentStates.reduce((sum, state) => sum + state.feeling_score, 0) / recentStates.length;
+    const motivation = recentStates.reduce((sum, state) => sum + state.motivation_level, 0) / recentStates.length;
+    const fatigue = recentStates.reduce((sum, state) => sum + state.mental_fatigue_level, 0) / recentStates.length;
+    
+    return { feeling, motivation, fatigue };
   };
 
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd/MM/yyyy HH:mm');
+  const averages = getLatestAverages();
+
+  const renderTopConcerns = () => {
+    // Filter states with concerns
+    const statesWithConcerns = mentalStates.filter(
+      (state) => state.has_concerns && state.concerns_details && state.concerns_details.trim() !== ""
+    );
+    
+    if (statesWithConcerns.length === 0) {
+      return <p className="text-gray-500 text-center py-4">אין חששות שתועדו לאחרונה</p>;
+    }
+    
+    // Sort by most recent first
+    const sortedConcerns = [...statesWithConcerns].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    
+    // Take the 3 most recent
+    return sortedConcerns.slice(0, 3).map((state) => (
+      <div key={state.id} className="p-4 border-b last:border-0">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm text-gray-500">
+            {format(parseISO(state.created_at), 'dd/MM/yyyy', { locale: he })}
+          </span>
+        </div>
+        <p className="text-sm">{state.concerns_details}</p>
+      </div>
+    ));
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <Button variant="outline" size="icon" onClick={() => navigate('/player/profile')}>
-            <ArrowRight className="h-4 w-4" />
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center mb-6">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate('/player/daily-mental-state')}
+            className="ml-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-bold text-center">
-            היסטוריית מצב מנטלי
-          </h1>
-          <Button variant="default" onClick={() => navigate('/player/daily-mental-state')}>
-            טופס חדש
-          </Button>
+          <h1 className="text-2xl font-bold">היסטוריית מצב מנטלי</h1>
         </div>
 
-        {mentalStates.length === 0 ? (
-          <Card className="shadow-lg">
-            <CardContent className="pt-6 text-center">
-              <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-xl font-semibold mb-2">אין נתונים להצגה</h3>
-              <p className="text-muted-foreground mb-4">
-                עדיין לא מילאת טפסי מצב מנטלי יומי
-              </p>
-              <Button onClick={() => navigate('/player/daily-mental-state')}>
-                מלא טופס חדש
-              </Button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">ציון הרגשה ממוצע</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <span className="text-3xl font-bold">{averages.feeling.toFixed(1)}</span>
+                <span className="text-sm text-gray-500">/10</span>
+              </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-6">
-            {/* Chart visualization of mental state trends */}
-            {chartData.length > 1 && (
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <LineChart className="h-5 w-5" />
-                    מגמות מצב מנטלי לאורך זמן
-                  </CardTitle>
-                  <CardDescription>
-                    השוואת הרגשה, מוטיבציה ועייפות מנטלית ב-10 הדיווחים האחרונים
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsLineChart data={chartData} margin={{ top: 5, right: 20, bottom: 20, left: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis domain={[0, 10]} />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="feeling" stroke="#22c55e" name="הרגשה" activeDot={{ r: 8 }} />
-                        <Line type="monotone" dataKey="motivation" stroke="#3b82f6" name="מוטיבציה" />
-                        <Line type="monotone" dataKey="fatigue" stroke="#f43f5e" name="עייפות מנטלית" />
-                      </RechartsLineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+          
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">מוטיבציה ממוצעת</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <span className="text-3xl font-bold">{averages.motivation.toFixed(1)}</span>
+                <span className="text-sm text-gray-500">/10</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">עייפות מנטלית ממוצעת</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <span className="text-3xl font-bold">{averages.fatigue.toFixed(1)}</span>
+                <span className="text-sm text-gray-500">/10</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-            {/* Individual mental state entries */}
-            <div className="space-y-4">
-              {mentalStates.map((state) => (
-                <Card key={state.id} className="shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between">
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <Calendar className="h-5 w-5" />
-                        {formatDate(state.created_at || '')}
-                      </CardTitle>
-                      <div className="flex items-center text-2xl">
-                        {getFeelingEmoji(state.feeling_score)}
+        <Card className="shadow-md mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex justify-between items-center">
+              <span>מגמות לאורך זמן</span>
+              <div className="flex bg-gray-100 rounded-lg overflow-hidden">
+                <Button 
+                  variant={timeRange === "week" ? "default" : "ghost"} 
+                  onClick={() => setTimeRange("week")}
+                  className="rounded-none px-3 py-1 h-auto text-sm"
+                >
+                  שבוע
+                </Button>
+                <Button 
+                  variant={timeRange === "month" ? "default" : "ghost"} 
+                  onClick={() => setTimeRange("month")}
+                  className="rounded-none px-3 py-1 h-auto text-sm"
+                >
+                  חודש
+                </Button>
+                <Button 
+                  variant={timeRange === "year" ? "default" : "ghost"} 
+                  onClick={() => setTimeRange("year")}
+                  className="rounded-none px-3 py-1 h-auto text-sm"
+                >
+                  שנה
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {mentalStates.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-gray-500 mb-4">אין עדיין מספיק נתונים להצגת גרף</p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/player/daily-mental-state')}
+                >
+                  מלא את השאלון היומי
+                </Button>
+              </div>
+            ) : (
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={formatChartData()}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis domain={[0, 10]} />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="הרגשה" stroke="#8884d8" activeDot={{ r: 8 }} />
+                    <Line type="monotone" dataKey="מוטיבציה" stroke="#82ca9d" />
+                    <Line type="monotone" dataKey="עייפות מנטלית" stroke="#ffc658" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Tabs defaultValue="concerns" className="w-full">
+          <TabsList className="w-full mb-4">
+            <TabsTrigger value="concerns" className="flex-1">חששות ודאגות אחרונות</TabsTrigger>
+            <TabsTrigger value="focus" className="flex-1">תחומי התמקדות</TabsTrigger>
+          </TabsList>
+          <TabsContent value="concerns">
+            <Card className="shadow-md">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">חששות ודאגות אחרונות</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {renderTopConcerns()}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="focus">
+            <Card className="shadow-md">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">תחומי התמקדות לשיפור</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {mentalStates
+                  .filter(state => state.improvement_focus && state.improvement_focus.trim() !== "")
+                  .slice(-3)
+                  .reverse()
+                  .map(state => (
+                    <div key={state.id} className="p-4 border-b last:border-0">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-500">
+                          {format(parseISO(state.created_at), 'dd/MM/yyyy', { locale: he })}
+                        </span>
                       </div>
+                      <p className="text-sm">{state.improvement_focus}</p>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span>הרגשה כללית:</span>
-                          <span className={getScoreColor(state.feeling_score)}>{state.feeling_score}/10</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>מוטיבציה:</span>
-                          <span className={getScoreColor(state.motivation_level)}>{state.motivation_level}/10</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>עייפות מנטלית:</span>
-                          <span className={getScoreColor(10 - state.mental_fatigue_level)}>{state.mental_fatigue_level}/10</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        {state.improvement_focus && (
-                          <div>
-                            <span className="font-semibold block">מה רציתי לשפר:</span>
-                            <p className="text-sm">{state.improvement_focus}</p>
-                          </div>
-                        )}
-                        {state.has_concerns && state.concerns_details && (
-                          <div>
-                            <span className="font-semibold block">דברים שהדאיגו אותי:</span>
-                            <p className="text-sm">{state.concerns_details}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
+                  ))}
+                {mentalStates.filter(state => state.improvement_focus && state.improvement_focus.trim() !== "").length === 0 && (
+                  <p className="text-gray-500 text-center py-4">אין תחומי התמקדות שתועדו לאחרונה</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
-}
+};
+
+export default MentalStateHistory;
