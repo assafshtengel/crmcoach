@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Code, ImageIcon, MessageSquare, Plus, Settings, Users, BarChart } from "lucide-react";
+import { CalendarIcon, Code, ImageIcon, MessageSquare, Plus, Settings, Users, BarChart, FileText, BookOpen, Target, Bell, PieChart, Trophy, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +33,11 @@ const DashboardCoach = () => {
   const [tools, setTools] = useState<Tool[]>([]);
   const [userName, setUserName] = useState<string>("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    sentVideos: 0,
+    completedMeetings: 3,
+    activePlayers: 5
+  });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -50,6 +55,7 @@ const DashboardCoach = () => {
     fetchUser();
   }, []);
 
+  // Fetch tools
   const { data: toolsData, isLoading, isError } = useQuery({
     queryKey: ["tools"],
     queryFn: () => getTools(),
@@ -61,6 +67,7 @@ const DashboardCoach = () => {
     }
   }, [toolsData]);
 
+  // Mutations for tools
   const createToolMutation = useMutation({
     mutationFn: (toolData: Omit<Tool, 'id' | 'created_at'>) => createTool(toolData),
     onSuccess: () => {
@@ -100,6 +107,7 @@ const DashboardCoach = () => {
     },
   });
 
+  // Form handling functions
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
   };
@@ -139,141 +147,239 @@ const DashboardCoach = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6 min-h-screen overflow-y-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">
-          שלום {userName} 👋
-        </h1>
-        <p className="text-gray-500">
-          ברוכים הבאים ללוח הבקרה שלך. כאן תוכלו לנהל את הכלים וההגדרות שלך.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-        <div 
-          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB] cursor-pointer" 
-          onClick={() => navigate("/tool-management")}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center mb-4">
-              <Code className="text-[#3498DB] mr-2 w-5 h-5" />
-              <h3 className="font-semibold text-lg text-gray-700">
-                ניהול כלים מנטליים
-              </h3>
+    <div className="container mx-auto py-4 px-4 md:px-6 min-h-screen overflow-y-auto">
+      {/* Header */}
+      <div className="mb-8 bg-gray-800 rounded-lg p-4 shadow-md text-white flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="bg-red-500 p-2 rounded-full">
+            <Bell className="h-5 w-5" />
+          </div>
+          <div className="bg-blue-500 p-2 rounded-full">
+            <FileText className="h-5 w-5" />
+          </div>
+          <a href="/chat" className="relative">
+            <div className="bg-blue-500 p-2 rounded-full">
+              <MessageSquare className="h-5 w-5" />
             </div>
-            <p className="text-gray-600">
-              הוסף, ערוך או הסר כלי אימון מנטליים הזמינים למשתמשים שלך.
-            </p>
-          </CardContent>
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+              2
+            </span>
+          </a>
         </div>
-
-        <div 
-          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F] cursor-pointer" 
-          onClick={() => navigate("/training-videos")}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center mb-4">
-              <ImageIcon className="text-[#F1C40F] mr-2 w-5 h-5" />
-              <h3 className="font-semibold text-lg text-gray-700">
-                ניהול סרטוני וידאו
-              </h3>
-            </div>
-            <p className="text-gray-600">
-              נהל את סרטוני הוידאו הזמינים למשתמשים שלך.
-            </p>
-          </CardContent>
-        </div>
-
-        <div 
-          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#2ECC71] cursor-pointer" 
-          onClick={() => navigate("/settings")}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center mb-4">
-              <Settings className="text-[#2ECC71] mr-2 w-5 h-5" />
-              <h3 className="font-semibold text-lg text-gray-700">
-                הגדרות
-              </h3>
-            </div>
-            <p className="text-gray-600">
-              עדכן את הגדרות הפרופיל שלך ונהל את המינוי שלך.
-            </p>
-          </CardContent>
-        </div>
-
-        <div 
-          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#E74C3C] cursor-pointer" 
-          onClick={() => navigate("/players-list")}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center mb-4">
-              <Users className="text-[#E74C3C] mr-2 w-5 h-5" />
-              <h3 className="font-semibold text-lg text-gray-700">
-                רשימת שחקנים
-              </h3>
-            </div>
-            <p className="text-gray-600">
-              צפה וערוך את רשימת השחקנים שלך, וגש לתיקי שחקנים.
-            </p>
-          </CardContent>
-        </div>
-
-        <div 
-          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9B59B6] cursor-pointer" 
-          onClick={() => navigate("/sessions")}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center mb-4">
-              <CalendarIcon className="text-[#9B59B6] mr-2 w-5 h-5" />
-              <h3 className="font-semibold text-lg text-gray-700">
-                פגישות
-              </h3>
-            </div>
-            <p className="text-gray-600">
-              תזמן וערוך את הפגישות שלך עם שחקנים.
-            </p>
-          </CardContent>
-        </div>
-
-        <div 
-          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#1ABC9C] cursor-pointer" 
-          onClick={() => navigate("/chat")}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center mb-4">
-              <MessageSquare className="text-[#1ABC9C] mr-2 w-5 h-5" />
-              <h3 className="font-semibold text-lg text-gray-700">
-                הודעות
-              </h3>
-            </div>
-            <p className="text-gray-600">
-              שלח וקבל הודעות משחקנים ועמיתים.
-            </p>
-          </CardContent>
-        </div>
-
-        <div 
-          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#34495E] cursor-pointer" 
-          onClick={() => navigate("/goals")}
-        >
-          <CardContent className="p-6">
-            <div className="flex items-center mb-4">
-              <BarChart className="text-[#34495E] mr-2 w-5 h-5" />
-              <h3 className="font-semibold text-lg text-gray-700">
-                מטרות
-              </h3>
-            </div>
-            <p className="text-gray-600">
-              הגדר וערוך מטרות לשחקנים שלך ועקוב אחר התקדמותם.
-            </p>
-          </CardContent>
+        <div className="flex items-center">
+          <h1 className="text-xl font-bold ml-2">ברוך הבא, {userName} 👋</h1>
+          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+            <span className="text-gray-700 font-bold">
+              {userName.charAt(0).toUpperCase()}
+            </span>
+          </div>
         </div>
       </div>
 
+      {/* Welcome Section */}
+      <h2 className="text-lg font-semibold text-gray-700 mb-4">שליחת הודעה למתאמנים</h2>
+      
+      <div className="bg-blue-50 p-4 rounded-md mb-8 flex items-center justify-between">
+        <Button 
+          className="bg-primary text-white"
+          onClick={() => navigate("/send-message")}
+        >
+          שליחת הודעה למספר המתאמן
+        </Button>
+        <div className="flex items-center">
+          <ClipboardList className="h-5 w-5 text-blue-500 mr-2" />
+          <p className="text-blue-700 font-medium">שליחת הודעה למתאמנים</p>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card className="border-l-4 border-yellow-400">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-right text-gray-600">סרטונים שנצפו</p>
+                <p className="text-4xl font-bold">{stats.sentVideos}</p>
+                <p className="text-sm text-gray-500">משתתפים צפו בסרטונים</p>
+              </div>
+              <div className="bg-yellow-100 p-3 rounded-full">
+                <ImageIcon className="h-6 w-6 text-yellow-500" />
+              </div>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              className="w-full mt-4 border-yellow-400 text-yellow-600"
+              onClick={() => navigate("/add-video")}
+            >
+              הוסף סרטון חדש
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-l-4 border-blue-400">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-right text-gray-600">מפגשים מתוזמנים</p>
+                <p className="text-4xl font-bold">{stats.completedMeetings}</p>
+                <p className="text-sm text-gray-500">מפגשים בשבוע הנוכחי (מתוך 10 מפגשים)</p>
+              </div>
+              <div className="bg-blue-100 p-3 rounded-full">
+                <CalendarIcon className="h-6 w-6 text-blue-500" />
+              </div>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              className="w-full mt-4 border-blue-400 text-blue-600"
+              onClick={() => navigate("/view-meetings")}
+            >
+              צפה בפירוט המפגשים המתוזמנים
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card className="border-l-4 border-green-400">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-right text-gray-600">משתתפים פעילים</p>
+                <p className="text-4xl font-bold">{stats.activePlayers}</p>
+                <p className="text-sm text-gray-500">משתתפים במסלול</p>
+              </div>
+              <div className="bg-green-100 p-3 rounded-full">
+                <Users className="h-6 w-6 text-green-500" />
+              </div>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              className="w-full mt-4 border-green-400 text-green-600"
+              onClick={() => navigate("/view-players-progress")}
+            >
+              צפה בהתקדמות המשתתפים
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Action Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-l-4 border-purple-400">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="bg-purple-100 p-3 rounded-full">
+                <FileText className="h-6 w-6 text-purple-500" />
+              </div>
+              <h3 className="font-semibold text-lg text-gray-700">סיכומי מפגשים</h3>
+            </div>
+            <p className="text-gray-600 mb-6 text-right">צפה בסיכומי 10 המפגשים האחרונים וערוך אותם</p>
+            <Button 
+              className="w-full bg-purple-500 hover:bg-purple-600"
+              onClick={() => navigate("/meeting-summaries")}
+            >
+              צפה בסיכומי מפגשים
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-red-400">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="bg-red-100 p-3 rounded-full">
+                <BookOpen className="h-6 w-6 text-red-500" />
+              </div>
+              <h3 className="font-semibold text-lg text-gray-700">דוחות וסטטיסטיקה</h3>
+            </div>
+            <p className="text-gray-600 mb-6 text-right">צפה בדוחות על התקדמות המשתתפים וביצועיהם</p>
+            <Button 
+              className="w-full bg-red-500 hover:bg-red-600"
+              onClick={() => navigate("/statistics")}
+            >
+              צפה בדוחות
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-green-400">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="bg-green-100 p-3 rounded-full">
+                <Target className="h-6 w-6 text-green-500" />
+              </div>
+              <h3 className="font-semibold text-lg text-gray-700">הגדרת יעדים</h3>
+            </div>
+            <p className="text-gray-600 mb-6 text-right">הגדר יעדים אישיים למשתתפים ועקוב אחר התקדמותם</p>
+            <Button 
+              className="w-full bg-green-500 hover:bg-green-600"
+              onClick={() => navigate("/goals")}
+            >
+              הגדר יעדים חדשים
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-blue-400">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="bg-blue-100 p-3 rounded-full">
+                <PieChart className="h-6 w-6 text-blue-500" />
+              </div>
+              <h3 className="font-semibold text-lg text-gray-700">הספרייה המנטלית</h3>
+            </div>
+            <p className="text-gray-600 mb-6 text-right">נהל ושתף את תכני הספרייה המנטלית עם המשתתפים</p>
+            <Button 
+              className="w-full bg-blue-500 hover:bg-blue-600"
+              onClick={() => navigate("/mental-library")}
+            >
+              צפה בספרייה
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-orange-400">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="bg-orange-100 p-3 rounded-full">
+                <Trophy className="h-6 w-6 text-orange-500" />
+              </div>
+              <h3 className="font-semibold text-lg text-gray-700">הישגים ושיפורים</h3>
+            </div>
+            <p className="text-gray-600 mb-6 text-right">צפה בהישגים של המשתתפים ועקוב אחר שיפורם</p>
+            <Button 
+              className="w-full bg-orange-500 hover:bg-orange-600"
+              onClick={() => navigate("/achievements")}
+            >
+              צפה בהישגים
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-purple-400">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="bg-purple-100 p-3 rounded-full">
+                <ClipboardList className="h-6 w-6 text-purple-500" />
+              </div>
+              <h3 className="font-semibold text-lg text-gray-700">סיכומי משחק</h3>
+            </div>
+            <p className="text-gray-600 mb-6 text-right">צפה בסיכומי משחקים וניתוח ביצועים עבור כל משתתף</p>
+            <Button 
+              className="w-full bg-purple-500 hover:bg-purple-600"
+              onClick={() => navigate("/game-summaries")}
+            >
+              צפה בסיכומי משחק
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Mental Tools Section */}
       <section className="mt-12">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">
-            כלים מנטליים שלך
+            כלים מנטליים
           </h2>
           <Button onClick={handleOpenDialog}>
             <Plus className="w-4 h-4 mr-2" />
@@ -340,6 +446,7 @@ const DashboardCoach = () => {
         )}
       </section>
 
+      {/* Add Tool Dialog */}
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
