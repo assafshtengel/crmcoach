@@ -193,9 +193,7 @@ const PlayersList = () => {
   };
 
   const viewAsPlayer = (playerId: string) => {
-    toast('צפייה בתצוגת שחקן תהיה זמינה בקרוב', {
-      description: 'פיתוח תכונה זו בתהליך'
-    });
+    navigate(`/player-profile/${playerId}`);
   };
 
   const updateContactStatus = async (playerId: string, newStatus: 'contacted' | 'pending' | 'in_progress' | 'completed') => {
