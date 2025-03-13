@@ -220,7 +220,7 @@ const DashboardCoach = () => {
       <div className="flex flex-wrap gap-4 mb-8">
         <Button 
           className="bg-green-500 hover:bg-green-600 flex items-center gap-2"
-          onClick={() => navigate("/player-form")}
+          onClick={() => navigate("/new-player-form")}
         >
           <UserPlus className="h-5 w-5" />
           הוסף משתתף חדש
