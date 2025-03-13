@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Code, ImageIcon, MessageSquare, Plus, Settings } from "lucide-react";
+import { CalendarIcon, Code, ImageIcon, MessageSquare, Plus, Settings, Users, BarChart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -169,7 +169,7 @@ const DashboardCoach = () => {
 
         <div 
           className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F] cursor-pointer" 
-          onClick={() => navigate("/videos-management")}
+          onClick={() => navigate("/training-videos")}
         >
           <CardContent className="p-6">
             <div className="flex items-center mb-4">
@@ -197,6 +197,74 @@ const DashboardCoach = () => {
             </div>
             <p className="text-gray-600">
               עדכן את הגדרות הפרופיל שלך ונהל את המינוי שלך.
+            </p>
+          </CardContent>
+        </div>
+
+        <div 
+          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#E74C3C] cursor-pointer" 
+          onClick={() => navigate("/players-list")}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center mb-4">
+              <Users className="text-[#E74C3C] mr-2 w-5 h-5" />
+              <h3 className="font-semibold text-lg text-gray-700">
+                רשימת שחקנים
+              </h3>
+            </div>
+            <p className="text-gray-600">
+              צפה וערוך את רשימת השחקנים שלך, וגש לתיקי שחקנים.
+            </p>
+          </CardContent>
+        </div>
+
+        <div 
+          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9B59B6] cursor-pointer" 
+          onClick={() => navigate("/sessions")}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center mb-4">
+              <CalendarIcon className="text-[#9B59B6] mr-2 w-5 h-5" />
+              <h3 className="font-semibold text-lg text-gray-700">
+                פגישות
+              </h3>
+            </div>
+            <p className="text-gray-600">
+              תזמן וערוך את הפגישות שלך עם שחקנים.
+            </p>
+          </CardContent>
+        </div>
+
+        <div 
+          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#1ABC9C] cursor-pointer" 
+          onClick={() => navigate("/chat")}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center mb-4">
+              <MessageSquare className="text-[#1ABC9C] mr-2 w-5 h-5" />
+              <h3 className="font-semibold text-lg text-gray-700">
+                הודעות
+              </h3>
+            </div>
+            <p className="text-gray-600">
+              שלח וקבל הודעות משחקנים ועמיתים.
+            </p>
+          </CardContent>
+        </div>
+
+        <div 
+          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#34495E] cursor-pointer" 
+          onClick={() => navigate("/goals")}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center mb-4">
+              <BarChart className="text-[#34495E] mr-2 w-5 h-5" />
+              <h3 className="font-semibold text-lg text-gray-700">
+                מטרות
+              </h3>
+            </div>
+            <p className="text-gray-600">
+              הגדר וערוך מטרות לשחקנים שלך ועקוב אחר התקדמותם.
             </p>
           </CardContent>
         </div>
