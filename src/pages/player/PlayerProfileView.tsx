@@ -1,19 +1,19 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, User, Calendar, PenTool, Video, Activity, FileText, Notebook, Brain, Folder, MessageSquare } from "lucide-react";
-import { toast } from "sonner";
+import { LogOut, User, Calendar, PenTool, Video, Activity, FileText, Notebook, Brain } from "lucide-react";
 
-const PlayerProfileView = () => {
+export default function PlayerProfileView() {
   const [playerData, setPlayerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [mentalStateToday, setMentalStateToday] = useState<boolean>(false);
-  const [upcomingMeetings, setUpcomingMeetings] = useState<any[]>([]);
-  const [pastMeetings, setPastMeetings] = useState<any[]>([]);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadPlayerData = async () => {
@@ -39,10 +39,9 @@ const PlayerProfileView = () => {
         
         setPlayerData(data);
 
-        // Get today's date in ISO format for all queries
+        // Check if player has submitted mental state form today
         const today = new Date().toISOString().split('T')[0];
         
-        // Check if player has submitted mental state form today
         const { data: mentalStateData, error: mentalStateError } = await supabase
           .from('player_mental_states')
           .select('id')
@@ -56,85 +55,24 @@ const PlayerProfileView = () => {
         } else {
           setMentalStateToday(mentalStateData && mentalStateData.length > 0);
         }
-
-        // Fetch upcoming meetings
-        const { data: upcomingData, error: upcomingError } = await supabase
-          .from('player_meetings')
-          .select(`
-            *,
-            coaches (
-              full_name
-            )
-          `)
-          .eq('player_id', playerSession.id)
-          .gte('meeting_date', today)
-          .order('meeting_date', { ascending: true })
-          .order('meeting_time', { ascending: true })
-          .limit(5);
-
-        if (upcomingError) throw upcomingError;
-        setUpcomingMeetings(upcomingData || []);
-
-        // Fetch past meetings with summaries
-        const { data: pastData, error: pastError } = await supabase
-          .from('player_meetings')
-          .select(`
-            *,
-            coaches (
-              full_name
-            ),
-            meeting_logs (
-              summary,
-              achievements,
-              next_steps
-            )
-          `)
-          .eq('player_id', playerSession.id)
-          .lt('meeting_date', today)
-          .order('meeting_date', { ascending: false })
-          .order('meeting_time', { ascending: false })
-          .limit(5);
-
-        if (pastError) throw pastError;
-        setPastMeetings(pastData || []);
-
       } catch (error: any) {
         console.error('Error loading player data:', error);
-        toast.error(error.message || "אירעה שגיאה בטעינת נתוני השחקן");
+        toast({
+          variant: "destructive",
+          title: "שגיאה בטעינת פרופיל",
+          description: error.message || "אירעה שגיאה בטעינת נתוני השחקן"
+        });
       } finally {
         setLoading(false);
       }
     };
     
     loadPlayerData();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleLogout = () => {
     localStorage.removeItem('playerSession');
     navigate('/player-auth');
-  };
-
-  const handleNavigation = (path: string) => {
-    // Update implemented pages list to include our player/goals page
-    const implementedPages = [
-      '/player/daily-mental-state', 
-      '/player/mental-state-history',
-      '/player/chat',
-      '/player/contract',
-      '/player/training-summary',
-      '/player/game-summary',
-      '/player/meetings',
-      '/player/goals',
-      '/player/game-preparation',
-    ];
-    
-    if (implementedPages.includes(path)) {
-      navigate(path);
-    } else if (path.startsWith('/player-file/') && playerData?.id) {
-      navigate(path);
-    } else {
-      toast.info("עמוד זה בפיתוח, יהיה זמין בקרוב");
-    }
   };
 
   if (loading) {
@@ -210,8 +148,7 @@ const PlayerProfileView = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {/* Daily Mental State */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -232,7 +169,7 @@ const PlayerProfileView = () => {
               <div className="flex gap-2 mt-4">
                 <Button 
                   className="flex-1" 
-                  onClick={() => handleNavigation('/player/daily-mental-state')}
+                  onClick={() => navigate('/player/daily-mental-state')}
                   variant={mentalStateToday ? "outline" : "default"}
                 >
                   {mentalStateToday ? 'מילוי שאלון חדש' : 'מלא שאלון'}
@@ -240,7 +177,7 @@ const PlayerProfileView = () => {
                 <Button 
                   className="flex-1" 
                   variant="outline"
-                  onClick={() => handleNavigation('/player/mental-state-history')}
+                  onClick={() => navigate('/player/mental-state-history')}
                 >
                   היסטוריה
                 </Button>
@@ -248,7 +185,6 @@ const PlayerProfileView = () => {
             </CardContent>
           </Card>
 
-          {/* Game Summary */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -260,16 +196,12 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => handleNavigation('/player/game-summary')}
-              >
+              <Button className="w-full" onClick={() => navigate('/player/game-summary')}>
                 צפה והוסף סיכומי משחק
               </Button>
             </CardContent>
           </Card>
 
-          {/* Training Summary */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -281,16 +213,12 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => handleNavigation('/player/training-summary')}
-              >
+              <Button className="w-full" onClick={() => navigate('/player/training-summary')}>
                 צפה והוסף סיכומי אימונים
               </Button>
             </CardContent>
           </Card>
 
-          {/* Videos */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -302,16 +230,12 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => handleNavigation('/player/videos')}
-              >
+              <Button className="w-full" onClick={() => navigate('/player/training-videos')}>
                 צפה בסרטונים
               </Button>
             </CardContent>
           </Card>
 
-          {/* Meetings */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -323,16 +247,12 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => handleNavigation('/player/meetings')}
-              >
+              <Button className="w-full" onClick={() => navigate('/player/meetings')}>
                 צפה ביומן
               </Button>
             </CardContent>
           </Card>
 
-          {/* Goals */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -344,16 +264,12 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => handleNavigation('/player/goals')}
-              >
+              <Button className="w-full" onClick={() => navigate('/player/goals')}>
                 צפה במטרות
               </Button>
             </CardContent>
           </Card>
 
-          {/* Game Preparation */}
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -365,184 +281,30 @@ const PlayerProfileView = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => handleNavigation('/player/game-preparation')}
-              >
+              <Button className="w-full" onClick={() => navigate('/player/game-preparation')}>
                 מלא טופס הכנה
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Contract */}
-          <Card className="shadow-md hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5" />
-                חוזה לחתימה
-              </CardTitle>
-              <CardDescription>
-                חוזה התקשרות עם המאמן
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => handleNavigation('/player/contract')}
-              >
-                צפה בחוזה
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Chat */}
-          <Card className="shadow-md hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MessageSquare className="h-5 w-5" />
-                צ'אט עם המאמן
-              </CardTitle>
-              <CardDescription>
-                תקשורת ישירה עם המאמן האישי
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => handleNavigation('/player/chat')}
-              >
-                פתח צ'אט
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Player File */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">תיק שחקן</CardTitle>
-              <CardDescription>כל המידע במקום אחד</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                צפו בתיק השחקן שלכם המכיל את כל המידע על פעילותכם, מטרות והתקדמות.
-              </p>
-              <Button 
-                className="w-full" 
-                variant="outline"
-                onClick={() => handleNavigation(`/player-file/${playerData?.id}`)}
-              >
-                <Folder className="mr-2 h-4 w-4" />
-                צפייה בתיק השחקן שלי
               </Button>
             </CardContent>
           </Card>
         </div>
 
+        {/* Additional tabs or sections can be added here */}
         <Tabs defaultValue="upcoming" className="mb-8">
           <TabsList className="w-full">
             <TabsTrigger value="upcoming" className="flex-1">פגישות קרובות</TabsTrigger>
             <TabsTrigger value="past" className="flex-1">פגישות קודמות</TabsTrigger>
           </TabsList>
-
           <TabsContent value="upcoming" className="mt-4">
             <Card>
               <CardContent className="pt-6">
-                {upcomingMeetings.length === 0 ? (
-                  <p className="text-center text-muted-foreground">אין לך פגישות קרובות</p>
-                ) : (
-                  <div className="space-y-4">
-                    {upcomingMeetings.map((meeting) => (
-                      <Card key={meeting.id} className="shadow-sm">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">
-                            {new Date(meeting.meeting_date).toLocaleDateString('he-IL')}
-                          </CardTitle>
-                          <CardDescription>
-                            {meeting.meeting_time.slice(0, 5)} - {meeting.meeting_type === 'training' ? 'אימון' : 'פגישה'}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            {meeting.location && (
-                              <p className="text-sm">
-                                <span className="font-medium">מיקום:</span> {meeting.location}
-                              </p>
-                            )}
-                            {meeting.coaches?.full_name && (
-                              <p className="text-sm">
-                                <span className="font-medium">מאמן:</span> {meeting.coaches.full_name}
-                              </p>
-                            )}
-                            {meeting.notes && (
-                              <p className="text-sm">
-                                <span className="font-medium">הערות:</span> {meeting.notes}
-                              </p>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+                <p className="text-center text-muted-foreground">אין לך פגישות קרובות</p>
               </CardContent>
             </Card>
           </TabsContent>
-
           <TabsContent value="past" className="mt-4">
             <Card>
               <CardContent className="pt-6">
-                {pastMeetings.length === 0 ? (
-                  <p className="text-center text-muted-foreground">אין פגישות קודמות</p>
-                ) : (
-                  <div className="space-y-4">
-                    {pastMeetings.map((meeting) => (
-                      <Card key={meeting.id} className="shadow-sm">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-lg">
-                            {new Date(meeting.meeting_date).toLocaleDateString('he-IL')}
-                          </CardTitle>
-                          <CardDescription>
-                            {meeting.meeting_time.slice(0, 5)} - {meeting.meeting_type === 'training' ? 'אימון' : 'פגישה'}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            {meeting.location && (
-                              <p className="text-sm">
-                                <span className="font-medium">מיקום:</span> {meeting.location}
-                              </p>
-                            )}
-                            {meeting.coaches?.full_name && (
-                              <p className="text-sm">
-                                <span className="font-medium">מאמן:</span> {meeting.coaches.full_name}
-                              </p>
-                            )}
-                            {meeting.meeting_logs?.[0] && (
-                              <>
-                                <div className="border-t pt-2">
-                                  <h4 className="font-medium mb-1">סיכום האימון:</h4>
-                                  <p className="text-sm whitespace-pre-line">{meeting.meeting_logs[0].summary}</p>
-                                </div>
-                                {meeting.meeting_logs[0].achievements && (
-                                  <div>
-                                    <h4 className="font-medium mb-1">הישגים:</h4>
-                                    <p className="text-sm">{meeting.meeting_logs[0].achievements}</p>
-                                  </div>
-                                )}
-                                {meeting.meeting_logs[0].next_steps && (
-                                  <div>
-                                    <h4 className="font-medium mb-1">צעדים הבאים:</h4>
-                                    <p className="text-sm">{meeting.meeting_logs[0].next_steps}</p>
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+                <p className="text-center text-muted-foreground">אין פגישות קודמות</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -550,6 +312,4 @@ const PlayerProfileView = () => {
       </div>
     </div>
   );
-};
-
-export default PlayerProfileView;
+}

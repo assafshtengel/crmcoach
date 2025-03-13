@@ -620,64 +620,6 @@ export type Database = {
         }
         Relationships: []
       }
-      meeting_logs: {
-        Row: {
-          achievements: string | null
-          coach_id: string | null
-          created_at: string
-          id: string
-          meeting_id: string | null
-          next_steps: string | null
-          player_id: string
-          summary: string
-          updated_at: string
-        }
-        Insert: {
-          achievements?: string | null
-          coach_id?: string | null
-          created_at?: string
-          id?: string
-          meeting_id?: string | null
-          next_steps?: string | null
-          player_id: string
-          summary: string
-          updated_at?: string
-        }
-        Update: {
-          achievements?: string | null
-          coach_id?: string | null
-          created_at?: string
-          id?: string
-          meeting_id?: string | null
-          next_steps?: string | null
-          player_id?: string
-          summary?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "meeting_logs_coach_id_fkey"
-            columns: ["coach_id"]
-            isOneToOne: false
-            referencedRelation: "coaches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "meeting_logs_meeting_id_fkey"
-            columns: ["meeting_id"]
-            isOneToOne: false
-            referencedRelation: "player_meetings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "meeting_logs_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       mental_commitments: {
         Row: {
           created_at: string
@@ -1027,63 +969,6 @@ export type Database = {
           },
         ]
       }
-      player_meetings: {
-        Row: {
-          coach_id: string | null
-          created_at: string
-          id: string
-          is_completed: boolean
-          location: string | null
-          meeting_date: string
-          meeting_time: string
-          meeting_type: string
-          notes: string | null
-          player_id: string
-          updated_at: string
-        }
-        Insert: {
-          coach_id?: string | null
-          created_at?: string
-          id?: string
-          is_completed?: boolean
-          location?: string | null
-          meeting_date: string
-          meeting_time: string
-          meeting_type?: string
-          notes?: string | null
-          player_id: string
-          updated_at?: string
-        }
-        Update: {
-          coach_id?: string | null
-          created_at?: string
-          id?: string
-          is_completed?: boolean
-          location?: string | null
-          meeting_date?: string
-          meeting_time?: string
-          meeting_type?: string
-          notes?: string | null
-          player_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "player_meetings_coach_id_fkey"
-            columns: ["coach_id"]
-            isOneToOne: false
-            referencedRelation: "coaches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "player_meetings_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       player_mental_states: {
         Row: {
           coach_id: string | null
@@ -1389,7 +1274,6 @@ export type Database = {
           has_started: boolean | null
           id: string
           location: string | null
-          meeting_type: string
           notes: string | null
           player_id: string
           reminder_sent: boolean | null
@@ -1402,7 +1286,6 @@ export type Database = {
           has_started?: boolean | null
           id?: string
           location?: string | null
-          meeting_type?: string
           notes?: string | null
           player_id: string
           reminder_sent?: boolean | null
@@ -1415,7 +1298,6 @@ export type Database = {
           has_started?: boolean | null
           id?: string
           location?: string | null
-          meeting_type?: string
           notes?: string | null
           player_id?: string
           reminder_sent?: boolean | null

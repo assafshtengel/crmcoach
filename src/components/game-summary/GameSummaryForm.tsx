@@ -15,8 +15,6 @@ import { Slider } from "@/components/ui/slider";
 import { GameSummaryFormValues } from "@/types/gameSummary";
 
 const formSchema = z.object({
-  match_date: z.string().min(1, { message: "תאריך המשחק הוא שדה חובה" }),
-  opponent_name: z.string().min(1, { message: "שם היריבה הוא שדה חובה" }),
   performance_rating: z.number().min(1).max(10),
   concentration_level: z.number().min(1).max(10),
   goals_met: z.boolean(),
@@ -38,8 +36,6 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
   const { toast } = useToast();
 
   const defaultValues: GameSummaryFormValues = {
-    match_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-    opponent_name: "",
     performance_rating: 5,
     concentration_level: 5,
     goals_met: false,
@@ -71,8 +67,6 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
         .insert({
           player_id: playerData.id,
           coach_id: playerData.coach_id,
-          match_date: values.match_date,
-          opponent_name: values.opponent_name,
           performance_rating: values.performance_rating,
           concentration_level: values.concentration_level,
           goals_met: values.goals_met,
@@ -119,36 +113,6 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="match_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>תאריך המשחק</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="opponent_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>יריבה</FormLabel>
-                    <FormControl>
-                      <Input placeholder="הזן את שם היריבה" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <div className="grid gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}

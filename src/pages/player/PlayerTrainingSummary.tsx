@@ -1,438 +1,413 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { ArrowLeft, Plus, Search, Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
+import { useQuery } from "@tanstack/react-query";
+import { TrainingSummary } from "@/types/trainingSummary";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { ArrowLeft } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Define form schema
-const trainingSummarySchema = z.object({
-  trainingName: z.string().min(1, { message: "נדרש שם אימון" }),
-  trainingDate: z.string().min(1, { message: "נדרש תאריך אימון" }),
-  trainingGoal: z.string().min(1, { message: "נדרשת מטרת אימון" }),
-  challenges: z.string().optional(),
-  insights: z.string().min(1, { message: "נדרשות תובנות עיקריות" }),
-  nextSteps: z.string().optional(),
+// Form schema using zod
+const formSchema = z.object({
+  performance_rating: z.number().min(1).max(10),
+  effort_level: z.number().min(1).max(10),
+  techniques_practiced: z.string().min(3, { message: "חובה למלא אילו טכניקות תרגלת" }),
+  achievements: z.string().min(3, { message: "חובה למלא הישגים באימון" }),
+  improvement_areas: z.string().min(3, { message: "חובה למלא תחומים לשיפור" }),
+  fatigue_level: z.number().min(1).max(10),
+  notes: z.string().optional(),
 });
 
-type TrainingSummaryFormValues = z.infer<typeof trainingSummarySchema>;
-
-interface TrainingSummary {
-  id: string;
-  player_id: string;
-  training_name: string;
-  training_date: string;
-  training_goal: string;
-  challenges: string;
-  insights: string;
-  next_steps: string;
-  created_at: string;
-  media_urls?: string[];
-}
-
-const PlayerTrainingSummary = () => {
-  const [trainingSummaries, setTrainingSummaries] = useState<TrainingSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+export default function PlayerTrainingSummary() {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [submitting, setSubmitting] = useState(false);
 
-  const form = useForm<TrainingSummaryFormValues>({
-    resolver: zodResolver(trainingSummarySchema),
+  // Get player info from local storage
+  const playerSessionStr = localStorage.getItem('playerSession');
+  const playerSession = playerSessionStr ? JSON.parse(playerSessionStr) : null;
+  const playerId = playerSession?.id;
+
+  // Form setup
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      trainingName: "",
-      trainingDate: new Date().toISOString().split('T')[0],
-      trainingGoal: "",
-      challenges: "",
-      insights: "",
-      nextSteps: "",
+      performance_rating: 5,
+      effort_level: 5,
+      techniques_practiced: "",
+      achievements: "",
+      improvement_areas: "",
+      fatigue_level: 5,
+      notes: "",
     },
   });
 
-  useEffect(() => {
-    const fetchTrainingSummaries = async () => {
-      try {
-        const playerSessionStr = localStorage.getItem('playerSession');
-        
-        if (!playerSessionStr) {
-          navigate('/player-auth');
-          return;
-        }
-        
-        const playerSession = JSON.parse(playerSessionStr);
-        
-        const { data, error } = await supabase
-          .from('training_summaries')
-          .select('*')
-          .eq('player_id', playerSession.id)
-          .order('training_date', { ascending: false });
-        
-        if (error) throw error;
-        
-        setTrainingSummaries(data || []);
-      } catch (error: any) {
-        console.error('Error loading training summaries:', error);
-        toast.error(error.message || "אירעה שגיאה בטעינת סיכומי האימונים");
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch training summaries
+  const fetchTrainingSummaries = async () => {
+    if (!playerId) return [];
     
-    fetchTrainingSummaries();
-  }, [navigate]);
+    const { data, error } = await supabase
+      .from("training_summaries")
+      .select("*")
+      .eq("player_id", playerId)
+      .order("created_at", { ascending: false });
 
-  const onSubmit = async (values: TrainingSummaryFormValues) => {
+    if (error) throw error;
+    return data || [];
+  };
+
+  const { data: summaries = [], isLoading, refetch } = useQuery({
+    queryKey: ["training-summaries", playerId],
+    queryFn: fetchTrainingSummaries,
+    enabled: !!playerId,
+  });
+
+  // Handle form submission
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!playerId) {
+      toast({
+        title: "שגיאה",
+        description: "נא להתחבר מחדש",
+        variant: "destructive",
+      });
+      navigate("/player-auth");
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      setLoading(true);
-      
-      const playerSessionStr = localStorage.getItem('playerSession');
-      if (!playerSessionStr) {
-        navigate('/player-auth');
-        return;
-      }
-      
-      const playerSession = JSON.parse(playerSessionStr);
-      
-      // Mock implementation - in a real app we would upload files to storage
-      const mediaUrls = selectedFiles.length > 0 
-        ? selectedFiles.map(file => URL.createObjectURL(file)) 
-        : [];
-      
-      const newSummary = {
-        player_id: playerSession.id,
-        training_name: values.trainingName,
-        training_date: values.trainingDate,
-        training_goal: values.trainingGoal,
-        challenges: values.challenges || "",
-        insights: values.insights,
-        next_steps: values.nextSteps || "",
-        media_urls: mediaUrls,
+      const trainingData = {
+        ...values,
+        player_id: playerId,
       };
-      
-      // In a real implementation, this would save to the database
-      // For now, we'll just add it to our state and pretend it saved
-      const mockSavedSummary = {
-        ...newSummary,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString()
-      };
-      
-      setTrainingSummaries(prev => [mockSavedSummary, ...prev]);
-      
-      toast.success("סיכום האימון נשמר בהצלחה");
-      setShowForm(false);
-      form.reset();
-      setSelectedFiles([]);
+
+      const { error } = await supabase
+        .from("training_summaries")
+        .insert(trainingData);
+
+      if (error) throw error;
+
+      toast({
+        title: "סיכום אימון נשמר בהצלחה!",
+        description: "הסיכום נוסף בהצלחה",
+      });
+
+      form.reset({
+        performance_rating: 5,
+        effort_level: 5,
+        techniques_practiced: "",
+        achievements: "",
+        improvement_areas: "",
+        fatigue_level: 5,
+        notes: "",
+      });
+
+      // Refresh the list
+      refetch();
     } catch (error: any) {
-      console.error('Error saving training summary:', error);
-      toast.error(error.message || "אירעה שגיאה בשמירת סיכום האימון");
+      console.error("Error submitting training summary:", error);
+      toast({
+        title: "שגיאה בשמירת הסיכום",
+        description: error.message || "אירעה שגיאה בשמירת סיכום האימון",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setSelectedFiles(prev => [...prev, ...newFiles]);
-    }
-  };
-
-  const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const filteredSummaries = trainingSummaries.filter(summary => 
-    summary.training_name.includes(searchQuery) || 
-    summary.training_goal.includes(searchQuery) ||
-    summary.insights.includes(searchQuery)
-  );
-
-  if (loading && trainingSummaries.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center mb-6">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => navigate('/player-profile')}
-            className="ml-2"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">סיכומי אימונים</h1>
+  // Render training summaries
+  const renderTrainingSummaries = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
         </div>
+      );
+    }
 
-        {!showForm ? (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <div className="relative w-full max-w-md">
-                <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="חיפוש סיכומי אימונים..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-10"
-                />
-              </div>
-              <Button onClick={() => setShowForm(true)} className="mr-2 whitespace-nowrap">
-                <Plus className="ml-2 h-4 w-4" />
-                הוסף סיכום חדש
-              </Button>
-            </div>
+    if (summaries.length === 0) {
+      return (
+        <div className="text-center p-8 bg-muted/20 rounded-lg border border-dashed">
+          <p className="text-muted-foreground">אין סיכומי אימונים להצגה</p>
+        </div>
+      );
+    }
 
-            {filteredSummaries.length === 0 ? (
-              <Card className="text-center p-8 bg-white shadow-md">
-                <CardContent className="pt-6">
-                  <p className="text-xl text-gray-500 mb-4">אין סיכומי אימונים עדיין</p>
-                  <Button onClick={() => setShowForm(true)}>
-                    <Plus className="ml-2 h-4 w-4" />
-                    הוסף סיכום אימון ראשון
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {filteredSummaries.map((summary) => (
-                  <Card key={summary.id} className="shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-                    <CardHeader className="pb-2 bg-emerald-50">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-xl">{summary.training_name}</CardTitle>
-                          <CardDescription>
-                            {new Date(summary.training_date).toLocaleDateString('he-IL')}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                      <div className="space-y-3">
-                        <div>
-                          <h3 className="font-medium text-emerald-600 mb-1">מטרת האימון</h3>
-                          <p className="text-sm">{summary.training_goal}</p>
-                        </div>
-                        
-                        {summary.challenges && (
-                          <div>
-                            <h3 className="font-medium text-emerald-600 mb-1">אתגרים שעלו</h3>
-                            <p className="text-sm">{summary.challenges}</p>
-                          </div>
-                        )}
-                        
-                        <div>
-                          <h3 className="font-medium text-emerald-600 mb-1">תובנות עיקריות</h3>
-                          <p className="text-sm">{summary.insights}</p>
-                        </div>
-                        
-                        {summary.next_steps && (
-                          <div>
-                            <h3 className="font-medium text-emerald-600 mb-1">משימות להמשך</h3>
-                            <p className="text-sm">{summary.next_steps}</p>
-                          </div>
-                        )}
-                        
-                        {summary.media_urls && summary.media_urls.length > 0 && (
-                          <div>
-                            <h3 className="font-medium text-emerald-600 mb-1">קבצי מדיה</h3>
-                            <div className="flex flex-wrap gap-2">
-                              {summary.media_urls.map((url, index) => (
-                                <a 
-                                  key={index} 
-                                  href={url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-sm text-blue-500 underline"
-                                >
-                                  קובץ {index + 1}
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+    return (
+      <div className="space-y-4">
+        {summaries.map((summary: TrainingSummary) => (
+          <Card key={summary.id} className="mb-4">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg font-semibold">
+                  סיכום אימון
+                </CardTitle>
+                <CardDescription>
+                  {summary.created_at && format(new Date(summary.created_at), "dd/MM/yyyy")}
+                </CardDescription>
               </div>
-            )}
-          </>
-        ) : (
-          <Card className="shadow-lg mb-6">
-            <CardHeader>
-              <CardTitle className="text-xl">הוסף סיכום אימון חדש</CardTitle>
-              <CardDescription>מלא את הפרטים הבאים לתיעוד האימון</CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="trainingName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>שם האימון</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="שם האימון" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="trainingDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>תאריך האימון</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">דירוג ביצועים:</span>
+                    <span className="font-medium">{summary.performance_rating}/10</span>
                   </div>
-                  
-                  <FormField
-                    control={form.control}
-                    name="trainingGoal"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>מטרת האימון</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} placeholder="תאר את מטרת האימון" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="challenges"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>אתגרים שעלו</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} placeholder="תאר אתגרים שעלו במהלך האימון" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="insights"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>תובנות עיקריות</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} placeholder="תאר את התובנות העיקריות מהאימון" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="nextSteps"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>משימות להמשך</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} placeholder="תאר משימות להמשך לאחר האימון" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="media-upload">הוספת קבצי מדיה (תמונות, סרטונים)</Label>
-                    <div className="border border-dashed rounded-lg p-6 text-center">
-                      <label htmlFor="media-upload" className="cursor-pointer">
-                        <Upload className="h-6 w-6 mx-auto mb-2 text-gray-400" />
-                        <p className="text-sm text-gray-500 mb-1">לחץ להעלאת קבצים</p>
-                        <p className="text-xs text-gray-400">ניתן להעלות תמונות, סרטונים או קבצי אודיו</p>
-                        <Input
-                          id="media-upload"
-                          type="file"
-                          multiple
-                          accept="image/*,video/*,audio/*"
-                          className="hidden"
-                          onChange={handleFileChange}
-                        />
-                      </label>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">רמת מאמץ:</span>
+                    <span className="font-medium">{summary.effort_level}/10</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">רמת עייפות:</span>
+                    <span className="font-medium">{summary.fatigue_level}/10</span>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">טכניקות שתרגלתי:</h4>
+                    <p className="text-sm bg-muted/30 p-2 rounded">{summary.techniques_practiced}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">הישגים באימון:</h4>
+                    <p className="text-sm bg-muted/30 p-2 rounded">{summary.achievements}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium mb-1">תחומים לשיפור:</h4>
+                    <p className="text-sm bg-muted/30 p-2 rounded">{summary.improvement_areas}</p>
+                  </div>
+                  {summary.notes && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-1">הערות:</h4>
+                      <p className="text-sm bg-muted/30 p-2 rounded">{summary.notes}</p>
                     </div>
-                    
-                    {selectedFiles.length > 0 && (
-                      <div className="space-y-2 mt-2">
-                        <p className="text-sm font-medium">קבצים שנבחרו:</p>
-                        <div className="space-y-1">
-                          {selectedFiles.map((file, index) => (
-                            <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                              <span className="text-sm truncate max-w-[80%]">{file.name}</span>
-                              <Button 
-                                type="button" 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => removeFile(index)}
-                              >
-                                הסר
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex justify-end space-x-2 rtl:space-x-reverse mt-6">
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => {
-                        setShowForm(false);
-                        form.reset();
-                        setSelectedFiles([]);
-                      }}
-                    >
-                      ביטול
-                    </Button>
-                    <Button type="submit" disabled={loading}>
-                      {loading ? "שומר..." : "שמור סיכום"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
-        )}
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4 md:p-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center mb-6">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/player/profile')} className="mr-2">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            חזרה
+          </Button>
+          <h1 className="text-2xl font-bold">סיכומי אימון</h1>
+        </div>
+
+        <Tabs defaultValue="history">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="history">היסטוריית סיכומים</TabsTrigger>
+            <TabsTrigger value="new">סיכום אימון חדש</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="history" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>היסטוריית סיכומי אימון</CardTitle>
+                <CardDescription>
+                  צפייה בסיכומי האימונים הקודמים שלך
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {renderTrainingSummaries()}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="new" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>סיכום אימון חדש</CardTitle>
+                <CardDescription>
+                  מלא את הפרטים לסיכום האימון
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="performance_rating"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>דירוג ביצועים באימון (1-10)</FormLabel>
+                            <FormControl>
+                              <div className="space-y-2">
+                                <Slider
+                                  min={1}
+                                  max={10}
+                                  step={1}
+                                  defaultValue={[field.value]}
+                                  onValueChange={(value) => field.onChange(value[0])}
+                                />
+                                <div className="flex justify-between">
+                                  <span>חלש 1</span>
+                                  <span className="font-medium">{field.value}</span>
+                                  <span>10 מצוין</span>
+                                </div>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="effort_level"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>רמת מאמץ באימון (1-10)</FormLabel>
+                            <FormControl>
+                              <div className="space-y-2">
+                                <Slider
+                                  min={1}
+                                  max={10}
+                                  step={1}
+                                  defaultValue={[field.value]}
+                                  onValueChange={(value) => field.onChange(value[0])}
+                                />
+                                <div className="flex justify-between">
+                                  <span>נמוך 1</span>
+                                  <span className="font-medium">{field.value}</span>
+                                  <span>10 גבוה</span>
+                                </div>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="techniques_practiced"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>אילו טכניקות תרגלת באימון?</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="פרט את הטכניקות שתרגלת באימון היום" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="achievements"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>הישגים באימון</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="מה היו ההישגים שלך באימון היום?" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="improvement_areas"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>תחומים לשיפור</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="על אילו תחומים אתה צריך לעבוד יותר?" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="fatigue_level"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>רמת עייפות אחרי האימון (1-10)</FormLabel>
+                          <FormControl>
+                            <div className="space-y-2">
+                              <Slider
+                                min={1}
+                                max={10}
+                                step={1}
+                                defaultValue={[field.value]}
+                                onValueChange={(value) => field.onChange(value[0])}
+                              />
+                              <div className="flex justify-between">
+                                <span>רענן 1</span>
+                                <span className="font-medium">{field.value}</span>
+                                <span>10 מאוד עייף</span>
+                              </div>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>הערות נוספות (אופציונלי)</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="הערות נוספות לגבי האימון" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button type="submit" className="w-full" disabled={submitting}>
+                      {submitting ? "שומר..." : "שמור סיכום אימון"}
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
-};
-
-export default PlayerTrainingSummary;
+}

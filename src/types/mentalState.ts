@@ -20,11 +20,3 @@ export interface MentalStateFormValues {
   has_concerns: boolean;
   concerns_details: string;
 }
-
-// Adding chart data types for visualization purposes
-export interface MentalStateChartData {
-  date: string;
-  feeling: number;
-  motivation: number;
-  fatigue: number;
-}

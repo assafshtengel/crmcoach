@@ -13,7 +13,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface CalendarEvent {
   id: string;
@@ -26,8 +32,8 @@ interface CalendarEvent {
     location?: string;
     reminderSent: boolean;
     notes?: string;
-    eventType?: 'meeting';
-    player_id?: string;
+    eventType?: 'reminder' | 'task' | 'other';
+    player_id?: string; 
   };
 }
 
@@ -45,11 +51,6 @@ interface CalendarProps {
   onEventClick: (eventId: string) => void;
   onEventAdd?: (eventData: any) => Promise<void>;
   selectedPlayerId?: string;
-  players?: Array<{
-    id: string;
-    full_name: string;
-  }>;
-  setSelectedPlayerId?: React.Dispatch<React.SetStateAction<string | undefined>>;
 }
 
 interface EventFormData {
@@ -57,18 +58,12 @@ interface EventFormData {
   date: string;
   time: string;
   notes?: string;
+  eventType: 'reminder' | 'task' | 'other';
   player_id?: string;
   location?: string;
 }
 
-export const Calendar: React.FC<CalendarProps> = ({
-  events,
-  onEventClick,
-  onEventAdd,
-  selectedPlayerId,
-  players,
-  setSelectedPlayerId
-}) => {
+export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEventAdd, selectedPlayerId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedView, setSelectedView] = useState<'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'>('dayGridMonth');
@@ -81,73 +76,81 @@ export const Calendar: React.FC<CalendarProps> = ({
       date: new Date().toISOString().split('T')[0],
       time: '12:00',
       notes: '',
+      eventType: 'reminder',
       player_id: selectedPlayerId,
       location: ''
     }
   });
-  
+
+  // Update form values when selectedPlayerId changes
   React.useEffect(() => {
     if (selectedPlayerId) {
       form.setValue('player_id', selectedPlayerId);
     }
   }, [selectedPlayerId, form]);
-  
+
   const handleEventClick = (info: any) => {
     const event = events.find(e => e.id === info.event.id);
     if (event) {
       setSelectedEvent(event);
     }
   };
-  
+
   const closeDialog = () => {
     setSelectedEvent(null);
   };
-  
+
   const handleEditClick = () => {
     if (selectedEvent) {
       onEventClick(selectedEvent.id);
       setSelectedEvent(null);
     }
   };
-  
+
   const onAddEvent = async (data: EventFormData) => {
     if (!onEventAdd) return;
+    
+    // Check if player_id exists, if not, show an error
     if (!data.player_id && !selectedPlayerId) {
-      toast.error('נא לבחור שחקן לפני הוספת מפגש');
+      toast.error('נא לבחור שחקן לפני הוספת אירוע');
       return;
     }
     
     try {
       setIsSubmitting(true);
+      
       const playerIdToUse = data.player_id || selectedPlayerId;
       
-      const selectedPlayer = players?.find(p => p.id === playerIdToUse);
-      const playerName = selectedPlayer ? selectedPlayer.full_name : data.title;
-      
       console.log('Saving event with player_id:', playerIdToUse);
+      
+      // Format the data for the fullcalendar event format first
       const eventData = {
-        title: playerName || data.title,
+        title: data.title,
         start: `${data.date}T${data.time}:00`,
         extendedProps: {
           notes: data.notes,
-          eventType: 'meeting',
+          eventType: data.eventType,
           player_id: playerIdToUse,
           location: data.location,
-          playerName: playerName || data.title
+          playerName: data.title // Use the title as playerName for display
         }
       };
       
       console.log('Submitting event data:', eventData);
+      
       await onEventAdd(eventData);
+      
       setIsAddEventOpen(false);
       form.reset({
         title: '',
         date: new Date().toISOString().split('T')[0],
         time: '12:00',
         notes: '',
+        eventType: 'reminder',
         player_id: selectedPlayerId,
         location: ''
       });
+      
     } catch (error) {
       console.error('Error adding event:', error);
       toast.error('אירעה שגיאה, אנא נסה שוב.');
@@ -155,99 +158,114 @@ export const Calendar: React.FC<CalendarProps> = ({
       setIsSubmitting(false);
     }
   };
-  
-  const getEventColor = () => {
-    return '#1E3A8A'; // Dark blue for meetings
+
+  const getEventColor = (eventType?: 'reminder' | 'task' | 'other') => {
+    switch (eventType) {
+      case 'reminder':
+        return '#F59E0B'; // כתום
+      case 'task':
+        return '#10B981'; // ירוק
+      case 'other':
+        return '#6B7280'; // אפור
+      default:
+        return '#F59E0B'; // Default to reminder color (orange)
+    }
   };
-  
-  return <>
+
+  return (
+    <>
       <div className="flex gap-2">
-        <Button variant="ghost" className="flex items-center gap-2 text-white hover:bg-white/10" onClick={() => setIsOpen(true)}>
+        <Button 
+          variant="ghost" 
+          className="flex items-center gap-2 text-white hover:bg-white/10"
+          onClick={() => setIsOpen(true)}
+        >
           <CalendarIcon className="h-5 w-5" />
           <span>לוח מפגשים</span>
         </Button>
-        {onEventAdd && <Button variant="ghost" onClick={() => setIsAddEventOpen(true)} className="flex items-center gap-2 hover:bg-white/10 text-lime-900">
+        {onEventAdd && (
+          <Button
+            variant="ghost"
+            className="flex items-center gap-2 text-white hover:bg-white/10"
+            onClick={() => setIsAddEventOpen(true)}
+          >
             <Plus className="h-5 w-5" />
-            <span>הוסף מפגש</span>
-          </Button>}
+            <span>הוסף אירוע</span>
+          </Button>
+        )}
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-6xl h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">לוח מפגשים</DialogTitle>
-            <DialogDescription>צפה במפגשים מתוכננים</DialogDescription>
+            <DialogTitle className="text-2xl font-bold">לוח אירועים</DialogTitle>
+            <DialogDescription>צפה באירועים מתוכננים</DialogDescription>
           </DialogHeader>
           
           <div className="flex-1 overflow-auto">
-            <FullCalendar 
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]} 
-              initialView={selectedView} 
+            <FullCalendar
+              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+              initialView={selectedView}
               headerToolbar={{
                 start: 'prev,next today',
                 center: 'title',
-                end: ''
-              }} 
+                end: '',
+              }}
               views={{
                 timeGridDay: {
                   type: 'timeGrid',
-                  duration: {
-                    days: 1
-                  }
+                  duration: { days: 1 }
                 },
                 timeGridWeek: {
                   type: 'timeGrid',
-                  duration: {
-                    weeks: 1
-                  }
+                  duration: { weeks: 1 }
                 },
                 dayGridMonth: {
                   type: 'dayGrid',
-                  duration: {
-                    months: 1
-                  }
+                  duration: { months: 1 }
                 }
-              }} 
-              events={events} 
-              eventClick={handleEventClick} 
-              locale="he" 
-              direction="rtl" 
-              firstDay={0} 
-              allDaySlot={false} 
-              slotMinTime="07:00:00" 
-              slotMaxTime="22:00:00" 
+              }}
+              events={events}
+              eventClick={handleEventClick}
+              locale="he"
+              direction="rtl"
+              firstDay={0}
+              allDaySlot={false}
+              slotMinTime="07:00:00"
+              slotMaxTime="22:00:00"
               eventTimeFormat={{
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false
-              }} 
+              }}
               slotLabelFormat={{
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false
-              }} 
-              eventContent={eventInfo => 
-                <div className="p-1 text-sm" style={{
-                  backgroundColor: getEventColor()
-                }}>
+              }}
+              eventContent={(eventInfo) => (
+                <div 
+                  className="p-1 text-sm"
+                  style={{ backgroundColor: getEventColor(eventInfo.event.extendedProps.eventType) }}
+                >
                   <div className="font-bold text-white">{eventInfo.timeText}</div>
                   <div className="text-white">{eventInfo.event.extendedProps.playerName}</div>
-                  {eventInfo.event.extendedProps.location && 
+                  {eventInfo.event.extendedProps.location && (
                     <div className="text-xs text-white/80">{eventInfo.event.extendedProps.location}</div>
-                  }
+                  )}
                 </div>
-              } 
+              )}
             />
           </div>
         </DialogContent>
       </Dialog>
 
-      {selectedEvent && 
+      {selectedEvent && (
         <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>פרטי מפגש</DialogTitle>
-              <DialogDescription>מידע מפורט על המפגש</DialogDescription>
+              <DialogTitle>פרטי אירוע</DialogTitle>
+              <DialogDescription>מידע מפורט על האירוע</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div>
@@ -258,18 +276,23 @@ export const Calendar: React.FC<CalendarProps> = ({
                 <h3 className="font-bold mb-1">תאריך ושעה</h3>
                 <p className="text-lg">{format(new Date(selectedEvent.start), 'dd/MM/yyyy HH:mm')}</p>
               </div>
-              {selectedEvent.extendedProps.location && 
+              {selectedEvent.extendedProps.location && (
                 <div>
                   <h3 className="font-bold mb-1">מיקום</h3>
                   <p className="text-lg">{selectedEvent.extendedProps.location}</p>
                 </div>
-              }
-              {selectedEvent.extendedProps.notes && 
+              )}
+              {selectedEvent.extendedProps.notes && (
                 <div>
                   <h3 className="font-bold mb-1">הערות</h3>
                   <p className="text-lg whitespace-pre-wrap">{selectedEvent.extendedProps.notes}</p>
                 </div>
-              }
+              )}
+              <div>
+                <h3 className="font-bold mb-1">סוג אירוע</h3>
+                <p className="text-lg">{selectedEvent.extendedProps.eventType === 'reminder' ? 'תזכורת' :
+                  selectedEvent.extendedProps.eventType === 'task' ? 'משימה' : 'אחר'}</p>
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={closeDialog}>סגור</Button>
@@ -277,62 +300,53 @@ export const Calendar: React.FC<CalendarProps> = ({
             </div>
           </DialogContent>
         </Dialog>
-      }
+      )}
 
-      <Dialog 
-        open={isAddEventOpen} 
-        onOpenChange={open => {
-          if (!open) {
-            form.reset({
-              title: '',
-              date: new Date().toISOString().split('T')[0],
-              time: '12:00',
-              notes: '',
-              player_id: selectedPlayerId,
-              location: ''
-            });
-          }
-          setIsAddEventOpen(open);
-        }}
-      >
+      <Dialog open={isAddEventOpen} onOpenChange={(open) => {
+        if (!open) {
+          form.reset({
+            title: '',
+            date: new Date().toISOString().split('T')[0],
+            time: '12:00',
+            notes: '',
+            eventType: 'reminder',
+            player_id: selectedPlayerId,
+            location: ''
+          });
+        }
+        setIsAddEventOpen(open);
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>הוספת מפגש חדש</DialogTitle>
-            <DialogDescription>מלא את הפרטים להוספת מפגש חדש</DialogDescription>
+            <DialogTitle>הוספת אירוע חדש</DialogTitle>
+            <DialogDescription>מלא את הפרטים להוספת אירוע חדש</DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onAddEvent)} className="space-y-4">
-              {players && setSelectedPlayerId && 
-                <FormField
-                  control={form.control}
-                  name="player_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>שחקן</FormLabel>
-                      <Select
-                        onValueChange={value => {
-                          field.onChange(value);
-                          setSelectedPlayerId(value);
-                        }}
-                        value={field.value || selectedPlayerId}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="בחר שחקן" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {players.map(player => (
-                            <SelectItem key={player.id} value={player.id}>
-                              {player.full_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-              }
+              <FormField
+                control={form.control}
+                name="eventType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>סוג אירוע</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="בחר סוג אירוע" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="reminder">תזכורת</SelectItem>
+                        <SelectItem value="task">משימה</SelectItem>
+                        <SelectItem value="other">אחר</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="title"
@@ -394,17 +408,16 @@ export const Calendar: React.FC<CalendarProps> = ({
                 )}
               />
               <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    form.reset();
-                    setIsAddEventOpen(false);
-                  }}
-                >
+                <Button type="button" variant="outline" onClick={() => {
+                  form.reset();
+                  setIsAddEventOpen(false);
+                }}>
                   ביטול
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button 
+                  type="submit"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? 'שומר...' : 'שמור'}
                 </Button>
               </div>
@@ -412,5 +425,6 @@ export const Calendar: React.FC<CalendarProps> = ({
           </Form>
         </DialogContent>
       </Dialog>
-    </>;
+    </>
+  );
 };

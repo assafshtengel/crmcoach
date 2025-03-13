@@ -4,8 +4,6 @@ export interface GameSummary {
   player_id: string;
   coach_id?: string;
   created_at?: string;
-  match_date: string;
-  opponent_name: string;
   performance_rating: number;
   concentration_level: number;
   goals_met: boolean;
@@ -15,8 +13,6 @@ export interface GameSummary {
 }
 
 export interface GameSummaryFormValues {
-  match_date: string;
-  opponent_name: string;
   performance_rating: number;
   concentration_level: number;
   goals_met: boolean;
