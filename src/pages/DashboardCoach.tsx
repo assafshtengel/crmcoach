@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, FileText, ImageIcon, MessageSquare, Plus, Users, BarChart, BookOpen, Target, Bell, PieChart, Trophy, ClipboardList, TrendingUp, LineChart } from "lucide-react";
+import { CalendarIcon, FileText, ImageIcon, MessageSquare, Plus, Users, BarChart, BookOpen, Target, Bell, PieChart, Trophy, ClipboardList, TrendingUp, LineChart, UserPlus, CalendarPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -214,6 +215,24 @@ const DashboardCoach = () => {
             </span>
           </Button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-4 mb-8">
+        <Button 
+          className="bg-green-500 hover:bg-green-600 flex items-center gap-2"
+          onClick={() => navigate("/player-form")}
+        >
+          <UserPlus className="h-5 w-5" />
+          הוסף משתתף חדש
+        </Button>
+        
+        <Button 
+          className="bg-blue-500 hover:bg-blue-600 flex items-center gap-2"
+          onClick={() => navigate("/new-session-form")}
+        >
+          <CalendarPlus className="h-5 w-5" />
+          צור מפגש חדש
+        </Button>
       </div>
 
       <h2 className="text-lg font-semibold text-gray-700 mb-4">שליחת הודעה למתאמנים</h2>
