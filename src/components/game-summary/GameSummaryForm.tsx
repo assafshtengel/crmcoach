@@ -71,6 +71,13 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
     setIsSubmitting(true);
 
     try {
+      console.log("Submitting game summary with values:", {
+        player_id: playerData.id,
+        coach_id: playerData.coach_id,
+        ...values,
+        game_date: values.game_date ? values.game_date.toISOString().split('T')[0] : null,
+      });
+
       const { data, error } = await supabase
         .from("game_summaries")
         .insert({
@@ -88,8 +95,11 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
         .select();
 
       if (error) {
+        console.error("Supabase error details:", error);
         throw error;
       }
+
+      console.log("Game summary saved successfully:", data);
 
       toast({
         title: "סיכום המשחק נשמר בהצלחה",
