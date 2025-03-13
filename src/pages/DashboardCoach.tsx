@@ -70,7 +70,7 @@ const DashboardCoach = () => {
     fetchUser();
   }, []);
 
-  const { data: toolsData, isLoading, isError } = useQuery({
+  const { data: toolsData, isLoading, isError, error } = useQuery({
     queryKey: ["tools"],
     queryFn: () => {
       return getTools().then(data => {
@@ -78,7 +78,7 @@ const DashboardCoach = () => {
         return data;
       }).catch(error => {
         console.error("Error fetching tools:", error);
-        throw error;
+        return [];
       });
     },
     retry: 1
@@ -105,7 +105,7 @@ const DashboardCoach = () => {
     onError: (error: any) => {
       toast({
         title: "אופס! משהו השתבש.",
-        description: error.message || "איר��ה שגיאה בעת יצירת הכלי.",
+        description: error.message || "אירעה שגיאה בעת יצירת הכלי.",
         variant: "destructive",
       });
     },
@@ -165,6 +165,14 @@ const DashboardCoach = () => {
 
   const handleDeleteTool = async (toolId: string) => {
     await deleteToolMutation.mutateAsync(toolId);
+  };
+
+  const handleNewSession = () => {
+    navigate("/new-session-form");
+    toast({
+      title: "מעבר לדף יצירת מפגש חדש",
+      description: "כעת תוכל ליצור מפגש חדש",
+    });
   };
 
   return (
@@ -227,7 +235,7 @@ const DashboardCoach = () => {
         
         <Button 
           className="bg-blue-500 hover:bg-blue-600 flex items-center gap-2"
-          onClick={() => navigate("/new-session-form")}
+          onClick={handleNewSession}
         >
           <CalendarPlus className="h-5 w-5" />
           צור מפגש חדש
@@ -455,7 +463,8 @@ const DashboardCoach = () => {
           </div>
         ) : isError ? (
           <div className="text-red-500 p-4 bg-red-50 rounded-md">
-            אירעה שגיאה בטעינת הכלים. יתכן שטבלת הכלים אינה קיימת בבסיס הנתונים.
+            <p>אירעה שגיאה בטעינת הכלים. {error instanceof Error ? error.message : ''}</p>
+            <p className="text-sm mt-2">יתכן שטבלת הכלים אינה קיימת בבסיס הנתונים. אנא צור קשר עם מנהל המערכת.</p>
           </div>
         ) : tools.length === 0 ? (
           <div className="text-gray-500 p-8 bg-gray-50 rounded-md text-center">
