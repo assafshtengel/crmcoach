@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,7 +42,6 @@ const DashboardCoach = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch the current user from Supabase
   useEffect(() => {
     const fetchUser = async () => {
       const { data } = await supabase.auth.getUser();
@@ -51,7 +49,6 @@ const DashboardCoach = () => {
         setUserId(data.user.id);
         setUserName(data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'מאמן');
         
-        // Fetch coach statistics if available
         try {
           const { data: statsData, error } = await supabase
             .rpc('get_coach_statistics', { coach_id: data.user.id });
@@ -73,15 +70,15 @@ const DashboardCoach = () => {
     fetchUser();
   }, []);
 
-  // Fetch tools
   const { data: toolsData, isLoading, isError } = useQuery({
     queryKey: ["tools"],
     queryFn: () => getTools(),
     retry: 1,
-    onSettled: (data, error) => {
-      if (error) {
-        console.error("Error fetching tools:", error);
-      }
+    onSuccess: (data) => {
+      console.log("Successfully fetched tools");
+    },
+    onError: (error) => {
+      console.error("Error fetching tools:", error);
     }
   });
 
@@ -91,7 +88,6 @@ const DashboardCoach = () => {
     }
   }, [toolsData]);
 
-  // Mutations for tools
   const createToolMutation = useMutation({
     mutationFn: (toolData: Omit<Tool, 'id' | 'created_at'>) => createTool(toolData),
     onSuccess: () => {
@@ -107,7 +103,7 @@ const DashboardCoach = () => {
     onError: (error: any) => {
       toast({
         title: "אופס! משהו השתבש.",
-        description: error.message || "אירעה שגיאה בעת יצירת הכלי.",
+        description: error.message || "איר��ה שגיאה בעת יצירת הכלי.",
         variant: "destructive",
       });
     },
@@ -131,7 +127,6 @@ const DashboardCoach = () => {
     },
   });
 
-  // Form handling functions
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
   };
@@ -172,7 +167,6 @@ const DashboardCoach = () => {
 
   return (
     <div className="container mx-auto py-4 px-4 md:px-6 min-h-screen overflow-y-auto">
-      {/* Header with notifications and user info */}
       <div className="mb-8 bg-gray-800 rounded-lg p-4 shadow-md text-white flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Button 
@@ -220,7 +214,6 @@ const DashboardCoach = () => {
         </div>
       </div>
 
-      {/* Message sending section */}
       <h2 className="text-lg font-semibold text-gray-700 mb-4">שליחת הודעה למתאמנים</h2>
       
       <div className="bg-blue-50 p-4 rounded-md mb-8 flex items-center justify-between">
@@ -236,7 +229,6 @@ const DashboardCoach = () => {
         </div>
       </div>
 
-      {/* Stats Cards Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card className="border-l-4 border-yellow-400">
           <CardContent className="p-6">
@@ -308,7 +300,6 @@ const DashboardCoach = () => {
         </Card>
       </div>
 
-      {/* Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-l-4 border-purple-400">
           <CardContent className="p-6">
@@ -419,7 +410,6 @@ const DashboardCoach = () => {
         </Card>
       </div>
 
-      {/* Mental Tools Section */}
       <section className="mt-12">
         <div className="flex justify-between items-center mb-6">
           <Button onClick={handleOpenDialog} className="bg-primary hover:bg-primary/90">
@@ -499,7 +489,6 @@ const DashboardCoach = () => {
         )}
       </section>
 
-      {/* Add Tool Dialog */}
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -548,3 +537,4 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
+
