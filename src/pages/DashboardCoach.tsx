@@ -72,14 +72,16 @@ const DashboardCoach = () => {
 
   const { data: toolsData, isLoading, isError } = useQuery({
     queryKey: ["tools"],
-    queryFn: () => getTools(),
-    retry: 1,
-    onSuccess: (data) => {
-      console.log("Successfully fetched tools");
+    queryFn: () => {
+      return getTools().then(data => {
+        console.log("Successfully fetched tools");
+        return data;
+      }).catch(error => {
+        console.error("Error fetching tools:", error);
+        throw error;
+      });
     },
-    onError: (error) => {
-      console.error("Error fetching tools:", error);
-    }
+    retry: 1
   });
 
   useEffect(() => {
@@ -537,4 +539,3 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
-
