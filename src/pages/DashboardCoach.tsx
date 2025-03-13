@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,7 @@ const DashboardCoach = () => {
   }, [toolsData]);
 
   const createToolMutation = useMutation({
-    mutationFn: createTool,
+    mutationFn: (toolData: Omit<Tool, 'id' | 'created_at'>) => createTool(toolData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tools"] });
       toast({
@@ -68,7 +69,7 @@ const DashboardCoach = () => {
   });
 
   const deleteToolMutation = useMutation({
-    mutationFn: deleteTool,
+    mutationFn: (toolId: string) => deleteTool(toolId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tools"] });
       toast({
