@@ -10,6 +10,8 @@ export interface GameSummary {
   strongest_point: string;
   improvement_notes: string;
   fatigue_level: number;
+  game_date?: string;
+  opponent_team?: string;
 }
 
 export interface GameSummaryFormValues {
@@ -19,4 +21,6 @@ export interface GameSummaryFormValues {
   strongest_point: string;
   improvement_notes: string;
   fatigue_level: number;
+  game_date?: string;
+  opponent_team?: string;
 }

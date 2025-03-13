@@ -56,6 +56,10 @@ export default function PlayerGameSummary() {
   }, [toast, navigate]);
 
   const handleSummarySubmitted = () => {
+    toast({
+      title: "סיכום המשחק נשמר בהצלחה",
+      description: "הנתונים נשמרו במערכת",
+    });
     setActiveTab("history");
   };
 

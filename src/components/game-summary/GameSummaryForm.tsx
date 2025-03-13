@@ -13,6 +13,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/lib/supabase";
 import { Slider } from "@/components/ui/slider";
 import { GameSummaryFormValues } from "@/types/gameSummary";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { CalendarIcon, Save } from "lucide-react";
 
 const formSchema = z.object({
   performance_rating: z.number().min(1).max(10),
@@ -21,6 +26,8 @@ const formSchema = z.object({
   strongest_point: z.string().min(3, { message: "יש להזין לפחות 3 תווים" }),
   improvement_notes: z.string().min(3, { message: "יש להזין לפחות 3 תווים" }),
   fatigue_level: z.number().min(1).max(10),
+  game_date: z.date().optional(),
+  opponent_team: z.string().optional(),
 });
 
 interface GameSummaryFormProps {
@@ -42,6 +49,7 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
     strongest_point: "",
     improvement_notes: "",
     fatigue_level: 5,
+    opponent_team: "",
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -73,6 +81,8 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
           strongest_point: values.strongest_point,
           improvement_notes: values.improvement_notes,
           fatigue_level: values.fatigue_level,
+          game_date: values.game_date ? format(values.game_date, 'yyyy-MM-dd') : null,
+          opponent_team: values.opponent_team || null,
         })
         .select();
 
@@ -113,6 +123,65 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="game_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>תאריך המשחק</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-right font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "dd/MM/yyyy")
+                            ) : (
+                              <span>בחר תאריך</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="opponent_team"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>קבוצה יריבה</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="שם הקבוצה היריבה" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
@@ -257,7 +326,8 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
             />
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" className="bg-primary font-bold" disabled={isSubmitting}>
+                <Save className="w-4 h-4 mr-2" />
                 {isSubmitting ? "שומר..." : "שמור סיכום משחק"}
               </Button>
             </div>

@@ -1,108 +1,137 @@
 
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { GameSummary } from "@/types/gameSummary";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 
 interface GameSummaryListProps {
   playerId: string;
-  coachView?: boolean;
 }
 
-export function GameSummaryList({ playerId, coachView = false }: GameSummaryListProps) {
-  const fetchSummaries = async (): Promise<GameSummary[]> => {
-    const { data, error } = await supabase
-      .from("game_summaries")
-      .select("*")
-      .eq("player_id", playerId)
-      .order("created_at", { ascending: false });
+export function GameSummaryList({ playerId }: GameSummaryListProps) {
+  const [summaries, setSummaries] = useState<GameSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-    if (error) {
-      throw new Error(error.message);
-    }
+  useEffect(() => {
+    const fetchGameSummaries = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("game_summaries")
+          .select("*")
+          .eq("player_id", playerId)
+          .order("created_at", { ascending: false });
 
-    return data || [];
-  };
+        if (error) {
+          throw error;
+        }
 
-  const { data: summaries, isLoading, error } = useQuery({
-    queryKey: ["game-summaries", playerId],
-    queryFn: fetchSummaries
-  });
+        setSummaries(data || []);
+      } catch (error: any) {
+        console.error("Error fetching game summaries:", error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה בטעינת סיכומי משחק",
+          description: error.message || "אירעה שגיאה. אנא נסה שוב מאוחר יותר.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGameSummaries();
+  }, [playerId, toast]);
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-40">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
   }
 
-  if (error) {
+  if (summaries.length === 0) {
     return (
-      <div className="text-center p-4 text-destructive">
-        שגיאה בטעינת נתונים: {(error as Error).message}
-      </div>
-    );
-  }
-
-  if (!summaries || summaries.length === 0) {
-    return (
-      <div className="text-center p-8 bg-muted/20 rounded-lg border border-dashed">
-        <p className="text-muted-foreground">אין סיכומי משחקים להצגה</p>
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium">אין סיכומי משחק</h3>
+        <p className="text-muted-foreground mt-1">סיכומי משחק שתשמור יופיעו כאן</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-xl font-semibold mb-4">סיכומי משחקים אחרונים</h3>
+    <div className="space-y-6">
       {summaries.map((summary) => (
-        <Card key={summary.id} className="mb-4">
-          <CardHeader className="pb-2">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-lg font-semibold">
-                סיכום משחק
-              </CardTitle>
-              <CardDescription>
-                {summary.created_at && format(new Date(summary.created_at), "dd/MM/yyyy")}
-              </CardDescription>
-            </div>
+        <Card key={summary.id} className="overflow-hidden">
+          <CardHeader className="bg-muted/40 pb-2">
+            <CardTitle className="text-lg">
+              סיכום משחק 
+              {summary.opponent_team && ` מול ${summary.opponent_team}`}
+            </CardTitle>
+            <CardDescription className="flex items-center justify-between">
+              <span>
+                {summary.game_date 
+                  ? `תאריך המשחק: ${format(new Date(summary.game_date), "dd/MM/yyyy")}`
+                  : `תאריך הסיכום: ${format(new Date(summary.created_at || ''), "dd/MM/yyyy")}`
+                }
+              </span>
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">דירוג ביצועים:</span>
-                  <span className="font-medium">{summary.performance_rating}/10</span>
+          <CardContent className="pt-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <div className="mb-4">
+                  <h4 className="font-semibold mb-1">ביצוע כללי:</h4>
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="absolute top-0 left-0 h-full bg-primary rounded-full"
+                      style={{ width: `${(summary.performance_rating / 10) * 100}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-right text-sm mt-1">{summary.performance_rating}/10</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">רמת ריכוז:</span>
-                  <span className="font-medium">{summary.concentration_level}/10</span>
+
+                <div className="mb-4">
+                  <h4 className="font-semibold mb-1">רמת ריכוז:</h4>
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="absolute top-0 left-0 h-full bg-primary rounded-full"
+                      style={{ width: `${(summary.concentration_level / 10) * 100}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-right text-sm mt-1">{summary.concentration_level}/10</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">עמידה במטרות:</span>
-                  <Badge variant={summary.goals_met ? "success" : "destructive"}>
-                    {summary.goals_met ? "כן" : "לא"}
-                  </Badge>
+
+                <div className="mb-4">
+                  <h4 className="font-semibold mb-1">רמת עייפות:</h4>
+                  <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="absolute top-0 left-0 h-full bg-amber-500 rounded-full"
+                      style={{ width: `${(summary.fatigue_level / 10) * 100}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-right text-sm mt-1">{summary.fatigue_level}/10</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">רמת עייפות:</span>
-                  <span className="font-medium">{summary.fatigue_level}/10</span>
+
+                <div>
+                  <h4 className="font-semibold mb-1">האם השגת את המטרות?</h4>
+                  <span className={`px-2 py-1 rounded-md text-xs ${summary.goals_met ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {summary.goals_met ? 'כן' : 'לא'}
+                  </span>
                 </div>
               </div>
               
-              <div className="space-y-3">
-                <div>
-                  <h4 className="text-sm font-medium mb-1">הנקודה החזקה ביותר:</h4>
-                  <p className="text-sm bg-muted/30 p-2 rounded">{summary.strongest_point}</p>
+              <div>
+                <div className="mb-4">
+                  <h4 className="font-semibold mb-1">הנקודה החזקה ביותר:</h4>
+                  <p className="text-sm bg-muted/30 p-2 rounded-md">{summary.strongest_point}</p>
                 </div>
+                
                 <div>
-                  <h4 className="text-sm font-medium mb-1">תחומים לשיפור:</h4>
-                  <p className="text-sm bg-muted/30 p-2 rounded">{summary.improvement_notes}</p>
+                  <h4 className="font-semibold mb-1">נקודות לשיפור:</h4>
+                  <p className="text-sm bg-muted/30 p-2 rounded-md">{summary.improvement_notes}</p>
                 </div>
               </div>
             </div>
