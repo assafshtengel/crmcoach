@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "./components/theme-provider"
@@ -20,7 +21,7 @@ import PlayerMeetings from './pages/player/PlayerMeetings';
 import DailyMentalState from './pages/player/DailyMentalState';
 import MentalStateHistory from './pages/player/MentalStateHistory';
 import TrainingForecasts from './pages/player/TrainingForecasts';
-import PlayerVideos from './pages/player/PlayerVideos';
+import PlayerVideosPage from './pages/player/PlayerVideos';
 
 const Sessions = () => <div>Sessions Page</div>;
 const SessionDetails = () => <div>Session Details Page</div>;
@@ -31,7 +32,7 @@ const PlayerDashboard = () => <div>Player Dashboard Page</div>;
 const CoachProfile = () => <div>Coach Profile Page</div>;
 const PlayerRegistration = () => <div>Player Registration Page</div>;
 const RegistrationLinks = () => <div>Registration Links Page</div>;
-const PlayerVideos = () => <div>Player Videos Page</div>;
+const PlayerVideosPlaceholder = () => <div>Player Videos Page</div>;
 const PlayerGoals = () => <div>Player Goals Page</div>;
 const Contract = () => <div>Contract Page</div>;
 
@@ -72,7 +73,7 @@ const App = () => {
               <Route path="/player/mental-state-history" element={<MentalStateHistory />} />
               <Route path="/player/game-summary" element={<PlayerGameSummary />} />
               <Route path="/player/training-summary" element={<PlayerTrainingSummary />} />
-              <Route path="/player/videos" element={<PlayerVideos />} />
+              <Route path="/player/videos" element={<PlayerVideosPage />} />
               <Route path="/player/meetings" element={<PlayerMeetings />} />
               <Route path="/player/goals" element={<PlayerGoals />} />
               <Route path="/player/game-preparation" element={<div>Game Preparation Page</div>} />
