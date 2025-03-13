@@ -7,9 +7,11 @@ import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CalendarClock, Users, MapPin, Clock } from 'lucide-react';
+import { CalendarClock, Users, MapPin, Clock, Info } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 
 interface SessionFormDialogProps {
   open: boolean;
@@ -33,7 +35,8 @@ export function SessionFormDialog({
   const [loading, setLoading] = useState(true);
   const [meetingType, setMeetingType] = useState<'in_person' | 'zoom'>('in_person');
   const [players, setPlayers] = useState<Array<{id: string, full_name: string}>>([]);
-  const [activeTab, setActiveTab] = useState("calendar");
+  const [location, setLocation] = useState('');
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     async function fetchData() {
@@ -107,7 +110,7 @@ export function SessionFormDialog({
 
   const handleAddEvent = async (eventData: any) => {
     try {
-      if (!eventData.extendedProps?.player_id) {
+      if (!selectedPlayerId) {
         toast.error('נא לבחור שחקן לפני הוספת מפגש');
         return;
       }
@@ -119,12 +122,12 @@ export function SessionFormDialog({
       }
 
       const sessionData = {
-        player_id: eventData.extendedProps.player_id,
+        player_id: selectedPlayerId,
         coach_id: user.id,
         session_date: eventData.start.split('T')[0],
         session_time: eventData.start.split('T')[1].substring(0, 5),
-        location: eventData.extendedProps.location || '',
-        notes: eventData.extendedProps.notes || '',
+        location: location || '',
+        notes: notes || '',
         reminder_sent: false,
         meeting_type: meetingType
       };
@@ -146,6 +149,11 @@ export function SessionFormDialog({
       
       toast.success('המפגש נוצר בהצלחה');
       
+      // Reset form
+      setSelectedPlayerId(undefined);
+      setLocation('');
+      setNotes('');
+      
       onOpenChange(false);
     } catch (error) {
       console.error('Error processing event data:', error);
@@ -155,7 +163,7 @@ export function SessionFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden p-0">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden">
         <DialogHeader className="bg-gradient-to-r from-[#3498DB] to-[#9b87f5] text-white px-6 py-4 rounded-t-lg">
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <CalendarClock className="h-6 w-6" />
@@ -166,24 +174,11 @@ export function SessionFormDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="calendar" className="w-full" onValueChange={setActiveTab}>
-          <div className="px-6 pt-4">
-            <TabsList className="w-full grid grid-cols-2 mb-4">
-              <TabsTrigger value="calendar" className="text-base py-3">
-                <CalendarClock className="h-4 w-4 mr-2" />
-                לוח שנה
-              </TabsTrigger>
-              <TabsTrigger value="details" className="text-base py-3">
-                <Users className="h-4 w-4 mr-2" />
-                פרטי מפגש
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          
-          <ScrollArea className="flex-1 h-[calc(90vh-180px)] px-6 pb-6">
-            <TabsContent value="calendar" className="mt-0 space-y-4">
-              {!loading && (
-                <div className="border rounded-lg p-4 bg-white shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
+          <div className="md:col-span-2">
+            <Card className="shadow-sm h-full">
+              <CardContent className="p-4">
+                {!loading && (
                   <Calendar
                     events={events}
                     onEventClick={handleEventClick}
@@ -192,82 +187,106 @@ export function SessionFormDialog({
                     players={players}
                     setSelectedPlayerId={setSelectedPlayerId}
                   />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="space-y-4">
+            <Card className="border-[#3498DB] shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="h-5 w-5 text-[#3498DB]" />
+                  <h3 className="font-medium text-lg">בחירת שחקן</h3>
                 </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="details" className="mt-0">
-              <div className="space-y-6">
-                <Card className="border-[#3498DB] border-2">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <MapPin className="h-5 w-5 text-[#3498DB]" />
-                      <h3 className="font-medium text-lg">סוג מפגש</h3>
-                    </div>
-                    
-                    <RadioGroup 
-                      value={meetingType} 
-                      onValueChange={(value) => setMeetingType(value as 'in_person' | 'zoom')}
-                      className="grid grid-cols-2 gap-4"
-                    >
-                      <div className={`relative border-2 rounded-lg p-4 transition-all ${meetingType === 'in_person' ? 'border-[#27AE60] bg-[#27AE60]/10' : 'border-gray-200'}`}>
-                        <div className="absolute top-3 right-3">
-                          <RadioGroupItem value="in_person" id="in_person" className="text-[#27AE60]" />
-                        </div>
-                        <div className="pt-6 text-center">
-                          <MapPin className="h-10 w-10 mx-auto mb-2 text-[#27AE60]" />
-                          <Label htmlFor="in_person" className="cursor-pointer text-lg font-medium block">פרונטלי</Label>
-                          <p className="text-sm text-gray-500 mt-1">מפגש פנים אל פנים</p>
-                        </div>
-                      </div>
-                      
-                      <div className={`relative border-2 rounded-lg p-4 transition-all ${meetingType === 'zoom' ? 'border-[#3498DB] bg-[#3498DB]/10' : 'border-gray-200'}`}>
-                        <div className="absolute top-3 right-3">
-                          <RadioGroupItem value="zoom" id="zoom" className="text-[#3498DB]" />
-                        </div>
-                        <div className="pt-6 text-center">
-                          <Clock className="h-10 w-10 mx-auto mb-2 text-[#3498DB]" />
-                          <Label htmlFor="zoom" className="cursor-pointer text-lg font-medium block">זום</Label>
-                          <p className="text-sm text-gray-500 mt-1">מפגש מקוון</p>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                  </CardContent>
-                </Card>
                 
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Users className="h-5 w-5 text-[#9b59b6]" />
-                      <h3 className="font-medium text-lg">בחירת שחקן</h3>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 mt-4">
-                      {players.map(player => (
-                        <div 
-                          key={player.id}
-                          className={`border rounded-lg p-3 cursor-pointer transition-all ${
-                            selectedPlayerId === player.id 
-                              ? 'bg-[#9b59b6]/10 border-[#9b59b6]' 
-                              : 'hover:bg-gray-50 border-gray-200'
-                          }`}
-                          onClick={() => setSelectedPlayerId(player.id)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-[#9b59b6]/20 flex items-center justify-center text-[#9b59b6] font-medium">
-                              {player.full_name.charAt(0)}
-                            </div>
-                            <span className="font-medium">{player.full_name}</span>
+                <ScrollArea className="h-[200px] rounded-md border p-2">
+                  <div className="grid grid-cols-1 gap-2">
+                    {players.map(player => (
+                      <div 
+                        key={player.id}
+                        className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                          selectedPlayerId === player.id 
+                            ? 'bg-[#3498DB]/10 border-[#3498DB]' 
+                            : 'hover:bg-gray-50 border-gray-200'
+                        }`}
+                        onClick={() => setSelectedPlayerId(player.id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-[#3498DB]/20 flex items-center justify-center text-[#3498DB] font-medium">
+                            {player.full_name.charAt(0)}
                           </div>
+                          <span className="font-medium">{player.full_name}</span>
                         </div>
-                      ))}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <MapPin className="h-5 w-5 text-[#27AE60]" />
+                  <h3 className="font-medium text-lg">סוג מפגש</h3>
+                </div>
+                
+                <RadioGroup 
+                  value={meetingType} 
+                  onValueChange={(value) => setMeetingType(value as 'in_person' | 'zoom')}
+                  className="grid grid-cols-2 gap-2"
+                >
+                  <div className={`relative border-2 rounded-lg p-2 transition-all ${meetingType === 'in_person' ? 'border-[#27AE60] bg-[#27AE60]/10' : 'border-gray-200'}`}>
+                    <div className="absolute top-2 right-2">
+                      <RadioGroupItem value="in_person" id="in_person" className="text-[#27AE60]" />
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </ScrollArea>
-        </Tabs>
+                    <div className="pt-4 text-center">
+                      <MapPin className="h-6 w-6 mx-auto mb-1 text-[#27AE60]" />
+                      <Label htmlFor="in_person" className="cursor-pointer text-sm font-medium block">פרונטלי</Label>
+                    </div>
+                  </div>
+                  
+                  <div className={`relative border-2 rounded-lg p-2 transition-all ${meetingType === 'zoom' ? 'border-[#3498DB] bg-[#3498DB]/10' : 'border-gray-200'}`}>
+                    <div className="absolute top-2 right-2">
+                      <RadioGroupItem value="zoom" id="zoom" className="text-[#3498DB]" />
+                    </div>
+                    <div className="pt-4 text-center">
+                      <Clock className="h-6 w-6 mx-auto mb-1 text-[#3498DB]" />
+                      <Label htmlFor="zoom" className="cursor-pointer text-sm font-medium block">זום</Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin className="h-5 w-5 text-[#9b59b6]" />
+                  <h3 className="font-medium">מיקום</h3>
+                </div>
+                <Input 
+                  placeholder={meetingType === 'in_person' ? 'הכנס מיקום פיזי' : 'קישור לפגישת זום'} 
+                  value={location} 
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="mb-4"
+                />
+                
+                <div className="flex items-center gap-2 mb-2">
+                  <Info className="h-5 w-5 text-[#F1C40F]" />
+                  <h3 className="font-medium">הערות</h3>
+                </div>
+                <Textarea 
+                  placeholder="הוסף הערות למפגש" 
+                  value={notes} 
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="resize-none h-20"
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
