@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -7,6 +6,7 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Layout } from '@/components/layout/Layout';
 import ToolManagement from '@/pages/ToolManagement';
 import AutoVideoManagement from '@/pages/AutoVideoManagement';
+import GameSummaryDetails from "./pages/GameSummaryDetails";
 
 // Import all the missing page components
 import DashboardCoach from '@/pages/DashboardCoach';
@@ -129,6 +129,7 @@ function App() {
             <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} />
             <Route path="/game-summary" element={<AuthGuard><GameSummary /></AuthGuard>} />
             <Route path="/player-game-summaries/:playerId" element={<AuthGuard><PlayerGameSummaryView /></AuthGuard>} />
+            <Route path="/game-summary/:playerId" element={<GameSummaryDetails />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

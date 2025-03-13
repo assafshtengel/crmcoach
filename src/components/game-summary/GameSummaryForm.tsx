@@ -34,6 +34,7 @@ interface GameSummaryFormProps {
   playerData?: {
     id: string;
     coach_id?: string;
+    full_name?: string;
   };
   onSuccess?: () => void;
 }
@@ -78,7 +79,8 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
         game_date: values.game_date ? values.game_date.toISOString().split('T')[0] : null,
       });
 
-      const { data, error } = await supabase
+      // First, insert the game summary
+      const { data: summaryData, error: summaryError } = await supabase
         .from("game_summaries")
         .insert({
           player_id: playerData.id,
@@ -94,12 +96,46 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
         })
         .select();
 
-      if (error) {
-        console.error("Supabase error details:", error);
-        throw error;
+      if (summaryError) {
+        console.error("Supabase error details:", summaryError);
+        throw summaryError;
       }
 
-      console.log("Game summary saved successfully:", data);
+      console.log("Game summary saved successfully:", summaryData);
+
+      // Now create a notification for the coach if coach_id exists
+      if (playerData.coach_id && summaryData && summaryData[0]) {
+        const summaryId = summaryData[0].id;
+        const playerName = playerData.full_name || "שחקן";
+        const gameDate = values.game_date 
+          ? format(values.game_date, "dd/MM/yyyy")
+          : "משחק אחרון";
+        const opponentTeam = values.opponent_team || "קבוצה לא ידועה";
+        
+        const notificationMessage = `${playerName} מילא סיכום משחק נגד ${opponentTeam} מתאריך ${gameDate}`;
+
+        const { error: notificationError } = await supabase
+          .from("notifications")
+          .insert({
+            coach_id: playerData.coach_id,
+            type: "game_summary",
+            message: notificationMessage,
+            meta: {
+              summary_id: summaryId,
+              player_id: playerData.id,
+              player_name: playerName,
+              game_date: values.game_date ? values.game_date.toISOString().split('T')[0] : null,
+              opponent_team: values.opponent_team || null
+            }
+          });
+
+        if (notificationError) {
+          console.error("Error creating notification:", notificationError);
+          // Don't throw here - we still want to show success for the summary
+        } else {
+          console.log("Coach notification created successfully");
+        }
+      }
 
       toast({
         title: "סיכום המשחק נשמר בהצלחה",

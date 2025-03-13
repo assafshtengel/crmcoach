@@ -25,6 +25,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 import EducationalTab from '@/components/educational/EducationalTab';
+import { useQuery } from "@tanstack/react-query";
+import { NotificationsBell } from "@/components/dashboard/NotificationsBell";
 
 interface DashboardStats {
   totalPlayers: number;
@@ -838,7 +840,14 @@ const DashboardCoach = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
+    <div className="container mx-auto py-6">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">לוח הבקרה</h1>
+        <div className="flex items-center gap-4">
+          <NotificationsBell />
+        </div>
+      </div>
+      
       <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1108,7 +1117,7 @@ const DashboardCoach = () => {
               <Target className="h-5 w-5 text-[#27ae60]" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500 mb-3">מלא טו��ס הכנה למשחק עבור השחקנים</p>
+              <p className="text-sm text-gray-500 mb-3">מלא טופס הכנה למשחק עבור השחקנים</p>
               <Button 
                 variant="default" 
                 className="w-full bg-[#27ae60] hover:bg-[#219653]"
@@ -1275,4 +1284,3 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
-
