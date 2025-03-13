@@ -23,18 +23,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { useUser } from "@clerk/clerk-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/lib/supabase";
 
 const DashboardCoach = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newToolName, setNewToolName] = useState("");
   const [newToolDescription, setNewToolDescription] = useState("");
   const [tools, setTools] = useState<Tool[]>([]);
+  const [userName, setUserName] = useState<string>("");
+  const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user } = useUser();
+
+  // Fetch the current user from Supabase
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
+        setUserId(data.user.id);
+        setUserName(data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || 'מאמן');
+      }
+    };
+    
+    fetchUser();
+  }, []);
 
   const { data: toolsData, isLoading, isError } = useQuery({
     queryKey: ["tools"],
@@ -104,7 +118,7 @@ const DashboardCoach = () => {
       return;
     }
 
-    if (!user) {
+    if (!userId) {
       toast({
         title: "משתמש לא מזוהה",
         description: "נא לבצע התחברות מחדש",
@@ -116,7 +130,7 @@ const DashboardCoach = () => {
     await createToolMutation.mutateAsync({
       name: newToolName,
       description: newToolDescription,
-      creatorId: user.id
+      creatorId: userId
     });
   };
 
@@ -125,10 +139,10 @@ const DashboardCoach = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
+    <div className="container mx-auto py-8 px-4 md:px-6 min-h-screen overflow-y-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">
-          שלום {user?.firstName} 👋
+          שלום {userName} 👋
         </h1>
         <p className="text-gray-500">
           ברוכים הבאים ללוח הבקרה שלך. כאן תוכלו לנהל את הכלים וההגדרות שלך.
@@ -136,7 +150,10 @@ const DashboardCoach = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-        <div className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB] cursor-pointer" onClick={() => navigate("/tool-management")}>
+        <div 
+          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB] cursor-pointer" 
+          onClick={() => navigate("/tool-management")}
+        >
           <CardContent className="p-6">
             <div className="flex items-center mb-4">
               <Code className="text-[#3498DB] mr-2 w-5 h-5" />
@@ -152,7 +169,7 @@ const DashboardCoach = () => {
 
         <div 
           className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F] cursor-pointer" 
-          onClick={() => navigate("/tool-management?tab=videos")}
+          onClick={() => navigate("/videos-management")}
         >
           <CardContent className="p-6">
             <div className="flex items-center mb-4">
@@ -167,7 +184,10 @@ const DashboardCoach = () => {
           </CardContent>
         </div>
 
-        <div className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#2ECC71] cursor-pointer" onClick={() => navigate("/settings")}>
+        <div 
+          className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#2ECC71] cursor-pointer" 
+          onClick={() => navigate("/settings")}
+        >
           <CardContent className="p-6">
             <div className="flex items-center mb-4">
               <Settings className="text-[#2ECC71] mr-2 w-5 h-5" />
@@ -206,17 +226,17 @@ const DashboardCoach = () => {
             ))}
           </div>
         ) : isError ? (
-          <div className="text-red-500">
-            אירעה שגיאה בטעינת הכלים.
+          <div className="text-red-500 p-4 bg-red-50 rounded-md">
+            אירעה שגיאה בטעינת הכלים. אנא נסו שוב מאוחר יותר.
           </div>
         ) : tools.length === 0 ? (
-          <div className="text-gray-500">
+          <div className="text-gray-500 p-8 bg-gray-50 rounded-md text-center">
             לא הוספת כלים עדיין. לחץ על "הוסף כלי חדש" כדי להתחיל.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tools.map((tool) => (
-              <Card key={tool.id} className="shadow-md">
+              <Card key={tool.id} className="shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <h3 className="font-semibold text-lg text-gray-700 mb-2">
                     {tool.name}
