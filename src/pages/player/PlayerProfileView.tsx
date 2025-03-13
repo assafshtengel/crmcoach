@@ -116,12 +116,15 @@ const PlayerProfileView = () => {
   };
 
   const handleNavigation = (path: string) => {
-    // For empty pages, show toast instead of navigating
+    // Update implemented pages list to include our new pages
     const implementedPages = [
       '/player/daily-mental-state', 
       '/player/mental-state-history',
       '/player/chat',
-      '/player/contract'
+      '/player/contract',
+      '/player/training-summary',
+      '/player/game-summary',
+      '/player/meetings'
     ];
     
     if (implementedPages.includes(path)) {
