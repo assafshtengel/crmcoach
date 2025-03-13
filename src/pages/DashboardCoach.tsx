@@ -210,7 +210,7 @@ const DashboardCoach = () => {
             <Button 
               variant="outline" 
               className="w-full mt-4 border-yellow-400 text-yellow-600"
-              onClick={() => navigate("/add-video")}
+              onClick={() => navigate("/training-videos")}
             >
               הוסף סרטון חדש
             </Button>
@@ -233,7 +233,7 @@ const DashboardCoach = () => {
             <Button 
               variant="outline" 
               className="w-full mt-4 border-blue-400 text-blue-600"
-              onClick={() => navigate("/view-meetings")}
+              onClick={() => navigate("/sessions-list")}
             >
               צפה בפירוט המפגשים המתוזמנים
             </Button>
@@ -256,7 +256,7 @@ const DashboardCoach = () => {
             <Button 
               variant="outline" 
               className="w-full mt-4 border-green-400 text-green-600"
-              onClick={() => navigate("/view-players-progress")}
+              onClick={() => navigate("/players-list")}
             >
               צפה בהתקדמות המשתתפים
             </Button>
@@ -277,7 +277,7 @@ const DashboardCoach = () => {
             <p className="text-gray-600 mb-6 text-right">צפה בסיכומי 10 המפגשים האחרונים וערוך אותם</p>
             <Button 
               className="w-full bg-purple-500 hover:bg-purple-600"
-              onClick={() => navigate("/meeting-summaries")}
+              onClick={() => navigate("/all-meeting-summaries")}
             >
               צפה בסיכומי מפגשים
             </Button>
@@ -295,7 +295,7 @@ const DashboardCoach = () => {
             <p className="text-gray-600 mb-6 text-right">צפה בדוחות על התקדמות המשתתפים וביצועיהם</p>
             <Button 
               className="w-full bg-red-500 hover:bg-red-600"
-              onClick={() => navigate("/statistics")}
+              onClick={() => navigate("/reports")}
             >
               צפה בדוחות
             </Button>
@@ -349,7 +349,7 @@ const DashboardCoach = () => {
             <p className="text-gray-600 mb-6 text-right">צפה בהישגים של המשתתפים ועקוב אחר שיפורם</p>
             <Button 
               className="w-full bg-orange-500 hover:bg-orange-600"
-              onClick={() => navigate("/achievements")}
+              onClick={() => navigate("/player-statistics")}
             >
               צפה בהישגים
             </Button>
@@ -367,7 +367,7 @@ const DashboardCoach = () => {
             <p className="text-gray-600 mb-6 text-right">צפה בסיכומי משחקים וניתוח ביצועים עבור כל משתתף</p>
             <Button 
               className="w-full bg-purple-500 hover:bg-purple-600"
-              onClick={() => navigate("/game-summaries")}
+              onClick={() => navigate("/game-summary")}
             >
               צפה בסיכומי משחק
             </Button>
