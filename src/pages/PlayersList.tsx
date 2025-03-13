@@ -24,7 +24,7 @@ interface Player {
   sport_field?: string;
   notes?: string;
   registration_link_id?: string | null;
-  contact_status?: 'contacted' | 'pending' | null;
+  contact_status?: 'contacted' | 'pending' | 'in_progress' | 'completed' | null;
   created_at: string;
   past_sessions_count: number;
   last_session_date?: string;
@@ -72,6 +72,10 @@ const PlayersList = () => {
       result = result.filter(player => player.contact_status === 'contacted');
     } else if (contactStatusFilter === 'pending') {
       result = result.filter(player => player.contact_status === 'pending');
+    } else if (contactStatusFilter === 'in_progress') {
+      result = result.filter(player => player.contact_status === 'in_progress');
+    } else if (contactStatusFilter === 'completed') {
+      result = result.filter(player => player.contact_status === 'completed');
     }
     setFilteredPlayers(result);
   };
@@ -194,7 +198,7 @@ const PlayersList = () => {
     });
   };
 
-  const updateContactStatus = async (playerId: string, newStatus: 'contacted' | 'pending') => {
+  const updateContactStatus = async (playerId: string, newStatus: 'contacted' | 'pending' | 'in_progress' | 'completed') => {
     try {
       const {
         error
@@ -412,7 +416,7 @@ const PlayersList = () => {
         row
       }) => {
         const player = row.original;
-        return <Select value={player.contact_status || 'pending'} onValueChange={value => updateContactStatus(player.id, value as 'contacted' | 'pending')}>
+        return <Select value={player.contact_status || 'pending'} onValueChange={value => updateContactStatus(player.id, value as 'contacted' | 'pending' | 'in_progress' | 'completed')}>
                 <SelectTrigger className="w-[140px] text-right">
                   <SelectValue />
                 </SelectTrigger>
@@ -421,6 +425,18 @@ const PlayersList = () => {
                     <div className="flex items-center">
                       <CheckCircle className="h-3 w-3 text-green-600 mr-2" />
                       יצרנו קשר
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="in_progress">
+                    <div className="flex items-center">
+                      <Clock className="h-3 w-3 text-blue-600 mr-2" />
+                      בתהליך
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="completed">
+                    <div className="flex items-center">
+                      <CheckCircle className="h-3 w-3 text-purple-600 mr-2" />
+                      הסתיים התהליך
                     </div>
                   </SelectItem>
                   <SelectItem value="pending">
@@ -706,6 +722,8 @@ const PlayersList = () => {
                 <SelectContent className="text-right">
                   <SelectItem value="all">כל השחקנים</SelectItem>
                   <SelectItem value="contacted">יצרנו קשר</SelectItem>
+                  <SelectItem value="in_progress">בתהליך</SelectItem>
+                  <SelectItem value="completed">הסתיים התהליך</SelectItem>
                   <SelectItem value="pending">ממתין ליצירת קשר</SelectItem>
                 </SelectContent>
               </Select>
