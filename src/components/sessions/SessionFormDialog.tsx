@@ -110,6 +110,7 @@ export function SessionFormDialog({
       }
 
       const formattedDate = format(data.session_date, 'yyyy-MM-dd');
+      const selectedPlayer = players.find(p => p.id === data.player_id);
 
       const sessionData = {
         player_id: data.player_id,
@@ -135,7 +136,19 @@ export function SessionFormDialog({
         throw error;
       }
       
-      toast.success('המפגש נוצר בהצלחה');
+      // Create a notification for the new session
+      const notificationData = {
+        coach_id: user.id,
+        type: 'new_session',
+        message: `נקבע מפגש חדש עם ${selectedPlayer?.full_name} בתאריך ${formattedDate}`
+      };
+      
+      await supabase
+        .from('notifications')
+        .insert(notificationData);
+        
+      const meetingTypeText = data.meeting_type === 'in_person' ? 'פרונטלי' : 'בזום';
+      toast.success(`המפגש ${meetingTypeText} עם ${selectedPlayer?.full_name} נקבע בהצלחה!`);
       onOpenChange(false);
     } catch (error) {
       console.error('Error processing session data:', error);
@@ -145,8 +158,8 @@ export function SessionFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden">
-        <DialogHeader className="bg-gradient-to-r from-[#3498DB] to-[#9b87f5] text-white px-6 py-4 rounded-t-lg">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-auto">
+        <DialogHeader className="bg-gradient-to-r from-[#3498DB] to-[#9b87f5] text-white px-6 py-4 rounded-t-lg sticky top-0 z-10">
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <CalendarClock className="h-6 w-6" />
             הוספת מפגש חדש
@@ -168,15 +181,15 @@ export function SessionFormDialog({
                     <Users className="h-5 w-5 text-[#3498DB]" />
                     בחירת שחקן
                   </FormLabel>
-                  <ScrollArea className="h-[120px] rounded-md border p-2">
+                  <ScrollArea className="h-[120px] rounded-md border p-2 border-[#D3E4FD] bg-[#F1F0FB]/30">
                     <div className="grid grid-cols-2 gap-2">
                       {players.map(player => (
                         <div 
                           key={player.id}
                           className={`border rounded-lg p-3 cursor-pointer transition-all ${
                             field.value === player.id 
-                              ? 'bg-[#3498DB]/10 border-[#3498DB]' 
-                              : 'hover:bg-gray-50 border-gray-200'
+                              ? 'bg-[#3498DB]/10 border-[#3498DB] shadow-sm' 
+                              : 'hover:bg-[#F1F0FB] border-gray-200'
                           }`}
                           onClick={() => form.setValue('player_id', player.id)}
                         >
@@ -248,6 +261,7 @@ export function SessionFormDialog({
                       <Input 
                         placeholder={form.watch('meeting_type') === 'in_person' ? 'הכנס מיקום פיזי' : 'קישור לפגישת זום'} 
                         {...field}
+                        className="border-[#D3E4FD] focus:border-[#9b87f5]"
                       />
                     </FormControl>
                   </FormItem>
@@ -272,7 +286,7 @@ export function SessionFormDialog({
                           <Button
                             variant="outline"
                             className={cn(
-                              "w-full pl-3 text-right font-normal",
+                              "w-full pl-3 text-right font-normal border-[#D3E4FD]",
                               !field.value && "text-muted-foreground"
                             )}
                           >
@@ -290,7 +304,6 @@ export function SessionFormDialog({
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
                           initialFocus
                           className="p-3 pointer-events-auto bg-white"
                         />
@@ -314,6 +327,7 @@ export function SessionFormDialog({
                       <Input 
                         type="time"
                         {...field}
+                        className="border-[#D3E4FD] focus:border-[#9b87f5]"
                       />
                     </FormControl>
                   </FormItem>
@@ -334,7 +348,7 @@ export function SessionFormDialog({
                   <FormControl>
                     <Textarea 
                       placeholder="הוסף הערות למפגש" 
-                      className="resize-none h-20"
+                      className="resize-none h-20 border-[#D3E4FD] focus:border-[#9b87f5]"
                       {...field}
                     />
                   </FormControl>
@@ -342,11 +356,11 @@ export function SessionFormDialog({
               )}
             />
 
-            <DialogFooter className="mt-6">
-              <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+            <DialogFooter className="mt-6 pt-4 border-t border-[#F1F0FB]">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-[#D3E4FD]">
                 ביטול
               </Button>
-              <Button type="submit" className="bg-[#3498DB]">
+              <Button type="submit" className="bg-gradient-to-r from-[#3498DB] to-[#9b87f5] hover:opacity-90">
                 יצירת מפגש
               </Button>
             </DialogFooter>
