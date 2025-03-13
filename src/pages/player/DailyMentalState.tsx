@@ -2,35 +2,36 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { Brain, CheckCircle, AlertTriangle, MessageCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { ArrowRight, Save, SmilePlus } from "lucide-react";
+import { MentalStateFormValues } from "@/types/mentalState";
 
-const DailyMentalState = () => {
-  const [playerData, setPlayerData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [alreadyFilledToday, setAlreadyFilledToday] = useState<boolean>(false);
-  const [submitting, setSubmitting] = useState<boolean>(false);
+export default function DailyMentalState() {
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formCompleted, setFormCompleted] = useState(false);
   const navigate = useNavigate();
-
-  // Form state
-  const [mentalState, setMentalState] = useState({
-    feeling_score: 7,
-    motivation_level: 7,
+  const { toast } = useToast();
+  
+  const [formValues, setFormValues] = useState<MentalStateFormValues>({
+    feeling_score: 5,
+    motivation_level: 5,
     mental_fatigue_level: 5,
-    has_concerns: false,
-    concerns_details: "",
     improvement_focus: "",
+    has_concerns: false,
+    concerns_details: ""
   });
 
   useEffect(() => {
-    const loadPlayerData = async () => {
+    const checkTodaySubmission = async () => {
       try {
+        setLoading(true);
         const playerSessionStr = localStorage.getItem('playerSession');
         
         if (!playerSessionStr) {
@@ -39,23 +40,9 @@ const DailyMentalState = () => {
         }
         
         const playerSession = JSON.parse(playerSessionStr);
-        
-        const { data, error } = await supabase
-          .from('players')
-          .select('*')
-          .eq('id', playerSession.id)
-          .single();
-          
-        if (error) {
-          throw error;
-        }
-        
-        setPlayerData(data);
-        
-        // Check if player has already filled out the form today
         const today = new Date().toISOString().split('T')[0];
         
-        const { data: todayEntry, error: checkError } = await supabase
+        const { data, error } = await supabase
           .from('player_mental_states')
           .select('id')
           .eq('player_id', playerSession.id)
@@ -63,62 +50,90 @@ const DailyMentalState = () => {
           .lt('created_at', `${today}T23:59:59`)
           .limit(1);
           
-        if (checkError) {
-          console.error('Error checking today\'s entry:', checkError);
-        } else {
-          setAlreadyFilledToday(todayEntry && todayEntry.length > 0);
+        if (error) {
+          throw error;
+        }
+        
+        if (data && data.length > 0) {
+          setFormCompleted(true);
         }
       } catch (error: any) {
-        console.error('Error loading player data:', error);
-        toast.error(error.message || "אירעה שגיאה בטעינת נתוני השחקן");
+        console.error('Error checking submission:', error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה בבדיקת טופס",
+          description: error.message || "אירעה שגיאה בטעינת הנתונים"
+        });
       } finally {
         setLoading(false);
       }
     };
     
-    loadPlayerData();
-  }, [navigate]);
+    checkTodaySubmission();
+  }, [navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!playerData?.id) {
-      toast.error("לא ניתן למצוא את פרטי השחקן");
-      return;
-    }
-
     try {
       setSubmitting(true);
+      const playerSessionStr = localStorage.getItem('playerSession');
       
-      const { data, error } = await supabase
+      if (!playerSessionStr) {
+        navigate('/player-auth');
+        return;
+      }
+      
+      const playerSession = JSON.parse(playerSessionStr);
+      
+      const { data: playerData, error: playerError } = await supabase
+        .from('players')
+        .select('coach_id')
+        .eq('id', playerSession.id)
+        .single();
+        
+      if (playerError) {
+        throw playerError;
+      }
+      
+      const { error } = await supabase
         .from('player_mental_states')
         .insert({
-          player_id: playerData.id,
+          player_id: playerSession.id,
           coach_id: playerData.coach_id,
-          feeling_score: mentalState.feeling_score,
-          motivation_level: mentalState.motivation_level,
-          mental_fatigue_level: mentalState.mental_fatigue_level,
-          has_concerns: mentalState.has_concerns,
-          concerns_details: mentalState.concerns_details,
-          improvement_focus: mentalState.improvement_focus,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+          feeling_score: formValues.feeling_score,
+          motivation_level: formValues.motivation_level,
+          mental_fatigue_level: formValues.mental_fatigue_level,
+          improvement_focus: formValues.improvement_focus,
+          has_concerns: formValues.has_concerns,
+          concerns_details: formValues.concerns_details
+        });
+        
+      if (error) {
+        throw error;
+      }
       
-      toast.success("השאלון היומי הוגש בהצלחה!");
-      setAlreadyFilledToday(true);
+      toast({
+        title: "הטופס נשלח בהצלחה",
+        description: "תודה על מילוי שאלון המצב היומי"
+      });
+      
+      setFormCompleted(true);
     } catch (error: any) {
-      console.error('Error submitting mental state:', error);
-      toast.error(error.message || "אירעה שגיאה בשמירת השאלון");
+      console.error('Error submitting form:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בשליחת הטופס",
+        description: error.message || "אירעה שגיאה בשליחת הטופס"
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleBackToProfile = () => {
-    navigate('/player-profile');
+  const getFeelingEmoji = (score: number) => {
+    if (score <= 3) return "😟";
+    if (score <= 6) return "😐";
+    return "😄";
   };
 
   if (loading) {
@@ -129,14 +144,27 @@ const DailyMentalState = () => {
     );
   }
 
-  if (!playerData) {
+  if (formCompleted) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">לא נמצאו נתוני שחקן</h2>
-          <Button onClick={() => navigate('/player-auth')} className="mt-4">
-            חזרה לדף התחברות
-          </Button>
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4">
+        <div className="max-w-xl mx-auto">
+          <Card className="shadow-lg">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold">תודה על מילוי הטופס!</CardTitle>
+              <CardDescription>
+                מילאת את שאלון המצב המנטלי היומי שלך בהצלחה.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center space-y-4">
+              <div className="text-6xl mb-4">✅</div>
+              <p className="text-center text-muted-foreground">
+                תוכל למלא טופס חדש מחר. המאמן שלך יוכל לראות את התשובות שלך.
+              </p>
+              <Button onClick={() => navigate('/player/profile')} className="mt-4">
+                חזרה לפרופיל
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -144,214 +172,130 @@ const DailyMentalState = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <Button variant="outline" onClick={handleBackToProfile}>
-            חזרה לפרופיל
+          <Button variant="outline" size="icon" onClick={() => navigate('/player/profile')}>
+            <ArrowRight className="h-4 w-4" />
           </Button>
-          <h1 className="text-3xl font-bold text-center flex items-center gap-2">
-            <Brain className="h-8 w-8" />
-            מצב מנטלי יומי
+          <h1 className="text-3xl font-bold text-center">
+            שאלון מצב מנטלי יומי
           </h1>
-          <div className="w-28"></div> {/* Spacer for alignment */}
+          <div className="w-9"></div> {/* Spacer for alignment */}
         </div>
-
-        <Card className="shadow-lg mb-8">
-          <CardHeader>
-            <CardTitle>שאלון מצב מנטלי יומי</CardTitle>
-            <CardDescription>
-              עזור למאמן שלך להבין את המצב המנטלי שלך היום
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {alreadyFilledToday ? (
-              <div className="py-8 flex flex-col items-center justify-center text-center">
-                <div className="bg-green-100 rounded-full p-4 mb-4">
-                  <CheckCircle className="h-12 w-12 text-green-500" />
-                </div>
-                <h3 className="text-xl font-medium mb-2">השאלון היומי כבר הוגש היום</h3>
-                <p className="text-muted-foreground mb-6 max-w-md">
-                  תודה על מילוי השאלון היומי! המאמן שלך יוכל לראות את התשובות שלך ולהתאים את האימון בהתאם.
-                </p>
-                <Button onClick={handleBackToProfile}>
-                  חזרה לפרופיל
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="feeling_score">איך אתה מרגיש היום בסולם של 1-10?</Label>
-                    <span className={
-                      mentalState.feeling_score >= 8 ? "text-green-500" :
-                      mentalState.feeling_score >= 6 ? "text-blue-500" :
-                      mentalState.feeling_score >= 4 ? "text-yellow-500" :
-                      "text-red-500"
-                    }>
-                      {mentalState.feeling_score}/10
-                    </span>
-                  </div>
-                  <Slider
-                    id="feeling_score"
-                    value={[mentalState.feeling_score]}
-                    max={10}
-                    step={1}
-                    onValueChange={(value) => setMentalState({...mentalState, feeling_score: value[0]})}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>נמוך</span>
-                    <span>גבוה</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="motivation_level">רמת המוטיבציה שלך היום?</Label>
-                    <span className={
-                      mentalState.motivation_level >= 8 ? "text-green-500" :
-                      mentalState.motivation_level >= 6 ? "text-blue-500" :
-                      mentalState.motivation_level >= 4 ? "text-yellow-500" :
-                      "text-red-500"
-                    }>
-                      {mentalState.motivation_level}/10
-                    </span>
-                  </div>
-                  <Slider
-                    id="motivation_level"
-                    value={[mentalState.motivation_level]}
-                    max={10}
-                    step={1}
-                    onValueChange={(value) => setMentalState({...mentalState, motivation_level: value[0]})}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>נמוך</span>
-                    <span>גבוה</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="mental_fatigue_level">רמת העייפות המנטלית שלך?</Label>
-                    <span className={
-                      mentalState.mental_fatigue_level > 7 ? "text-red-500" :
-                      mentalState.mental_fatigue_level > 4 ? "text-yellow-500" :
-                      "text-green-500"
-                    }>
-                      {mentalState.mental_fatigue_level}/10
-                    </span>
-                  </div>
-                  <Slider
-                    id="mental_fatigue_level"
-                    value={[mentalState.mental_fatigue_level]}
-                    max={10}
-                    step={1}
-                    onValueChange={(value) => setMentalState({...mentalState, mental_fatigue_level: value[0]})}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>רענן</span>
-                    <span>עייף</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={mentalState.has_concerns}
-                      onChange={(e) => setMentalState({...mentalState, has_concerns: e.target.checked})}
-                      className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
-                    />
-                    האם יש משהו שמטריד אותך היום?
-                  </Label>
-                  
-                  {mentalState.has_concerns && (
-                    <div className="pt-4 pb-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                        <Label htmlFor="concerns_details">פרט את מה שמטריד אותך:</Label>
-                      </div>
-                      <Textarea
-                        id="concerns_details"
-                        value={mentalState.concerns_details}
-                        onChange={(e) => setMentalState({...mentalState, concerns_details: e.target.value})}
-                        placeholder="תאר את מה שמטריד אותך כדי שהמאמן יוכל לעזור"
-                      />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2 pt-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MessageCircle className="h-5 w-5 text-blue-500" />
-                    <Label htmlFor="improvement_focus">על מה אתה רוצה להתמקד בשיפור היום?</Label>
-                  </div>
-                  <Textarea
-                    id="improvement_focus"
-                    value={mentalState.improvement_focus}
-                    onChange={(e) => setMentalState({...mentalState, improvement_focus: e.target.value})}
-                    placeholder="תאר תחום או מיומנות שהיית רוצה להתמקד בשיפור היום"
-                  />
-                </div>
-
-                <CardFooter className="px-0 pt-4 pb-0">
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={submitting}
-                  >
-                    {submitting ? "שולח..." : "שלח שאלון"}
-                  </Button>
-                </CardFooter>
-              </form>
-            )}
-          </CardContent>
-        </Card>
 
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>למה חשוב למלא את השאלון היומי?</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <SmilePlus className="h-5 w-5" />
+              איך אתה מרגיש היום?
+            </CardTitle>
+            <CardDescription>
+              מלא את הטופס כדי לשתף את המאמן במצבך המנטלי
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="bg-blue-100 rounded-full p-2 mt-1">
-                <Brain className="h-5 w-5 text-blue-600" />
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label className="flex justify-between mb-2">
+                    <span>איך אני מרגיש היום?</span>
+                    <span className="text-xl">{getFeelingEmoji(formValues.feeling_score)} {formValues.feeling_score}/10</span>
+                  </Label>
+                  <Slider
+                    value={[formValues.feeling_score]}
+                    min={1}
+                    max={10}
+                    step={1}
+                    onValueChange={(value) => setFormValues({ ...formValues, feeling_score: value[0] })}
+                    className="py-4"
+                  />
+                </div>
+
+                <div>
+                  <Label className="flex justify-between mb-2">
+                    <span>רמת מוטיבציה</span>
+                    <span>{formValues.motivation_level}/10</span>
+                  </Label>
+                  <Slider
+                    value={[formValues.motivation_level]}
+                    min={1}
+                    max={10}
+                    step={1}
+                    onValueChange={(value) => setFormValues({ ...formValues, motivation_level: value[0] })}
+                    className="py-4"
+                  />
+                </div>
+
+                <div>
+                  <Label className="flex justify-between mb-2">
+                    <span>רמת עייפות מנטלית</span>
+                    <span>{formValues.mental_fatigue_level}/10</span>
+                  </Label>
+                  <Slider
+                    value={[formValues.mental_fatigue_level]}
+                    min={1}
+                    max={10}
+                    step={1}
+                    onValueChange={(value) => setFormValues({ ...formValues, mental_fatigue_level: value[0] })}
+                    className="py-4"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="improvement_focus" className="mb-2 block">
+                    מה אני רוצה לשפר היום?
+                  </Label>
+                  <Textarea
+                    id="improvement_focus"
+                    value={formValues.improvement_focus}
+                    onChange={(e) => setFormValues({ ...formValues, improvement_focus: e.target.value })}
+                    placeholder="מה היית רוצה לשפר היום?"
+                    className="resize-none"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="has_concerns">האם יש משהו שמדאיג אותי כרגע?</Label>
+                    <Switch
+                      id="has_concerns"
+                      checked={formValues.has_concerns}
+                      onCheckedChange={(checked) => setFormValues({ ...formValues, has_concerns: checked })}
+                    />
+                  </div>
+                  
+                  {formValues.has_concerns && (
+                    <Textarea
+                      value={formValues.concerns_details}
+                      onChange={(e) => setFormValues({ ...formValues, concerns_details: e.target.value })}
+                      placeholder="פרט מה מדאיג אותך..."
+                      className="resize-none mt-2"
+                    />
+                  )}
+                </div>
               </div>
-              <div>
-                <h3 className="font-medium">מודעות עצמית</h3>
-                <p className="text-sm text-muted-foreground">
-                  מילוי השאלון היומי עוזר לך להיות יותר מודע למצב המנטלי שלך ולזהות דפוסים.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <div className="bg-green-100 rounded-full p-2 mt-1">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-medium">אימון מותאם אישית</h3>
-                <p className="text-sm text-muted-foreground">
-                  המאמן שלך יכול להתאים את האימון בהתאם למצב המנטלי היומי שלך.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <div className="bg-purple-100 rounded-full p-2 mt-1">
-                <MessageCircle className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-medium">תקשורת טובה יותר</h3>
-                <p className="text-sm text-muted-foreground">
-                  השאלון מאפשר תקשורת שוטפת עם המאמן גם בימים שאין אימון משותף.
-                </p>
-              </div>
-            </div>
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 mr-2"></div>
+                    שולח...
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <Save className="mr-2 h-4 w-4" />
+                    שלח את הטופס
+                  </div>
+                )}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
     </div>
   );
-};
-
-export default DailyMentalState;
+}
