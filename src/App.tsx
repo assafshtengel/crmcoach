@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "./components/theme-provider"
@@ -24,6 +23,7 @@ import TrainingForecasts from './pages/player/TrainingForecasts';
 import PlayerVideosPage from './pages/player/PlayerVideos';
 import PlayerGoals from './pages/player/PlayerGoals';
 import GamePreparation from './pages/GamePreparation';
+import AllMeetingSummaries from './pages/AllMeetingSummaries';
 
 const Sessions = () => <div>Sessions Page</div>;
 const SessionDetails = () => <div>Session Details Page</div>;
@@ -67,6 +67,7 @@ const App = () => {
               <Route path="/edit-player/:playerId" element={<EditPlayerForm />} />
               <Route path="/add-player" element={<AddPlayerForm />} />
               <Route path="/new-player" element={<Navigate to="/add-player" />} />
+              <Route path="/all-meeting-summaries" element={<AllMeetingSummaries />} />
               
               <Route path="/player-profile" element={<PlayerProfileView />} />
               <Route path="/player/profile" element={<PlayerProfileView />} />

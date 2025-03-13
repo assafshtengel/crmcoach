@@ -1095,6 +1095,10 @@ const DashboardCoach = () => {
                 <Button 
                   variant="default" 
                   className="w-full bg-[#9b87f5] hover:bg-[#8a68f9]"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/all-meeting-summaries');
+                  }}
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   צפה בכל הסיכומים
@@ -1297,3 +1301,4 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
+
