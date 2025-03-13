@@ -53,7 +53,7 @@ const App = () => {
             <Routes>
               <Route 
                 path="/" 
-                element={isPlayer() ? <Navigate to="/player-profile" /> : <DashboardCoach />} 
+                element={<Navigate to="/dashboard-coach" />} 
               />
               
               <Route path="/player-auth" element={<PlayerAuth />} />
