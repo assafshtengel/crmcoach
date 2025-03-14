@@ -1,141 +1,80 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from 'next-themes';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthGuard } from '@/components/auth/AuthGuard';
-import { Layout } from '@/components/layout/Layout';
-import ToolManagement from '@/pages/ToolManagement';
-import AutoVideoManagement from '@/pages/AutoVideoManagement';
-import GameSummaryDetails from "./pages/GameSummaryDetails";
-
-// Import all the missing page components
-import DashboardCoach from '@/pages/DashboardCoach';
-import Index from '@/pages/Index';
-import NewIndex from '@/pages/NewIndex';
-import Dashboard from '@/pages/Dashboard';
-import PlayerProfile from '@/pages/PlayerProfile';
-import Huze from '@/pages/Huze';
-import Contract from '@/pages/Contract';
-import MentalCommitment from '@/pages/MentalCommitment';
-import Admin from '@/pages/Admin';
-import MentalTools from '@/pages/MentalTools';
-import ShortTermGoals from '@/pages/ShortTermGoals';
-import DailyChallenge from '@/pages/DailyChallenge';
-import PlayerForm from '@/pages/PlayerForm';
-import SessionsList from '@/pages/SessionsList';
-import PlayersList from '@/pages/PlayersList';
-import NewSessionForm from '@/pages/NewSessionForm';
-import EditSessionForm from '@/pages/EditSessionForm';
-import GoalDetailsQuestions from '@/pages/GoalDetailsQuestions';
-import ProfileCoach from '@/pages/ProfileCoach';
-import CoachSignUp from '@/pages/CoachSignUp';
-import Reports from '@/pages/Reports';
-import Contact from '@/pages/Contact';
-import Next from '@/pages/Next';
-import PlayerEvaluation from '@/pages/PlayerEvaluation';
-import AnalyticsDashboard from '@/pages/AnalyticsDashboard';
-import PlayerStatistics from '@/pages/PlayerStatistics';
-import GamePreparation from '@/pages/GamePreparation';
-import NotificationsDashboard from '@/pages/NotificationsDashboard';
-import AuthPage from '@/pages/auth/AuthPage';
-import PlayerAuth from '@/pages/PlayerAuth';
-import ActionPlan from '@/pages/ActionPlan';
-import SessionSummaries from '@/pages/SessionSummaries';
-import NewPlayerForm from '@/pages/NewPlayerForm';
-import EditPlayerForm from '@/pages/EditPlayerForm';
-import RegistrationLinks from '@/pages/RegistrationLinks';
-import PublicRegistrationForm from '@/pages/PublicRegistrationForm';
-import AllMeetingSummaries from '@/pages/AllMeetingSummaries';
-import Goals from '@/pages/Goals';
-import PlayerProfileView from '@/pages/player/PlayerProfileView';
-import PlayerGameSummary from '@/pages/player/PlayerGameSummary';
-import PlayerTrainingSummary from '@/pages/player/PlayerTrainingSummary';
-import DailyMentalState from '@/pages/player/DailyMentalState';
-import MentalStateHistory from '@/pages/player/MentalStateHistory';
-import PlayerMentalStateView from '@/pages/PlayerMentalStateView';
-import GameSummary from '@/pages/GameSummary';
-import PlayerGameSummaryView from '@/components/game-summary/PlayerGameSummaryView';
-import NotFound from '@/pages/NotFound';
-import MentalLibrary from '@/pages/MentalLibrary';
-
-import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import PlayersList from "./pages/PlayersList";
+import NewPlayerForm from "./pages/NewPlayerForm";
+import PlayerAuth from "./pages/PlayerAuth";
+import PlayerProfile from "./pages/PlayerProfile";
+import EditPlayerForm from "./pages/EditPlayerForm";
+import PlayerProfileView from "./pages/player/PlayerProfileView";
+import DailyMentalState from "./pages/player/DailyMentalState";
+import MentalStateHistory from "./pages/player/MentalStateHistory";
+import PlayerGameSummary from "./pages/player/PlayerGameSummary";
+import DashboardCoach from "./pages/DashboardCoach";
+import Messages from "./pages/Messages";
+import ChatPage from "./pages/ChatPage";
+import GroupMessageDetail from "./pages/GroupMessageDetail";
+import PlayerMessages from "./pages/player/PlayerMessages";
+import AuthPage from "./pages/auth/AuthPage";
+import { AuthGuard } from "./components/auth/AuthGuard";
+import { Toaster } from "./components/ui/toaster";
+import GameSummaries from "./pages/GameSummaries";
+import NewGameSummary from "./pages/NewGameSummary";
+import EditGameSummary from "./pages/EditGameSummary";
+import EvaluationForm from "./pages/EvaluationForm";
+import EvaluationsList from "./pages/EvaluationsList";
+import EvaluationDetails from "./pages/EvaluationDetails";
+import TrainingVideos from "./pages/TrainingVideos";
+import TrainingGoals from "./pages/TrainingGoals";
+import Meetings from "./pages/Meetings";
+import GamePreparation from "./pages/GamePreparation";
+import TrainingSummaries from "./pages/TrainingSummaries";
+import NewTrainingSummary from "./pages/NewTrainingSummary";
+import EditTrainingSummary from "./pages/EditTrainingSummary";
+import { useUser } from "@supabase/auth-helpers-react";
 
 function App() {
+  const user = useUser();
+
   return (
-    <Router>
-      <QueryClientProvider client={new QueryClient()}>
-        <ThemeProvider attribute="class">
-          <Toaster />
-          <Routes>
-            {/* PUBLIC ROUTES - These routes are accessible without any authentication */}
-            {/* Important: These routes DO NOT use the AuthGuard component */}
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/player-auth" element={<PlayerAuth />} />
-            <Route path="/signup-coach" element={<CoachSignUp />} />
-            <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
-            
-            {/* PLAYER ROUTES - These routes require player authentication */}
-            <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-            <Route path="/player/game-summary" element={<AuthGuard playerOnly={true}><PlayerGameSummary /></AuthGuard>} />
-            <Route path="/player/training-summary" element={<AuthGuard playerOnly={true}><PlayerTrainingSummary /></AuthGuard>} />
-            <Route path="/player/daily-mental-state" element={<AuthGuard playerOnly={true}><DailyMentalState /></AuthGuard>} />
-            <Route path="/player/mental-state-history" element={<AuthGuard playerOnly={true}><MentalStateHistory /></AuthGuard>} />
-            <Route path="/player/training-videos" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-            <Route path="/player/meetings" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-            <Route path="/player/goals" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-            <Route path="/player/game-preparation" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-            
-            {/* COACH ROUTES - These routes require coach authentication */}
-            <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
-            <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
-            <Route path="/new" element={<AuthGuard><NewIndex /></AuthGuard>} />
-            <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
-            <Route path="/dashboard/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
-            <Route path="/huze" element={<AuthGuard><Huze /></AuthGuard>} />
-            <Route path="/contract" element={<AuthGuard><Contract /></AuthGuard>} />
-            <Route path="/mental-commitment" element={<AuthGuard><MentalCommitment /></AuthGuard>} />
-            <Route path="/admin" element={<AuthGuard><Admin /></AuthGuard>} />
-            <Route path="/mental-tools" element={<AuthGuard><MentalTools /></AuthGuard>} />
-            <Route path="/short-term-goals" element={<AuthGuard><ShortTermGoals /></AuthGuard>} />
-            <Route path="/daily-challenge" element={<AuthGuard><DailyChallenge /></AuthGuard>} />
-            <Route path="/player-form" element={<AuthGuard><PlayerForm /></AuthGuard>} />
-            <Route path="/sessions-list" element={<AuthGuard><SessionsList /></AuthGuard>} />
-            <Route path="/players-list" element={<AuthGuard><PlayersList /></AuthGuard>} />
-            <Route path="/new-session" element={<AuthGuard><NewSessionForm /></AuthGuard>} />
-            <Route path="/edit-session" element={<AuthGuard><EditSessionForm /></AuthGuard>} />
-            <Route path="/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
-            <Route path="/player-mental-states/:playerId" element={<AuthGuard><PlayerMentalStateView /></AuthGuard>} />
-            <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
-            <Route path="/goal-details-questions" element={<AuthGuard><GoalDetailsQuestions /></AuthGuard>} />
-            <Route path="/profile-coach" element={<AuthGuard><ProfileCoach /></AuthGuard>} />
-            <Route path="/reports" element={<AuthGuard><Reports /></AuthGuard>} />
-            <Route path="/contact" element={<AuthGuard><Contact /></AuthGuard>} />
-            <Route path="/next" element={<AuthGuard><Next /></AuthGuard>} />
-            <Route path="/player-evaluation" element={<AuthGuard><PlayerEvaluation /></AuthGuard>} />
-            <Route path="/analytics" element={<AuthGuard><AnalyticsDashboard /></AuthGuard>} />
-            <Route path="/player-statistics" element={<AuthGuard><PlayerStatistics /></AuthGuard>} />
-            <Route path="/game-prep" element={<AuthGuard><GamePreparation /></AuthGuard>} />
-            <Route path="/notifications" element={<AuthGuard><NotificationsDashboard /></AuthGuard>} />
-            <Route path="/action-plan" element={<AuthGuard><ActionPlan /></AuthGuard>} />
-            <Route path="/session-summaries" element={<AuthGuard><SessionSummaries /></AuthGuard>} />
-            <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />
-            <Route path="/edit-player" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
-            <Route path="/edit-player/:playerId" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
-            <Route path="/registration-links" element={<AuthGuard><RegistrationLinks /></AuthGuard>} />
-            <Route path="/tool-management" element={<AuthGuard><ToolManagement /></AuthGuard>} />
-            <Route path="/auto-video-management" element={<AuthGuard><AutoVideoManagement /></AuthGuard>} />
-            <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
-            <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} />
-            <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} />
-            <Route path="/game-summary" element={<AuthGuard><GameSummary /></AuthGuard>} />
-            <Route path="/player-game-summaries/:playerId" element={<AuthGuard><PlayerGameSummaryView /></AuthGuard>} />
-            <Route path="/game-summary/:playerId" element={<GameSummaryDetails />} />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </Router>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+        <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
+        <Route path="/players-list" element={<AuthGuard><PlayersList /></AuthGuard>} />
+        <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />
+        <Route path="/player/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
+        <Route path="/edit-player/:playerId" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
+        <Route path="/player-auth" element={<PlayerAuth />} />
+        <Route path="/player" element={<PlayerProfileView />} />
+        <Route path="/player/daily-mental-state" element={<DailyMentalState />} />
+        <Route path="/player/mental-state-history" element={<MentalStateHistory />} />
+        <Route path="/player/game-summary" element={<PlayerGameSummary />} />
+        <Route path="/game-summary/:playerId" element={<AuthGuard><GameSummaries /></AuthGuard>} />
+        <Route path="/new-game-summary/:playerId" element={<AuthGuard><NewGameSummary /></AuthGuard>} />
+        <Route path="/edit-game-summary/:gameSummaryId" element={<AuthGuard><EditGameSummary /></AuthGuard>} />
+        <Route path="/evaluation-form/:playerId" element={<AuthGuard><EvaluationForm /></AuthGuard>} />
+        <Route path="/evaluations-list/:playerId" element={<AuthGuard><EvaluationsList /></AuthGuard>} />
+        <Route path="/evaluation-details/:evaluationId" element={<AuthGuard><EvaluationDetails /></AuthGuard>} />
+        <Route path="/training-videos" element={<TrainingVideos />} />
+        <Route path="/training-goals" element={<TrainingGoals />} />
+        <Route path="/meetings" element={<Meetings />} />
+        <Route path="/game-preparation" element={<GamePreparation />} />
+        <Route path="/training-summaries/:playerId" element={<AuthGuard><TrainingSummaries /></AuthGuard>} />
+        <Route path="/new-training-summary/:playerId" element={<AuthGuard><NewTrainingSummary /></AuthGuard>} />
+        <Route path="/edit-training-summary/:trainingSummaryId" element={<AuthGuard><EditTrainingSummary /></AuthGuard>} />
+        
+        {/* Messaging routes */}
+        <Route path="/messages" element={<AuthGuard><Messages /></AuthGuard>} />
+        <Route path="/chat/:playerId" element={<AuthGuard><ChatPage /></AuthGuard>} />
+        <Route path="/group-message/:messageId" element={<AuthGuard><GroupMessageDetail /></AuthGuard>} />
+        <Route path="/player/messages" element={<PlayerMessages />} />
+        
+      </Routes>
+      <Toaster />
+    </BrowserRouter>
   );
 }
 

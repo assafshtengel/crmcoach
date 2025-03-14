@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -6,7 +5,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, User, Calendar, PenTool, Video, Activity, FileText, Notebook, Brain } from "lucide-react";
+import { 
+  LogOut, User, Calendar, PenTool, Video, Activity, 
+  FileText, Notebook, Brain, MessageCircle 
+} from "lucide-react";
 
 export default function PlayerProfileView() {
   const [playerData, setPlayerData] = useState<any>(null);
@@ -39,7 +41,6 @@ export default function PlayerProfileView() {
         
         setPlayerData(data);
 
-        // Check if player has submitted mental state form today
         const today = new Date().toISOString().split('T')[0];
         
         const { data: mentalStateData, error: mentalStateError } = await supabase
@@ -106,7 +107,7 @@ export default function PlayerProfileView() {
           <h1 className="text-3xl font-bold text-center">
             שלום, {playerData.full_name}
           </h1>
-          <div className="w-9"></div> {/* Spacer for alignment */}
+          <div className="w-9"></div>
         </div>
 
         <Card className="shadow-lg mb-8">
@@ -286,9 +287,25 @@ export default function PlayerProfileView() {
               </Button>
             </CardContent>
           </Card>
+
+          <Card className="shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <MessageCircle className="h-5 w-5" />
+                הודעות
+              </CardTitle>
+              <CardDescription>
+                תקשורת עם המאמן שלך
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={() => navigate('/player/messages')}>
+                צפה בהודעות
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Additional tabs or sections can be added here */}
         <Tabs defaultValue="upcoming" className="mb-8">
           <TabsList className="w-full">
             <TabsTrigger value="upcoming" className="flex-1">פגישות קרובות</TabsTrigger>
