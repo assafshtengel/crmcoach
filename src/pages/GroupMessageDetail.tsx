@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -30,7 +31,7 @@ export default function GroupMessageDetail() {
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { toast: showToast } = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchMessageDetails = async () => {
@@ -77,7 +78,7 @@ export default function GroupMessageDetail() {
         setRecipients(formattedRecipients);
       } catch (error) {
         console.error("Error fetching message details:", error);
-        showToast({
+        toast({
           variant: "destructive",
           title: "שגיאה בטעינת פרטי הודעה",
           description: "לא ניתן לטעון את פרטי ההודעה"
@@ -104,7 +105,7 @@ export default function GroupMessageDetail() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [messageId, showToast]);
+  }, [messageId, toast]);
 
   if (loading) {
     return (

@@ -599,6 +599,27 @@ export type Database = {
         }
         Relationships: []
       }
+      group_messages: {
+        Row: {
+          coach_id: string
+          content: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          coach_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          coach_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       last_meetings: {
         Row: {
           created_at: string
@@ -813,6 +834,68 @@ export type Database = {
           name?: string
           user_id?: string
           video_url?: string | null
+        }
+        Relationships: []
+      }
+      message_recipients: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message_id: string
+          player_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_id: string
+          player_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_id?: string
+          player_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_recipients_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "group_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          recipient_id?: string
+          sender_id?: string
         }
         Relationships: []
       }
