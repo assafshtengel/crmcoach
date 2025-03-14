@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Users, ArrowRight, Check, Clock } from "lucide-react";
 
 interface GroupMessage {
@@ -38,7 +37,6 @@ export default function GroupMessageDetail() {
       if (!messageId) return;
       
       try {
-        // Fetch the group message
         const { data: messageData, error: messageError } = await supabase
           .from("group_messages")
           .select("*")
@@ -48,7 +46,6 @@ export default function GroupMessageDetail() {
         if (messageError) throw messageError;
         setMessage(messageData);
 
-        // Fetch recipients with player names
         const { data: recipientsData, error: recipientsError } = await supabase
           .from("message_recipients")
           .select(`
@@ -70,10 +67,9 @@ export default function GroupMessageDetail() {
           read_at: recipient.is_read ? recipient.updated_at : undefined
         }));
 
-        // Sort by read status and then by name
         formattedRecipients.sort((a, b) => {
           if (a.is_read !== b.is_read) {
-            return a.is_read ? 1 : -1; // Unread first
+            return a.is_read ? 1 : -1;
           }
           return a.player_name.localeCompare(b.player_name);
         });
@@ -93,7 +89,6 @@ export default function GroupMessageDetail() {
 
     fetchMessageDetails();
 
-    // Set up real-time subscription for message recipient status changes
     const channel = supabase
       .channel('message-recipients-changes')
       .on('postgres_changes', { 
@@ -102,7 +97,7 @@ export default function GroupMessageDetail() {
         table: 'message_recipients',
         filter: `message_id=eq.${messageId}`
       }, () => {
-        fetchMessageDetails();  // Refresh recipients list with updated read status
+        fetchMessageDetails();
       })
       .subscribe();
       
@@ -153,7 +148,7 @@ export default function GroupMessageDetail() {
               <Users className="h-6 w-6" />
               פרטי הודעה קבוצתית
             </h1>
-            <div className="w-[120px]"></div> {/* Spacer for alignment */}
+            <div className="w-[120px]"></div>
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
@@ -165,7 +160,7 @@ export default function GroupMessageDetail() {
                     תוכן ההודעה
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {formatDistanceToNow(new Date(message.created_at), {
+                    {formatDistanceToNow(new Date(message?.created_at || ""), {
                       addSuffix: true,
                       locale: he
                     })}
@@ -174,7 +169,7 @@ export default function GroupMessageDetail() {
               </CardHeader>
               <CardContent>
                 <div className="bg-muted/50 p-4 rounded-md whitespace-pre-wrap">
-                  {message.content}
+                  {message?.content}
                 </div>
                 
                 <div className="mt-4 flex justify-between items-center">

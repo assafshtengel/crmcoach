@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
@@ -31,10 +32,30 @@ import GamePreparation from "./pages/GamePreparation";
 import TrainingSummaries from "./pages/TrainingSummaries";
 import NewTrainingSummary from "./pages/NewTrainingSummary";
 import EditTrainingSummary from "./pages/EditTrainingSummary";
-import { useUser } from "@supabase/auth-helpers-react";
+import { useState, useEffect } from "react";
+import { supabase } from "./lib/supabase";
 
 function App() {
-  const user = useUser();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user || null);
+    };
+    
+    checkUser();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+    
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <BrowserRouter>

@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { NotificationsBell } from "../dashboard/NotificationsBell";
 import { 
   LogOut, Settings, Users, Calendar, Video, 
-  BarChart, Tool, FileText, BookOpen, MessageCircle 
+  BarChart, ClipboardCheck, FileText, BookOpen, MessageCircle 
 } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -91,7 +91,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             to="/evaluations"
             className="text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-1"
           >
-            <Tool size={16} />
+            <ClipboardCheck size={16} />
             הערכות
           </Link>
           <Link
