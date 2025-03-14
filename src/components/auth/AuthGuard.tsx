@@ -25,7 +25,8 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         const publicRoutes = [
           '/auth',
           '/player-auth',
-          '/signup-coach'
+          '/signup-coach',
+          '/register'
         ];
         
         // Check if current path is a public route or registration path
@@ -50,10 +51,11 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             const playerData = JSON.parse(playerSession);
             
             // Verify player credentials directly in the database
+            // This check is completely independent of coach authentication
             const { data, error } = await supabase
               .from('players')
               .select('id, email, full_name')
-              .eq('email', playerData.email)
+              .eq('email', playerData.email.toLowerCase())
               .eq('id', playerData.id)
               .single();
               
@@ -74,6 +76,8 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             return;
           }
         }
+        
+        // From here on, we're dealing with coach routes only
         
         // Player profile view for coaches - allow access for coach
         if (playerId && currentPath.includes('/player-profile/')) {

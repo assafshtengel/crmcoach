@@ -64,12 +64,12 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard-coach" replace />} />
         <Route path="/index" element={<Index />} />
         
-        {/* Public authentication routes */}
+        {/* Public authentication routes - these don't need any auth check */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/signup-coach" element={<CoachSignUp />} />
         <Route path="/player-auth" element={<PlayerAuth />} />
         
-        {/* Player routes - protected by player authentication */}
+        {/* Player routes - completely separate authentication system */}
         <Route path="/player" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
         <Route path="/player/daily-mental-state" element={<AuthGuard playerOnly={true}><DailyMentalState /></AuthGuard>} />
         <Route path="/player/mental-state-history" element={<AuthGuard playerOnly={true}><MentalStateHistory /></AuthGuard>} />

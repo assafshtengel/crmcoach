@@ -26,11 +26,14 @@ const PlayerAuth = () => {
     try {
       console.log("Player attempting to log in with email:", email);
       
+      // Normalize email to lowercase for case-insensitive comparison
+      const normalizedEmail = email.trim().toLowerCase();
+      
       // Check if this email exists in the players table
       const { data: playerData, error: playerError } = await supabase
         .from('players')
         .select('id, email, password, full_name')
-        .eq('email', email.trim().toLowerCase())
+        .ilike('email', normalizedEmail) // Use case-insensitive comparison
         .maybeSingle();
 
       if (playerError) {
@@ -46,7 +49,7 @@ const PlayerAuth = () => {
 
       // If no player found with this email
       if (!playerData) {
-        console.log("No player found with email:", email);
+        console.log("No player found with email:", normalizedEmail);
         toast({
           variant: "destructive",
           title: "כתובת אימייל לא קיימת",
@@ -58,7 +61,7 @@ const PlayerAuth = () => {
 
       // Email exists but password doesn't match
       if (playerData.password !== password) {
-        console.log("Password doesn't match for player:", email);
+        console.log("Password doesn't match for player:", normalizedEmail);
         toast({
           variant: "destructive",
           title: "סיסמה שגויה",
@@ -69,7 +72,7 @@ const PlayerAuth = () => {
       }
 
       // Login successful
-      console.log("Player login successful for:", email);
+      console.log("Player login successful for:", normalizedEmail);
       toast({
         title: "התחברות הצליחה",
         description: `ברוך הבא, ${playerData.full_name || 'שחקן יקר'}!`,
@@ -78,7 +81,7 @@ const PlayerAuth = () => {
       // Store player session data in localStorage
       localStorage.setItem('playerSession', JSON.stringify({
         id: playerData.id,
-        email: playerData.email,
+        email: playerData.email.toLowerCase(), // Ensure email is stored in lowercase
         fullName: playerData.full_name
       }));
 
