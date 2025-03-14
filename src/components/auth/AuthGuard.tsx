@@ -35,8 +35,8 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           return;
         }
 
-        // Player-only routes - check player authentication
-        if (playerOnly || currentPath.startsWith('/player/')) {
+        // Player routes - check player authentication
+        if (playerOnly || currentPath.startsWith('/player/') || currentPath === '/player') {
           console.log("Player route detected - checking player authentication");
           const playerSession = localStorage.getItem('playerSession');
           
@@ -75,31 +75,13 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           }
         }
         
-        // Player profile view - allow access for both player or coach
+        // Player profile view for coaches - allow access for coach
         if (playerId && currentPath.includes('/player-profile/')) {
-          // First check for player session (player viewing their own profile)
-          const playerSession = localStorage.getItem('playerSession');
-          
-          if (playerSession) {
-            try {
-              const playerData = JSON.parse(playerSession);
-              
-              if (playerData.id === playerId) {
-                console.log("Player viewing their own profile");
-                setIsLoading(false);
-                return;
-              }
-            } catch (err) {
-              console.error("Error parsing player session:", err);
-              // Continue with coach auth check below
-            }
-          }
-
-          // If no valid player session, check for coach auth
+          // Check for coach auth only
           const { data: { user }, error } = await supabase.auth.getUser();
           
           if (error || !user) {
-            console.log("No authenticated user found, redirecting to auth");
+            console.log("No authenticated coach found, redirecting to auth");
             navigate("/auth");
             return;
           }
@@ -123,7 +105,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
       } catch (error) {
         console.error("Authentication check failed:", error);
         // Redirect based on the route type
-        if (playerOnly || location.pathname.startsWith('/player/')) {
+        if (playerOnly || location.pathname.startsWith('/player/') || location.pathname === '/player') {
           navigate("/player-auth");
         } else {
           navigate("/auth");

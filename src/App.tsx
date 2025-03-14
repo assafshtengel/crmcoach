@@ -63,29 +63,37 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard-coach" replace />} />
         <Route path="/index" element={<Index />} />
+        
+        {/* Public authentication routes */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/signup-coach" element={<CoachSignUp />} />
+        <Route path="/player-auth" element={<PlayerAuth />} />
+        
+        {/* Player routes - protected by player authentication */}
+        <Route path="/player" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
+        <Route path="/player/daily-mental-state" element={<AuthGuard playerOnly={true}><DailyMentalState /></AuthGuard>} />
+        <Route path="/player/mental-state-history" element={<AuthGuard playerOnly={true}><MentalStateHistory /></AuthGuard>} />
+        <Route path="/player/game-summary" element={<AuthGuard playerOnly={true}><PlayerGameSummary /></AuthGuard>} />
+        <Route path="/player/messages" element={<AuthGuard playerOnly={true}><PlayerMessages /></AuthGuard>} />
+        
+        {/* Coach routes - protected by coach authentication */}
         <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
         <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
         <Route path="/players-list" element={<AuthGuard><PlayersList /></AuthGuard>} />
         <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />
         <Route path="/player/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
         <Route path="/edit-player/:playerId" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
-        <Route path="/player-auth" element={<PlayerAuth />} />
-        <Route path="/player" element={<PlayerProfileView />} />
-        <Route path="/player/daily-mental-state" element={<DailyMentalState />} />
-        <Route path="/player/mental-state-history" element={<MentalStateHistory />} />
-        <Route path="/player/game-summary" element={<PlayerGameSummary />} />
+        
         <Route path="/game-summary/:playerId" element={<AuthGuard><GameSummaries /></AuthGuard>} />
         <Route path="/new-game-summary/:playerId" element={<AuthGuard><NewGameSummary /></AuthGuard>} />
         <Route path="/edit-game-summary/:gameSummaryId" element={<AuthGuard><EditGameSummary /></AuthGuard>} />
         <Route path="/evaluation-form/:playerId" element={<AuthGuard><EvaluationForm /></AuthGuard>} />
         <Route path="/evaluations-list/:playerId" element={<AuthGuard><EvaluationsList /></AuthGuard>} />
         <Route path="/evaluation-details/:evaluationId" element={<AuthGuard><EvaluationDetails /></AuthGuard>} />
-        <Route path="/training-videos" element={<TrainingVideos />} />
-        <Route path="/training-goals" element={<TrainingGoals />} />
-        <Route path="/meetings" element={<Meetings />} />
-        <Route path="/game-preparation" element={<GamePreparation />} />
+        <Route path="/training-videos" element={<AuthGuard><TrainingVideos /></AuthGuard>} />
+        <Route path="/training-goals" element={<AuthGuard><TrainingGoals /></AuthGuard>} />
+        <Route path="/meetings" element={<AuthGuard><Meetings /></AuthGuard>} />
+        <Route path="/game-preparation" element={<AuthGuard><GamePreparation /></AuthGuard>} />
         <Route path="/training-summaries/:playerId" element={<AuthGuard><TrainingSummaries /></AuthGuard>} />
         <Route path="/new-training-summary/:playerId" element={<AuthGuard><NewTrainingSummary /></AuthGuard>} />
         <Route path="/edit-training-summary/:trainingSummaryId" element={<AuthGuard><EditTrainingSummary /></AuthGuard>} />
@@ -94,8 +102,6 @@ function App() {
         <Route path="/messages" element={<AuthGuard><Messages /></AuthGuard>} />
         <Route path="/chat/:playerId" element={<AuthGuard><ChatPage /></AuthGuard>} />
         <Route path="/group-message/:messageId" element={<AuthGuard><GroupMessageDetail /></AuthGuard>} />
-        <Route path="/player/messages" element={<PlayerMessages />} />
-        
       </Routes>
       <Toaster />
     </BrowserRouter>
