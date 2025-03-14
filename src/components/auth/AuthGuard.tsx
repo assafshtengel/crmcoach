@@ -36,7 +36,8 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           return;
         }
 
-        // Player routes - check player authentication
+        // PLAYER AUTHENTICATION SECTION
+        // If this is a player route (playerOnly flag or path starts with /player/)
         if (playerOnly || currentPath.startsWith('/player/') || currentPath === '/player') {
           console.log("Player route detected - checking player authentication");
           const playerSession = localStorage.getItem('playerSession');
@@ -55,7 +56,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             const { data, error } = await supabase
               .from('players')
               .select('id, email, full_name')
-              .eq('email', playerData.email.toLowerCase())
+              .ilike('email', playerData.email.toLowerCase())
               .eq('id', playerData.id)
               .single();
               
@@ -77,7 +78,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           }
         }
         
-        // From here on, we're dealing with coach routes only
+        // COACH AUTHENTICATION SECTION - completely separate from player auth
         
         // Player profile view for coaches - allow access for coach
         if (playerId && currentPath.includes('/player-profile/')) {

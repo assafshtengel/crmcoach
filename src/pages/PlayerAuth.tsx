@@ -29,11 +29,11 @@ const PlayerAuth = () => {
       // Normalize email to lowercase for case-insensitive comparison
       const normalizedEmail = email.trim().toLowerCase();
       
-      // Check if this email exists in the players table
+      // Check if this email exists in the players table - use case-insensitive comparison
       const { data: playerData, error: playerError } = await supabase
         .from('players')
         .select('id, email, password, full_name')
-        .ilike('email', normalizedEmail) // Use case-insensitive comparison
+        .ilike('email', normalizedEmail) // Case-insensitive comparison
         .maybeSingle();
 
       if (playerError) {
@@ -78,10 +78,10 @@ const PlayerAuth = () => {
         description: `ברוך הבא, ${playerData.full_name || 'שחקן יקר'}!`,
       });
 
-      // Store player session data in localStorage
+      // Store player session data in localStorage - always store email in lowercase
       localStorage.setItem('playerSession', JSON.stringify({
         id: playerData.id,
-        email: playerData.email.toLowerCase(), // Ensure email is stored in lowercase
+        email: playerData.email.toLowerCase(), // Always store email in lowercase
         fullName: playerData.full_name
       }));
 

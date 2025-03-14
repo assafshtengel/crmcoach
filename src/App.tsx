@@ -49,6 +49,7 @@ function App() {
     
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event);
         setUser(session?.user || null);
       }
     );
@@ -64,19 +65,20 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard-coach" replace />} />
         <Route path="/index" element={<Index />} />
         
-        {/* Public authentication routes - these don't need any auth check */}
+        {/* ========== PUBLIC ROUTES (no auth needed) ========== */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/signup-coach" element={<CoachSignUp />} />
         <Route path="/player-auth" element={<PlayerAuth />} />
+        <Route path="/register/*" element={<Index />} />
         
-        {/* Player routes - completely separate authentication system */}
+        {/* ========== PLAYER ROUTES (player auth system) ========== */}
         <Route path="/player" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
         <Route path="/player/daily-mental-state" element={<AuthGuard playerOnly={true}><DailyMentalState /></AuthGuard>} />
         <Route path="/player/mental-state-history" element={<AuthGuard playerOnly={true}><MentalStateHistory /></AuthGuard>} />
         <Route path="/player/game-summary" element={<AuthGuard playerOnly={true}><PlayerGameSummary /></AuthGuard>} />
         <Route path="/player/messages" element={<AuthGuard playerOnly={true}><PlayerMessages /></AuthGuard>} />
         
-        {/* Coach routes - protected by coach authentication */}
+        {/* ========== COACH ROUTES (coach auth system) ========== */}
         <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
         <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
         <Route path="/players-list" element={<AuthGuard><PlayersList /></AuthGuard>} />
