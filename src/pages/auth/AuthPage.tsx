@@ -34,7 +34,7 @@ const AuthPage = () => {
             {mode === "signup" && <SignUpForm onLoginClick={() => setMode("login")} />}
             {mode === "reset-password" && <ResetPasswordForm onBackToLoginClick={() => setMode("login")} />}
             
-            <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <div className="mt-6 pt-6 border-t border-gray-200 text-center space-y-3">
               <Button 
                 variant="link" 
                 onClick={() => navigate('/player-auth')}
@@ -42,6 +42,16 @@ const AuthPage = () => {
               >
                 כניסה לשחקנים
               </Button>
+              
+              <div>
+                <Button 
+                  variant="link" 
+                  onClick={() => navigate('/signup-coach')}
+                  className="text-sm text-primary hover:underline"
+                >
+                  הרשמה כמאמן חדש (דף מלא)
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

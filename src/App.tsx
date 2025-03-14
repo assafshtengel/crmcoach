@@ -32,6 +32,7 @@ import GamePreparation from "./pages/GamePreparation";
 import TrainingSummaries from "./pages/TrainingSummaries";
 import NewTrainingSummary from "./pages/NewTrainingSummary";
 import EditTrainingSummary from "./pages/EditTrainingSummary";
+import CoachSignUp from "./pages/CoachSignUp";
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabase";
 
@@ -63,6 +64,7 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard-coach" replace />} />
         <Route path="/index" element={<Index />} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/signup-coach" element={<CoachSignUp />} />
         <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
         <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
         <Route path="/players-list" element={<AuthGuard><PlayersList /></AuthGuard>} />
