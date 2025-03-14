@@ -36,7 +36,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           return;
         }
 
-        // PLAYER AUTHENTICATION SECTION
+        // ========== PLAYER AUTHENTICATION SECTION ==========
         // If this is a player route (playerOnly flag or path starts with /player/)
         if (playerOnly || currentPath.startsWith('/player/') || currentPath === '/player') {
           console.log("Player route detected - checking player authentication");
@@ -78,7 +78,8 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           }
         }
         
-        // COACH AUTHENTICATION SECTION - completely separate from player auth
+        // ========== COACH AUTHENTICATION SECTION ==========
+        // This section is completely separate from player auth
         
         // Player profile view for coaches - allow access for coach
         if (playerId && currentPath.includes('/player-profile/')) {

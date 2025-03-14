@@ -50,6 +50,7 @@ function App() {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event);
+        // Only update coach user state - player auth is separate
         setUser(session?.user || null);
       }
     );
