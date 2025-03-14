@@ -30,7 +30,7 @@ const PlayerAuth = () => {
       const { data: playerData, error: playerError } = await supabase
         .from('players')
         .select('id, email, password, full_name')
-        .eq('email', email)
+        .eq('email', email.trim().toLowerCase())
         .maybeSingle();
 
       if (playerError) {
@@ -79,12 +79,11 @@ const PlayerAuth = () => {
       localStorage.setItem('playerSession', JSON.stringify({
         id: playerData.id,
         email: playerData.email,
-        password: playerData.password,
         fullName: playerData.full_name
       }));
 
       // Navigate to the player profile view
-      navigate('/player/profile');
+      navigate('/player');
     } catch (error: any) {
       console.error("Unexpected error during player login:", error);
       toast({
@@ -106,7 +105,7 @@ const PlayerAuth = () => {
       const { data: playerData, error: playerError } = await supabase
         .from('players')
         .select('id, email')
-        .eq('email', email)
+        .eq('email', email.trim().toLowerCase())
         .maybeSingle();
 
       if (playerError) {

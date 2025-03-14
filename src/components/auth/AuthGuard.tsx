@@ -36,8 +36,8 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         }
 
         // Player-only routes - check player authentication
-        if (playerOnly) {
-          console.log("Player-only route - checking player authentication");
+        if (playerOnly || currentPath.startsWith('/player/')) {
+          console.log("Player route detected - checking player authentication");
           const playerSession = localStorage.getItem('playerSession');
           
           if (!playerSession) {
@@ -52,21 +52,13 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             // Verify player credentials directly in the database
             const { data, error } = await supabase
               .from('players')
-              .select('id, email, password, full_name')
+              .select('id, email, full_name')
               .eq('email', playerData.email)
-              .eq('password', playerData.password)
+              .eq('id', playerData.id)
               .single();
               
             if (error || !data) {
               console.error("Invalid player session, redirecting to player login", error);
-              localStorage.removeItem('playerSession');
-              navigate("/player-auth");
-              return;
-            }
-            
-            // Make sure the session ID matches the database ID
-            if (data.id !== playerData.id) {
-              console.error("Player ID mismatch, redirecting to player login");
               localStorage.removeItem('playerSession');
               navigate("/player-auth");
               return;
@@ -131,7 +123,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
       } catch (error) {
         console.error("Authentication check failed:", error);
         // Redirect based on the route type
-        if (playerOnly) {
+        if (playerOnly || location.pathname.startsWith('/player/')) {
           navigate("/player-auth");
         } else {
           navigate("/auth");
