@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -361,9 +362,11 @@ const PlayersList = () => {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-      </div>;
+      </div>
+    );
   }
 
   const columns = [
@@ -782,4 +785,87 @@ const PlayersList = () => {
                       <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
                         <div>
                           <p className="text-gray-500">אימייל:</p>
-                          <p dir="ltr" className="font-
+                          <p dir="ltr" className="font-medium">{player.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">טלפון:</p>
+                          <p dir="ltr" className="font-medium">{player.phone || "לא צוין"}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500">סטטוס:</span>
+                          <div className={`flex items-center gap-1 ${sessionStatus.color}`}>
+                            {sessionStatus.icon}
+                            <span>{sessionStatus.message}</span>
+                          </div>
+                        </div>
+                        
+                        {player.next_session_date && (
+                          <div className="mt-1 text-xs text-right">
+                            <span className="text-gray-500">מפגש הבא: </span>
+                            <span className="font-medium">
+                              {formatDate(player.next_session_date)} {formatTime(player.next_session_time)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between items-center mt-4">
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleViewProfile(player.id)} className="px-2">
+                            <UserCircle className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleEditPlayer(player.id)} className="px-2">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => copyPlayerLink(player.id)} className="px-2">
+                            {copiedPlayerId === player.id ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleScheduleSession(player.id, player.full_name)}
+                          className="flex items-center gap-1"
+                        >
+                          <Calendar className="h-4 w-4" />
+                          <span>קבע מפגש</span>
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
+
+        <AlertDialog 
+          open={!!playerToDelete} 
+          onOpenChange={() => setPlayerToDelete(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+              <AlertDialogDescription>
+                האם אתה בטוח שברצונך למחוק את השחקן {playerToDelete?.name}?
+                <br />
+                פעולה זו לא ניתנת לביטול.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+                מחק
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
+};
+
+export default PlayersList;
