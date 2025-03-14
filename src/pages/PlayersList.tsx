@@ -670,13 +670,15 @@ const PlayersList = () => {
           </Button>
         </div>
 
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
             <h3 className="font-bold">שגיאה בטעינת רשימת השחקנים:</h3>
             <p>{error}</p>
             <Button onClick={fetchPlayers} className="mt-2" variant="secondary">
               נסה שוב
             </Button>
-          </div>}
+          </div>
+        )}
 
         <div className="mb-4 text-gray-600">
           סה"כ שחקנים: {players.length} | מוצגים: {filteredPlayers.length}
@@ -738,9 +740,12 @@ const PlayersList = () => {
           </div>
         </Card>
 
-        {filteredPlayers.length === 0 ? <div className="text-center py-8 text-gray-500">
+        {filteredPlayers.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
             {players.length === 0 ? "לא נמצאו שחקנים במערכת" : "לא נמצאו שחקנים התואמים את הסינון הנוכחי"}
-          </div> : <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          </div>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full mb-6 grid grid-cols-2">
               <TabsTrigger value="table">טבלה</TabsTrigger>
               <TabsTrigger value="cards">כרטיסיות</TabsTrigger>
@@ -755,10 +760,11 @@ const PlayersList = () => {
             <TabsContent value="cards" className="w-full">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPlayers.map(player => {
-              const sessionStatus = getSessionStatus(player);
-              const baseUrl = window.location.origin;
-              const profileUrl = `${baseUrl}/player-profile/${player.id}`;
-              return <div key={player.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
+                  const sessionStatus = getSessionStatus(player);
+                  const baseUrl = window.location.origin;
+                  const profileUrl = `${baseUrl}/player-profile/${player.id}`;
+                  return (
+                    <div key={player.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
                       <div className="flex justify-between mb-3">
                         <div className="text-right flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -778,4 +784,85 @@ const PlayersList = () => {
                           <p dir="ltr" className="font-medium">{player.email}</p>
                         </div>
                         <div>
-                          <
+                          <p className="text-gray-500">טלפון:</p>
+                          <p dir="ltr" className="font-medium">{player.phone || "לא צוין"}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500">סטטוס:</span>
+                          <div className={`flex items-center gap-1 ${sessionStatus.color}`}>
+                            {sessionStatus.icon}
+                            <span>{sessionStatus.message}</span>
+                          </div>
+                        </div>
+                        
+                        {player.next_session_date && (
+                          <div className="mt-1 text-xs text-right">
+                            <span className="text-gray-500">מפגש הבא: </span>
+                            <span className="font-medium">
+                              {formatDate(player.next_session_date)} {formatTime(player.next_session_time)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between items-center mt-4">
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleViewProfile(player.id)} className="px-2">
+                            <UserCircle className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleEditPlayer(player.id)} className="px-2">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => copyPlayerLink(player.id)} className="px-2">
+                            {copiedPlayerId === player.id ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleScheduleSession(player.id, player.full_name)}
+                          className="flex items-center gap-1"
+                        >
+                          <Calendar className="h-4 w-4" />
+                          <span>קבע מפגש</span>
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
+
+        <AlertDialog 
+          open={!!playerToDelete} 
+          onOpenChange={() => setPlayerToDelete(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+              <AlertDialogDescription>
+                האם אתה בטוח שברצונך למחוק את השחקן {playerToDelete?.name}?
+                <br />
+                פעולה זו לא ניתנת לביטול.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+                מחק
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
+};
+
+export default PlayersList;
+
