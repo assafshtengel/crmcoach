@@ -290,7 +290,7 @@ export function UpcomingGamesAlert() {
                           <Badge variant="destructive" className="ml-2">היום</Badge>
                         )}
                         {isTomorrow && (
-                          <Badge variant="warning" className="ml-2">מחר</Badge>
+                          <Badge variant="secondary" className="ml-2 bg-yellow-100 text-yellow-800 border-yellow-200">מחר</Badge>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
@@ -299,7 +299,7 @@ export function UpcomingGamesAlert() {
                     </div>
                   </div>
                   {game.sentReminder ? (
-                    <Badge variant="success" className="bg-green-100 text-green-800 border-green-200">
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
                       נשלחה תזכורת
                     </Badge>
                   ) : (
