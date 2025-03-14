@@ -1,5 +1,5 @@
 
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import PlayersList from "./pages/PlayersList";
@@ -60,7 +60,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Index />} />
+        <Route path="/" element={<Navigate to="/dashboard-coach" replace />} />
+        <Route path="/index" element={<Index />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
         <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />

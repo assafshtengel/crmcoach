@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -38,7 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col min-h-screen">
       <header className="bg-white border-b">
         <div className="container mx-auto py-4 px-6 flex items-center justify-between">
-          <Link to="/dashboard" className="text-xl font-bold">
+          <Link to="/dashboard-coach" className="text-xl font-bold">
             Huzе
           </Link>
           <div className="flex items-center space-x-4">
@@ -55,12 +56,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
       
       <nav className="bg-white border-b p-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link to="/dashboard" className="text-xl font-bold">
+          <Link to="/dashboard-coach" className="text-xl font-bold">
             Huzе
           </Link>
           
           <Link
-            to="/dashboard"
+            to="/dashboard-coach"
             className="text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-1"
           >
             <BarChart size={16} />
