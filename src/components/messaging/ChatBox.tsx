@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { MessageList, Message } from "./MessageList";
@@ -22,18 +22,30 @@ export const ChatBox = ({
 }: ChatBoxProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
+    // Get current user ID once when component mounts
+    const getCurrentUser = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      setCurrentUserId(userData?.user?.id || null);
+    };
+    
+    getCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    // Only fetch messages and set up real-time subscription when currentUserId is available
+    if (!currentUserId) return;
+    
     const fetchMessages = async () => {
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData?.user?.id) return;
-
         const { data, error } = await supabase
           .from("messages")
           .select("*")
-          .or(`sender_id.eq.${userData.user.id},recipient_id.eq.${userData.user.id}`)
+          .or(`sender_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`)
           .or(`sender_id.eq.${recipientId},recipient_id.eq.${recipientId}`)
           .order("created_at");
 
@@ -41,7 +53,7 @@ export const ChatBox = ({
 
         // Mark messages as read if current user is the recipient
         const unreadMessages = data?.filter(
-          msg => msg.recipient_id === userData.user.id && !msg.is_read
+          msg => msg.recipient_id === currentUserId && !msg.is_read
         ) || [];
 
         if (unreadMessages.length > 0) {
@@ -55,7 +67,7 @@ export const ChatBox = ({
 
         setMessages(data?.map(msg => ({
           ...msg,
-          is_self: msg.sender_id === userData.user.id
+          is_self: msg.sender_id === currentUserId
         })) || []);
       } catch (error) {
         console.error("Error fetching messages:", error);
@@ -72,7 +84,7 @@ export const ChatBox = ({
     fetchMessages();
 
     // Set up real-time subscription for new messages
-    const channel = supabase
+    channelRef.current = supabase
       .channel('messages-channel')
       .on('postgres_changes', { 
         event: 'INSERT', 
@@ -81,11 +93,13 @@ export const ChatBox = ({
       }, (payload) => {
         // Only add message if it's part of this conversation
         const newMessage = payload.new as Message;
-        if ((newMessage.sender_id === recipientId && newMessage.recipient_id === supabase.auth.getUser()?.data?.user?.id) ||
-            (newMessage.recipient_id === recipientId && newMessage.sender_id === supabase.auth.getUser()?.data?.user?.id)) {
-          
+        const isForCurrentConversation = 
+          (newMessage.sender_id === recipientId && newMessage.recipient_id === currentUserId) ||
+          (newMessage.recipient_id === recipientId && newMessage.sender_id === currentUserId);
+        
+        if (isForCurrentConversation) {
           // Mark as read if recipient is the current user
-          if (newMessage.recipient_id === supabase.auth.getUser()?.data?.user?.id) {
+          if (newMessage.recipient_id === currentUserId) {
             supabase
               .from("messages")
               .update({ is_read: true })
@@ -96,24 +110,27 @@ export const ChatBox = ({
           
           setMessages(prev => [...prev, {
             ...newMessage,
-            is_self: newMessage.sender_id === supabase.auth.getUser()?.data?.user?.id
+            is_self: newMessage.sender_id === currentUserId
           }]);
         }
       })
       .subscribe();
       
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
     };
-  }, [recipientId]);
+  }, [currentUserId, recipientId]);
 
   const handleSendMessage = async (content: string) => {
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user?.id) throw new Error("User not authenticated");
+      if (!currentUserId) {
+        throw new Error("User not authenticated");
+      }
 
       const { error } = await supabase.from("messages").insert({
-        sender_id: userData.user.id,
+        sender_id: currentUserId,
         recipient_id: recipientId,
         content
       });
@@ -162,7 +179,7 @@ export const ChatBox = ({
           <>
             <MessageList 
               messages={messages} 
-              currentUserId={supabase.auth.getUser()?.data?.user?.id || ""}
+              currentUserId={currentUserId || ""}
             />
             <MessageInput 
               onSendMessage={handleSendMessage}
