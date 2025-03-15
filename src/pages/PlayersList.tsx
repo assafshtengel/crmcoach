@@ -193,7 +193,7 @@ const PlayersList = () => {
   };
 
   const viewAsPlayer = (playerId: string) => {
-    navigate(`/player-profile/${playerId}`);
+    navigate(`/player/${playerId}`);
   };
 
   const updateContactStatus = async (playerId: string, newStatus: 'contacted' | 'pending' | 'in_progress' | 'completed') => {
@@ -312,7 +312,7 @@ const PlayersList = () => {
         return {
           type: 'inactive',
           icon: <AlertCircle className="h-4 w-4 text-amber-500" />,
-          message: 'יש לקבוע מפגש (לא פעיל יותר משבועיים)',
+          message: 'יש לקבוע מפגש (לא פעי�� יותר משבועיים)',
           color: 'text-amber-500'
         };
       }
@@ -860,7 +860,7 @@ const PlayersList = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
               <AlertDialogDescription>
-                האם אתה בטוח שברצונך למחוק את השחקן {playerToDelete?.name}?
+                האם אתה בטוח שבר��ונך למחוק את השחקן {playerToDelete?.name}?
                 <br />
                 פעולה זו לא ניתנת לביטול.
               </AlertDialogDescription>
