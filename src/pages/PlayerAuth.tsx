@@ -79,23 +79,22 @@ const PlayerAuth = () => {
       console.log("Player login successful for:", normalizedEmail);
       
       // Store player session data in localStorage - always store email in lowercase
-      localStorage.setItem('playerSession', JSON.stringify({
+      const sessionData = {
         id: playerData.id,
         email: normalizedEmail, // Always store email in lowercase
         fullName: playerData.full_name
-      }));
+      };
+      
+      localStorage.setItem('playerSession', JSON.stringify(sessionData));
+      console.log("Player session data stored:", sessionData);
 
       toast({
         title: "התחברות הצליחה",
         description: `ברוך הבא, ${playerData.full_name || 'שחקן יקר'}!`,
       });
 
-      // Add a small delay to ensure the toast message is shown before navigation
-      setTimeout(() => {
-        // Navigate to the player profile view - ensure this route exists
-        console.log("Navigating to player profile");
-        navigate('/player');
-      }, 500);
+      // Force a hard reload to ensure the AuthGuard picks up the new session
+      window.location.href = '/player';
     } catch (error: any) {
       console.error("Unexpected error during player login:", error);
       toast({

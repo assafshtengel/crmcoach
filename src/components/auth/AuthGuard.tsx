@@ -54,7 +54,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             
             // Use a completely independent query for player authentication
             // This ensures it's not affected by coach authentication state
-            const { data, error } = await fetch(
+            const response = await fetch(
               `${window.location.origin}/.netlify/functions/verify-player-session`,
               {
                 method: 'POST',
@@ -66,32 +66,35 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
                   playerEmail: playerData.email.toLowerCase(),
                 }),
               }
-            ).then(res => res.json());
+            );
             
-            // Fallback to direct database check if function fails
-            if (error || !data) {
-              console.log("Function verification failed, attempting database verification");
-              // Direct database verification as fallback
-              const { data: playerDbData, error: playerDbError } = await supabase
-                .from('players')
-                .select('id, email, full_name')
-                .ilike('email', playerData.email.toLowerCase())
-                .eq('id', playerData.id)
-                .single();
-                
-              if (playerDbError || !playerDbData) {
-                console.error("Invalid player session, redirecting to player login", playerDbError);
-                localStorage.removeItem('playerSession');
-                navigate("/player-auth");
-                return;
-              }
-              
-              console.log("Player authenticated successfully (fallback)");
+            const result = await response.json();
+            
+            // Check if verification was successful
+            if (response.ok && result.data) {
+              console.log("Player authenticated successfully via function");
               setIsLoading(false);
               return;
             }
             
-            console.log("Player authenticated successfully");
+            // Fallback to direct database check if function fails
+            console.log("Function verification failed, attempting database verification");
+            // Direct database verification as fallback
+            const { data: playerDbData, error: playerDbError } = await supabase
+              .from('players')
+              .select('id, email, full_name')
+              .ilike('email', playerData.email.toLowerCase())
+              .eq('id', playerData.id)
+              .single();
+              
+            if (playerDbError || !playerDbData) {
+              console.error("Invalid player session, redirecting to player login", playerDbError);
+              localStorage.removeItem('playerSession');
+              navigate("/player-auth");
+              return;
+            }
+            
+            console.log("Player authenticated successfully (fallback)");
             setIsLoading(false);
             return;
           } catch (err) {
