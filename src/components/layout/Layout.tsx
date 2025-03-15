@@ -37,22 +37,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="bg-white border-b">
-        <div className="container mx-auto py-4 px-6 flex items-center justify-between">
-          <Link to="/dashboard-coach" className="text-xl font-bold">
-            Huzе
-          </Link>
-          <div className="flex items-center space-x-4">
-            <NotificationsBell />
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Removed the redundant header section that was selected */}
       
       <nav className="bg-white border-b p-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
