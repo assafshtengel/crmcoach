@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DataTable } from '@/components/admin/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
 import { Input } from '@/components/ui/input';
+import { DirectAccessLinkGenerator } from "@/components/player/DirectAccessLinkGenerator";
 
 interface Player {
   id: string;
@@ -170,7 +171,7 @@ const PlayersList = () => {
 
   const copyPlayerLink = (playerId: string) => {
     const baseUrl = window.location.origin;
-    const profileUrl = `${baseUrl}/player-profile/${playerId}`;
+    const profileUrl = `${baseUrl}/player/${playerId}`;
     navigator.clipboard.writeText(profileUrl).then(() => {
       setCopiedPlayerId(playerId);
       toast.success('הקישור הועתק ללוח');
@@ -529,80 +530,85 @@ const PlayersList = () => {
       }) => {
         const player = row.original;
         const baseUrl = window.location.origin;
-        const profileUrl = `${baseUrl}/player-profile/${player.id}`;
+        const profileUrl = `${baseUrl}/player/${player.id}`;
         const loginUrl = `${baseUrl}/player-auth`;
         return <div className="flex gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Link className="h-3.5 w-3.5 mr-1" />
-                    פרטי גישה
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 bg-gray-50">
-                  <div className="space-y-3">
-                    <h4 className="font-medium mb-2">פרטי גישה עבור {player.full_name}</h4>
-                    
-                    <div className="space-y-1">
-                      <label className="text-xs text-gray-500">מזהה שחקן</label>
-                      <div className="flex items-center gap-1">
-                        <Input value={player.id} readOnly className="text-xs font-mono h-8" />
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => copyPlayerId(player.id)}>
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <label className="text-xs text-gray-500 bg-orange-50">סיסמת כניסה</label>
-                      <div className="flex items-center gap-1">
-                        <Input value={player.password || "לא הוגדרה סיסמה"} readOnly className="text-xs font-mono h-8" type="text" />
-                        {player.password ? (
-                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => {
-                            navigator.clipboard.writeText(player.password || "");
-                            toast.success("הסיסמה הועתקה ללוח");
-                          }}>
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        ) : (
-                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => generatePasswordForPlayer(player.id, player.full_name)}>
-                            <CheckCircle className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <label className="text-xs text-gray-500">קישור לפרופיל</label>
-                      <div className="flex items-center gap-1">
-                        <Input value={profileUrl} readOnly className="text-xs font-mono h-8" dir="ltr" />
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => copyPlayerLink(player.id)}>
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <label className="text-xs text-gray-500">אימייל</label>
-                      <Input value={player.email} readOnly className="text-xs h-8" dir="ltr" />
-                    </div>
-                    
-                    <div className="pt-2 flex justify-between">
-                      <Button size="sm" variant="outline" className="w-full" onClick={() => viewAsPlayer(player.id)}>
-                        <Eye className="h-3.5 w-3.5 mr-1" />
-                        צפה כשחקן
-                      </Button>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-              
-              <Button variant="outline" size="sm" onClick={() => copyPlayerLink(player.id)} className="min-w-9 w-9 p-0">
-                {copiedPlayerId === player.id ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Link className="h-3.5 w-3.5 mr-1" />
+                פרטי גישה
               </Button>
-            </div>;
-      }
-    },
+            </PopoverTrigger>
+            <PopoverContent className="w-80 bg-gray-50">
+              <div className="space-y-3">
+                <h4 className="font-medium mb-2">פרטי גישה עבור {player.full_name}</h4>
+                
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500">מזהה שחקן</label>
+                  <div className="flex items-center gap-1">
+                    <Input value={player.id} readOnly className="text-xs font-mono h-8" />
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => copyPlayerId(player.id)}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500 bg-orange-50">סיסמת כניסה</label>
+                  <div className="flex items-center gap-1">
+                    <Input value={player.password || "לא הוגדרה סיסמה"} readOnly className="text-xs font-mono h-8" type="text" />
+                    {player.password ? (
+                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => {
+                        navigator.clipboard.writeText(player.password || "");
+                        toast.success("הסיסמה הועתקה ללוח");
+                      }}>
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => generatePasswordForPlayer(player.id, player.full_name)}>
+                        <CheckCircle className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500">קישור לפרופיל</label>
+                  <div className="flex items-center gap-1">
+                    <Input value={profileUrl} readOnly className="text-xs font-mono h-8" dir="ltr" />
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => copyPlayerLink(player.id)}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500">אימייל</label>
+                  <Input value={player.email} readOnly className="text-xs h-8" dir="ltr" />
+                </div>
+                
+                <div className="border-t border-gray-200 pt-3 mt-3">
+                  <DirectAccessLinkGenerator playerId={player.id} playerName={player.full_name} />
+                </div>
+                
+                <div className="pt-2 flex justify-between">
+                  <Button size="sm" variant="outline" className="w-full" onClick={() => viewAsPlayer(player.id)}>
+                    <Eye className="h-3.5 w-3.5 mr-1" />
+                    צפה כשחקן
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          
+          <Button variant="outline" size="sm" onClick={() => copyPlayerLink(player.id)} className="min-w-9 w-9 p-0">
+            {copiedPlayerId === player.id ? <CheckCircle className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+          </Button>
+        </div>;
+  }
+}
+,
     {
       id: "actions",
       header: "פעולות",
@@ -769,7 +775,7 @@ const PlayersList = () => {
                 {filteredPlayers.map(player => {
                   const sessionStatus = getSessionStatus(player);
                   const baseUrl = window.location.origin;
-                  const profileUrl = `${baseUrl}/player-profile/${player.id}`;
+                  const profileUrl = `${baseUrl}/player/${player.id}`;
                   return (
                     <div key={player.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
                       <div className="flex justify-between mb-3">
@@ -781,56 +787,21 @@ const PlayersList = () => {
                           <p className="text-sm text-gray-500">{player.sport_field || "לא צוין"}</p>
                         </div>
                         <div className="rtl">
-                          {player.registration_link_id ? <Badge variant="secondary" className="ml-2">רישום עצמאי</Badge> : <Badge variant="outline" className="ml-2">נרשם ע״י המאמן</Badge>}
+                          {player.registration_link_id ? <Badge variant="secondary">רישום עצמאי</Badge> : <Badge variant="outline">נרשם ע״י המאמן</Badge>}
                         </div>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 mb-4">
-                        <div>
-                          <div className="text-xs text-gray-500 mb-1">דוא"ל</div>
-                          <div className="text-sm" dir="ltr">{player.email}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm text-gray-500">
+                          {player.past_sessions_count || 0} מפגשים שהתקיימו
                         </div>
-                        <div>
-                          <div className="text-xs text-gray-500 mb-1">טלפון</div>
-                          <div className="text-sm" dir="ltr">{player.phone || "-"}</div>
+                        <div className="text-sm text-gray-500">
+                          {player.last_session_date && <span>אחרון: {formatDate(player.last_session_date)}</span>}
                         </div>
                       </div>
-                      
-                      <div className="flex flex-col gap-2">
-                        <div className={`flex items-center gap-1.5 ${sessionStatus.color} text-sm py-1 px-2 rounded-full bg-opacity-10 w-fit`}>
-                          {sessionStatus.icon}
-                          <span>
-                            {player.next_session_date
-                              ? `מפגש הבא: ${formatDate(player.next_session_date)}`
-                              : sessionStatus.message}
-                          </span>
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm text-gray-500">
+                          {player.next_session_date ? <span>מפגש עתידי: {formatDate(player.next_session_date)} {formatTime(player.next_session_time)}</span> : <span>לא נקבע</span>}
                         </div>
-                        
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <Badge variant="outline" className="font-medium">
-                            {player.past_sessions_count || 0} מפגשים
-                          </Badge>
-                          {player.last_session_date && 
-                            <span className="text-xs text-gray-500">
-                              (אחרון: {formatDate(player.last_session_date)})
-                            </span>
-                          }
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between mt-4 pt-3 border-t border-gray-100">
-                        <Button variant="outline" size="sm" onClick={() => viewAsPlayer(player.id)} className="flex-1 mr-1">
-                          <Eye className="h-4 w-4 mr-1" />
-                          צפה
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEditPlayer(player.id)} className="flex-1 mx-1">
-                          <Pencil className="h-4 w-4 mr-1" />
-                          ערוך
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleScheduleSession(player.id, player.full_name)} className="flex-1 ml-1">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          קבע מפגש
-                        </Button>
                       </div>
                     </div>
                   );
@@ -839,23 +810,6 @@ const PlayersList = () => {
             </TabsContent>
           </Tabs>
         )}
-        
-        <AlertDialog open={!!playerToDelete} onOpenChange={(open) => !open && setPlayerToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>האם אתה בטוח שברצונך למחוק את השחקן?</AlertDialogTitle>
-              <AlertDialogDescription>
-                פעולה זו תמחק לצמיתות את השחקן {playerToDelete?.name} וכל הנתונים הקשורים אליו. לא ניתן לבטל פעולה זו.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>ביטול</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
-                מחק שחקן
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
     </div>
   );

@@ -36,11 +36,39 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           return;
         }
 
+        // ========== PLAYER DIRECT ACCESS SECTION ==========
+        // Check for direct access tokens when accessing a specific player's profile
+        if (currentPath.startsWith('/player/') && playerId) {
+          console.log("Player direct access path detected, checking for direct access token");
+          const directAccess = sessionStorage.getItem('playerDirectAccess');
+          
+          if (directAccess) {
+            try {
+              const directAccessData = JSON.parse(directAccess);
+              
+              // Verify this direct access is for the same player being accessed
+              if (directAccessData.id === playerId) {
+                console.log("Direct access valid for player:", playerId);
+                setIsLoading(false);
+                return;
+              } else {
+                console.log("Direct access token is for different player, redirecting");
+                sessionStorage.removeItem('playerDirectAccess');
+                navigate("/player-auth");
+                return;
+              }
+            } catch (err) {
+              console.error("Error parsing direct access data:", err);
+              sessionStorage.removeItem('playerDirectAccess');
+            }
+          }
+        }
+
         // ========== PLAYER AUTHENTICATION SECTION ==========
         // If this is a player route (playerOnly flag or path starts with /player/)
         if (playerOnly || currentPath.startsWith('/player/') || currentPath === '/player') {
           console.log("Player route detected - checking player authentication");
-          const playerSession = localStorage.getItem('playerSession');
+          const playerSession = localStorage.getItem('playerSession') || sessionStorage.getItem('playerSession');
           
           if (!playerSession) {
             console.log("No player session found, redirecting to player login");
@@ -63,7 +91,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
                   },
                   body: JSON.stringify({
                     playerId: playerData.id,
-                    playerEmail: playerData.email.toLowerCase(),
+                    playerEmail: playerData.email?.toLowerCase(),
                   }),
                 }
               );
@@ -90,13 +118,14 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             const { data: playerDbData, error: playerDbError } = await supabase
               .from('players')
               .select('id, email, full_name')
-              .ilike('email', playerData.email.toLowerCase())
+              .ilike('email', playerData.email?.toLowerCase() || '')
               .eq('id', playerData.id)
               .single();
               
             if (playerDbError || !playerDbData) {
               console.error("Invalid player session, redirecting to player login", playerDbError);
               localStorage.removeItem('playerSession');
+              sessionStorage.removeItem('playerSession');
               navigate("/player-auth");
               return;
             }
@@ -107,6 +136,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           } catch (err) {
             console.error("Error parsing player session:", err);
             localStorage.removeItem('playerSession');
+            sessionStorage.removeItem('playerSession');
             navigate("/player-auth");
             return;
           }
