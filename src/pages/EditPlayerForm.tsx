@@ -248,7 +248,8 @@ const EditPlayerForm = () => {
         description: "פרטי השחקן עודכנו בהצלחה.",
       });
 
-      navigate(`/player-profile/${playerId}`);
+      // Navigate to players list instead of player profile
+      navigate('/players-list');
 
     } catch (error: any) {
       console.error('Error updating player:', error);
