@@ -225,11 +225,7 @@ const PlayersList = () => {
   };
 
   const handleEditPlayer = (playerId: string) => {
-    navigate('/edit-player', {
-      state: {
-        playerId
-      }
-    });
+    navigate(`/edit-player/${playerId}`);
   };
 
   const handleViewProfile = (playerId: string) => {
