@@ -1,166 +1,144 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
-export default function PlayerAuth() {
+const PlayerAuth = () => {
   const [playerId, setPlayerId] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [checkingAccess, setCheckingAccess] = useState(true);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [verifyingToken, setVerifyingToken] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
   
-  // Check for access token in the URL
+  // Check for direct access token in URL
   useEffect(() => {
-    const checkDirectAccess = async () => {
-      try {
-        // Check if we have a direct access token in the URL
-        const searchParams = new URLSearchParams(location.search);
-        const accessToken = searchParams.get('access');
-        const directPlayerId = searchParams.get('player');
-        
-        if (accessToken && directPlayerId) {
-          console.log("Found direct access token for player:", directPlayerId);
-          
-          // Verify the access token against the player
-          const { data, error } = await supabase
-            .from('player_access_tokens')
-            .select('*')
-            .eq('player_id', directPlayerId)
-            .eq('token', accessToken)
-            .eq('is_active', true)
-            .single();
-          
-          if (error) {
-            console.error("Error verifying access token:", error);
-            toast({
-              variant: "destructive",
-              title: "קישור לא תקין",
-              description: "הקישור שהשתמשת בו אינו תקף או שפג תוקפו",
-            });
-          } else if (data) {
-            // Valid token, create a temporary player session
-            const playerData = {
-              id: directPlayerId,
-              direct_access: true,
-              access_token: accessToken
-            };
-            
-            // Store in session storage for temporary access
-            sessionStorage.setItem('playerDirectAccess', JSON.stringify(playerData));
-            
-            // Redirect to player view
-            navigate(`/player/${directPlayerId}`);
-            return;
-          }
-        }
-        
-        // Check if player is already authenticated
-        const existingSession = localStorage.getItem('playerSession');
-        if (existingSession) {
-          try {
-            const parsedSession = JSON.parse(existingSession);
-            // Redirect to player profile
-            navigate(`/player`);
-            return;
-          } catch (error) {
-            // Invalid session data, remove it
-            localStorage.removeItem('playerSession');
-          }
-        }
-      } catch (error) {
-        console.error("Error checking direct access:", error);
-      } finally {
-        setCheckingAccess(false);
-      }
-    };
+    const accessToken = searchParams.get('access');
+    const playerIdFromUrl = searchParams.get('player');
     
-    checkDirectAccess();
-  }, [location, navigate, toast]);
+    if (accessToken && playerIdFromUrl) {
+      verifyAccessToken(accessToken, playerIdFromUrl);
+    }
+  }, [searchParams]);
+  
+  const verifyAccessToken = async (token: string, playerIdFromUrl: string) => {
+    setVerifyingToken(true);
+    try {
+      // Verify the token against the database
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('player_access_tokens')
+        .select('*, players:player_id(id, full_name, email)')
+        .eq('token', token)
+        .eq('player_id', playerIdFromUrl)
+        .eq('is_active', true)
+        .single();
+      
+      if (tokenError || !tokenData) {
+        console.error("Invalid or expired token:", tokenError);
+        toast.error('הקישור אינו תקף או שפג תוקפו');
+        return;
+      }
+      
+      // Token is valid, set up direct access session
+      const playerData = {
+        id: tokenData.player_id,
+        full_name: tokenData.players?.full_name,
+        email: tokenData.players?.email,
+      };
 
-  const handleLogin = async (e) => {
+      // Store player data in session storage for direct access
+      sessionStorage.setItem('playerDirectAccess', JSON.stringify(playerData));
+      
+      // Redirect to the player profile
+      toast.success('מועבר לפרופיל השחקן...');
+      navigate(`/player/${playerData.id}`);
+    } catch (error) {
+      console.error("Error verifying token:", error);
+      toast.error('שגיאה באימות הקישור');
+    } finally {
+      setVerifyingToken(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // First we need to verify the player ID and password
-      const { data, error } = await supabase
-        .from('players')
-        .select('id, full_name, email, password')
-        .eq('id', playerId)
+      if (!playerId) {
+        toast.error("אנא הזן מזהה שחקן");
+        return;
+      }
+
+      // Fetch player info from database
+      const { data: player, error: playerError } = await supabase
+        .from("players")
+        .select("id, full_name, email, password")
+        .eq("id", playerId)
         .single();
 
-      if (error || !data) {
-        throw new Error("שחקן לא נמצא או פרטי הזיהוי שגויים");
+      if (playerError || !player) {
+        console.error("Player not found:", playerError);
+        toast.error("מזהה שחקן לא נמצא");
+        return;
       }
 
-      // Verify password (basic comparison for now)
-      if (!data.password || data.password !== password) {
-        throw new Error("הסיסמה שהזנת שגויה");
+      // Validate password if one is set for the player
+      if (player.password && password !== player.password) {
+        toast.error("סיסמה שגויה");
+        return;
       }
 
-      // Create session for the player
+      // Store player session
       const playerData = {
-        id: data.id,
-        full_name: data.full_name,
-        email: data.email,
+        id: player.id,
+        full_name: player.full_name,
+        email: player.email,
       };
 
-      // Store player session in local or session storage based on "remember me"
+      // Store in localStorage if remember me is checked, otherwise in sessionStorage
       if (rememberMe) {
-        localStorage.setItem('playerSession', JSON.stringify(playerData));
+        localStorage.setItem("playerSession", JSON.stringify(playerData));
       } else {
-        sessionStorage.setItem('playerSession', JSON.stringify(playerData));
-        localStorage.removeItem('playerSession');
+        sessionStorage.setItem("playerSession", JSON.stringify(playerData));
       }
 
-      toast({
-        title: "התחברות בוצעה בהצלחה",
-        description: `ברוך הבא, ${data.full_name}`,
-      });
-
-      // Redirect to player profile
-      navigate('/player');
-
+      toast.success("התחברת בהצלחה");
+      navigate(`/player/${player.id}`);
     } catch (error) {
       console.error("Login error:", error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בהתחברות",
-        description: error.message,
-      });
+      toast.error("שגיאה בהתחברות");
     } finally {
       setLoading(false);
     }
   };
 
-  if (checkingAccess) {
+  if (verifyingToken) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+          <p className="mt-4 text-lg">מאמת את הקישור...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-      <div className="w-full max-w-md">
-        <Card className="backdrop-blur-sm bg-white/90 shadow-lg">
+    <div className="h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
+      <div className="max-w-md w-full">
+        <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-xl sm:text-2xl font-bold text-emerald-900">
-              התחברות לשחקנים
-            </CardTitle>
-            <CardDescription className="mt-2 text-sm sm:text-base">
-              הזן את פרטי הכניסה שלך כדי להתחבר
+            <CardTitle className="text-2xl font-bold">כניסת שחקנים</CardTitle>
+            <CardDescription>
+              כניסה למערכת המנטליות לשחקנים
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -169,45 +147,57 @@ export default function PlayerAuth() {
                 <Label htmlFor="playerId">מזהה שחקן</Label>
                 <Input
                   id="playerId"
-                  dir="ltr"
                   value={playerId}
                   onChange={(e) => setPlayerId(e.target.value)}
+                  placeholder="הזן את מזהה השחקן שלך"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">סיסמה</Label>
+                <Label htmlFor="password">סיסמה (אם הוגדרה)</Label>
                 <Input
                   id="password"
                   type="password"
-                  dir="ltr"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
+                  placeholder="הזן את הסיסמה שלך (אם הוגדרה)"
                 />
               </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Checkbox 
-                  id="rememberMe" 
-                  checked={rememberMe} 
-                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 text-primary"
                 />
-                <Label htmlFor="rememberMe" className="text-sm">זכור אותי</Label>
+                <Label htmlFor="rememberMe" className="mr-2">זכור אותי</Label>
               </div>
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loading}
+                disabled={loading || !playerId}
               >
-                {loading ? "מתחבר..." : "התחבר"}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    מתחבר...
+                  </>
+                ) : (
+                  "התחבר"
+                )}
               </Button>
-              <p className="text-sm text-center text-gray-500 mt-4">
-                לא יודע את הפרטים שלך? צור קשר עם המאמן שלך כדי לקבל את פרטי הכניסה.
-              </p>
             </form>
           </CardContent>
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-gray-500">
+              מאמנים? <a href="/auth" className="text-primary hover:underline">לחצו כאן להתחברות</a>
+            </p>
+          </CardFooter>
         </Card>
       </div>
     </div>
   );
-}
+};
+
+export default PlayerAuth;
