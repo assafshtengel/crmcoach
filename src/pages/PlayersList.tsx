@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -627,9 +626,17 @@ const PlayersList = () => {
                 </Tooltip>
               </TooltipProvider>
               
-              <Button variant="outline" size="sm" onClick={() => handleEditPlayer(player.id)}>
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="sm" onClick={() => handleEditPlayer(player.id)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>ערוך פרטי שחקן</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
               <Button variant="outline" size="sm" onClick={() => handleScheduleSession(player.id, player.full_name)} className="gap-2">
                 <Calendar className="h-4 w-4" />
                 קבע מפגש
@@ -817,9 +824,16 @@ const PlayersList = () => {
                           <Button variant="outline" size="sm" onClick={() => handleViewProfile(player.id)} className="px-2">
                             <UserCircle className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleEditPlayer(player.id)} className="px-2">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="outline" size="sm" onClick={() => handleEditPlayer(player.id)} className="px-2">
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>ערוך פרטי שחקן</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           <Button variant="outline" size="sm" onClick={() => copyPlayerLink(player.id)} className="px-2">
                             {copiedPlayerId === player.id ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                           </Button>
