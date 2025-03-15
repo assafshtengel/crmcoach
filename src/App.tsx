@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
@@ -76,6 +75,7 @@ function App() {
         
         {/* ========== PLAYER ROUTES (player auth system) ========== */}
         <Route path="/player" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
+        <Route path="/player/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
         <Route path="/player/daily-mental-state" element={<AuthGuard playerOnly={true}><DailyMentalState /></AuthGuard>} />
         <Route path="/player/mental-state-history" element={<AuthGuard playerOnly={true}><MentalStateHistory /></AuthGuard>} />
         <Route path="/player/game-summary" element={<AuthGuard playerOnly={true}><PlayerGameSummary /></AuthGuard>} />
@@ -86,7 +86,6 @@ function App() {
         <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
         <Route path="/players-list" element={<AuthGuard><PlayersList /></AuthGuard>} />
         <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />
-        <Route path="/player/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
         <Route path="/edit-player/:playerId" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
         
         <Route path="/game-summary/:playerId" element={<AuthGuard><GameSummaries /></AuthGuard>} />
