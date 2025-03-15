@@ -52,33 +52,40 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             const playerData = JSON.parse(playerSession);
             console.log("Player session found:", playerData);
             
-            // Use a completely independent query for player authentication
-            // This ensures it's not affected by coach authentication state
-            const response = await fetch(
-              `${window.location.origin}/.netlify/functions/verify-player-session`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  playerId: playerData.id,
-                  playerEmail: playerData.email.toLowerCase(),
-                }),
+            // Verify player session using Netlify function
+            try {
+              const response = await fetch(
+                `${window.location.origin}/.netlify/functions/verify-player-session`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    playerId: playerData.id,
+                    playerEmail: playerData.email.toLowerCase(),
+                  }),
+                }
+              );
+              
+              const result = await response.json();
+              
+              // Check if verification was successful
+              if (response.ok && result.data) {
+                console.log("Player authenticated successfully via function");
+                setIsLoading(false);
+                return;
+              } else {
+                console.error("Function verification failed:", result.error);
+                // Continue to fallback below
               }
-            );
-            
-            const result = await response.json();
-            
-            // Check if verification was successful
-            if (response.ok && result.data) {
-              console.log("Player authenticated successfully via function");
-              setIsLoading(false);
-              return;
+            } catch (funcError) {
+              console.error("Error calling verification function:", funcError);
+              // Continue to fallback below
             }
             
             // Fallback to direct database check if function fails
-            console.log("Function verification failed, attempting database verification");
+            console.log("Attempting database verification");
             // Direct database verification as fallback
             const { data: playerDbData, error: playerDbError } = await supabase
               .from('players')

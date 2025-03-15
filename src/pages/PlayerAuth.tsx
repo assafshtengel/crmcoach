@@ -93,8 +93,11 @@ const PlayerAuth = () => {
         description: `ברוך הבא, ${playerData.full_name || 'שחקן יקר'}!`,
       });
 
-      // Force a hard reload to ensure the AuthGuard picks up the new session
-      window.location.href = '/player';
+      // Wait for toast to show, then redirect with a hard reload
+      setTimeout(() => {
+        console.log("Redirecting to player page with hard reload");
+        window.location.href = '/player';
+      }, 1000);
     } catch (error: any) {
       console.error("Unexpected error during player login:", error);
       toast({

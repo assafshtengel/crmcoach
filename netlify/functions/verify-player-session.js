@@ -18,12 +18,12 @@ exports.handler = async (event, context) => {
       };
     }
 
+    console.log(`Verifying player session: ID=${playerId}, Email=${playerEmail}`);
+
     // Create Supabase client with anon key
     const supabaseUrl = 'https://hntgzgrlyfhojcaofbjv.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhudGd6Z3JseWZob2pjYW9mYmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjY2NTYsImV4cCI6MjA1NDkwMjY1Nn0.InXLUXMCNHzBYxOEY_97y1Csm_uBeGyUsiNWlAQoHus';
     const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    console.log(`Verifying player session: ID=${playerId}, Email=${playerEmail}`);
     
     // Query the database to verify the player
     const { data, error } = await supabase
@@ -33,8 +33,16 @@ exports.handler = async (event, context) => {
       .eq('id', playerId)
       .single();
       
-    if (error || !data) {
-      console.log('Player verification failed:', error || 'No data returned');
+    if (error) {
+      console.log('Database error during player verification:', error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Database error during verification' })
+      };
+    }
+    
+    if (!data) {
+      console.log('Player verification failed: No matching player found');
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Invalid player credentials' })
