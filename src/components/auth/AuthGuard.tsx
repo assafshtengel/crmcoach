@@ -51,19 +51,41 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           try {
             const playerData = JSON.parse(playerSession);
             
-            // Verify player credentials directly in the database
-            // Use anon key for this query to ensure it works regardless of coach login state
-            const { data, error } = await supabase
-              .from('players')
-              .select('id, email, full_name')
-              .ilike('email', playerData.email.toLowerCase())
-              .eq('id', playerData.id)
-              .single();
-              
+            // Use a completely independent query for player authentication
+            // This ensures it's not affected by coach authentication state
+            const { data, error } = await fetch(
+              `${window.location.origin}/.netlify/functions/verify-player-session`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  playerId: playerData.id,
+                  playerEmail: playerData.email.toLowerCase(),
+                }),
+              }
+            ).then(res => res.json());
+            
+            // Fallback to direct database check if function fails
             if (error || !data) {
-              console.error("Invalid player session, redirecting to player login", error);
-              localStorage.removeItem('playerSession');
-              navigate("/player-auth");
+              // Direct database verification as fallback
+              const { data: playerDbData, error: playerDbError } = await supabase
+                .from('players')
+                .select('id, email, full_name')
+                .ilike('email', playerData.email.toLowerCase())
+                .eq('id', playerData.id)
+                .single();
+                
+              if (playerDbError || !playerDbData) {
+                console.error("Invalid player session, redirecting to player login", playerDbError);
+                localStorage.removeItem('playerSession');
+                navigate("/player-auth");
+                return;
+              }
+              
+              console.log("Player authenticated successfully (fallback)");
+              setIsLoading(false);
               return;
             }
             

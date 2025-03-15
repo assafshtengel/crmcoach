@@ -15,5 +15,5 @@ export const getSupabase = () => {
   return supabaseInstance;
 };
 
-// For backward compatibility, also export as supabase
+// For backward compatibility, export as supabase
 export const supabase = getSupabase();

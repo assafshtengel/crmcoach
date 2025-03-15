@@ -29,12 +29,15 @@ const PlayerAuth = () => {
       // Normalize email to lowercase for case-insensitive comparison
       const normalizedEmail = email.trim().toLowerCase();
       
-      // Using Supabase client directly with anon key (already configured in supabase.ts)
-      // This ensures the query works regardless of coach authentication state
-      const { data: playerData, error: playerError } = await supabase
+      // Create a connection that is always using the anonymous key
+      // This ensures complete independence from any coach authentication
+      const playerAuthClient = supabase;
+      
+      // Query players table directly with the anon key
+      const { data: playerData, error: playerError } = await playerAuthClient
         .from('players')
         .select('id, email, password, full_name')
-        .ilike('email', normalizedEmail) // Case-insensitive comparison with ilike
+        .ilike('email', normalizedEmail)
         .maybeSingle();
 
       if (playerError) {
@@ -105,8 +108,11 @@ const PlayerAuth = () => {
     setLoading(true);
 
     try {
+      // Create a connection that is always using the anonymous key
+      const playerAuthClient = supabase;
+      
       // Check if email exists in players table - use case-insensitive comparison
-      const { data: playerData, error: playerError } = await supabase
+      const { data: playerData, error: playerError } = await playerAuthClient
         .from('players')
         .select('id, email')
         .ilike('email', email.trim().toLowerCase())
@@ -124,7 +130,7 @@ const PlayerAuth = () => {
       const newPassword = Math.random().toString(36).slice(-10);
 
       // Update the player's password
-      const { error: updateError } = await supabase
+      const { error: updateError } = await playerAuthClient
         .from('players')
         .update({ password: newPassword })
         .eq('id', playerData.id);
