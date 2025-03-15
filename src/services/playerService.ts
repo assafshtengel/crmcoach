@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { PlayerFormValues } from "@/components/new-player/PlayerFormSchema";
 
@@ -52,6 +53,52 @@ export const updatePlayer = async (
     return data;
   } catch (error) {
     console.error('Error updating player:', error);
+    throw error;
+  }
+};
+
+// Add a new function to create players with the current user as coach
+export const createPlayer = async (playerData: PlayerFormValues) => {
+  try {
+    // Get current user session to use their ID as coach_id
+    const { data: sessionData } = await supabase.auth.getSession();
+    const currentUserId = sessionData.session?.user?.id;
+    
+    if (!currentUserId) {
+      throw new Error("אין משתמש מחובר. יש להתחבר כדי ליצור שחקן חדש.");
+    }
+
+    const finalSportField = playerData.sportField === 'other' && playerData.otherSportField
+      ? playerData.otherSportField
+      : playerData.sportField === 'other'
+        ? 'אחר'
+        : playerData.sportField;
+
+    const { data, error } = await supabase
+      .from('players')
+      .insert({
+        full_name: `${playerData.firstName} ${playerData.lastName}`,
+        email: playerData.playerEmail,
+        phone: playerData.playerPhone,
+        birthdate: playerData.birthDate,
+        city: playerData.city,
+        club: playerData.club,
+        year_group: playerData.yearGroup,
+        injuries: playerData.injuries,
+        parent_name: playerData.parentName,
+        parent_phone: playerData.parentPhone,
+        parent_email: playerData.parentEmail,
+        notes: playerData.notes,
+        sport_field: finalSportField,
+        coach_id: currentUserId,
+        registration_timestamp: new Date().toISOString()
+      })
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating player:', error);
     throw error;
   }
 };
