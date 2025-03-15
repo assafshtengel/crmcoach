@@ -19,11 +19,12 @@ export const ResetPasswordForm = ({ onBackToLoginClick }: ResetPasswordFormProps
     setLoading(true);
 
     try {
-      // Get current origin to ensure we're redirecting to the right place
-      const currentOrigin = window.location.origin;
+      // קבל את כתובת האתר הנוכחית כדי להבטיח שהפניה נכונה
+      const currentURL = window.location.origin;
+      console.log("Current origin for reset password:", currentURL);
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${currentOrigin}/auth?type=recovery`,
+        redirectTo: `${currentURL}/auth?type=recovery`,
       });
 
       if (error) throw error;
@@ -35,6 +36,7 @@ export const ResetPasswordForm = ({ onBackToLoginClick }: ResetPasswordFormProps
       
       onBackToLoginClick();
     } catch (error: any) {
+      console.error("Reset password error:", error);
       toast({
         variant: "destructive",
         title: "שגיאה באיפוס סיסמה",

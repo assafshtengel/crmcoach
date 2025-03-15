@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LoginForm } from "@/components/auth/LoginForm";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
+import { UpdatePasswordForm } from "@/components/auth/UpdatePasswordForm";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,17 +20,23 @@ const AuthPage = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if there's a hash fragment that might contain access_token
-    const handleHashFragment = async () => {
+    // בדיקה אם יש פרגמנט האש שעשוי להכיל access_token
+    const handleAuthRedirect = async () => {
       try {
         setLoading(true);
         
-        // Hash fragment might contain auth info from password reset
+        // פרגמנט האש עשוי להכיל מידע אימות מאיפוס סיסמה
         const hashFragment = window.location.hash;
+        const searchParams = new URLSearchParams(location.search);
+        const actionType = searchParams.get("type");
+
+        console.log("Hash fragment:", hashFragment);
+        console.log("Action type from URL:", actionType);
+        
         if (hashFragment && hashFragment.includes("access_token")) {
-          console.log("Hash fragment detected, processing auth recovery");
+          console.log("Hash fragment with token detected, processing auth recovery");
           
-          // Supabase will automatically handle the hash
+          // סופאבייס יטפל אוטומטית בהאש
           const { data: { session }, error } = await supabase.auth.getSession();
           
           if (error) {
@@ -40,31 +47,38 @@ const AuthPage = () => {
               description: "אירעה שגיאה בתהליך האימות, נא לנסות שוב",
             });
           } else if (session) {
-            console.log("User authenticated successfully");
-            navigate("/dashboard-coach");
-            return;
+            if (actionType === "recovery" || hashFragment.includes("type=recovery")) {
+              // אם זה איפוס סיסמה, נציג את טופס עדכון הסיסמה
+              console.log("Recovery mode detected");
+              setMode("update-password");
+            } else {
+              // אחרת, נניח שזו התחברות רגילה ונעביר לדף הבית
+              console.log("User authenticated successfully, redirecting to dashboard");
+              navigate("/dashboard-coach");
+              return;
+            }
           }
         }
+        
+        // בדיקה אם יש type=recovery ב-URL (פרמטר שאילתה מסורתי)
+        if (actionType === "recovery") {
+          console.log("Recovery mode from query param detected");
+          setMode("update-password");
+        }
       } catch (error) {
-        console.error("Error handling hash fragment:", error);
+        console.error("Error handling authentication redirect:", error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה בתהליך האימות",
+          description: "אירעה שגיאה לא צפויה, נא לנסות שוב",
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    handleHashFragment();
-  }, [navigate, toast]);
-
-  // Check URL parameters for action type (if any)
-  useEffect(() => {
-    // Check if we have type=recovery in the URL (traditional query param)
-    const queryParams = new URLSearchParams(location.search);
-    const actionType = queryParams.get("type");
-    
-    if (actionType === "recovery") {
-      setMode("update-password");
-    }
-  }, [location]);
+    handleAuthRedirect();
+  }, [navigate, location, toast]);
 
   if (loading) {
     return (
@@ -96,6 +110,7 @@ const AuthPage = () => {
             {mode === "login" && <LoginForm onSignUpClick={() => setMode("signup")} onForgotPasswordClick={() => setMode("reset-password")} />}
             {mode === "signup" && <SignUpForm onLoginClick={() => setMode("login")} />}
             {mode === "reset-password" && <ResetPasswordForm onBackToLoginClick={() => setMode("login")} />}
+            {mode === "update-password" && <UpdatePasswordForm onSuccessCallback={() => navigate("/dashboard-coach")} />}
             
             <div className="mt-6 pt-6 border-t border-gray-200 text-center space-y-3">
               <Button 
