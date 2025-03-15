@@ -54,11 +54,7 @@ export default function PlayerProfile() {
         }
       } catch (error: any) {
         console.error('Error fetching player:', error);
-        toast({
-          title: 'שגיאה',
-          description: error.message,
-          variant: 'destructive',
-        });
+        toast.error(`שגיאה: ${error.message}`);
       } finally {
         setLoading(false);
       }
@@ -117,18 +113,11 @@ export default function PlayerProfile() {
         throw error;
       }
 
-      toast({
-        title: 'הצלחה',
-        description: 'השחקן נמחק בהצלחה',
-      });
+      toast.success('השחקן נמחק בהצלחה');
       navigate('/players-list'); // Redirect to the players list page
     } catch (error: any) {
       console.error('Error deleting player:', error);
-      toast({
-        title: 'שגיאה',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error(`שגיאה: ${error.message}`);
     } finally {
       setOpenDialog(false);
     }
