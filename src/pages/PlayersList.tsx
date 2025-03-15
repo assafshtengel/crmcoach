@@ -638,9 +638,9 @@ const PlayersList = () => {
                 קבע מפגש
               </Button>
               <Button variant="outline" size="sm" onClick={() => setPlayerToDelete({
-        id: player.id,
-        name: player.full_name
-      })} className="text-red-600 hover:text-red-700">
+                id: player.id,
+                name: player.full_name
+              })} className="text-red-600 hover:text-red-700">
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>;
@@ -785,4 +785,80 @@ const PlayersList = () => {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols
+                      <div className="grid grid-cols-2 gap-2 mb-4">
+                        <div>
+                          <div className="text-xs text-gray-500 mb-1">דוא"ל</div>
+                          <div className="text-sm" dir="ltr">{player.email}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 mb-1">טלפון</div>
+                          <div className="text-sm" dir="ltr">{player.phone || "-"}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2">
+                        <div className={`flex items-center gap-1.5 ${sessionStatus.color} text-sm py-1 px-2 rounded-full bg-opacity-10 w-fit`}>
+                          {sessionStatus.icon}
+                          <span>
+                            {player.next_session_date
+                              ? `מפגש הבא: ${formatDate(player.next_session_date)}`
+                              : sessionStatus.message}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <Badge variant="outline" className="font-medium">
+                            {player.past_sessions_count || 0} מפגשים
+                          </Badge>
+                          {player.last_session_date && 
+                            <span className="text-xs text-gray-500">
+                              (אחרון: {formatDate(player.last_session_date)})
+                            </span>
+                          }
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between mt-4 pt-3 border-t border-gray-100">
+                        <Button variant="outline" size="sm" onClick={() => viewAsPlayer(player.id)} className="flex-1 mr-1">
+                          <Eye className="h-4 w-4 mr-1" />
+                          צפה
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleEditPlayer(player.id)} className="flex-1 mx-1">
+                          <Pencil className="h-4 w-4 mr-1" />
+                          ערוך
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleScheduleSession(player.id, player.full_name)} className="flex-1 ml-1">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          קבע מפגש
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
+        
+        <AlertDialog open={!!playerToDelete} onOpenChange={(open) => !open && setPlayerToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>האם אתה בטוח שברצונך למחוק את השחקן?</AlertDialogTitle>
+              <AlertDialogDescription>
+                פעולה זו תמחק לצמיתות את השחקן {playerToDelete?.name} וכל הנתונים הקשורים אליו. לא ניתן לבטל פעולה זו.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+                מחק שחקן
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
+};
+
+export default PlayersList;
