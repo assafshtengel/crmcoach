@@ -39,11 +39,24 @@ import { supabase } from "./lib/supabase";
 
 function App() {
   const [user, setUser] = useState(null);
+  const [initialAuthChecked, setInitialAuthChecked] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data } = await supabase.auth.getSession();
-      setUser(data.session?.user || null);
+      try {
+        const { data } = await supabase.auth.getSession();
+        setUser(data.session?.user || null);
+        
+        // If we have a session but no user, try to refresh the session
+        if (!data.session?.user && localStorage.getItem('coachRememberMe') === 'true') {
+          const { data: refreshData } = await supabase.auth.refreshSession();
+          setUser(refreshData.session?.user || null);
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setInitialAuthChecked(true);
+      }
     };
     
     checkUser();
@@ -60,6 +73,15 @@ function App() {
       authListener?.subscription.unsubscribe();
     };
   }, []);
+
+  // Show loading spinner while initial auth check is in progress
+  if (!initialAuthChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>

@@ -20,64 +20,81 @@ const AuthPage = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // בדיקה אם יש פרגמנט האש שעשוי להכיל access_token
-    const handleAuthRedirect = async () => {
+    // בדיקה אם המשתמש כבר מחובר, ואם כן - הפנייה ישירה לדף הבית
+    const checkExistingSession = async () => {
       try {
-        setLoading(true);
+        const { data } = await supabase.auth.getSession();
         
-        // פרגמנט האש עשוי להכיל מידע אימות מאיפוס סיסמה
-        const hashFragment = window.location.hash;
-        const searchParams = new URLSearchParams(location.search);
-        const actionType = searchParams.get("type");
-
-        console.log("Hash fragment:", hashFragment);
-        console.log("Action type from URL:", actionType);
+        if (data.session?.user) {
+          console.log("User already authenticated, redirecting to dashboard");
+          navigate("/dashboard-coach");
+          return;
+        }
         
-        if (hashFragment && hashFragment.includes("access_token")) {
-          console.log("Hash fragment with token detected, processing auth recovery");
+        // If "remember me" is enabled but no session, try to refresh the session
+        if (localStorage.getItem('coachRememberMe') === 'true') {
+          const { data: refreshData } = await supabase.auth.refreshSession();
           
-          // סופאבייס יטפל אוטומטית בהאש
-          const { data: { session }, error } = await supabase.auth.getSession();
-          
-          if (error) {
-            console.error("Error processing auth hash:", error);
-            toast({
-              variant: "destructive",
-              title: "שגיאה באימות",
-              description: "אירעה שגיאה בתהליך האימות, נא לנסות שוב",
-            });
-          } else if (session) {
-            if (actionType === "recovery" || hashFragment.includes("type=recovery")) {
-              // אם זה איפוס סיסמה, נציג את טופס עדכון הסיסמה
-              console.log("Recovery mode detected");
-              setMode("update-password");
-            } else {
-              // אחרת, נניח שזו התחברות רגילה ונעביר לדף הבית
-              console.log("User authenticated successfully, redirecting to dashboard");
-              navigate("/dashboard-coach");
-              return;
-            }
+          if (refreshData.session?.user) {
+            console.log("Session refreshed successfully, redirecting to dashboard");
+            navigate("/dashboard-coach");
+            return;
           }
         }
         
-        // בדיקה אם יש type=recovery ב-URL (פרמטר שאילתה מסורתי)
-        if (actionType === "recovery") {
-          console.log("Recovery mode from query param detected");
-          setMode("update-password");
-        }
+        // בדיקה אם יש פרגמנט האש שעשוי להכיל access_token
+        const handleAuthRedirect = async () => {
+          // פרגמנט האש עשוי להכיל מידע אימות מאיפוס סיסמה
+          const hashFragment = window.location.hash;
+          const searchParams = new URLSearchParams(location.search);
+          const actionType = searchParams.get("type");
+
+          console.log("Hash fragment:", hashFragment);
+          console.log("Action type from URL:", actionType);
+          
+          if (hashFragment && hashFragment.includes("access_token")) {
+            console.log("Hash fragment with token detected, processing auth recovery");
+            
+            // סופאבייס יטפל אוטומטית בהאש
+            const { data: { session }, error } = await supabase.auth.getSession();
+            
+            if (error) {
+              console.error("Error processing auth hash:", error);
+              toast({
+                variant: "destructive",
+                title: "שגיאה באימות",
+                description: "אירעה שגיאה בתהליך האימות, נא לנסות שוב",
+              });
+            } else if (session) {
+              if (actionType === "recovery" || hashFragment.includes("type=recovery")) {
+                // אם זה איפוס סיסמה, נציג את טופס עדכון הסיסמה
+                console.log("Recovery mode detected");
+                setMode("update-password");
+              } else {
+                // אחרת, נניח שזו התחברות רגילה ונעביר לדף הבית
+                console.log("User authenticated successfully, redirecting to dashboard");
+                navigate("/dashboard-coach");
+                return;
+              }
+            }
+          }
+          
+          // בדיקה אם יש type=recovery ב-URL (פרמטר שאילתה מסורתי)
+          if (actionType === "recovery") {
+            console.log("Recovery mode from query param detected");
+            setMode("update-password");
+          }
+        };
+        
+        await handleAuthRedirect();
       } catch (error) {
-        console.error("Error handling authentication redirect:", error);
-        toast({
-          variant: "destructive",
-          title: "שגיאה בתהליך האימות",
-          description: "אירעה שגיאה לא צפויה, נא לנסות שוב",
-        });
+        console.error("Error checking authentication:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    handleAuthRedirect();
+    checkExistingSession();
   }, [navigate, location, toast]);
 
   if (loading) {

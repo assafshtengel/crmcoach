@@ -113,25 +113,10 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         }
         
         // ========== COACH AUTHENTICATION SECTION ==========
-        // This section is completely separate from player auth
+        // Check for "Remember Me" preference from localStorage first
+        const rememberMeEnabled = localStorage.getItem('coachRememberMe') === 'true';
         
-        // Player profile view for coaches - allow access for coach
-        if (playerId && currentPath.includes('/player-profile/')) {
-          // Check for coach auth only
-          const { data: { user }, error } = await supabase.auth.getUser();
-          
-          if (error || !user) {
-            console.log("No authenticated coach found, redirecting to auth");
-            navigate("/auth");
-            return;
-          }
-          
-          console.log("Coach authenticated for viewing player profile");
-          setIsLoading(false);
-          return;
-        }
-        
-        // For all other coach routes, require Supabase authentication
+        // For all coach routes, require Supabase authentication
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error || !user) {
