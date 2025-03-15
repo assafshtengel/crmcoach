@@ -10,7 +10,13 @@ let supabaseInstance = null;
 
 export const getSupabase = () => {
   if (!supabaseInstance) {
-    supabaseInstance = createClient<Database>(supabaseUrl, supabaseKey);
+    supabaseInstance = createClient<Database>(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+      }
+    });
   }
   return supabaseInstance;
 };

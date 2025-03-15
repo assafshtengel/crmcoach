@@ -50,6 +50,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           
           try {
             const playerData = JSON.parse(playerSession);
+            console.log("Player session found:", playerData);
             
             // Use a completely independent query for player authentication
             // This ensures it's not affected by coach authentication state
@@ -69,6 +70,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             
             // Fallback to direct database check if function fails
             if (error || !data) {
+              console.log("Function verification failed, attempting database verification");
               // Direct database verification as fallback
               const { data: playerDbData, error: playerDbError } = await supabase
                 .from('players')

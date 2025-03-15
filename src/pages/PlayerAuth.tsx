@@ -77,11 +77,7 @@ const PlayerAuth = () => {
 
       // Login successful
       console.log("Player login successful for:", normalizedEmail);
-      toast({
-        title: "התחברות הצליחה",
-        description: `ברוך הבא, ${playerData.full_name || 'שחקן יקר'}!`,
-      });
-
+      
       // Store player session data in localStorage - always store email in lowercase
       localStorage.setItem('playerSession', JSON.stringify({
         id: playerData.id,
@@ -89,8 +85,17 @@ const PlayerAuth = () => {
         fullName: playerData.full_name
       }));
 
-      // Navigate to the player profile view
-      navigate('/player');
+      toast({
+        title: "התחברות הצליחה",
+        description: `ברוך הבא, ${playerData.full_name || 'שחקן יקר'}!`,
+      });
+
+      // Add a small delay to ensure the toast message is shown before navigation
+      setTimeout(() => {
+        // Navigate to the player profile view - ensure this route exists
+        console.log("Navigating to player profile");
+        navigate('/player');
+      }, 500);
     } catch (error: any) {
       console.error("Unexpected error during player login:", error);
       toast({
