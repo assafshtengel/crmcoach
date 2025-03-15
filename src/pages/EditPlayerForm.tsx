@@ -209,7 +209,7 @@ const EditPlayerForm = () => {
       parent_email: values.parentEmail,
       notes: values.notes,
       sport_field: finalSportField,
-      position: null, // Set position to null to clear it
+      // Remove the position field that doesn't exist in the database
       ...(imageUrl && { profile_image: imageUrl })
     };
 

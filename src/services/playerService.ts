@@ -45,6 +45,7 @@ export const updatePlayer = async (
         parent_email: parentEmail,
         notes,
         sport_field: finalSportField,
+        // Remove position reference here as well
       })
       .eq('id', playerId)
       .select();
