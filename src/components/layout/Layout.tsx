@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -7,9 +6,11 @@ import {
   LogOut, Settings, Users, Calendar, Video, 
   BarChart, ClipboardCheck, FileText, BookOpen, MessageCircle 
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [coachName, setCoachName] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,6 +20,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       if (!session) {
         navigate('/auth');
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.user_metadata?.full_name) {
+          setCoachName(user.user_metadata.full_name);
+        } else {
+          setCoachName(user?.email?.split('@')[0] || "Coach");
+        }
       }
     };
 
@@ -35,14 +43,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return null;
   }
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Removed the redundant header section that was selected */}
       
       <nav className="bg-white border-b p-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link to="/dashboard-coach" className="text-xl font-bold">
-            Huzе
+          <Link to="/dashboard-coach" className="flex items-center gap-2">
+            <Avatar className="h-8 w-8 border border-gray-200">
+              <AvatarImage src="" />
+              <AvatarFallback className="bg-emerald-500 text-white text-xs">
+                {getInitials(coachName)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-md font-semibold">{coachName}</span>
           </Link>
           
           <Link
@@ -52,6 +75,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <BarChart size={16} />
             לוח בקרה
           </Link>
+          
           <Link
             to="/players-list"
             className="text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-1"
