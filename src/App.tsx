@@ -33,6 +33,7 @@ import TrainingSummaries from "./pages/TrainingSummaries";
 import NewTrainingSummary from "./pages/NewTrainingSummary";
 import EditTrainingSummary from "./pages/EditTrainingSummary";
 import CoachSignUp from "./pages/CoachSignUp";
+import NotFound from "./pages/NotFound";
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabase";
 
@@ -68,6 +69,7 @@ function App() {
         
         {/* ========== PUBLIC ROUTES (no auth needed) ========== */}
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/auth/*" element={<AuthPage />} /> {/* Catch all auth related routes for deep linking */}
         <Route path="/signup-coach" element={<CoachSignUp />} />
         <Route path="/player-auth" element={<PlayerAuth />} />
         <Route path="/register/*" element={<Index />} />
@@ -105,6 +107,9 @@ function App() {
         <Route path="/messages" element={<AuthGuard><Messages /></AuthGuard>} />
         <Route path="/chat/:playerId" element={<AuthGuard><ChatPage /></AuthGuard>} />
         <Route path="/group-message/:messageId" element={<AuthGuard><GroupMessageDetail /></AuthGuard>} />
+        
+        {/* Page not found - must be last */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
     </BrowserRouter>
