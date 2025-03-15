@@ -40,6 +40,16 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         // Check for direct access tokens when accessing a specific player's profile
         if (currentPath.startsWith('/player/') && playerId) {
           console.log("Player direct access path detected, checking for direct access token");
+          
+          // First, check if the user is a coach that's already logged in
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            console.log("Logged in coach detected, allowing access to player profile");
+            setIsLoading(false);
+            return;
+          }
+          
+          // If not a coach, check for player direct access tokens
           const directAccess = sessionStorage.getItem('playerDirectAccess');
           
           if (directAccess) {
@@ -68,6 +78,15 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         // If this is a player route (playerOnly flag or path starts with /player/)
         if (playerOnly || currentPath.startsWith('/player/') || currentPath === '/player') {
           console.log("Player route detected - checking player authentication");
+          
+          // First, check if the user is a coach that's already logged in
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            console.log("Logged in coach detected, allowing access to player profile");
+            setIsLoading(false);
+            return;
+          }
+          
           const playerSession = localStorage.getItem('playerSession') || sessionStorage.getItem('playerSession');
           
           if (!playerSession) {
@@ -181,3 +200,4 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
 
   return <>{children}</>;
 };
+

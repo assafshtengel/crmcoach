@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Link } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
@@ -61,9 +61,9 @@ export const DirectAccessLinkGenerator = ({ playerId, playerName }: DirectAccess
         
       if (insertError) throw insertError;
       
-      // Generate the link
+      // Generate the link - using the absolute URL format
       const baseUrl = window.location.origin;
-      const link = `${baseUrl}/player-auth?access=${token}&player=${playerId}`;
+      const link = `${baseUrl}/player/${playerId}?access=${token}`;
       setAccessLink(link);
       
     } catch (error) {
@@ -123,7 +123,7 @@ export const DirectAccessLinkGenerator = ({ playerId, playerName }: DirectAccess
       )}
       
       <p className="text-xs text-gray-500">
-        הקישור מאפשר לשחקן לצפות בפרופיל שלו ללא צורך בהתחברות.
+        הקישור מאפשר גישה ישירה ללא צורך בהתחברות או סיסמה.
       </p>
     </div>
   );

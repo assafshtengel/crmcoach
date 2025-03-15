@@ -1,24 +1,30 @@
-
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Layout } from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { ArrowRight, Pencil, Settings, Activity, Brain } from 'lucide-react';
 
 export default function PlayerProfile() {
   const { playerId } = useParams<{ playerId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [hasMentalStates, setHasMentalStates] = useState(false);
 
   useEffect(() => {
+    const accessToken = searchParams.get('access');
+    
+    if (accessToken && playerId) {
+      verifyAndSetupDirectAccess(accessToken, playerId);
+    }
+    
     const fetchPlayer = async () => {
       setLoading(true);
       try {
@@ -49,7 +55,7 @@ export default function PlayerProfile() {
       } catch (error: any) {
         console.error('Error fetching player:', error);
         toast({
-          title: 'Error',
+          title: 'שגיאה',
           description: error.message,
           variant: 'destructive',
         });
@@ -61,7 +67,38 @@ export default function PlayerProfile() {
     if (playerId) {
       fetchPlayer();
     }
-  }, [playerId, navigate, toast]);
+  }, [playerId, navigate, searchParams]);
+  
+  const verifyAndSetupDirectAccess = async (token: string, playerIdToVerify: string) => {
+    try {
+      // Verify the token against the database
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('player_access_tokens')
+        .select('*, players:player_id(id, full_name, email)')
+        .eq('token', token)
+        .eq('player_id', playerIdToVerify)
+        .eq('is_active', true)
+        .single();
+      
+      if (tokenError || !tokenData) {
+        console.error("Invalid or expired token:", tokenError);
+        return;
+      }
+      
+      // Token is valid, set up direct access session
+      const playerData = {
+        id: tokenData.player_id,
+        full_name: tokenData.players?.full_name,
+        email: tokenData.players?.email,
+      };
+
+      // Store player data in session storage for direct access
+      sessionStorage.setItem('playerDirectAccess', JSON.stringify(playerData));
+      console.log('Direct access session established');
+    } catch (error) {
+      console.error("Error verifying token:", error);
+    }
+  };
 
   const handleOpenSettings = () => {
     // Implement the settings logic here
@@ -81,14 +118,14 @@ export default function PlayerProfile() {
       }
 
       toast({
-        title: 'Success',
-        description: 'Player deleted successfully.',
+        title: 'הצלחה',
+        description: 'השחקן נמחק בהצלחה',
       });
       navigate('/players-list'); // Redirect to the players list page
     } catch (error: any) {
       console.error('Error deleting player:', error);
       toast({
-        title: 'Error',
+        title: 'שגיאה',
         description: error.message,
         variant: 'destructive',
       });
