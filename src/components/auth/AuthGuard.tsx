@@ -52,7 +52,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             const playerData = JSON.parse(playerSession);
             
             // Verify player credentials directly in the database
-            // This check is completely independent of coach authentication
+            // Use anon key for this query to ensure it works regardless of coach login state
             const { data, error } = await supabase
               .from('players')
               .select('id, email, full_name')

@@ -29,7 +29,8 @@ const PlayerAuth = () => {
       // Normalize email to lowercase for case-insensitive comparison
       const normalizedEmail = email.trim().toLowerCase();
       
-      // Check if this email exists in the players table - use case-insensitive comparison
+      // Using Supabase client directly with anon key (already configured in supabase.ts)
+      // This ensures the query works regardless of coach authentication state
       const { data: playerData, error: playerError } = await supabase
         .from('players')
         .select('id, email, password, full_name')
