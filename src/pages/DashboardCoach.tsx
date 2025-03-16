@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { supabase } from "@/lib/supabase";
@@ -137,7 +138,7 @@ const AnalyticsDashboardContent = () => {
             dataKeys={[
               { key: 'feelingScore', color: '#4299e1', name: 'תחושה כללית' },
               { key: 'motivationLevel', color: '#48bb78', name: 'מוטיבציה' },
-              { key: 'fatigueLevel', color: '#ed8936', name: 'עייפ��ת מנטלית' },
+              { key: 'fatigueLevel', color: '#ed8936', name: 'עייפות מנטלית' },
             ]}
             isLoading={isLoading}
             height={300}
