@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
 const PlayerAuth = () => {
-  const [playerId, setPlayerId] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [verifyingToken, setVerifyingToken] = useState(false);
@@ -72,46 +72,83 @@ const PlayerAuth = () => {
     setLoading(true);
 
     try {
-      if (!playerId) {
-        toast.error("אנא הזן מזהה שחקן");
+      // Email-based login
+      if (email) {
+        // Fetch player info from database based on email
+        const { data: playersByEmail, error: emailError } = await supabase
+          .from("players")
+          .select("id, full_name, email, password")
+          .eq("email", email.toLowerCase())
+          .single();
+
+        if (emailError || !playersByEmail) {
+          console.error("Player not found by email:", emailError);
+          
+          // If not found by email, try by ID as fallback
+          const { data: playersById, error: idError } = await supabase
+            .from("players")
+            .select("id, full_name, email, password")
+            .eq("id", email)
+            .single();
+            
+          if (idError || !playersById) {
+            toast.error("שם משתמש לא נמצא");
+            setLoading(false);
+            return;
+          }
+          
+          // Found by ID
+          if (playersById.password && password !== playersById.password) {
+            toast.error("סיסמה שגויה");
+            setLoading(false);
+            return;
+          }
+          
+          // Valid ID login
+          const playerData = {
+            id: playersById.id,
+            full_name: playersById.full_name,
+            email: playersById.email,
+          };
+          
+          if (rememberMe) {
+            localStorage.setItem("playerSession", JSON.stringify(playerData));
+          } else {
+            sessionStorage.setItem("playerSession", JSON.stringify(playerData));
+          }
+          
+          toast.success("התחברת בהצלחה");
+          navigate(`/player/${playersById.id}`);
+          return;
+        }
+        
+        // Email login validation
+        if (playersByEmail.password && password !== playersByEmail.password) {
+          toast.error("סיסמה שגויה");
+          setLoading(false);
+          return;
+        }
+        
+        // Store player session
+        const playerData = {
+          id: playersByEmail.id,
+          full_name: playersByEmail.full_name,
+          email: playersByEmail.email,
+        };
+        
+        // Store in localStorage or sessionStorage based on remember me
+        if (rememberMe) {
+          localStorage.setItem("playerSession", JSON.stringify(playerData));
+        } else {
+          sessionStorage.setItem("playerSession", JSON.stringify(playerData));
+        }
+        
+        toast.success("התחברת בהצלחה");
+        navigate(`/player/${playersByEmail.id}`);
         return;
-      }
-
-      // Fetch player info from database
-      const { data: player, error: playerError } = await supabase
-        .from("players")
-        .select("id, full_name, email, password")
-        .eq("id", playerId)
-        .single();
-
-      if (playerError || !player) {
-        console.error("Player not found:", playerError);
-        toast.error("מזהה שחקן לא נמצא");
-        return;
-      }
-
-      // Validate password if one is set for the player
-      if (player.password && password !== player.password) {
-        toast.error("סיסמה שגויה");
-        return;
-      }
-
-      // Store player session
-      const playerData = {
-        id: player.id,
-        full_name: player.full_name,
-        email: player.email,
-      };
-
-      // Store in localStorage if remember me is checked, otherwise in sessionStorage
-      if (rememberMe) {
-        localStorage.setItem("playerSession", JSON.stringify(playerData));
       } else {
-        sessionStorage.setItem("playerSession", JSON.stringify(playerData));
+        toast.error("אנא הזן אימייל או מזהה שחקן");
       }
-
-      toast.success("התחברת בהצלחה");
-      navigate(`/player/${player.id}`);
     } catch (error) {
       console.error("Login error:", error);
       toast.error("שגיאה בהתחברות");
@@ -144,12 +181,12 @@ const PlayerAuth = () => {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="playerId">מזהה שחקן</Label>
+                <Label htmlFor="email">מזהה שחקן</Label>
                 <Input
-                  id="playerId"
-                  value={playerId}
-                  onChange={(e) => setPlayerId(e.target.value)}
-                  placeholder="הזן את מזהה השחקן שלך"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="הזן את האימייל או מזהה השחקן שלך"
                   required
                 />
               </div>
@@ -176,7 +213,7 @@ const PlayerAuth = () => {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loading || !playerId}
+                disabled={loading || !email}
               >
                 {loading ? (
                   <>

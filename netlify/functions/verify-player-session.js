@@ -9,29 +9,36 @@ exports.handler = async (event, context) => {
 
   try {
     // Parse the request body
-    const { playerId, playerEmail } = JSON.parse(event.body);
+    const requestBody = JSON.parse(event.body);
+    const { playerId, playerEmail } = requestBody;
     
-    if (!playerId || !playerEmail) {
+    if (!playerId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields' })
+        body: JSON.stringify({ error: 'Missing required player ID field' })
       };
     }
 
-    console.log(`Verifying player session: ID=${playerId}, Email=${playerEmail}`);
+    console.log(`Verifying player session: ID=${playerId}, Email=${playerEmail || 'not provided'}`);
 
     // Create Supabase client with anon key
     const supabaseUrl = 'https://hntgzgrlyfhojcaofbjv.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhudGd6Z3JseWZob2pjYW9mYmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjY2NTYsImV4cCI6MjA1NDkwMjY1Nn0.InXLUXMCNHzBYxOEY_97y1Csm_uBeGyUsiNWlAQoHus';
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Query the database to verify the player
-    const { data, error } = await supabase
+    // Build the query
+    let query = supabase
       .from('players')
       .select('id, email, full_name')
-      .ilike('email', playerEmail.toLowerCase())
-      .eq('id', playerId)
-      .single();
+      .eq('id', playerId);
+      
+    // Add email filter if provided
+    if (playerEmail) {
+      query = query.ilike('email', playerEmail.toLowerCase());
+    }
+    
+    // Execute the query
+    const { data, error } = await query.single();
       
     if (error) {
       console.log('Database error during player verification:', error);

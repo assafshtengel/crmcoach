@@ -99,59 +99,41 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             const playerData = JSON.parse(playerSession);
             console.log("Player session found:", playerData);
             
-            // Verify player session using Netlify function
+            // Verify player session using database check
             try {
-              const response = await fetch(
-                `${window.location.origin}/.netlify/functions/verify-player-session`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    playerId: playerData.id,
-                    playerEmail: playerData.email?.toLowerCase(),
-                  }),
-                }
-              );
+              // Attempt database verification
+              console.log("Attempting database verification");
               
-              const result = await response.json();
-              
-              // Check if verification was successful
-              if (response.ok && result.data) {
-                console.log("Player authenticated successfully via function");
-                setIsLoading(false);
+              // Check if player exists in database
+              const { data: playerDbData, error: playerDbError } = await supabase
+                .from('players')
+                .select('id, email, full_name')
+                .eq('id', playerData.id)
+                .single();
+                
+              if (playerDbError || !playerDbData) {
+                console.error("Invalid player session, redirecting to player login", playerDbError);
+                localStorage.removeItem('playerSession');
+                sessionStorage.removeItem('playerSession');
+                navigate("/player-auth");
                 return;
-              } else {
-                console.error("Function verification failed:", result.error);
-                // Continue to fallback below
               }
-            } catch (funcError) {
-              console.error("Error calling verification function:", funcError);
-              // Continue to fallback below
-            }
-            
-            // Fallback to direct database check if function fails
-            console.log("Attempting database verification");
-            // Direct database verification as fallback
-            const { data: playerDbData, error: playerDbError } = await supabase
-              .from('players')
-              .select('id, email, full_name')
-              .ilike('email', playerData.email?.toLowerCase() || '')
-              .eq('id', playerData.id)
-              .single();
               
-            if (playerDbError || !playerDbData) {
-              console.error("Invalid player session, redirecting to player login", playerDbError);
-              localStorage.removeItem('playerSession');
-              sessionStorage.removeItem('playerSession');
+              // Additional check - if the current path specifies a playerId, make sure it matches the session
+              if (playerId && playerData.id !== playerId) {
+                console.log("Player trying to access another player's profile, redirecting");
+                navigate(`/player/${playerData.id}`);
+                return;
+              }
+              
+              console.log("Player authenticated successfully");
+              setIsLoading(false);
+              return;
+            } catch (verifyError) {
+              console.error("Error verifying player:", verifyError);
               navigate("/player-auth");
               return;
             }
-            
-            console.log("Player authenticated successfully (fallback)");
-            setIsLoading(false);
-            return;
           } catch (err) {
             console.error("Error parsing player session:", err);
             localStorage.removeItem('playerSession');
@@ -162,9 +144,6 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         }
         
         // ========== COACH AUTHENTICATION SECTION ==========
-        // Check for "Remember Me" preference from localStorage first
-        const rememberMeEnabled = localStorage.getItem('coachRememberMe') === 'true';
-        
         // For all coach routes, require Supabase authentication
         const { data: { user }, error } = await supabase.auth.getUser();
         
@@ -200,4 +179,3 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
 
   return <>{children}</>;
 };
-
