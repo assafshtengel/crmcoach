@@ -34,6 +34,8 @@ import NewTrainingSummary from "./pages/NewTrainingSummary";
 import EditTrainingSummary from "./pages/EditTrainingSummary";
 import CoachSignUp from "./pages/CoachSignUp";
 import NotFound from "./pages/NotFound";
+import NewSessionForm from "./pages/NewSessionForm";
+import SessionsList from "./pages/SessionsList";
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabase";
 
@@ -110,6 +112,10 @@ function App() {
         <Route path="/players-list" element={<AuthGuard><PlayersList /></AuthGuard>} />
         <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />
         <Route path="/edit-player/:playerId" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
+        
+        {/* Sessions management routes */}
+        <Route path="/new-session" element={<AuthGuard><NewSessionForm /></AuthGuard>} />
+        <Route path="/sessions" element={<AuthGuard><SessionsList /></AuthGuard>} />
         
         <Route path="/game-summary/:playerId" element={<AuthGuard><GameSummaries /></AuthGuard>} />
         <Route path="/new-game-summary/:playerId" element={<AuthGuard><NewGameSummary /></AuthGuard>} />

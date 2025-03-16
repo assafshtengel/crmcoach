@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { supabase } from "@/lib/supabase";
@@ -15,7 +14,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BeliefBreakingCard } from "@/components/ui/BeliefBreakingCard";
 
 const AnalyticsDashboardContent = () => {
-  const { chartData, isLoading, dateRange, setDateRange } = useChartData();
   const [playersCount, setPlayersCount] = useState(0);
   const [nextSessionCount, setNextSessionCount] = useState(0);
   
@@ -26,7 +24,6 @@ const AnalyticsDashboardContent = () => {
         
         if (!user) return;
         
-        // Fetch players count
         const { count: playersCount, error: playersError } = await supabase
           .from('players')
           .select('*', { count: 'exact', head: true })
@@ -34,11 +31,9 @@ const AnalyticsDashboardContent = () => {
           
         if (playersError) throw playersError;
         
-        // Get today's date
         const today = new Date();
         const formattedToday = today.toISOString().split('T')[0];
         
-        // Fetch upcoming sessions count
         const { count: sessionsCount, error: sessionsError } = await supabase
           .from('sessions')
           .select('*', { count: 'exact', head: true })
@@ -57,6 +52,7 @@ const AnalyticsDashboardContent = () => {
     fetchCounts();
   }, []);
   
+  const { chartData, isLoading, dateRange, setDateRange } = useChartData();
   const mentalStateChartData = chartData.mentalStates || [];
   const sessionsChartData = chartData.sessions || [];
   
@@ -112,7 +108,7 @@ const AnalyticsDashboardContent = () => {
               <QuickActionButton
                 icon={<Calendar className="h-4 w-4" />}
                 text="קבע מפגש"
-                onClick="/sessions"
+                onClick="/new-session"
                 gradient="from-green-500 to-green-600"
               />
               <QuickActionButton
@@ -141,7 +137,7 @@ const AnalyticsDashboardContent = () => {
             dataKeys={[
               { key: 'feelingScore', color: '#4299e1', name: 'תחושה כללית' },
               { key: 'motivationLevel', color: '#48bb78', name: 'מוטיבציה' },
-              { key: 'fatigueLevel', color: '#ed8936', name: 'עייפות מנטלית' },
+              { key: 'fatigueLevel', color: '#ed8936', name: 'עייפ��ת מנטלית' },
             ]}
             isLoading={isLoading}
             height={300}
