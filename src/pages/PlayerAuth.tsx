@@ -72,9 +72,8 @@ const PlayerAuth = () => {
     setLoading(true);
 
     try {
-      // Email-based login
       if (email) {
-        // Fetch player info from database based on email
+        // Fetch player info from database based on email or ID
         const { data: playersByEmail, error: emailError } = await supabase
           .from("players")
           .select("id, full_name, email, password")

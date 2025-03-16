@@ -82,15 +82,6 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         if (playerOnly || currentPath.startsWith('/player/') || currentPath === '/player') {
           console.log("Player route detected - checking player authentication");
           
-          // First, check if the user is a coach that's already logged in
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            console.log("Logged in coach detected, allowing access to player profile");
-            setUserType('coach');
-            setIsLoading(false);
-            return;
-          }
-          
           const playerSession = localStorage.getItem('playerSession') || sessionStorage.getItem('playerSession');
           
           if (!playerSession) {
