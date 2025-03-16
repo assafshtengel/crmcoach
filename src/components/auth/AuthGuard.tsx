@@ -1,5 +1,5 @@
 
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode, cloneElement, isValidElement } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 
@@ -184,8 +184,8 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
   }
 
   // Pass userType as a prop to children
-  if (React.isValidElement(children)) {
-    return React.cloneElement(children, { userType });
+  if (isValidElement(children)) {
+    return cloneElement(children, { userType });
   }
 
   return <>{children}</>;
