@@ -12,14 +12,14 @@ exports.handler = async (event, context) => {
     const requestBody = JSON.parse(event.body);
     const { playerId, playerEmail, userType } = requestBody;
     
-    if (!playerId) {
+    if (!playerId && !playerEmail) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required player ID field' })
+        body: JSON.stringify({ error: 'Missing required player identification fields' })
       };
     }
 
-    console.log(`Verifying player session: ID=${playerId}, Email=${playerEmail || 'not provided'}, UserType=${userType || 'not specified'}`);
+    console.log(`Verifying player session: ID=${playerId || 'not provided'}, Email=${playerEmail || 'not provided'}, UserType=${userType || 'not specified'}`);
 
     // Create Supabase client with anon key
     const supabaseUrl = 'https://hntgzgrlyfhojcaofbjv.supabase.co';
@@ -27,18 +27,25 @@ exports.handler = async (event, context) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Build the query
-    let query = supabase
-      .from('players')
-      .select('id, email, full_name, coach_id')
-      .eq('id', playerId);
-      
-    // Add email filter if provided
+    let query = supabase.from('players').select('id, email, full_name, coach_id, password');
+    
+    // Add filters based on provided parameters
+    if (playerId) {
+      query = query.eq('id', playerId);
+    }
+    
     if (playerEmail) {
-      query = query.ilike('email', playerEmail.toLowerCase());
+      if (playerId) {
+        // If we have both ID and email, use 'or' condition
+        query = query.or(`id.eq.${playerId},email.ilike.${playerEmail.toLowerCase()}`);
+      } else {
+        // If we only have email, just filter by email
+        query = query.ilike('email', playerEmail.toLowerCase());
+      }
     }
     
     // Execute the query
-    const { data, error } = await query.single();
+    let { data, error } = await query;
       
     if (error) {
       console.log('Database error during player verification:', error);
@@ -48,7 +55,15 @@ exports.handler = async (event, context) => {
       };
     }
     
-    if (!data) {
+    // If multiple results, prioritize exact ID match
+    if (data && data.length > 1 && playerId) {
+      data = data.filter(player => player.id === playerId);
+    }
+    
+    // Get the first matching player
+    const player = data && data.length > 0 ? data[0] : null;
+    
+    if (!player) {
       console.log('Player verification failed: No matching player found');
       return {
         statusCode: 401,
@@ -56,13 +71,13 @@ exports.handler = async (event, context) => {
       };
     }
     
-    console.log('Player verified successfully:', data.full_name);
+    console.log('Player verified successfully:', player.full_name);
     
     // Return success with player data and include user type
     return {
       statusCode: 200,
       body: JSON.stringify({ 
-        data,
+        data: player,
         userType: userType || 'player' // Default to player if not specified
       })
     };

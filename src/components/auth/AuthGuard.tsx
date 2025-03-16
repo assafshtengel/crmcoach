@@ -42,16 +42,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         if (currentPath.startsWith('/player/') && playerId) {
           console.log("Player direct access path detected, checking for direct access token");
           
-          // First, check if the user is a coach that's already logged in
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            console.log("Logged in coach detected, allowing access to player profile");
-            setUserType('coach');
-            setIsLoading(false);
-            return;
-          }
-          
-          // If not a coach, check for player direct access tokens
+          // Check for player direct access tokens
           const directAccess = sessionStorage.getItem('playerDirectAccess');
           
           if (directAccess) {
@@ -94,20 +85,25 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             const playerData = JSON.parse(playerSession);
             console.log("Player session found:", playerData);
             
-            // Verify player session using database check
+            // Verify player session using database check or serverless function
             try {
-              // Attempt database verification
-              console.log("Attempting database verification");
+              // Call our serverless function to verify the player session
+              const response = await fetch('/.netlify/functions/verify-player-session', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  playerId: playerData.id,
+                  playerEmail: playerData.email,
+                  userType: 'player'
+                }),
+              });
               
-              // Check if player exists in database
-              const { data: playerDbData, error: playerDbError } = await supabase
-                .from('players')
-                .select('id, email, full_name')
-                .eq('id', playerData.id)
-                .single();
-                
-              if (playerDbError || !playerDbData) {
-                console.error("Invalid player session, redirecting to player login", playerDbError);
+              const result = await response.json();
+              
+              if (!response.ok || !result.data) {
+                console.error("Invalid player session, redirecting to player login", result.error);
                 localStorage.removeItem('playerSession');
                 sessionStorage.removeItem('playerSession');
                 navigate("/player-auth");
@@ -127,8 +123,39 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
               return;
             } catch (verifyError) {
               console.error("Error verifying player:", verifyError);
-              navigate("/player-auth");
-              return;
+              
+              // Fallback verification using direct Supabase query
+              try {
+                const { data: playerDbData, error: playerDbError } = await supabase
+                  .from('players')
+                  .select('id, email, full_name')
+                  .eq('id', playerData.id)
+                  .single();
+                  
+                if (playerDbError || !playerDbData) {
+                  console.error("Invalid player session (fallback check), redirecting to player login", playerDbError);
+                  localStorage.removeItem('playerSession');
+                  sessionStorage.removeItem('playerSession');
+                  navigate("/player-auth");
+                  return;
+                }
+                
+                // Additional check - if the current path specifies a playerId, make sure it matches the session
+                if (playerId && playerData.id !== playerId) {
+                  console.log("Player trying to access another player's profile, redirecting");
+                  navigate(`/player/${playerData.id}`);
+                  return;
+                }
+                
+                console.log("Player authenticated successfully (fallback method)");
+                setUserType('player');
+                setIsLoading(false);
+                return;
+              } catch (fallbackError) {
+                console.error("Error in fallback verification:", fallbackError);
+                navigate("/player-auth");
+                return;
+              }
             }
           } catch (err) {
             console.error("Error parsing player session:", err);

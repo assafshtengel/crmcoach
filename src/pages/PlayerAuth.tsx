@@ -73,7 +73,56 @@ const PlayerAuth = () => {
 
     try {
       if (email) {
-        // Fetch player info from database based on email or ID
+        // Try serverless function first for player verification
+        try {
+          const response = await fetch('/.netlify/functions/verify-player-session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              playerId: email, // Try using email as ID first
+              playerEmail: email,
+              userType: 'player'
+            }),
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok && result.data) {
+            // Found player via serverless function
+            const playerData = result.data;
+            
+            // Check password if set
+            if (playerData.password && password !== playerData.password) {
+              toast.error("סיסמה שגויה");
+              setLoading(false);
+              return;
+            }
+            
+            // Valid login - store player session
+            const playerSessionData = {
+              id: playerData.id,
+              full_name: playerData.full_name,
+              email: playerData.email,
+            };
+            
+            if (rememberMe) {
+              localStorage.setItem("playerSession", JSON.stringify(playerSessionData));
+            } else {
+              sessionStorage.setItem("playerSession", JSON.stringify(playerSessionData));
+            }
+            
+            toast.success("התחברת בהצלחה");
+            navigate(`/player/${playerData.id}`);
+            return;
+          }
+        } catch (serverlessError) {
+          console.error("Error calling serverless function:", serverlessError);
+          // Continue with fallback to direct Supabase query
+        }
+
+        // Fallback: Fetch player info from database based on email or ID
         const { data: playersByEmail, error: emailError } = await supabase
           .from("players")
           .select("id, full_name, email, password")
