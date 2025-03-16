@@ -18,7 +18,7 @@ import { SessionFormDialog } from "@/components/sessions/SessionFormDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AdminMessageForm } from "@/components/admin/AdminMessageForm";
 
-const Dashboard = () => {
+const Dashboard = ({ userType = 'coach' }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -371,6 +371,188 @@ const Dashboard = () => {
       });
     }
   };
+
+  if (userType === 'player') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+        <div className="max-w-7xl mx-auto p-8">
+          <header className="mb-8">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-4">
+                <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" className="text-red-500 hover:bg-red-50" onClick={() => setShowLogoutDialog(true)}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex items-center">
+                <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-lg shadow-sm">
+                  <div className="text-right">
+                    <h1 className="text-2xl font-bold text-primary">ברוך הבא, ליאם אמזלג!</h1>
+                    <p className="text-gray-600 text-sm">מערכת האימון האישית שלך</p>
+                  </div>
+                  <Avatar className="h-12 w-12 border-2 border-primary">
+                    <AvatarImage src="/lovable-uploads/61e79669-b448-42d3-9bad-463ce7b4e254.png" alt="ליאם אמזלג" />
+                    <AvatarFallback>לא</AvatarFallback>
+                  </Avatar>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  הוסף מפגש חדש
+                </Button>
+                <Button variant="default" className="bg-green-500 hover:bg-green-600 flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  הוסף סיכום חדש
+                </Button>
+              </div>
+            </div>
+          </header>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <Card className="bg-blue-50/40 hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg font-medium text-blue-800 flex items-center">
+                  <Calendar className="h-5 w-5 mr-2 text-blue-600" />
+                  המפגש הבא
+                </CardTitle>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Edit className="h-4 w-4 text-blue-600" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <p className="text-blue-800">{nextMeetingText}</p>
+                <p className="text-sm text-blue-600 mt-2">תאריך: 16.2-21.2</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-indigo-50/40 hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg font-medium text-indigo-800 flex items-center">
+                  <Calendar className="h-5 w-5 mr-2 text-indigo-600" />
+                  המפגש האחרון
+                </CardTitle>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Edit className="h-4 w-4 text-indigo-600" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <p className="text-indigo-800">{lastMeetingText}</p>
+                <p className="text-sm text-indigo-600 mt-2">תאריך: {lastMeetingDate}</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-purple-50/40 hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg font-medium text-purple-800 flex items-center">
+                  <BookOpen className="h-5 w-5 mr-2 text-purple-600" />
+                  שאלון אבחון ראשוני
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {evaluationResults ? (
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium text-purple-900">הציון הכולל:</span>
+                      <span className={`text-xl font-bold ${getScoreColor(evaluationResults.total_score)}`}>
+                        {evaluationResults.total_score.toFixed(1)}
+                      </span>
+                    </div>
+                    <Button variant="outline" className="w-full mt-2" onClick={() => navigate("/player-evaluation")}>
+                      צפה בפרטים
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-2">
+                    <p className="text-purple-800 mb-2">טרם מילאת את שאלון האבחון הראשוני</p>
+                    <Button className="mt-2 bg-purple-600 hover:bg-purple-700" onClick={() => navigate("/player-evaluation")}>
+                      מלא שאלון
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="bg-white md:col-span-2 hover:shadow-md transition-shadow">
+              <CardHeader className="bg-blue-50 rounded-t-xl">
+                <CardTitle className="text-blue-800">סרטוני הדרכה</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  {videos.map(video => (
+                    <div key={video.id} className="flex items-center p-3 border border-gray-100 rounded-lg hover:bg-gray-50">
+                      <div className="flex-shrink-0 mr-3">
+                        <div className="bg-blue-100 p-2 rounded-full">
+                          <Video className="h-5 w-5 text-blue-600" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{video.title}</h4>
+                        <p className="text-sm text-gray-500">{video.date}</p>
+                      </div>
+                      {!video.isLocked ? (
+                        <div className="flex items-center">
+                          <Checkbox 
+                            id={`watched-${video.id}`} 
+                            checked={watchedVideos.includes(video.id)} 
+                            onCheckedChange={() => handleWatchedToggle(video.id)}
+                            className="mr-2" 
+                          />
+                          <label htmlFor={`watched-${video.id}`} className="text-sm">צפיתי</label>
+                          <Button variant="ghost" size="sm" className="ml-2">
+                            <Play className="h-4 w-4 text-blue-600" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="text-gray-400">
+                          <span>🔒</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white hover:shadow-md transition-shadow">
+              <CardHeader className="bg-green-50 rounded-t-xl">
+                <CardTitle className="text-green-800">מטרות</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <ul className="space-y-3">
+                  {goals.map((goal, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <div className="h-2 w-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                      <span className="text-sm">{goal}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+          <AlertDialogContent className="bg-white/95 backdrop-blur-sm">
+            <AlertDialogHeader>
+              <AlertDialogTitle>אתה בטוח שברצונך להתנתק?</AlertDialogTitle>
+              <AlertDialogDescription>
+                לאחר ההתנתקות תצטרך להתחבר מחדש כדי לגשת למערכת
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>לא</AlertDialogCancel>
+              <AlertDialogAction onClick={handleLogout}>כן, התנתק</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
