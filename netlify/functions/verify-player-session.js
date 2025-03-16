@@ -10,7 +10,7 @@ exports.handler = async (event, context) => {
   try {
     // Parse the request body
     const requestBody = JSON.parse(event.body);
-    const { playerId, playerEmail } = requestBody;
+    const { playerId, playerEmail, userType } = requestBody;
     
     if (!playerId) {
       return {
@@ -19,7 +19,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    console.log(`Verifying player session: ID=${playerId}, Email=${playerEmail || 'not provided'}`);
+    console.log(`Verifying player session: ID=${playerId}, Email=${playerEmail || 'not provided'}, UserType=${userType || 'not specified'}`);
 
     // Create Supabase client with anon key
     const supabaseUrl = 'https://hntgzgrlyfhojcaofbjv.supabase.co';
@@ -29,7 +29,7 @@ exports.handler = async (event, context) => {
     // Build the query
     let query = supabase
       .from('players')
-      .select('id, email, full_name')
+      .select('id, email, full_name, coach_id')
       .eq('id', playerId);
       
     // Add email filter if provided
@@ -58,10 +58,13 @@ exports.handler = async (event, context) => {
     
     console.log('Player verified successfully:', data.full_name);
     
-    // Return success with player data
+    // Return success with player data and include user type
     return {
       statusCode: 200,
-      body: JSON.stringify({ data })
+      body: JSON.stringify({ 
+        data,
+        userType: userType || 'player' // Default to player if not specified
+      })
     };
   } catch (error) {
     console.error('Function error:', error);

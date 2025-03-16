@@ -10,6 +10,7 @@ interface AuthGuardProps {
 
 export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [userType, setUserType] = useState<'coach' | 'player' | null>(null);
   const navigate = useNavigate();
   const { playerId } = useParams<{ playerId: string }>();
   const location = useLocation();
@@ -45,6 +46,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
             console.log("Logged in coach detected, allowing access to player profile");
+            setUserType('coach');
             setIsLoading(false);
             return;
           }
@@ -59,6 +61,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
               // Verify this direct access is for the same player being accessed
               if (directAccessData.id === playerId) {
                 console.log("Direct access valid for player:", playerId);
+                setUserType('player');
                 setIsLoading(false);
                 return;
               } else {
@@ -83,6 +86,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
             console.log("Logged in coach detected, allowing access to player profile");
+            setUserType('coach');
             setIsLoading(false);
             return;
           }
@@ -127,6 +131,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
               }
               
               console.log("Player authenticated successfully");
+              setUserType('player');
               setIsLoading(false);
               return;
             } catch (verifyError) {
@@ -154,6 +159,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         }
 
         console.log("Coach authenticated successfully");
+        setUserType('coach');
         setIsLoading(false);
       } catch (error) {
         console.error("Authentication check failed:", error);
@@ -175,6 +181,11 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
       </div>
     );
+  }
+
+  // Pass userType as a prop to children
+  if (React.isValidElement(children)) {
+    return React.cloneElement(children, { userType });
   }
 
   return <>{children}</>;

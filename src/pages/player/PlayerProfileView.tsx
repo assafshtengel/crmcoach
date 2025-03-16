@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,17 +11,32 @@ import {
   FileText, Notebook, Brain, MessageCircle 
 } from "lucide-react";
 
-export default function PlayerProfileView() {
+interface PlayerProfileViewProps {
+  userType?: 'coach' | 'player' | null;
+}
+
+export default function PlayerProfileView({ userType = 'player' }: PlayerProfileViewProps) {
   const [playerData, setPlayerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [mentalStateToday, setMentalStateToday] = useState<boolean>(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     const loadPlayerData = async () => {
       try {
-        const playerSessionStr = localStorage.getItem('playerSession');
+        // If a coach is viewing this page, redirect them back to the coach view
+        if (userType === 'coach') {
+          const playerSession = sessionStorage.getItem('playerDirectAccess');
+          if (playerSession) {
+            const playerInfo = JSON.parse(playerSession);
+            navigate(`/player/${playerInfo.id}`);
+            return;
+          }
+          navigate('/players-list');
+          return;
+        }
+        
+        const playerSessionStr = localStorage.getItem('playerSession') || sessionStorage.getItem('playerSession');
         
         if (!playerSessionStr) {
           navigate('/player-auth');
@@ -58,21 +74,18 @@ export default function PlayerProfileView() {
         }
       } catch (error: any) {
         console.error('Error loading player data:', error);
-        toast({
-          variant: "destructive",
-          title: "שגיאה בטעינת פרופיל",
-          description: error.message || "אירעה שגיאה בטעינת נתוני השחקן"
-        });
+        toast.error("שגיאה בטעינת פרופיל: " + (error.message || "אירעה שגיאה בטעינת נתוני השחקן"));
       } finally {
         setLoading(false);
       }
     };
     
     loadPlayerData();
-  }, [navigate, toast]);
+  }, [navigate, userType]);
 
   const handleLogout = () => {
     localStorage.removeItem('playerSession');
+    sessionStorage.removeItem('playerSession');
     navigate('/player-auth');
   };
 

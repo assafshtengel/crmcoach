@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -9,7 +10,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 import { ArrowRight, Pencil, Settings, Activity, Brain } from 'lucide-react';
 
-export default function PlayerProfile() {
+interface PlayerProfileProps {
+  userType?: 'coach' | 'player' | null;
+}
+
+export default function PlayerProfile({ userType = 'coach' }: PlayerProfileProps) {
   const { playerId } = useParams<{ playerId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -122,6 +127,13 @@ export default function PlayerProfile() {
       setOpenDialog(false);
     }
   };
+
+  // Redirect player to their dedicated profile view
+  useEffect(() => {
+    if (userType === 'player' && playerId) {
+      navigate(`/player/profile-view`);
+    }
+  }, [userType, playerId, navigate]);
 
   return (
     <Layout>
