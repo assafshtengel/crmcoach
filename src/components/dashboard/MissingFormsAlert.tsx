@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +36,6 @@ export function MissingFormsAlert() {
 
       if (error) throw error;
 
-      // Extract unique players and their info
       const playersMap = new Map<string, PlayerWithMissingForm>();
       
       notifications.forEach(notification => {
@@ -69,7 +67,6 @@ export function MissingFormsAlert() {
   useEffect(() => {
     fetchMissingForms();
     
-    // Set up real-time subscription for new notifications
     const channel = supabase
       .channel('missing-forms-changes')
       .on('postgres_changes', {
@@ -99,7 +96,6 @@ export function MissingFormsAlert() {
         description: 'הנתונים יתעדכנו בקרוב'
       });
       
-      // Give the database time to update before refreshing
       setTimeout(() => {
         fetchMissingForms();
       }, 2000);
@@ -116,39 +112,38 @@ export function MissingFormsAlert() {
   if (loading) {
     return (
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-500" />
-            <Skeleton className="h-6 w-40" />
+        <CardHeader className="pb-1 p-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            <Skeleton className="h-4 w-32" />
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Skeleton className="h-16 w-full" />
+        <CardContent className="p-3">
+          <Skeleton className="h-10 w-full" />
         </CardContent>
       </Card>
     );
   }
 
-  // If no players with missing forms, show minimal card
   if (playersWithMissingForms.length === 0) {
     return (
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-green-600">
-            <Users className="h-5 w-5" />
+        <CardHeader className="pb-1 p-3">
+          <CardTitle className="flex items-center gap-2 text-green-600 text-sm">
+            <Users className="h-4 w-4" />
             כל השחקנים מילאו את השאלונים היומיים
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 pt-1">
           <div className="flex justify-end">
             <Button 
               variant="ghost" 
               size="sm" 
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 h-7 text-xs"
               onClick={runManualCheck}
               disabled={refreshing}
             >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
               רענן
             </Button>
           </div>
@@ -159,67 +154,63 @@ export function MissingFormsAlert() {
 
   return (
     <Card className="border-yellow-200 bg-yellow-50">
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center justify-between">
+      <CardHeader className="pb-1 p-3">
+        <CardTitle className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-yellow-500" />
+            <AlertTriangle className="h-4 w-4 text-yellow-500" />
             <span>{playersWithMissingForms.length} שחקנים לא מילאו שאלון יומי</span>
           </div>
           <Button 
             variant="ghost" 
             size="sm" 
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 h-6 p-1"
             onClick={() => setExpanded(!expanded)}
           >
             {expanded ? (
-              <ChevronUp className="h-4 w-4" />
+              <ChevronUp className="h-3 w-3" />
             ) : (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3 w-3" />
             )}
           </Button>
         </CardTitle>
       </CardHeader>
       {expanded && (
-        <CardContent>
-          <div className="space-y-3 max-h-80 overflow-y-auto">
+        <CardContent className="p-3 pt-1">
+          <div className="space-y-2 max-h-60 overflow-y-auto">
             {playersWithMissingForms.map(player => (
               <div 
                 key={player.id} 
-                className="flex items-center justify-between p-2 bg-white rounded-md shadow-sm"
+                className="flex items-center justify-between p-1.5 bg-white rounded-md shadow-sm"
               >
-                <div className="flex items-center gap-2">
-                  <Avatar>
-                    <AvatarFallback>{player.name.substring(0, 2)}</AvatarFallback>
+                <div className="flex items-center gap-1.5">
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="text-xs">{player.name.substring(0, 2)}</AvatarFallback>
                     <AvatarImage src={`/api/avatar/${player.id}`} />
                   </Avatar>
                   <div>
-                    <div className="font-medium">{player.name}</div>
-                    {player.lastSubmission ? (
-                      <div className="text-xs text-muted-foreground">
+                    <div className="font-medium text-xs">{player.name}</div>
+                    {player.lastSubmission && (
+                      <div className="text-[10px] text-muted-foreground">
                         מילא לאחרונה: {formatDistance(new Date(player.lastSubmission), new Date(), { addSuffix: true, locale: he })}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-muted-foreground">
-                        לא נמצא מילוי קודם
                       </div>
                     )}
                   </div>
                 </div>
-                <Badge variant={player.missedDays > 2 ? "destructive" : "outline"}>
+                <Badge variant={player.missedDays > 2 ? "destructive" : "outline"} className="text-xs px-1.5 py-0.5">
                   {player.missedDays} {player.missedDays === 1 ? "יום" : "ימים"}
                 </Badge>
               </div>
             ))}
           </div>
-          <div className="flex justify-end mt-4">
+          <div className="flex justify-end mt-2">
             <Button 
               variant="outline" 
               size="sm" 
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 h-7 text-xs"
               onClick={runManualCheck}
               disabled={refreshing}
             >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
               בדוק שוב
             </Button>
           </div>
