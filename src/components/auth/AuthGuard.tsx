@@ -185,7 +185,8 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
 
   // Pass userType as a prop to children
   if (isValidElement(children)) {
-    return cloneElement(children, { userType });
+    // Use type assertion to tell TypeScript that this element can accept userType
+    return cloneElement(children, { userType } as React.ComponentProps<typeof children.type>);
   }
 
   return <>{children}</>;
