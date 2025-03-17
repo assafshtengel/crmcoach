@@ -33,8 +33,8 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <PlayersProvider>
             <Routes>
-              {/* Redirect root path to index */}
-              <Route path="/" element={<Index />} />
+              {/* Redirect root path to dashboard-coach */}
+              <Route path="/" element={<Navigate to="/dashboard-coach" replace />} />
               <Route path="/dashboard-coach" element={<DashboardCoach />} />
               <Route path="/players-list" element={<PlayersList />} />
               <Route path="/sessions" element={<Sessions />} />
@@ -49,6 +49,7 @@ const App = () => {
               <Route path="/player-registration" element={<PlayerRegistration />} />
               <Route path="/registration-links" element={<RegistrationLinks />} />
               <Route path="/player-file/:playerId" element={<PlayerFile />} />
+              <Route path="/index" element={<Index />} />
             </Routes>
             <Toaster />
           </PlayersProvider>
