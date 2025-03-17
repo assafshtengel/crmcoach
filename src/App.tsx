@@ -20,6 +20,7 @@ function App() {
     <main>
       <Toaster />
       <Routes>
+        {/* Auth routes */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/player-auth" element={<PlayerAuth />} />
         <Route path="/signup-coach" element={<CoachSignUp />} />
