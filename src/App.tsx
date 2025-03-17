@@ -1,80 +1,59 @@
 
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { Toaster } from 'sonner';
-import './App.css';
-import { AuthGuard } from '@/components/auth/AuthGuard';
-import DashboardCoach from '@/pages/DashboardCoach';
-import PlayerProfile from '@/pages/PlayerProfile';
-import SessionsList from '@/pages/SessionsList';
-import AllMeetingSummaries from '@/pages/AllMeetingSummaries';
-import PlayersList from '@/pages/PlayersList';
-import PlayerAuth from '@/pages/PlayerAuth';
-import CoachSignUp from '@/pages/CoachSignUp';
-import AuthPage from '@/pages/auth/AuthPage';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from "./components/theme-provider"
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from "sonner"
+import DashboardCoach from './pages/DashboardCoach';
+import PlayersList from './pages/PlayersList';
+import Goals from './pages/Goals';
+import PlayerProfileView from './pages/player/PlayerProfileView';
+import MentalTools from './pages/MentalTools';
+import { PlayersProvider } from './contexts/PlayersContext';
+import PlayerFile from "@/pages/PlayerFile";
 
-function App() {
-  const [coachName, setCoachName] = React.useState('');
+// Create placeholder components for missing modules
+const Sessions = () => <div>Sessions Page</div>;
+const SessionDetails = () => <div>Session Details Page</div>;
+const CoachesList = () => <div>Coaches List Page</div>;
+const MentalPrepForm = () => <div>Mental Prep Form Page</div>;
+const TrainingVideos = () => <div>Training Videos Page</div>;
+const PlayerDashboard = () => <div>Player Dashboard Page</div>;
+const CoachProfile = () => <div>Coach Profile Page</div>;
+const PlayerRegistration = () => <div>Player Registration Page</div>;
+const RegistrationLinks = () => <div>Registration Links Page</div>;
 
+const queryClient = new QueryClient();
+
+const App = () => {
   return (
-    <main>
-      <Toaster />
-      <Routes>
-        {/* Auth routes */}
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/player-auth" element={<PlayerAuth />} />
-        <Route path="/signup-coach" element={<CoachSignUp />} />
-        
-        {/* Root dashboard route with AuthGuard */}
-        <Route path="/" element={
-          <AuthGuard>
-            <DashboardCoach />
-          </AuthGuard>
-        } />
-        
-        {/* Players list route */}
-        <Route path="/players-list" element={
-          <AuthGuard>
-            <PlayersList />
-          </AuthGuard>
-        } />
-        
-        {/* Player profile routes */}
-        <Route path="/player/:playerId" element={
-          <AuthGuard playerOnly={true}>
-            <PlayerProfile />
-          </AuthGuard>
-        } />
-        <Route path="/player/profile-view" element={
-          <AuthGuard playerOnly={true}>
-            <PlayerProfile />
-          </AuthGuard>
-        } />
-        <Route path="/player-profile/:playerId" element={
-          <AuthGuard>
-            <PlayerProfile />
-          </AuthGuard>
-        } />
-        
-        {/* Sessions list route */}
-        <Route path="/sessions-list" element={
-          <AuthGuard>
-            <SessionsList />
-          </AuthGuard>
-        } />
-        
-        {/* Session summaries route */}
-        <Route 
-          path="/session-summaries" 
-          element={
-            <AuthGuard>
-              <AllMeetingSummaries />
-            </AuthGuard>
-          } 
-        />
-      </Routes>
-    </main>
+    <BrowserRouter>
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <QueryClientProvider client={queryClient}>
+          <PlayersProvider>
+            <Routes>
+              <Route path="/" element={<PlayerDashboard />} />
+              <Route path="/dashboard-coach" element={<DashboardCoach />} />
+              <Route path="/players-list" element={<PlayersList />} />
+              <Route path="/sessions" element={<Sessions />} />
+              <Route path="/sessions/:sessionId" element={<SessionDetails />} />
+              <Route path="/coaches-list" element={<CoachesList />} />
+              <Route path="/goals" element={<Goals />} />
+              <Route path="/mental-prep-form" element={<MentalPrepForm />} />
+              <Route path="/player-profile" element={<PlayerProfileView />} />
+              <Route path="/mental-tools" element={<MentalTools />} />
+              <Route path="/training-videos" element={<TrainingVideos />} />
+              <Route path="/coach-profile" element={<CoachProfile />} />
+              <Route path="/player-registration" element={<PlayerRegistration />} />
+              <Route path="/registration-links" element={<RegistrationLinks />} />
+              <Route path="/player-file/:playerId" element={<PlayerFile />} />
+            </Routes>
+            <Toaster />
+          </PlayersProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   );
-}
+};
 
 export default App;

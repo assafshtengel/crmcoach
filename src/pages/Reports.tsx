@@ -121,7 +121,7 @@ const Reports = () => {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/dashboard')}
         >
           <ArrowRight className="h-4 w-4" />
         </Button>

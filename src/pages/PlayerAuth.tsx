@@ -1,286 +1,266 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Mail, Lock } from "lucide-react";
+import { Label } from "@/components/ui/label";
+
+type AuthMode = "login" | "reset-password";
 
 const PlayerAuth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [verifyingToken, setVerifyingToken] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<AuthMode>("login");
   const navigate = useNavigate();
-  
-  // Check for direct access token in URL
-  useEffect(() => {
-    const accessToken = searchParams.get('access');
-    const playerIdFromUrl = searchParams.get('player');
-    
-    if (accessToken && playerIdFromUrl) {
-      verifyAccessToken(accessToken, playerIdFromUrl);
-    }
-  }, [searchParams]);
-  
-  const verifyAccessToken = async (token: string, playerIdFromUrl: string) => {
-    setVerifyingToken(true);
-    try {
-      // Verify the token against the database
-      const { data: tokenData, error: tokenError } = await supabase
-        .from('player_access_tokens')
-        .select('*, players:player_id(id, full_name, email)')
-        .eq('token', token)
-        .eq('player_id', playerIdFromUrl)
-        .eq('is_active', true)
-        .single();
-      
-      if (tokenError || !tokenData) {
-        console.error("Invalid or expired token:", tokenError);
-        toast.error('הקישור אינו תקף או שפג תוקפו');
-        return;
-      }
-      
-      // Token is valid, set up direct access session
-      const playerData = {
-        id: tokenData.player_id,
-        full_name: tokenData.players?.full_name,
-        email: tokenData.players?.email,
-      };
-
-      // Store player data in session storage for direct access
-      sessionStorage.setItem('playerDirectAccess', JSON.stringify(playerData));
-      
-      // Redirect to the player profile
-      toast.success('מועבר לפרופיל השחקן...');
-      navigate(`/player/${playerData.id}`);
-    } catch (error) {
-      console.error("Error verifying token:", error);
-      toast.error('שגיאה באימות הקישור');
-    } finally {
-      setVerifyingToken(false);
-    }
-  };
+  const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (email) {
-        // Try serverless function first for player verification
-        try {
-          const response = await fetch('/.netlify/functions/verify-player-session', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              playerId: email, // Try using email as ID first
-              playerEmail: email,
-              userType: 'player'
-            }),
-          });
-          
-          const result = await response.json();
-          
-          if (response.ok && result.data) {
-            // Found player via serverless function
-            const playerData = result.data;
-            
-            // Check password if set
-            if (playerData.password && password !== playerData.password) {
-              toast.error("סיסמה שגויה");
-              setLoading(false);
-              return;
-            }
-            
-            // Valid login - store player session
-            const playerSessionData = {
-              id: playerData.id,
-              full_name: playerData.full_name,
-              email: playerData.email,
-            };
-            
-            if (rememberMe) {
-              localStorage.setItem("playerSession", JSON.stringify(playerSessionData));
-            } else {
-              sessionStorage.setItem("playerSession", JSON.stringify(playerSessionData));
-            }
-            
-            toast.success("התחברת בהצלחה");
-            navigate(`/player/${playerData.id}`);
-            return;
-          }
-        } catch (serverlessError) {
-          console.error("Error calling serverless function:", serverlessError);
-          // Continue with fallback to direct Supabase query
-        }
+      console.log("Player attempting to log in with email:", email);
+      
+      // Check if this email exists in the players table
+      const { data: playerData, error: playerError } = await supabase
+        .from('players')
+        .select('id, email, password, full_name')
+        .eq('email', email)
+        .maybeSingle();
 
-        // Fallback: Fetch player info from database based on email or ID
-        const { data: playersByEmail, error: emailError } = await supabase
-          .from("players")
-          .select("id, full_name, email, password")
-          .eq("email", email.toLowerCase())
-          .single();
-
-        if (emailError || !playersByEmail) {
-          console.error("Player not found by email:", emailError);
-          
-          // If not found by email, try by ID as fallback
-          const { data: playersById, error: idError } = await supabase
-            .from("players")
-            .select("id, full_name, email, password")
-            .eq("id", email)
-            .single();
-            
-          if (idError || !playersById) {
-            toast.error("שם משתמש לא נמצא");
-            setLoading(false);
-            return;
-          }
-          
-          // Found by ID
-          if (playersById.password && password !== playersById.password) {
-            toast.error("סיסמה שגויה");
-            setLoading(false);
-            return;
-          }
-          
-          // Valid ID login
-          const playerData = {
-            id: playersById.id,
-            full_name: playersById.full_name,
-            email: playersById.email,
-          };
-          
-          if (rememberMe) {
-            localStorage.setItem("playerSession", JSON.stringify(playerData));
-          } else {
-            sessionStorage.setItem("playerSession", JSON.stringify(playerData));
-          }
-          
-          toast.success("התחברת בהצלחה");
-          navigate(`/player/${playersById.id}`);
-          return;
-        }
-        
-        // Email login validation
-        if (playersByEmail.password && password !== playersByEmail.password) {
-          toast.error("סיסמה שגויה");
-          setLoading(false);
-          return;
-        }
-        
-        // Store player session
-        const playerData = {
-          id: playersByEmail.id,
-          full_name: playersByEmail.full_name,
-          email: playersByEmail.email,
-        };
-        
-        // Store in localStorage or sessionStorage based on remember me
-        if (rememberMe) {
-          localStorage.setItem("playerSession", JSON.stringify(playerData));
-        } else {
-          sessionStorage.setItem("playerSession", JSON.stringify(playerData));
-        }
-        
-        toast.success("התחברת בהצלחה");
-        navigate(`/player/${playersByEmail.id}`);
+      if (playerError) {
+        console.error("Database error checking player credentials:", playerError);
+        toast({
+          variant: "destructive",
+          title: "שגיאה במערכת",
+          description: "אירעה שגיאה בבדיקת פרטי השחקן. נא לנסות שוב מאוחר יותר.",
+        });
+        setLoading(false);
         return;
-      } else {
-        toast.error("אנא הזן אימייל או מזהה שחקן");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("שגיאה בהתחברות");
+
+      // If no player found with this email
+      if (!playerData) {
+        console.log("No player found with email:", email);
+        toast({
+          variant: "destructive",
+          title: "כתובת אימייל לא קיימת",
+          description: "לא נמצא שחקן רשום עם כתובת האימייל שהוזנה",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Email exists but password doesn't match
+      if (playerData.password !== password) {
+        console.log("Password doesn't match for player:", email);
+        toast({
+          variant: "destructive",
+          title: "סיסמה שגויה",
+          description: "הסיסמה שהוזנה אינה מתאימה לחשבון זה",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Login successful
+      console.log("Player login successful for:", email);
+      toast({
+        title: "התחברות הצליחה",
+        description: `ברוך הבא, ${playerData.full_name || 'שחקן יקר'}!`,
+      });
+
+      // Store player session data in localStorage
+      localStorage.setItem('playerSession', JSON.stringify({
+        id: playerData.id,
+        email: playerData.email,
+        password: playerData.password,
+        fullName: playerData.full_name
+      }));
+
+      // Navigate to the player profile view
+      navigate('/player/profile');
+    } catch (error: any) {
+      console.error("Unexpected error during player login:", error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהתחברות",
+        description: error.message || "אירעה שגיאה בהתחברות. אנא נסה שוב.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  if (verifyingToken) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-          <p className="mt-4 text-lg">מאמת את הקישור...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // Check if email exists in players table
+      const { data: playerData, error: playerError } = await supabase
+        .from('players')
+        .select('id, email')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (playerError) {
+        throw new Error("שגיאה בבדיקת פרטי השחקן");
+      }
+
+      if (!playerData) {
+        throw new Error("לא נמצא שחקן עם כתובת האימייל הזו");
+      }
+
+      // Generate a new random password
+      const newPassword = Math.random().toString(36).slice(-10);
+
+      // Update the player's password
+      const { error: updateError } = await supabase
+        .from('players')
+        .update({ password: newPassword })
+        .eq('id', playerData.id);
+
+      if (updateError) {
+        throw new Error("שגיאה בעדכון הסיסמה");
+      }
+
+      // For a real application, you would send an email with the new password
+      // For now, we'll display it in the toast
+      toast({
+        title: "הסיסמה אופסה בהצלחה",
+        description: `הסיסמה החדשה שלך היא: ${newPassword}`,
+        duration: 10000, // Longer duration so user can see the password
+      });
+
+      setMode("login");
+    } catch (error: any) {
+      console.error("Reset password error:", error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה באיפוס הסיסמה",
+        description: error.message || "אירעה שגיאה באיפוס הסיסמה. אנא נסה שוב.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
-      <div className="max-w-md w-full">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">כניסת שחקנים</CardTitle>
-            <CardDescription>
-              כניסה למערכת המנטליות לשחקנים
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">
+            {mode === "login" ? "כניסה לשחקנים" : "איפוס סיסמה"}
+          </CardTitle>
+          <CardDescription>
+            {mode === "login" 
+              ? "התחבר כדי לגשת לפרופיל השחקן שלך" 
+              : "הזן את כתובת המייל שלך לאיפוס הסיסמה"
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {mode === "login" ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">מזהה שחקן</Label>
-                <Input
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="הזן את האימייל או מזהה השחקן שלך"
-                  required
-                />
+                <Label htmlFor="email">כתובת אימייל</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="הזן את האימייל שלך"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">סיסמה (אם הוגדרה)</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="הזן את הסיסמה שלך (אם הוגדרה)"
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="rememberMe"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-primary"
-                />
-                <Label htmlFor="rememberMe" className="mr-2">זכור אותי</Label>
+                <Label htmlFor="password">סיסמה</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="הזן את הסיסמה שלך"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
               </div>
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loading || !email}
+                disabled={loading}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    מתחבר...
-                  </>
-                ) : (
-                  "התחבר"
-                )}
+                {loading ? "מתחבר..." : "התחבר"}
               </Button>
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => setMode("reset-password")}
+                  className="text-sm text-primary hover:underline"
+                >
+                  שכחת סיסמה?
+                </button>
+              </div>
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/auth')}
+                  className="text-sm text-primary hover:underline"
+                >
+                  כניסה למאמנים
+                </button>
+              </div>
             </form>
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <p className="text-sm text-gray-500">
-              מאמנים? <a href="/auth" className="text-primary hover:underline">לחצו כאן להתחברות</a>
-            </p>
-          </CardFooter>
-        </Card>
-      </div>
+          ) : (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">כתובת אימייל</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="הזן את האימייל שלך"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? "שולח..." : "אפס סיסמה"}
+              </Button>
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => setMode("login")}
+                  className="text-sm text-primary hover:underline"
+                >
+                  חזרה להתחברות
+                </button>
+              </div>
+            </form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

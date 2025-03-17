@@ -10,16 +10,10 @@ let supabaseInstance = null;
 
 export const getSupabase = () => {
   if (!supabaseInstance) {
-    supabaseInstance = createClient<Database>(supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: false,
-      }
-    });
+    supabaseInstance = createClient<Database>(supabaseUrl, supabaseKey);
   }
   return supabaseInstance;
 };
 
-// For backward compatibility, export as supabase
+// For backward compatibility, also export as supabase
 export const supabase = getSupabase();

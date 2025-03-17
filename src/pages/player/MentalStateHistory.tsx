@@ -5,12 +5,23 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Calendar, Activity } from "lucide-react";
+import { ArrowRight, Calendar, Activity, LineChart } from "lucide-react";
 import { format } from "date-fns";
-import { MentalState } from "@/types/mentalState";
+import { MentalState, MentalStateChartData } from "@/types/mentalState";
+import { 
+  LineChart as RechartsLineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from "recharts";
 
 export default function MentalStateHistory() {
   const [mentalStates, setMentalStates] = useState<MentalState[]>([]);
+  const [chartData, setChartData] = useState<MentalStateChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -40,6 +51,21 @@ export default function MentalStateHistory() {
         }
         
         setMentalStates(data || []);
+        
+        // Transform the data for the chart - we take the last 10 entries and reverse them for chronological display
+        if (data && data.length > 0) {
+          const chartEntries = [...data]
+            .sort((a, b) => new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime())
+            .slice(-10)
+            .map(entry => ({
+              date: format(new Date(entry.created_at || ''), 'dd/MM'),
+              feeling: entry.feeling_score,
+              motivation: entry.motivation_level,
+              fatigue: entry.mental_fatigue_level
+            }));
+          
+          setChartData(chartEntries);
+        }
       } catch (error: any) {
         console.error('Error loading mental states:', error);
         toast({
@@ -108,54 +134,88 @@ export default function MentalStateHistory() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {mentalStates.map((state) => (
-              <Card key={state.id} className="shadow-md hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Calendar className="h-5 w-5" />
-                      {formatDate(state.created_at || '')}
-                    </CardTitle>
-                    <div className="flex items-center text-2xl">
-                      {getFeelingEmoji(state.feeling_score)}
-                    </div>
-                  </div>
+          <div className="space-y-6">
+            {/* Chart visualization of mental state trends */}
+            {chartData.length > 1 && (
+              <Card className="shadow-md">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <LineChart className="h-5 w-5" />
+                    מגמות מצב מנטלי לאורך זמן
+                  </CardTitle>
+                  <CardDescription>
+                    השוואת הרגשה, מוטיבציה ועייפות מנטלית ב-10 הדיווחים האחרונים
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>הרגשה כללית:</span>
-                        <span className={getScoreColor(state.feeling_score)}>{state.feeling_score}/10</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>מוטיבציה:</span>
-                        <span className={getScoreColor(state.motivation_level)}>{state.motivation_level}/10</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>עייפות מנטלית:</span>
-                        <span className={getScoreColor(10 - state.mental_fatigue_level)}>{state.mental_fatigue_level}/10</span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      {state.improvement_focus && (
-                        <div>
-                          <span className="font-semibold block">מה רציתי לשפר:</span>
-                          <p className="text-sm">{state.improvement_focus}</p>
-                        </div>
-                      )}
-                      {state.has_concerns && state.concerns_details && (
-                        <div>
-                          <span className="font-semibold block">דברים שהדאיגו אותי:</span>
-                          <p className="text-sm">{state.concerns_details}</p>
-                        </div>
-                      )}
-                    </div>
+                  <div className="h-80 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsLineChart data={chartData} margin={{ top: 5, right: 20, bottom: 20, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis domain={[0, 10]} />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="feeling" stroke="#22c55e" name="הרגשה" activeDot={{ r: 8 }} />
+                        <Line type="monotone" dataKey="motivation" stroke="#3b82f6" name="מוטיבציה" />
+                        <Line type="monotone" dataKey="fatigue" stroke="#f43f5e" name="עייפות מנטלית" />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )}
+
+            {/* Individual mental state entries */}
+            <div className="space-y-4">
+              {mentalStates.map((state) => (
+                <Card key={state.id} className="shadow-md hover:shadow-lg transition-shadow">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Calendar className="h-5 w-5" />
+                        {formatDate(state.created_at || '')}
+                      </CardTitle>
+                      <div className="flex items-center text-2xl">
+                        {getFeelingEmoji(state.feeling_score)}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>הרגשה כללית:</span>
+                          <span className={getScoreColor(state.feeling_score)}>{state.feeling_score}/10</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>מוטיבציה:</span>
+                          <span className={getScoreColor(state.motivation_level)}>{state.motivation_level}/10</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>עייפות מנטלית:</span>
+                          <span className={getScoreColor(10 - state.mental_fatigue_level)}>{state.mental_fatigue_level}/10</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        {state.improvement_focus && (
+                          <div>
+                            <span className="font-semibold block">מה רציתי לשפר:</span>
+                            <p className="text-sm">{state.improvement_focus}</p>
+                          </div>
+                        )}
+                        {state.has_concerns && state.concerns_details && (
+                          <div>
+                            <span className="font-semibold block">דברים שהדאיגו אותי:</span>
+                            <p className="text-sm">{state.concerns_details}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -1,42 +1,24 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  LogOut, User, Calendar, PenTool, Video, Activity, 
-  FileText, Notebook, Brain, MessageCircle 
-} from "lucide-react";
+import { LogOut, User, Calendar, PenTool, Video, Activity, FileText, Notebook, Brain, Folder } from "lucide-react";
+import { Link } from "react-router-dom";
 
-interface PlayerProfileViewProps {
-  userType?: 'coach' | 'player' | null;
-}
-
-export default function PlayerProfileView({ userType = 'player' }: PlayerProfileViewProps) {
+export default function PlayerProfileView() {
   const [playerData, setPlayerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [mentalStateToday, setMentalStateToday] = useState<boolean>(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadPlayerData = async () => {
       try {
-        // If a coach is viewing this page, redirect them back to the coach view
-        if (userType === 'coach') {
-          const playerSession = sessionStorage.getItem('playerDirectAccess');
-          if (playerSession) {
-            const playerInfo = JSON.parse(playerSession);
-            navigate(`/player/${playerInfo.id}`);
-            return;
-          }
-          navigate('/players-list');
-          return;
-        }
-        
-        const playerSessionStr = localStorage.getItem('playerSession') || sessionStorage.getItem('playerSession');
+        const playerSessionStr = localStorage.getItem('playerSession');
         
         if (!playerSessionStr) {
           navigate('/player-auth');
@@ -57,6 +39,7 @@ export default function PlayerProfileView({ userType = 'player' }: PlayerProfile
         
         setPlayerData(data);
 
+        // Check if player has submitted mental state form today
         const today = new Date().toISOString().split('T')[0];
         
         const { data: mentalStateData, error: mentalStateError } = await supabase
@@ -74,18 +57,21 @@ export default function PlayerProfileView({ userType = 'player' }: PlayerProfile
         }
       } catch (error: any) {
         console.error('Error loading player data:', error);
-        toast.error("שגיאה בטעינת פרופיל: " + (error.message || "אירעה שגיאה בטעינת נתוני השחקן"));
+        toast({
+          variant: "destructive",
+          title: "שגיאה בטעינת פרופיל",
+          description: error.message || "אירעה שגיאה בטעינת נתוני השחקן"
+        });
       } finally {
         setLoading(false);
       }
     };
     
     loadPlayerData();
-  }, [navigate, userType]);
+  }, [navigate, toast]);
 
   const handleLogout = () => {
     localStorage.removeItem('playerSession');
-    sessionStorage.removeItem('playerSession');
     navigate('/player-auth');
   };
 
@@ -120,7 +106,7 @@ export default function PlayerProfileView({ userType = 'player' }: PlayerProfile
           <h1 className="text-3xl font-bold text-center">
             שלום, {playerData.full_name}
           </h1>
-          <div className="w-9"></div>
+          <div className="w-9"></div> {/* Spacer for alignment */}
         </div>
 
         <Card className="shadow-lg mb-8">
@@ -162,7 +148,7 @@ export default function PlayerProfileView({ userType = 'player' }: PlayerProfile
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -244,7 +230,7 @@ export default function PlayerProfileView({ userType = 'player' }: PlayerProfile
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => navigate('/player/training-videos')}>
+              <Button className="w-full" onClick={() => navigate('/player/videos')}>
                 צפה בסרטונים
               </Button>
             </CardContent>
@@ -301,20 +287,21 @@ export default function PlayerProfileView({ userType = 'player' }: PlayerProfile
             </CardContent>
           </Card>
 
-          <Card className="shadow-md hover:shadow-lg transition-shadow">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MessageCircle className="h-5 w-5" />
-                הודעות
-              </CardTitle>
-              <CardDescription>
-                תקשורת עם המאמן שלך
-              </CardDescription>
+              <CardTitle className="text-lg">תיק שחקן</CardTitle>
+              <CardDescription>כל המידע במקום אחד</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" onClick={() => navigate('/player/messages')}>
-                צפה בהודעות
-              </Button>
+              <p className="text-sm text-muted-foreground mb-4">
+                צפו בתיק השחקן שלכם המכיל את כל המידע על פעילותכם, מטרות והתקדמות.
+              </p>
+              <Link to={`/player-file/${playerData?.id}`}>
+                <Button className="w-full" variant="outline">
+                  <Folder className="mr-2 h-4 w-4" />
+                  צפייה בתיק השחקן שלי
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

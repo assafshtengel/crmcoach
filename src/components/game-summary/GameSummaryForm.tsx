@@ -13,28 +13,22 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/lib/supabase";
 import { Slider } from "@/components/ui/slider";
 import { GameSummaryFormValues } from "@/types/gameSummary";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { CalendarIcon, Save } from "lucide-react";
 
 const formSchema = z.object({
+  match_date: z.string().min(1, { message: "תאריך המשחק הוא שדה חובה" }),
+  opponent_name: z.string().min(1, { message: "שם היריבה הוא שדה חובה" }),
   performance_rating: z.number().min(1).max(10),
   concentration_level: z.number().min(1).max(10),
   goals_met: z.boolean(),
   strongest_point: z.string().min(3, { message: "יש להזין לפחות 3 תווים" }),
   improvement_notes: z.string().min(3, { message: "יש להזין לפחות 3 תווים" }),
   fatigue_level: z.number().min(1).max(10),
-  game_date: z.date().optional(),
-  opponent_team: z.string().optional(),
 });
 
 interface GameSummaryFormProps {
   playerData?: {
     id: string;
     coach_id?: string;
-    full_name?: string;
   };
   onSuccess?: () => void;
 }
@@ -43,15 +37,15 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // Define defaultValues with the right types
-  const defaultValues = {
+  const defaultValues: GameSummaryFormValues = {
+    match_date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+    opponent_name: "",
     performance_rating: 5,
     concentration_level: 5,
     goals_met: false,
     strongest_point: "",
     improvement_notes: "",
     fatigue_level: 5,
-    opponent_team: "",
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -72,69 +66,24 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
     setIsSubmitting(true);
 
     try {
-      console.log("Submitting game summary with values:", {
-        player_id: playerData.id,
-        coach_id: playerData.coach_id,
-        ...values,
-        game_date: values.game_date ? values.game_date.toISOString().split('T')[0] : null,
-      });
-
-      // First, insert the game summary
-      const { data: summaryData, error: summaryError } = await supabase
+      const { data, error } = await supabase
         .from("game_summaries")
         .insert({
           player_id: playerData.id,
           coach_id: playerData.coach_id,
+          match_date: values.match_date,
+          opponent_name: values.opponent_name,
           performance_rating: values.performance_rating,
           concentration_level: values.concentration_level,
           goals_met: values.goals_met,
           strongest_point: values.strongest_point,
           improvement_notes: values.improvement_notes,
           fatigue_level: values.fatigue_level,
-          game_date: values.game_date ? values.game_date.toISOString().split('T')[0] : null,
-          opponent_team: values.opponent_team || null,
         })
         .select();
 
-      if (summaryError) {
-        console.error("Supabase error details:", summaryError);
-        throw summaryError;
-      }
-
-      console.log("Game summary saved successfully:", summaryData);
-
-      // Now create a notification for the coach if coach_id exists
-      if (playerData.coach_id && summaryData && summaryData[0]) {
-        const summaryId = summaryData[0].id;
-        const playerName = playerData.full_name || "שחקן";
-        const gameDate = values.game_date 
-          ? format(values.game_date, "dd/MM/yyyy")
-          : "משחק אחרון";
-        const opponentTeam = values.opponent_team || "קבוצה לא ידועה";
-        
-        const notificationMessage = `${playerName} מילא סיכום משחק נגד ${opponentTeam} מתאריך ${gameDate}`;
-
-        const { error: notificationError } = await supabase
-          .from("notifications")
-          .insert({
-            coach_id: playerData.coach_id,
-            type: "game_summary",
-            message: notificationMessage,
-            meta: {
-              summary_id: summaryId,
-              player_id: playerData.id,
-              player_name: playerName,
-              game_date: values.game_date ? values.game_date.toISOString().split('T')[0] : null,
-              opponent_team: values.opponent_team || null
-            }
-          });
-
-        if (notificationError) {
-          console.error("Error creating notification:", notificationError);
-          // Don't throw here - we still want to show success for the summary
-        } else {
-          console.log("Coach notification created successfully");
-        }
+      if (error) {
+        throw error;
       }
 
       toast({
@@ -142,7 +91,6 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
         description: "הנתונים נשמרו במערכת",
       });
       
-      // Reset form with the right types
       form.reset(defaultValues);
 
       if (onSuccess) {
@@ -174,39 +122,13 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
             <div className="grid gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
-                name="game_date"
+                name="match_date"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>תאריך המשחק</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-right font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
-                            ) : (
-                              <span>בחר תאריך</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -214,15 +136,12 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
 
               <FormField
                 control={form.control}
-                name="opponent_team"
+                name="opponent_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>קבוצה יריבה</FormLabel>
+                    <FormLabel>יריבה</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="שם הקבוצה היריבה" 
-                        {...field} 
-                      />
+                      <Input placeholder="הזן את שם היריבה" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -374,8 +293,7 @@ export function GameSummaryForm({ playerData, onSuccess }: GameSummaryFormProps)
             />
 
             <div className="flex justify-end">
-              <Button type="submit" className="bg-primary font-bold" disabled={isSubmitting}>
-                <Save className="w-4 h-4 mr-2" />
+              <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "שומר..." : "שמור סיכום משחק"}
               </Button>
             </div>

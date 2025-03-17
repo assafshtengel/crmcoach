@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { formSchema, PlayerFormValues, sportFields } from '@/components/new-player/PlayerFormSchema';
 import { PlayerPersonalInfo } from '@/components/new-player/PlayerPersonalInfo';
 import { PlayerClubInfo } from '@/components/new-player/PlayerClubInfo';
@@ -17,139 +17,82 @@ import { ImageUpload } from '@/components/new-player/ImageUpload';
 
 const EditPlayerForm = () => {
   const navigate = useNavigate();
-  const { playerId } = useParams<{ playerId: string }>();
+  const location = useLocation();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [initialSportField, setInitialSportField] = useState('');
   const [initialOtherSportField, setInitialOtherSportField] = useState('');
-  const [playerData, setPlayerData] = useState<any>(null);
+
+  const playerData = location.state?.playerData;
 
   useEffect(() => {
-    const fetchPlayerData = async () => {
-      if (!playerId) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "לא נמצאו פרטי שחקן לעריכה",
-        });
-        navigate('/players-list');
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('players')
-          .select('*')
-          .eq('id', playerId)
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        if (!data) {
-          toast({
-            variant: "destructive",
-            title: "שגיאה",
-            description: "לא נמצאו פרטי שחקן לעריכה",
-          });
-          navigate('/players-list');
-          return;
-        }
-
-        setPlayerData(data);
-        
-        if (data.profile_image) {
-          setPreviewUrl(data.profile_image);
-        }
-        
-        // Handle sport field initialization
-        const sportFieldValue = data?.sport_field || '';
-        const isKnownSport = sportFields.some(sport => sport.value === sportFieldValue || sport.label === sportFieldValue);
-        
-        if (isKnownSport) {
-          // If it's a known sport, set it directly
-          const matchingSport = sportFields.find(sport => 
-            sport.value === sportFieldValue || sport.label === sportFieldValue
-          );
-          setInitialSportField(matchingSport?.value || 'football');
-        } else if (sportFieldValue) {
-          // If it's not a known sport but has a value, set it as "other"
-          setInitialSportField('other');
-          setInitialOtherSportField(sportFieldValue);
-        } else {
-          // Default to empty
-          setInitialSportField('');
-        }
-
-      } catch (error: any) {
-        console.error('Error fetching player:', error);
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "אירעה שגיאה בטעינת פרטי השחקן",
-        });
-        navigate('/players-list');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPlayerData();
-  }, [playerId, navigate, toast]);
+    if (!playerData) {
+      toast({
+        variant: "destructive",
+        title: "שגיאה",
+        description: "לא נמצאו פרטי שחקן לעריכה",
+      });
+      navigate('/players-list');
+      return;
+    }
+    
+    if (playerData.profile_image) {
+      setPreviewUrl(playerData.profile_image);
+    }
+    
+    // Handle sport field initialization
+    const sportFieldValue = playerData?.sport_field || '';
+    const isKnownSport = sportFields.some(sport => sport.value === sportFieldValue || sport.label === sportFieldValue);
+    
+    if (isKnownSport) {
+      // If it's a known sport, set it directly
+      const matchingSport = sportFields.find(sport => 
+        sport.value === sportFieldValue || sport.label === sportFieldValue
+      );
+      setInitialSportField(matchingSport?.value || 'football');
+    } else if (sportFieldValue) {
+      // If it's not a known sport but has a value, set it as "other"
+      setInitialSportField('other');
+      setInitialOtherSportField(sportFieldValue);
+    } else {
+      // Default to empty
+      setInitialSportField('');
+    }
+    
+  }, [playerData, navigate, toast]);
 
   const form = useForm<PlayerFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      playerEmail: '',
-      playerPhone: '',
-      birthDate: '',
-      city: '',
-      club: '',
-      yearGroup: '',
-      injuries: '',
-      parentName: '',
-      parentPhone: '',
-      parentEmail: '',
-      notes: '',
-      sportField: '',
-      otherSportField: ''
+      firstName: playerData?.full_name?.split(' ')[0] || '',
+      lastName: playerData?.full_name?.split(' ')[1] || '',
+      playerEmail: playerData?.email || '',
+      playerPhone: playerData?.phone || '',
+      birthDate: playerData?.birthdate || '',
+      city: playerData?.city || '',
+      club: playerData?.club || '',
+      yearGroup: playerData?.year_group || '',
+      injuries: playerData?.injuries || '',
+      parentName: playerData?.parent_name || '',
+      parentPhone: playerData?.parent_phone || '',
+      parentEmail: playerData?.parent_email || '',
+      notes: playerData?.notes || '',
+      sportField: initialSportField,
+      otherSportField: initialOtherSportField
     },
   });
   
-  // Update form values when player data is loaded
+  // Update form values when initialSportField changes
   useEffect(() => {
-    if (playerData) {
-      // Split full name into first and last name
-      const nameParts = playerData.full_name?.split(' ') || [];
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      form.reset({
-        firstName,
-        lastName,
-        playerEmail: playerData.email || '',
-        playerPhone: playerData.phone || '',
-        birthDate: playerData.birthdate || '',
-        city: playerData.city || '',
-        club: playerData.club || '',
-        yearGroup: playerData.year_group || '',
-        injuries: playerData.injuries || '',
-        parentName: playerData.parent_name || '',
-        parentPhone: playerData.parent_phone || '',
-        parentEmail: playerData.parent_email || '',
-        notes: playerData.notes || '',
-        sportField: initialSportField,
-        otherSportField: initialOtherSportField
-      });
+    if (initialSportField) {
+      form.setValue('sportField', initialSportField);
     }
-  }, [playerData, form, initialSportField, initialOtherSportField]);
+    if (initialOtherSportField) {
+      form.setValue('otherSportField', initialOtherSportField);
+    }
+  }, [initialSportField, initialOtherSportField, form]);
 
   const handleImageUpload = (file: File) => {
     setProfileImage(file);
@@ -186,7 +129,7 @@ const EditPlayerForm = () => {
   };
 
   const updatePlayer = async (values: PlayerFormValues, imageUrl?: string) => {
-    if (!playerId) return;
+    if (!playerData?.id) return;
 
     // Determine the final sport field value
     const finalSportField = values.sportField === 'other' && values.otherSportField
@@ -209,14 +152,15 @@ const EditPlayerForm = () => {
       parent_email: values.parentEmail,
       notes: values.notes,
       sport_field: finalSportField,
-      // Remove the position field that doesn't exist in the database
+      position: null, // Set position to null to clear it
       ...(imageUrl && { profile_image: imageUrl })
+      // Remove registration_timestamp since it doesn't exist in the DB schema
     };
 
     const { error } = await supabase
       .from('players')
       .update(updateData)
-      .eq('id', playerId);
+      .eq('id', playerData.id);
 
     if (error) throw error;
   };
@@ -230,7 +174,7 @@ const EditPlayerForm = () => {
       let imageUrl: string | undefined;
       if (profileImage) {
         try {
-          imageUrl = await uploadProfileImage(playerId!, profileImage);
+          imageUrl = await uploadProfileImage(playerData.id, profileImage);
         } catch (error) {
           console.error('Error uploading image:', error);
           toast({
@@ -248,8 +192,7 @@ const EditPlayerForm = () => {
         description: "פרטי השחקן עודכנו בהצלחה.",
       });
 
-      // Navigate to players list instead of player profile
-      navigate('/players-list');
+      navigate(`/player-profile/${playerData.id}`);
 
     } catch (error: any) {
       console.error('Error updating player:', error);
@@ -261,14 +204,6 @@ const EditPlayerForm = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-gray-600">טוען פרטי שחקן...</div>
-      </div>
-    );
   }
 
   if (!playerData) {

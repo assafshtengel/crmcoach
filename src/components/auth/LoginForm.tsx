@@ -5,8 +5,6 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 
 interface LoginFormProps {
   onSignUpClick: () => void;
@@ -17,7 +15,6 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -53,21 +50,8 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
       if (data.user) {
         console.log("User authenticated:", data.user);
         
-        // Set persistent session based on remember me option
-        if (rememberMe) {
-          // This is already the default in Supabase, but we're being explicit
-          await supabase.auth.setSession({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-          });
-          
-          localStorage.setItem('coachRememberMe', 'true');
-        } else {
-          localStorage.removeItem('coachRememberMe');
-        }
-        
         // המשתמש התחבר בהצלחה, מעבר ישיר לדף הבית
-        navigate('/dashboard-coach');
+        navigate('/');
         
         toast({
           title: "התחברות בוצעה בהצלחה",
@@ -106,14 +90,6 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-      </div>
-      <div className="flex items-center space-x-2 space-x-reverse">
-        <Checkbox 
-          id="rememberMe" 
-          checked={rememberMe} 
-          onCheckedChange={(checked) => setRememberMe(checked === true)}
-        />
-        <Label htmlFor="rememberMe" className="text-sm">זכור אותי</Label>
       </div>
       <Button
         type="submit"

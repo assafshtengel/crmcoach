@@ -34,15 +34,12 @@ export default function PlayerGameSummary() {
             .single();
 
           if (error || !data) {
-            console.error("Error fetching player data:", error);
             throw new Error("Player data not found");
           }
 
-          console.log("Player data loaded:", data);
           setPlayerData(data);
         } catch (error) {
           console.error("Error parsing player session:", error);
-          localStorage.removeItem('playerSession');
           navigate("/player-auth");
         }
       } catch (error: any) {
@@ -59,10 +56,6 @@ export default function PlayerGameSummary() {
   }, [toast, navigate]);
 
   const handleSummarySubmitted = () => {
-    toast({
-      title: "סיכום המשחק נשמר בהצלחה",
-      description: "הנתונים נשמרו במערכת",
-    });
     setActiveTab("history");
   };
 
