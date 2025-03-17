@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -61,6 +60,7 @@ import {
   Trash2,
   CheckCircle,
 } from "lucide-react";
+import { Goal, Milestone } from "@/types/goal";
 
 // Schema for creating a new goal
 const goalFormSchema = z.object({
@@ -77,29 +77,6 @@ const milestoneSchema = z.object({
   due_date: z.date().optional(),
   is_completed: z.boolean().default(false),
 });
-
-// Types for our components
-type Goal = {
-  id: string;
-  title: string;
-  description: string;
-  target_date: string;
-  success_criteria: string;
-  player_id: string;
-  coach_id: string;
-  created_at: string;
-  progress: number;
-};
-
-type Milestone = {
-  id: string;
-  goal_id: string;
-  title: string;
-  description: string | null;
-  due_date: string | null;
-  is_completed: boolean;
-  created_at: string;
-};
 
 export default function PlayerGoals() {
   const navigate = useNavigate();
@@ -186,9 +163,44 @@ export default function PlayerGoals() {
         throw error;
       }
 
-      // Map data to Goal type with progress calculation
+      // Convert the data to Goal objects
+      const goalsArray: Goal[] = [];
+      
+      data.forEach((playerGoal) => {
+        // Short-term goals
+        if (Array.isArray(playerGoal.short_term_goals)) {
+          const shortTermGoals = playerGoal.short_term_goals.map((goal: any) => ({
+            id: goal.id || `st-${Math.random().toString(36).substring(2, 9)}`,
+            title: goal.title,
+            description: goal.description || "",
+            target_date: goal.target_date || "",
+            success_criteria: goal.success_criteria || "",
+            coach_id: playerGoal.coach_id || "",
+            is_completed: goal.is_completed || false,
+            created_at: goal.created_at || playerGoal.created_at,
+          }));
+          goalsArray.push(...shortTermGoals);
+        }
+        
+        // Long-term goals
+        if (Array.isArray(playerGoal.long_term_goals)) {
+          const longTermGoals = playerGoal.long_term_goals.map((goal: any) => ({
+            id: goal.id || `lt-${Math.random().toString(36).substring(2, 9)}`,
+            title: goal.title,
+            description: goal.description || "",
+            target_date: goal.target_date || "",
+            success_criteria: goal.success_criteria || "",
+            coach_id: playerGoal.coach_id || "",
+            is_completed: goal.is_completed || false,
+            created_at: goal.created_at || playerGoal.created_at,
+          }));
+          goalsArray.push(...longTermGoals);
+        }
+      });
+
+      // Calculate progress for each goal
       const goalsWithProgress = await Promise.all(
-        data.map(async (goal) => {
+        goalsArray.map(async (goal) => {
           // Fetch milestones for this goal to calculate progress
           const { data: goalMilestones, error: milestonesError } = await supabase
             .from("goal_milestones")
@@ -201,8 +213,9 @@ export default function PlayerGoals() {
           }
 
           // Calculate progress based on completed milestones
-          const progress = goalMilestones.length > 0
-            ? (goalMilestones.filter(m => m.is_completed).length / goalMilestones.length) * 100
+          const milestonesArray = goalMilestones || [];
+          const progress = milestonesArray.length > 0
+            ? (milestonesArray.filter(m => m.is_completed).length / milestonesArray.length) * 100
             : 0;
 
           return { ...goal, progress };
@@ -233,7 +246,18 @@ export default function PlayerGoals() {
         throw error;
       }
 
-      setMilestones(data || []);
+      // Map the data to Milestone objects
+      const milestonesArray: Milestone[] = (data || []).map(milestone => ({
+        id: milestone.id,
+        goal_id: milestone.goal_id,
+        title: milestone.title,
+        description: milestone.description || "",
+        due_date: milestone.due_date || "",
+        is_completed: milestone.is_completed || false,
+        created_at: milestone.created_at,
+      }));
+
+      setMilestones(milestonesArray);
     } catch (error) {
       console.error("Error fetching milestones:", error);
       toast({
@@ -247,7 +271,7 @@ export default function PlayerGoals() {
   // Handle goal selection
   const handleGoalSelect = (goal: Goal) => {
     setSelectedGoal(goal);
-    fetchMilestones(goal.id);
+    fetchMilestones(goal.id || "");
   };
 
   // Create a new goal
@@ -262,17 +286,46 @@ export default function PlayerGoals() {
         return;
       }
 
-      const { data, error } = await supabase.from("player_goals").insert({
-        player_id: playerData.id,
-        coach_id: playerData.coach_id,
+      // Create goal object
+      const newGoal: Goal = {
         title: values.title,
         description: values.description,
         target_date: values.target_date.toISOString(),
         success_criteria: values.success_criteria,
-      }).select();
+        coach_id: playerData.coach_id || null,
+        is_completed: false,
+      };
 
-      if (error) {
-        throw error;
+      // Check if player already has a player_goals record
+      const { data: existingGoals, error: fetchError } = await supabase
+        .from("player_goals")
+        .select("*")
+        .eq("player_id", playerData.id)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existingGoals) {
+        // Add to short_term_goals array
+        const shortTermGoals = [...(existingGoals.short_term_goals || []), newGoal];
+        
+        const { error: updateError } = await supabase
+          .from("player_goals")
+          .update({ short_term_goals: shortTermGoals })
+          .eq("id", existingGoals.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new player_goals record
+        const { error: insertError } = await supabase
+          .from("player_goals")
+          .insert({
+            player_id: playerData.id,
+            short_term_goals: [newGoal],
+            long_term_goals: []
+          });
+
+        if (insertError) throw insertError;
       }
 
       // Reset form and close dialog
@@ -299,7 +352,7 @@ export default function PlayerGoals() {
   // Create a new milestone
   const onCreateMilestone = async (values: z.infer<typeof milestoneSchema>) => {
     try {
-      if (!selectedGoal) {
+      if (!selectedGoal || !selectedGoal.id) {
         toast({
           title: "שגיאה",
           description: "לא נבחרה מטרה",
@@ -308,13 +361,17 @@ export default function PlayerGoals() {
         return;
       }
 
-      const { data, error } = await supabase.from("goal_milestones").insert({
+      const milestoneData = {
         goal_id: selectedGoal.id,
         title: values.title,
         description: values.description || null,
         due_date: values.due_date ? values.due_date.toISOString() : null,
         is_completed: values.is_completed,
-      });
+      };
+
+      const { error } = await supabase
+        .from("goal_milestones")
+        .insert(milestoneData);
 
       if (error) {
         throw error;
@@ -349,18 +406,17 @@ export default function PlayerGoals() {
   // Toggle milestone completion status
   const toggleMilestoneCompletion = async (milestone: Milestone) => {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("goal_milestones")
         .update({ is_completed: !milestone.is_completed })
-        .eq("id", milestone.id)
-        .select();
+        .eq("id", milestone.id);
 
       if (error) {
         throw error;
       }
 
       // Refresh milestones list
-      if (selectedGoal) {
+      if (selectedGoal && selectedGoal.id) {
         fetchMilestones(selectedGoal.id);
         
         // Refresh goals to update progress
@@ -396,7 +452,7 @@ export default function PlayerGoals() {
       }
 
       // Refresh milestones list
-      if (selectedGoal) {
+      if (selectedGoal && selectedGoal.id) {
         fetchMilestones(selectedGoal.id);
         
         // Refresh goals to update progress
@@ -432,14 +488,37 @@ export default function PlayerGoals() {
         throw milestonesError;
       }
 
-      // Then delete the goal itself
-      const { error: goalError } = await supabase
-        .from("player_goals")
-        .delete()
-        .eq("id", goalId);
+      // Update player_goals to remove this goal
+      if (playerData) {
+        // Get current player_goals
+        const { data: playerGoals, error: fetchError } = await supabase
+          .from("player_goals")
+          .select("*")
+          .eq("player_id", playerData.id)
+          .single();
 
-      if (goalError) {
-        throw goalError;
+        if (fetchError) throw fetchError;
+
+        if (playerGoals) {
+          // Filter out the goal to be deleted
+          const shortTermGoals = (playerGoals.short_term_goals || []).filter(
+            (goal: any) => goal.id !== goalId
+          );
+          const longTermGoals = (playerGoals.long_term_goals || []).filter(
+            (goal: any) => goal.id !== goalId
+          );
+
+          // Update player_goals
+          const { error: updateError } = await supabase
+            .from("player_goals")
+            .update({
+              short_term_goals: shortTermGoals,
+              long_term_goals: longTermGoals
+            })
+            .eq("id", playerGoals.id);
+
+          if (updateError) throw updateError;
+        }
       }
 
       // Clear selected goal if it was deleted

@@ -481,6 +481,36 @@ export type Database = {
           },
         ]
       }
+      goal_milestones: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          goal_id: string
+          id: string
+          is_completed: boolean | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          goal_id: string
+          id?: string
+          is_completed?: boolean | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          goal_id?: string
+          id?: string
+          is_completed?: boolean | null
+          title?: string
+        }
+        Relationships: []
+      }
       goal_progress: {
         Row: {
           goal_id: string | null
@@ -1584,6 +1614,48 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      training_summaries: {
+        Row: {
+          achievements: string
+          coach_id: string | null
+          created_at: string | null
+          effort_level: number
+          fatigue_level: number
+          id: string
+          improvement_areas: string
+          notes: string | null
+          performance_rating: number
+          player_id: string
+          techniques_practiced: string
+        }
+        Insert: {
+          achievements: string
+          coach_id?: string | null
+          created_at?: string | null
+          effort_level: number
+          fatigue_level: number
+          id?: string
+          improvement_areas: string
+          notes?: string | null
+          performance_rating: number
+          player_id: string
+          techniques_practiced: string
+        }
+        Update: {
+          achievements?: string
+          coach_id?: string | null
+          created_at?: string | null
+          effort_level?: number
+          fatigue_level?: number
+          id?: string
+          improvement_areas?: string
+          notes?: string | null
+          performance_rating?: number
+          player_id?: string
+          techniques_practiced?: string
         }
         Relationships: []
       }
