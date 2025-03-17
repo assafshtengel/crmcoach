@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Home, Pencil, Trash2, Loader2, FileText } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -179,12 +178,22 @@ const SessionsList = () => {
           >
             <Home className="h-4 w-4" />
           </Button>
-          <Button
-            onClick={() => navigate('/new-session')}
-            className="bg-primary hover:bg-primary/90"
-          >
-            קביעת מפגש חדש
-          </Button>
+          <div className="flex space-x-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/session-summaries')}
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              סיכומי מפגשים
+            </Button>
+            <Button
+              onClick={() => navigate('/new-session')}
+              className="bg-primary hover:bg-primary/90"
+            >
+              קביעת מפגש חדש
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="upcoming" className="w-full mb-6">
