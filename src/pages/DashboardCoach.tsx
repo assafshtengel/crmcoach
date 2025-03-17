@@ -66,7 +66,6 @@ export function DashboardCoach() {
               </CardContent>
             </Card>
             
-            {/* Add a new card for session summaries */}
             <Card className="overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-purple-100 to-indigo-100">
                 <CardTitle className="text-lg font-semibold flex items-center">
