@@ -8,6 +8,7 @@ export interface Goal {
   coach_id?: string;
   is_completed?: boolean;
   created_at?: string;
+  progress?: number; // Adding progress property needed by components
 }
 
 export interface Milestone {
@@ -27,4 +28,5 @@ export interface PlayerGoal {
   long_term_goals: Goal[];
   created_at?: string;
   updated_at?: string;
+  coach_id?: string; // Adding coach_id property needed by components
 }

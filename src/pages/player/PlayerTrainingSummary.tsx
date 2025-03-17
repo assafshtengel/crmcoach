@@ -89,8 +89,14 @@ export default function PlayerTrainingSummary() {
     setSubmitting(true);
     try {
       const trainingData = {
-        ...values,
         player_id: playerId,
+        performance_rating: values.performance_rating,
+        effort_level: values.effort_level,
+        techniques_practiced: values.techniques_practiced,
+        achievements: values.achievements,
+        improvement_areas: values.improvement_areas,
+        fatigue_level: values.fatigue_level,
+        notes: values.notes,
       };
 
       const { error } = await supabase

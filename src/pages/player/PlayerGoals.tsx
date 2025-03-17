@@ -1,1076 +1,1093 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { format, isAfter } from "date-fns";
-import { supabase } from "@/lib/supabase";
+
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { Progress } from "@/components/ui/progress";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, Circle, Plus, PlusCircle, ArrowLeft, Trash2, Edit } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
+import { supabase } from '@/lib/supabase';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  ArrowRight,
-  Calendar as CalendarIcon,
-  Plus,
-  Target,
-  Flag,
-  TrendingUp,
-  CheckCircle2,
-  Clock,
-  Edit,
-  Trash2,
-  CheckCircle,
-} from "lucide-react";
-import { Goal, Milestone } from "@/types/goal";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Goal, Milestone, PlayerGoal } from '@/types/goal';
+import { toast } from 'sonner';
+import { Progress } from "@/components/ui/progress";
 
-// Schema for creating a new goal
-const goalFormSchema = z.object({
-  title: z.string().min(2, { message: "שם המטרה חייב להכיל לפחות 2 תווים" }),
-  description: z.string().min(5, { message: "תיאור המטרה חייב להכיל לפחות 5 תווים" }),
-  target_date: z.date({ required_error: "נא לבחור תאריך יעד" }),
-  success_criteria: z.string().min(5, { message: "קריטריון להצלחה חייב להכיל לפחות 5 תווים" }),
-});
-
-// Schema for milestone steps
-const milestoneSchema = z.object({
-  title: z.string().min(2, { message: "כותרת השלב חייבת להכיל לפחות 2 תווים" }),
-  description: z.string().optional(),
-  due_date: z.date().optional(),
-  is_completed: z.boolean().default(false),
-});
-
-export default function PlayerGoals() {
+const PlayerGoals = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [goals, setGoals] = useState<Goal[]>([]);
+  const [activeTab, setActiveTab] = useState("short-term");
+  const [shortTermGoals, setShortTermGoals] = useState<Goal[]>([]);
+  const [longTermGoals, setLongTermGoals] = useState<Goal[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
-  const [isNewGoalDialogOpen, setIsNewGoalDialogOpen] = useState(false);
-  const [isNewMilestoneDialogOpen, setIsNewMilestoneDialogOpen] = useState(false);
-  const [playerData, setPlayerData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddGoalOpen, setIsAddGoalOpen] = useState(false);
+  const [isAddMilestoneOpen, setIsAddMilestoneOpen] = useState(false);
+  const [isEditGoalOpen, setIsEditGoalOpen] = useState(false);
+  const [isEditMilestoneOpen, setIsEditMilestoneOpen] = useState(false);
+  const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
+  const [formError, setFormError] = useState('');
+  const [playerGoalId, setPlayerGoalId] = useState<string | null>(null);
 
-  // Form for creating a new goal
-  const goalForm = useForm<z.infer<typeof goalFormSchema>>({
-    resolver: zodResolver(goalFormSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      success_criteria: "",
-    },
-  });
+  // Form values for goal
+  const [goalTitle, setGoalTitle] = useState('');
+  const [goalDescription, setGoalDescription] = useState('');
+  const [goalDate, setGoalDate] = useState('');
+  const [goalCriteria, setGoalCriteria] = useState('');
 
-  // Form for creating a new milestone
-  const milestoneForm = useForm<z.infer<typeof milestoneSchema>>({
-    resolver: zodResolver(milestoneSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      is_completed: false,
-    },
-  });
+  // Form values for milestone
+  const [milestoneTitle, setMilestoneTitle] = useState('');
+  const [milestoneDescription, setMilestoneDescription] = useState('');
+  const [milestoneDueDate, setMilestoneDueDate] = useState('');
 
-  // Fetch player data and goals when component mounts
   useEffect(() => {
-    const fetchPlayerData = async () => {
+    const fetchData = async () => {
+      const playerSessionStr = localStorage.getItem('playerSession');
+      
+      if (!playerSessionStr) {
+        navigate('/player-auth');
+        return;
+      }
+      
+      const playerSession = JSON.parse(playerSessionStr);
+      const playerId = playerSession.id;
+      
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          navigate("/player-auth");
-          return;
-        }
-
-        // Fetch player data
-        const { data: playerData, error: playerError } = await supabase
-          .from("players")
-          .select("*")
-          .eq("id", user.id)
+        setIsLoading(true);
+        
+        // Fetch player's goals from player_goals table
+        const { data: playerGoalsData, error: playerGoalsError } = await supabase
+          .from('player_goals')
+          .select('*')
+          .eq('player_id', playerId)
           .single();
-
-        if (playerError) {
-          console.error("Error fetching player data:", playerError);
-          return;
+        
+        if (playerGoalsError && playerGoalsError.code !== 'PGRST116') {
+          throw playerGoalsError;
         }
+        
+        if (playerGoalsData) {
+          setPlayerGoalId(playerGoalsData.id);
 
-        setPlayerData(playerData);
+          // Parse JSON data from the playerGoalsData
+          const shortGoals = Array.isArray(playerGoalsData.short_term_goals) 
+            ? playerGoalsData.short_term_goals 
+            : [];
+          
+          const longGoals = Array.isArray(playerGoalsData.long_term_goals) 
+            ? playerGoalsData.long_term_goals 
+            : [];
+          
+          // Add progress properties if they don't exist
+          const shortGoalsWithProgress = shortGoals.map((goal: Goal) => ({
+            ...goal,
+            progress: goal.progress || 0
+          }));
+          
+          const longGoalsWithProgress = longGoals.map((goal: Goal) => ({
+            ...goal,
+            progress: goal.progress || 0
+          }));
 
-        // Fetch goals for this player
-        fetchGoals(user.id);
+          setShortTermGoals(shortGoalsWithProgress);
+          setLongTermGoals(longGoalsWithProgress);
+          
+          // Fetch all milestones for any goals
+          const goalIds = [
+            ...shortGoalsWithProgress.map(g => g.id), 
+            ...longGoalsWithProgress.map(g => g.id)
+          ].filter(Boolean);
+          
+          if (goalIds.length > 0) {
+            const { data: milestonesData, error: milestonesError } = await supabase
+              .from('goal_milestones')
+              .select('*')
+              .in('goal_id', goalIds);
+            
+            if (milestonesError) throw milestonesError;
+            
+            if (milestonesData) {
+              setMilestones(milestonesData);
+            }
+          }
+        } else {
+          // Create a new player_goals record if none exists
+          const { data: newPlayerGoals, error: createError } = await supabase
+            .from('player_goals')
+            .insert({
+              player_id: playerId,
+              short_term_goals: [],
+              long_term_goals: []
+            })
+            .select()
+            .single();
+          
+          if (createError) throw createError;
+          
+          if (newPlayerGoals) {
+            setPlayerGoalId(newPlayerGoals.id);
+            setShortTermGoals([]);
+            setLongTermGoals([]);
+          }
+        }
       } catch (error) {
-        console.error("Error in fetching player data:", error);
-        toast({
-          title: "שגיאה",
-          description: "אירעה שגיאה בטעינת נתוני השחקן",
-          variant: "destructive",
-        });
+        console.error('Error fetching goals:', error);
+        toast.error('שגיאה בטעינת המטרות');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
+    
+    fetchData();
+  }, [navigate]);
 
-    fetchPlayerData();
-  }, [navigate, toast]);
-
-  // Fetch goals for a player
-  const fetchGoals = async (playerId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("player_goals")
-        .select("*")
-        .eq("player_id", playerId)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      // Convert the data to Goal objects
-      const goalsArray: Goal[] = [];
-      
-      data.forEach((playerGoal) => {
-        // Short-term goals
-        if (Array.isArray(playerGoal.short_term_goals)) {
-          const shortTermGoals = playerGoal.short_term_goals.map((goal: any) => ({
-            id: goal.id || `st-${Math.random().toString(36).substring(2, 9)}`,
-            title: goal.title,
-            description: goal.description || "",
-            target_date: goal.target_date || "",
-            success_criteria: goal.success_criteria || "",
-            coach_id: playerGoal.coach_id || "",
-            is_completed: goal.is_completed || false,
-            created_at: goal.created_at || playerGoal.created_at,
-          }));
-          goalsArray.push(...shortTermGoals);
-        }
-        
-        // Long-term goals
-        if (Array.isArray(playerGoal.long_term_goals)) {
-          const longTermGoals = playerGoal.long_term_goals.map((goal: any) => ({
-            id: goal.id || `lt-${Math.random().toString(36).substring(2, 9)}`,
-            title: goal.title,
-            description: goal.description || "",
-            target_date: goal.target_date || "",
-            success_criteria: goal.success_criteria || "",
-            coach_id: playerGoal.coach_id || "",
-            is_completed: goal.is_completed || false,
-            created_at: goal.created_at || playerGoal.created_at,
-          }));
-          goalsArray.push(...longTermGoals);
-        }
-      });
-
-      // Calculate progress for each goal
-      const goalsWithProgress = await Promise.all(
-        goalsArray.map(async (goal) => {
-          // Fetch milestones for this goal to calculate progress
-          const { data: goalMilestones, error: milestonesError } = await supabase
-            .from("goal_milestones")
-            .select("*")
-            .eq("goal_id", goal.id);
-
-          if (milestonesError) {
-            console.error("Error fetching milestones:", milestonesError);
-            return { ...goal, progress: 0 };
-          }
-
-          // Calculate progress based on completed milestones
-          const milestonesArray = goalMilestones || [];
-          const progress = milestonesArray.length > 0
-            ? (milestonesArray.filter(m => m.is_completed).length / milestonesArray.length) * 100
-            : 0;
-
-          return { ...goal, progress };
-        })
-      );
-
-      setGoals(goalsWithProgress);
-    } catch (error) {
-      console.error("Error fetching goals:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בטעינת המטרות",
-        variant: "destructive",
-      });
+  const handleAddGoal = async () => {
+    if (!goalTitle) {
+      setFormError('נא למלא כותרת');
+      return;
     }
-  };
-
-  // Fetch milestones for a specific goal
-  const fetchMilestones = async (goalId: string) => {
+    
     try {
-      const { data, error } = await supabase
-        .from("goal_milestones")
-        .select("*")
-        .eq("goal_id", goalId)
-        .order("due_date", { ascending: true });
-
-      if (error) {
-        throw error;
-      }
-
-      // Map the data to Milestone objects
-      const milestonesArray: Milestone[] = (data || []).map(milestone => ({
-        id: milestone.id,
-        goal_id: milestone.goal_id,
-        title: milestone.title,
-        description: milestone.description || "",
-        due_date: milestone.due_date || "",
-        is_completed: milestone.is_completed || false,
-        created_at: milestone.created_at,
-      }));
-
-      setMilestones(milestonesArray);
-    } catch (error) {
-      console.error("Error fetching milestones:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בטעינת אבני הדרך",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handle goal selection
-  const handleGoalSelect = (goal: Goal) => {
-    setSelectedGoal(goal);
-    fetchMilestones(goal.id || "");
-  };
-
-  // Create a new goal
-  const onCreateGoal = async (values: z.infer<typeof goalFormSchema>) => {
-    try {
-      if (!playerData) {
-        toast({
-          title: "שגיאה",
-          description: "לא נמצאו נתוני שחקן",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create goal object
       const newGoal: Goal = {
-        title: values.title,
-        description: values.description,
-        target_date: values.target_date.toISOString(),
-        success_criteria: values.success_criteria,
-        coach_id: playerData.coach_id || null,
+        id: crypto.randomUUID(),
+        title: goalTitle,
+        description: goalDescription || undefined,
+        target_date: goalDate || undefined,
+        success_criteria: goalCriteria || undefined,
+        is_completed: false,
+        progress: 0,
+        created_at: new Date().toISOString()
+      };
+      
+      let updatedGoals;
+      
+      if (activeTab === 'short-term') {
+        updatedGoals = {
+          short_term_goals: [...shortTermGoals, newGoal],
+          long_term_goals: longTermGoals
+        };
+      } else {
+        updatedGoals = {
+          short_term_goals: shortTermGoals,
+          long_term_goals: [...longTermGoals, newGoal]
+        };
+      }
+      
+      const { error } = await supabase
+        .from('player_goals')
+        .update(updatedGoals)
+        .eq('id', playerGoalId);
+      
+      if (error) throw error;
+      
+      if (activeTab === 'short-term') {
+        setShortTermGoals(prev => [...prev, newGoal]);
+      } else {
+        setLongTermGoals(prev => [...prev, newGoal]);
+      }
+      
+      resetGoalForm();
+      setIsAddGoalOpen(false);
+      toast.success('המטרה נוספה בהצלחה');
+      
+    } catch (error) {
+      console.error('Error adding goal:', error);
+      toast.error('שגיאה בהוספת המטרה');
+    }
+  };
+
+  const handleEditGoal = async () => {
+    if (!selectedGoal || !goalTitle) {
+      setFormError('נא למלא כותרת');
+      return;
+    }
+    
+    try {
+      const updatedGoal: Goal = {
+        ...selectedGoal,
+        title: goalTitle,
+        description: goalDescription || undefined,
+        target_date: goalDate || undefined,
+        success_criteria: goalCriteria || undefined,
+      };
+      
+      let updatedGoals;
+      
+      if (activeTab === 'short-term') {
+        updatedGoals = {
+          short_term_goals: shortTermGoals.map(g => 
+            g.id === selectedGoal.id ? updatedGoal : g
+          ),
+          long_term_goals: longTermGoals
+        };
+      } else {
+        updatedGoals = {
+          short_term_goals: shortTermGoals,
+          long_term_goals: longTermGoals.map(g => 
+            g.id === selectedGoal.id ? updatedGoal : g
+          )
+        };
+      }
+      
+      const { error } = await supabase
+        .from('player_goals')
+        .update(updatedGoals)
+        .eq('id', playerGoalId);
+      
+      if (error) throw error;
+      
+      if (activeTab === 'short-term') {
+        setShortTermGoals(prev => 
+          prev.map(g => g.id === selectedGoal.id ? updatedGoal : g)
+        );
+      } else {
+        setLongTermGoals(prev => 
+          prev.map(g => g.id === selectedGoal.id ? updatedGoal : g)
+        );
+      }
+      
+      resetGoalForm();
+      setIsEditGoalOpen(false);
+      toast.success('המטרה עודכנה בהצלחה');
+      
+    } catch (error) {
+      console.error('Error updating goal:', error);
+      toast.error('שגיאה בעדכון המטרה');
+    }
+  };
+
+  const handleDeleteGoal = async (goalId: string | undefined) => {
+    if (!goalId) return;
+    
+    try {
+      // Delete all milestones associated with this goal
+      await supabase
+        .from('goal_milestones')
+        .delete()
+        .eq('goal_id', goalId);
+      
+      let updatedGoals;
+      
+      if (activeTab === 'short-term') {
+        updatedGoals = {
+          short_term_goals: shortTermGoals.filter(g => g.id !== goalId),
+          long_term_goals: longTermGoals
+        };
+      } else {
+        updatedGoals = {
+          short_term_goals: shortTermGoals,
+          long_term_goals: longTermGoals.filter(g => g.id !== goalId)
+        };
+      }
+      
+      const { error } = await supabase
+        .from('player_goals')
+        .update(updatedGoals)
+        .eq('id', playerGoalId);
+      
+      if (error) throw error;
+      
+      if (activeTab === 'short-term') {
+        setShortTermGoals(prev => prev.filter(g => g.id !== goalId));
+      } else {
+        setLongTermGoals(prev => prev.filter(g => g.id !== goalId));
+      }
+      
+      // Also remove milestones associated with this goal
+      setMilestones(prev => prev.filter(m => m.goal_id !== goalId));
+      
+      toast.success('המטרה נמחקה בהצלחה');
+      
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+      toast.error('שגיאה במחיקת המטרה');
+    }
+  };
+
+  const handleAddMilestone = async () => {
+    if (!selectedGoal || !milestoneTitle) {
+      setFormError('נא למלא כותרת');
+      return;
+    }
+    
+    try {
+      const newMilestone: Milestone = {
+        goal_id: selectedGoal.id || '',
+        title: milestoneTitle,
+        description: milestoneDescription || undefined,
+        due_date: milestoneDueDate || undefined,
         is_completed: false,
       };
-
-      // Check if player already has a player_goals record
-      const { data: existingGoals, error: fetchError } = await supabase
-        .from("player_goals")
-        .select("*")
-        .eq("player_id", playerData.id)
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-
-      if (existingGoals) {
-        // Add to short_term_goals array
-        const shortTermGoals = [...(existingGoals.short_term_goals || []), newGoal];
-        
-        const { error: updateError } = await supabase
-          .from("player_goals")
-          .update({ short_term_goals: shortTermGoals })
-          .eq("id", existingGoals.id);
-
-        if (updateError) throw updateError;
-      } else {
-        // Create new player_goals record
-        const { error: insertError } = await supabase
-          .from("player_goals")
-          .insert({
-            player_id: playerData.id,
-            short_term_goals: [newGoal],
-            long_term_goals: []
-          });
-
-        if (insertError) throw insertError;
-      }
-
-      // Reset form and close dialog
-      goalForm.reset();
-      setIsNewGoalDialogOpen(false);
-
-      // Refresh goals list
-      fetchGoals(playerData.id);
-
-      toast({
-        title: "מטרה נוספה בהצלחה",
-        description: "המטרה החדשה נוספה בהצלחה",
-      });
-    } catch (error) {
-      console.error("Error creating goal:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה ביצירת המטרה",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Create a new milestone
-  const onCreateMilestone = async (values: z.infer<typeof milestoneSchema>) => {
-    try {
-      if (!selectedGoal || !selectedGoal.id) {
-        toast({
-          title: "שגיאה",
-          description: "לא נבחרה מטרה",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const milestoneData = {
-        goal_id: selectedGoal.id,
-        title: values.title,
-        description: values.description || null,
-        due_date: values.due_date ? values.due_date.toISOString() : null,
-        is_completed: values.is_completed,
-      };
-
-      const { error } = await supabase
-        .from("goal_milestones")
-        .insert(milestoneData);
-
-      if (error) {
-        throw error;
-      }
-
-      // Reset form and close dialog
-      milestoneForm.reset();
-      setIsNewMilestoneDialogOpen(false);
-
-      // Refresh milestones list
-      fetchMilestones(selectedGoal.id);
       
-      // Refresh goals to update progress
-      if (playerData) {
-        fetchGoals(playerData.id);
+      const { data, error } = await supabase
+        .from('goal_milestones')
+        .insert(newMilestone)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        setMilestones(prev => [...prev, data]);
       }
-
-      toast({
-        title: "אבן דרך נוספה בהצלחה",
-        description: "אבן הדרך החדשה נוספה בהצלחה",
-      });
+      
+      resetMilestoneForm();
+      setIsAddMilestoneOpen(false);
+      toast.success('אבן הדרך נוספה בהצלחה');
+      
+      // Update goal progress
+      updateGoalProgress(selectedGoal.id);
+      
     } catch (error) {
-      console.error("Error creating milestone:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה ביצירת אבן הדרך",
-        variant: "destructive",
-      });
+      console.error('Error adding milestone:', error);
+      toast.error('שגיאה בהוספת אבן הדרך');
     }
   };
 
-  // Toggle milestone completion status
-  const toggleMilestoneCompletion = async (milestone: Milestone) => {
+  const handleEditMilestone = async () => {
+    if (!selectedMilestone || !milestoneTitle) {
+      setFormError('נא למלא כותרת');
+      return;
+    }
+    
     try {
+      const updatedMilestone: Milestone = {
+        ...selectedMilestone,
+        title: milestoneTitle,
+        description: milestoneDescription || undefined,
+        due_date: milestoneDueDate || undefined,
+      };
+      
       const { error } = await supabase
-        .from("goal_milestones")
-        .update({ is_completed: !milestone.is_completed })
-        .eq("id", milestone.id);
-
-      if (error) {
-        throw error;
-      }
-
-      // Refresh milestones list
-      if (selectedGoal && selectedGoal.id) {
-        fetchMilestones(selectedGoal.id);
-        
-        // Refresh goals to update progress
-        if (playerData) {
-          fetchGoals(playerData.id);
-        }
-      }
-
-      toast({
-        title: "עדכון סטטוס",
-        description: `אבן הדרך ${milestone.is_completed ? "סומנה כלא הושלמה" : "סומנה כהושלמה"}`,
-      });
+        .from('goal_milestones')
+        .update(updatedMilestone)
+        .eq('id', selectedMilestone.id);
+      
+      if (error) throw error;
+      
+      setMilestones(prev => 
+        prev.map(m => m.id === selectedMilestone.id ? updatedMilestone : m)
+      );
+      
+      resetMilestoneForm();
+      setIsEditMilestoneOpen(false);
+      toast.success('אבן הדרך עודכנה בהצלחה');
+      
     } catch (error) {
-      console.error("Error toggling milestone completion:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בעדכון סטטוס אבן הדרך",
-        variant: "destructive",
-      });
+      console.error('Error updating milestone:', error);
+      toast.error('שגיאה בעדכון אבן הדרך');
     }
   };
 
-  // Delete a milestone
-  const deleteMilestone = async (milestoneId: string) => {
+  const handleDeleteMilestone = async (milestoneId: string | undefined) => {
+    if (!milestoneId) return;
+    
     try {
+      const milestoneToDelete = milestones.find(m => m.id === milestoneId);
+      
       const { error } = await supabase
-        .from("goal_milestones")
+        .from('goal_milestones')
         .delete()
-        .eq("id", milestoneId);
-
-      if (error) {
-        throw error;
+        .eq('id', milestoneId);
+      
+      if (error) throw error;
+      
+      setMilestones(prev => prev.filter(m => m.id !== milestoneId));
+      toast.success('אבן הדרך נמחקה בהצלחה');
+      
+      // Update goal progress if we know which goal this milestone belonged to
+      if (milestoneToDelete?.goal_id) {
+        updateGoalProgress(milestoneToDelete.goal_id);
       }
-
-      // Refresh milestones list
-      if (selectedGoal && selectedGoal.id) {
-        fetchMilestones(selectedGoal.id);
-        
-        // Refresh goals to update progress
-        if (playerData) {
-          fetchGoals(playerData.id);
-        }
-      }
-
-      toast({
-        title: "אבן דרך נמחקה",
-        description: "אבן הדרך נמחקה בהצלחה",
-      });
+      
     } catch (error) {
-      console.error("Error deleting milestone:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה במחיקת אבן הדרך",
-        variant: "destructive",
-      });
+      console.error('Error deleting milestone:', error);
+      toast.error('שגיאה במחיקת אבן הדרך');
     }
   };
 
-  // Delete a goal and its milestones
-  const deleteGoal = async (goalId: string) => {
+  const handleToggleMilestoneCompletion = async (milestone: Milestone) => {
     try {
-      // First delete all milestones for this goal
-      const { error: milestonesError } = await supabase
-        .from("goal_milestones")
-        .delete()
-        .eq("goal_id", goalId);
-
-      if (milestonesError) {
-        throw milestonesError;
-      }
-
-      // Update player_goals to remove this goal
-      if (playerData) {
-        // Get current player_goals
-        const { data: playerGoals, error: fetchError } = await supabase
-          .from("player_goals")
-          .select("*")
-          .eq("player_id", playerData.id)
-          .single();
-
-        if (fetchError) throw fetchError;
-
-        if (playerGoals) {
-          // Filter out the goal to be deleted
-          const shortTermGoals = (playerGoals.short_term_goals || []).filter(
-            (goal: any) => goal.id !== goalId
-          );
-          const longTermGoals = (playerGoals.long_term_goals || []).filter(
-            (goal: any) => goal.id !== goalId
-          );
-
-          // Update player_goals
-          const { error: updateError } = await supabase
-            .from("player_goals")
-            .update({
-              short_term_goals: shortTermGoals,
-              long_term_goals: longTermGoals
-            })
-            .eq("id", playerGoals.id);
-
-          if (updateError) throw updateError;
-        }
-      }
-
-      // Clear selected goal if it was deleted
-      if (selectedGoal && selectedGoal.id === goalId) {
-        setSelectedGoal(null);
-        setMilestones([]);
-      }
-
-      // Refresh goals list
-      if (playerData) {
-        fetchGoals(playerData.id);
-      }
-
-      toast({
-        title: "מטרה נמחקה",
-        description: "המטרה וכל אבני הדרך שלה נמחקו בהצלחה",
-      });
+      const updatedMilestone = {
+        ...milestone,
+        is_completed: !milestone.is_completed
+      };
+      
+      const { error } = await supabase
+        .from('goal_milestones')
+        .update(updatedMilestone)
+        .eq('id', milestone.id);
+      
+      if (error) throw error;
+      
+      setMilestones(prev => 
+        prev.map(m => m.id === milestone.id ? updatedMilestone : m)
+      );
+      
+      // Update goal progress
+      updateGoalProgress(milestone.goal_id);
+      
     } catch (error) {
-      console.error("Error deleting goal:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה במחיקת המטרה",
-        variant: "destructive",
-      });
+      console.error('Error toggling milestone completion:', error);
+      toast.error('שגיאה בעדכון סטטוס אבן הדרך');
     }
   };
 
-  // Calculate days remaining until target date
-  const calculateDaysRemaining = (targetDate: string) => {
-    const target = new Date(targetDate);
-    const today = new Date();
-    const diffTime = target.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+  const updateGoalProgress = async (goalId: string | undefined) => {
+    if (!goalId) return;
+    
+    const goalMilestones = milestones.filter(m => m.goal_id === goalId);
+    
+    if (goalMilestones.length === 0) return;
+    
+    const completedCount = goalMilestones.filter(m => m.is_completed).length;
+    const progress = Math.round((completedCount / goalMilestones.length) * 100);
+    
+    try {
+      // Find the goal in either short or long term goals
+      let goalFound = false;
+      
+      // Check short term goals
+      let updatedShortTermGoals = [...shortTermGoals];
+      for (let i = 0; i < updatedShortTermGoals.length; i++) {
+        if (updatedShortTermGoals[i].id === goalId) {
+          updatedShortTermGoals[i] = {
+            ...updatedShortTermGoals[i],
+            progress
+          };
+          goalFound = true;
+          break;
+        }
+      }
+      
+      // Check long term goals if not found
+      let updatedLongTermGoals = [...longTermGoals];
+      if (!goalFound) {
+        for (let i = 0; i < updatedLongTermGoals.length; i++) {
+          if (updatedLongTermGoals[i].id === goalId) {
+            updatedLongTermGoals[i] = {
+              ...updatedLongTermGoals[i],
+              progress
+            };
+            goalFound = true;
+            break;
+          }
+        }
+      }
+      
+      if (goalFound) {
+        const { error } = await supabase
+          .from('player_goals')
+          .update({
+            short_term_goals: updatedShortTermGoals,
+            long_term_goals: updatedLongTermGoals
+          })
+          .eq('id', playerGoalId);
+        
+        if (error) throw error;
+        
+        setShortTermGoals(updatedShortTermGoals);
+        setLongTermGoals(updatedLongTermGoals);
+      }
+      
+    } catch (error) {
+      console.error('Error updating goal progress:', error);
+      toast.error('שגיאה בעדכון התקדמות המטרה');
+    }
   };
 
-  // Check if a target date has passed
-  const isDatePassed = (targetDate: string) => {
-    return isAfter(new Date(), new Date(targetDate));
+  const resetGoalForm = () => {
+    setGoalTitle('');
+    setGoalDescription('');
+    setGoalDate('');
+    setGoalCriteria('');
+    setFormError('');
   };
 
-  // Render loading state
-  if (loading) {
+  const resetMilestoneForm = () => {
+    setMilestoneTitle('');
+    setMilestoneDescription('');
+    setMilestoneDueDate('');
+    setFormError('');
+  };
+
+  const editGoal = (goal: Goal) => {
+    setSelectedGoal(goal);
+    setGoalTitle(goal.title || '');
+    setGoalDescription(goal.description || '');
+    setGoalDate(goal.target_date || '');
+    setGoalCriteria(goal.success_criteria || '');
+    setIsEditGoalOpen(true);
+  };
+
+  const editMilestone = (milestone: Milestone) => {
+    setSelectedMilestone(milestone);
+    setMilestoneTitle(milestone.title || '');
+    setMilestoneDescription(milestone.description || '');
+    setMilestoneDueDate(milestone.due_date || '');
+    setIsEditMilestoneOpen(true);
+  };
+
+  const getGoalMilestones = (goalId: string | undefined) => {
+    if (!goalId) return [];
+    return milestones.filter(m => m.goal_id === goalId);
+  };
+
+  if (isLoading) {
     return (
-      <div className="container mx-auto py-8 text-center">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 min-h-screen">
-      <div className="flex justify-between items-center mb-8">
-        <Button variant="outline" onClick={() => navigate("/player/profile")}>
-          <ArrowRight className="mr-2 h-4 w-4" /> חזרה לפרופיל
-        </Button>
-        <h1 className="text-3xl font-bold">מטרות אימון</h1>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4 md:p-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center mb-6">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/player/profile')} className="mr-2">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            חזרה
+          </Button>
+          <h1 className="text-2xl font-bold">המטרות שלי</h1>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left sidebar - Goals list */}
-        <div className="md:col-span-1">
-          <Card className="mb-6">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">המטרות שלי</CardTitle>
-                <CardDescription>
-                  ניהול וצפייה במטרות האימון שלך
-                </CardDescription>
-              </div>
-              <Dialog open={isNewGoalDialogOpen} onOpenChange={setIsNewGoalDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-1" /> מטרה חדשה
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[550px]">
-                  <DialogHeader>
-                    <DialogTitle>הוספת מטרת אימון חדשה</DialogTitle>
-                    <DialogDescription>
-                      הגדר מטרת אימון חדשה וצור אבני דרך להתקדמות
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Form {...goalForm}>
-                    <form onSubmit={goalForm.handleSubmit(onCreateGoal)} className="space-y-4">
-                      <FormField
-                        control={goalForm.control}
-                        name="title"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>שם המטרה</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="לדוגמה: שיפור דיוק מסירות" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={goalForm.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>תיאור המטרה</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="תאר את המטרה ואת החשיבות שלה"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={goalForm.control}
-                        name="target_date"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>תאריך יעד</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className="w-full justify-start text-right"
-                                  >
-                                    {field.value ? (
-                                      format(field.value, "dd/MM/yyyy")
-                                    ) : (
-                                      <span>בחר תאריך</span>
-                                    )}
-                                    <CalendarIcon className="mr-auto h-4 w-4" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  initialFocus
-                                  className="pointer-events-auto"
-                                />
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={goalForm.control}
-                        name="success_criteria"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>קריטריון להצלחה</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="כיצד תדע שהשגת את המטרה? לדוגמה: 80% דיוק מסירות ב-3 משחקים רצופים"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <DialogFooter>
-                        <Button type="submit">הוסף מטרה</Button>
-                      </DialogFooter>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent>
-              {goals.length > 0 ? (
-                <div className="space-y-4">
-                  {goals.map((goal) => (
-                    <Card
-                      key={goal.id}
-                      className={`cursor-pointer hover:shadow-md transition-shadow ${
-                        selectedGoal?.id === goal.id ? "border-primary ring-1 ring-primary" : ""
-                      }`}
-                      onClick={() => handleGoalSelect(goal)}
+        <Tabs defaultValue="short-term" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="short-term">מטרות לטווח קצר</TabsTrigger>
+            <TabsTrigger value="long-term">מטרות לטווח ארוך</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="short-term" className="mt-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xl">מטרות לטווח קצר</CardTitle>
+                <Button variant="outline" size="sm" onClick={() => {
+                  resetGoalForm();
+                  setIsAddGoalOpen(true);
+                }}>
+                  <PlusCircle className="h-4 w-4 mr-1" />
+                  הוסף מטרה חדשה
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {shortTermGoals.length === 0 ? (
+                  <div className="text-center p-8 bg-muted/20 rounded-lg border border-dashed">
+                    <p className="text-muted-foreground">אין מטרות לטווח קצר עדיין</p>
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="mt-4"
+                      onClick={() => {
+                        resetGoalForm();
+                        setIsAddGoalOpen(true);
+                      }}
                     >
-                      <CardHeader className="py-4 px-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-lg">{goal.title}</CardTitle>
-                            <CardDescription className="line-clamp-2">
-                              {goal.description}
-                            </CardDescription>
-                          </div>
-                          <Target className={`h-5 w-5 ${isDatePassed(goal.target_date) ? 'text-red-500' : 'text-primary'}`} />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="py-0 px-4">
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm text-gray-500">
-                            <span>התקדמות:</span>
-                            <span>{Math.round(goal.progress)}%</span>
-                          </div>
-                          <Progress value={goal.progress} className="h-2" />
-                          <div className="flex justify-between items-center text-sm">
-                            <div className="flex items-center">
-                              <Flag className="h-4 w-4 mr-1" />
-                              <span>
-                                {format(new Date(goal.target_date), "dd/MM/yyyy")}
-                              </span>
-                            </div>
-                            <div>
-                              {!isDatePassed(goal.target_date) ? (
-                                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                  {calculateDaysRemaining(goal.target_date)} ימים נותרו
-                                </span>
-                              ) : (
-                                <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
-                                  תאריך יעד חלף
-                                </span>
+                      <Plus className="h-4 w-4 mr-1" />
+                      הוסף מטרה ראשונה
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {shortTermGoals.map(goal => (
+                      <Card key={goal.id} className="mb-4 overflow-hidden">
+                        <div className="border-b p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <h3 className="font-medium text-lg">{goal.title}</h3>
+                              {goal.description && <p className="text-muted-foreground text-sm">{goal.description}</p>}
+                              {goal.target_date && (
+                                <div className="flex items-center text-muted-foreground text-xs">
+                                  <span>תאריך יעד: {format(new Date(goal.target_date), 'dd/MM/yyyy', { locale: he })}</span>
+                                </div>
+                              )}
+                              {goal.success_criteria && (
+                                <div className="mt-2">
+                                  <span className="text-xs font-medium">קריטריון להצלחה:</span>
+                                  <p className="text-sm">{goal.success_criteria}</p>
+                                </div>
                               )}
                             </div>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => editGoal(goal)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                onClick={() => handleDeleteGoal(goal.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="mt-3">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span>התקדמות</span>
+                              <span>{goal.progress}%</span>
+                            </div>
+                            <Progress value={goal.progress} className="h-2" />
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 border border-dashed rounded-lg">
-                  <Target className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                  <p className="text-gray-500">
-                    לא נמצאו מטרות. הוסף מטרת אימון חדשה כדי להתחיל!
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main content - Selected goal details */}
-        <div className="md:col-span-2">
-          {selectedGoal ? (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-2xl">{selectedGoal.title}</CardTitle>
-                      <CardDescription>
-                        נוצר ב-{format(new Date(selectedGoal.created_at), "dd/MM/yyyy")}
-                      </CardDescription>
-                    </div>
-                    <Button variant="destructive" size="sm" onClick={() => deleteGoal(selectedGoal.id)}>
-                      <Trash2 className="h-4 w-4 mr-1" /> מחק מטרה
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h3 className="text-sm font-medium mb-2 flex items-center">
-                          <Target className="h-4 w-4 mr-1" /> תיאור המטרה
-                        </h3>
-                        <p className="text-gray-700">{selectedGoal.description}</p>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h3 className="text-sm font-medium mb-2 flex items-center">
-                          <Flag className="h-4 w-4 mr-1" /> קריטריון להצלחה
-                        </h3>
-                        <p className="text-gray-700">{selectedGoal.success_criteria}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-md font-medium">התקדמות כוללת</h3>
-                        <span className="font-medium">{Math.round(selectedGoal.progress)}%</span>
-                      </div>
-                      <Progress value={selectedGoal.progress} className="h-3" />
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <Clock className="h-5 w-5 mr-1" />
-                        <div>
-                          <div className="text-sm">תאריך יעד: {format(new Date(selectedGoal.target_date), "dd/MM/yyyy")}</div>
-                          {!isDatePassed(selectedGoal.target_date) ? (
-                            <div className="text-sm text-green-600">
-                              {calculateDaysRemaining(selectedGoal.target_date)} ימים נותרו
-                            </div>
+                        
+                        <div className="p-4 bg-gray-50">
+                          <div className="flex justify-between items-center mb-3">
+                            <h4 className="text-sm font-medium">אבני דרך</h4>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => {
+                                setSelectedGoal(goal);
+                                resetMilestoneForm();
+                                setIsAddMilestoneOpen(true);
+                              }}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              הוסף אבן דרך
+                            </Button>
+                          </div>
+                          
+                          {getGoalMilestones(goal.id).length === 0 ? (
+                            <p className="text-muted-foreground text-sm text-center py-2">אין אבני דרך עדיין</p>
                           ) : (
-                            <div className="text-sm text-red-600">תאריך היעד חלף</div>
+                            <ul className="space-y-2">
+                              {getGoalMilestones(goal.id).map(milestone => (
+                                <li key={milestone.id} className="flex items-start justify-between bg-white p-2 rounded border text-sm">
+                                  <div className="flex items-start gap-2">
+                                    <button
+                                      onClick={() => handleToggleMilestoneCompletion(milestone)}
+                                      className="mt-0.5 flex-shrink-0"
+                                    >
+                                      {milestone.is_completed ? (
+                                        <CheckCircle className="h-4 w-4 text-emerald-500" />
+                                      ) : (
+                                        <Circle className="h-4 w-4 text-gray-300" />
+                                      )}
+                                    </button>
+                                    <div>
+                                      <div className={`font-medium ${milestone.is_completed ? 'line-through text-muted-foreground' : ''}`}>
+                                        {milestone.title}
+                                      </div>
+                                      {milestone.description && (
+                                        <p className={`text-xs mt-1 ${milestone.is_completed ? 'line-through text-muted-foreground' : 'text-gray-600'}`}>
+                                          {milestone.description}
+                                        </p>
+                                      )}
+                                      {milestone.due_date && (
+                                        <p className="text-xs text-gray-400 mt-1">
+                                          תאריך יעד: {format(new Date(milestone.due_date), 'dd/MM/yyyy', { locale: he })}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={() => editMilestone(milestone)}
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                      onClick={() => handleDeleteMilestone(milestone.id)}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
                           )}
                         </div>
-                      </div>
-                      <div className="text-sm bg-primary/10 text-primary px-3 py-1 rounded-full">
-                        {selectedGoal.progress >= 100 ? "הושלם" : "בתהליך"}
-                      </div>
-                    </div>
+                      </Card>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-bold">אבני דרך</h2>
-                <Dialog open={isNewMilestoneDialogOpen} onOpenChange={setIsNewMilestoneDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" variant="outline">
-                      <Plus className="h-4 w-4 mr-1" /> הוסף אבן דרך
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[550px]">
-                    <DialogHeader>
-                      <DialogTitle>הוספת אבן דרך חדשה</DialogTitle>
-                      <DialogDescription>
-                        הוסף שלב ביניים להתקדמות לקראת המטרה
-                      </DialogDescription>
-                    </DialogHeader>
-                    <Form {...milestoneForm}>
-                      <form onSubmit={milestoneForm.handleSubmit(onCreateMilestone)} className="space-y-4">
-                        <FormField
-                          control={milestoneForm.control}
-                          name="title"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>כותרת</FormLabel>
-                              <FormControl>
-                                <Input {...field} placeholder="לדוגמה: תרגול 20 דקות ביום" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={milestoneForm.control}
-                          name="description"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>תיאור (אופציונלי)</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="תאר את השלב בפירוט"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={milestoneForm.control}
-                          name="due_date"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                              <FormLabel>תאריך יעד (אופציונלי)</FormLabel>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <FormControl>
-                                    <Button
-                                      variant={"outline"}
-                                      className="w-full justify-start text-right"
-                                    >
-                                      {field.value ? (
-                                        format(field.value, "dd/MM/yyyy")
-                                      ) : (
-                                        <span>בחר תאריך</span>
-                                      )}
-                                      <CalendarIcon className="mr-auto h-4 w-4" />
-                                    </Button>
-                                  </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    selected={field.value || undefined}
-                                    onSelect={field.onChange}
-                                    initialFocus
-                                    className="pointer-events-auto"
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={milestoneForm.control}
-                          name="is_completed"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 rtl:space-x-reverse">
-                              <FormControl>
-                                <input
-                                  type="checkbox"
-                                  checked={field.value}
-                                  onChange={field.onChange}
-                                  className="h-4 w-4"
-                                />
-                              </FormControl>
-                              <FormLabel className="!mt-0">הושלם כבר</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                        <DialogFooter>
-                          <Button type="submit">הוסף אבן דרך</Button>
-                        </DialogFooter>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <Tabs defaultValue="daily" className="w-full">
-                <TabsList className="w-full">
-                  <TabsTrigger value="daily" className="flex-1">יומי</TabsTrigger>
-                  <TabsTrigger value="weekly" className="flex-1">שבועי</TabsTrigger>
-                  <TabsTrigger value="all" className="flex-1">כל אבני הדרך</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="daily" className="mt-4">
-                  {milestones.filter(m => !m.due_date || calculateDaysRemaining(m.due_date) <= 1).length > 0 ? (
-                    <div className="space-y-2">
-                      {milestones
-                        .filter(m => !m.due_date || calculateDaysRemaining(m.due_date) <= 1)
-                        .map((milestone) => (
-                          <MilestoneItem
-                            key={milestone.id}
-                            milestone={milestone}
-                            onToggleCompletion={toggleMilestoneCompletion}
-                            onDelete={deleteMilestone}
-                          />
-                        ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 border border-dashed rounded-lg">
-                      <p className="text-gray-500">אין אבני דרך יומיות. הוסף אבני דרך לעקוב אחר התקדמות יומית!</p>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="weekly" className="mt-4">
-                  {milestones.filter(m => m.due_date && calculateDaysRemaining(m.due_date) > 1 && calculateDaysRemaining(m.due_date) <= 7).length > 0 ? (
-                    <div className="space-y-2">
-                      {milestones
-                        .filter(m => m.due_date && calculateDaysRemaining(m.due_date) > 1 && calculateDaysRemaining(m.due_date) <= 7)
-                        .map((milestone) => (
-                          <MilestoneItem
-                            key={milestone.id}
-                            milestone={milestone}
-                            onToggleCompletion={toggleMilestoneCompletion}
-                            onDelete={deleteMilestone}
-                          />
-                        ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 border border-dashed rounded-lg">
-                      <p className="text-gray-500">אין אבני דרך שבועיות. הוסף אבני דרך לעקוב אחר התקדמות שבועית!</p>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="all" className="mt-4">
-                  {milestones.length > 0 ? (
-                    <div className="space-y-2">
-                      {milestones.map((milestone) => (
-                        <MilestoneItem
-                          key={milestone.id}
-                          milestone={milestone}
-                          onToggleCompletion={toggleMilestoneCompletion}
-                          onDelete={deleteMilestone}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 border border-dashed rounded-lg">
-                      <p className="text-gray-500">אין אבני דרך. הוסף אבני דרך כדי לעקוב אחר התקדמות לקראת המטרה!</p>
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </div>
-          ) : (
-            <Card className="h-full flex flex-col justify-center items-center py-12">
-              <Target className="h-16 w-16 text-gray-300 mb-4" />
-              <h3 className="text-xl font-bold text-gray-700 mb-2">בחר מטרה מהרשימה</h3>
-              <p className="text-gray-500 text-center max-w-md mb-6">
-                בחר מטרת אימון מהרשימה כדי לראות את הפרטים שלה או להוסיף אבני דרך להתקדמות
-              </p>
-              <Dialog open={isNewGoalDialogOpen} onOpenChange={setIsNewGoalDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-1" /> הוסף מטרה חדשה
-                  </Button>
-                </DialogTrigger>
-                {/* Dialog content is the same as above */}
-              </Dialog>
+                )}
+              </CardContent>
             </Card>
-          )}
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="long-term" className="mt-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xl">מטרות לטווח ארוך</CardTitle>
+                <Button variant="outline" size="sm" onClick={() => {
+                  resetGoalForm();
+                  setIsAddGoalOpen(true);
+                }}>
+                  <PlusCircle className="h-4 w-4 mr-1" />
+                  הוסף מטרה חדשה
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {longTermGoals.length === 0 ? (
+                  <div className="text-center p-8 bg-muted/20 rounded-lg border border-dashed">
+                    <p className="text-muted-foreground">אין מטרות לטווח ארוך עדיין</p>
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="mt-4"
+                      onClick={() => {
+                        resetGoalForm();
+                        setIsAddGoalOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      הוסף מטרה ראשונה
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {longTermGoals.map(goal => (
+                      <Card key={goal.id} className="mb-4 overflow-hidden">
+                        <div className="border-b p-4">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <h3 className="font-medium text-lg">{goal.title}</h3>
+                              {goal.description && <p className="text-muted-foreground text-sm">{goal.description}</p>}
+                              {goal.target_date && (
+                                <div className="flex items-center text-muted-foreground text-xs">
+                                  <span>תאריך יעד: {format(new Date(goal.target_date), 'dd/MM/yyyy', { locale: he })}</span>
+                                </div>
+                              )}
+                              {goal.success_criteria && (
+                                <div className="mt-2">
+                                  <span className="text-xs font-medium">קריטריון להצלחה:</span>
+                                  <p className="text-sm">{goal.success_criteria}</p>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => editGoal(goal)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                onClick={() => handleDeleteGoal(goal.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="mt-3">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span>התקדמות</span>
+                              <span>{goal.progress}%</span>
+                            </div>
+                            <Progress value={goal.progress} className="h-2" />
+                          </div>
+                        </div>
+                        
+                        <div className="p-4 bg-gray-50">
+                          <div className="flex justify-between items-center mb-3">
+                            <h4 className="text-sm font-medium">אבני דרך</h4>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => {
+                                setSelectedGoal(goal);
+                                resetMilestoneForm();
+                                setIsAddMilestoneOpen(true);
+                              }}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              הוסף אבן דרך
+                            </Button>
+                          </div>
+                          
+                          {getGoalMilestones(goal.id).length === 0 ? (
+                            <p className="text-muted-foreground text-sm text-center py-2">אין אבני דרך עדיין</p>
+                          ) : (
+                            <ul className="space-y-2">
+                              {getGoalMilestones(goal.id).map(milestone => (
+                                <li key={milestone.id} className="flex items-start justify-between bg-white p-2 rounded border text-sm">
+                                  <div className="flex items-start gap-2">
+                                    <button
+                                      onClick={() => handleToggleMilestoneCompletion(milestone)}
+                                      className="mt-0.5 flex-shrink-0"
+                                    >
+                                      {milestone.is_completed ? (
+                                        <CheckCircle className="h-4 w-4 text-emerald-500" />
+                                      ) : (
+                                        <Circle className="h-4 w-4 text-gray-300" />
+                                      )}
+                                    </button>
+                                    <div>
+                                      <div className={`font-medium ${milestone.is_completed ? 'line-through text-muted-foreground' : ''}`}>
+                                        {milestone.title}
+                                      </div>
+                                      {milestone.description && (
+                                        <p className={`text-xs mt-1 ${milestone.is_completed ? 'line-through text-muted-foreground' : 'text-gray-600'}`}>
+                                          {milestone.description}
+                                        </p>
+                                      )}
+                                      {milestone.due_date && (
+                                        <p className="text-xs text-gray-400 mt-1">
+                                          תאריך יעד: {format(new Date(milestone.due_date), 'dd/MM/yyyy', { locale: he })}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={() => editMilestone(milestone)}
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon"
+                                      className="h-6 w-6 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                      onClick={() => handleDeleteMilestone(milestone.id)}
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-    </div>
-  );
-}
 
-// Milestone item component
-function MilestoneItem({
-  milestone,
-  onToggleCompletion,
-  onDelete,
-}: {
-  milestone: Milestone;
-  onToggleCompletion: (milestone: Milestone) => void;
-  onDelete: (id: string) => void;
-}) {
-  return (
-    <div className={`p-3 border rounded-lg flex items-start gap-3 ${milestone.is_completed ? 'bg-green-50 border-green-200' : 'bg-white'}`}>
-      <button
-        className="mt-1 flex-shrink-0"
-        onClick={() => onToggleCompletion(milestone)}
-        title={milestone.is_completed ? "סמן כלא הושלם" : "סמן כהושלם"}
-      >
-        {milestone.is_completed ? (
-          <CheckCircle className="h-5 w-5 text-green-500" />
-        ) : (
-          <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
-        )}
-      </button>
-      <div className="flex-grow">
-        <h4 className={`font-medium ${milestone.is_completed ? 'line-through text-gray-500' : ''}`}>
-          {milestone.title}
-        </h4>
-        {milestone.description && (
-          <p className={`text-sm mt-1 ${milestone.is_completed ? 'text-gray-400' : 'text-gray-600'}`}>
-            {milestone.description}
-          </p>
-        )}
-        {milestone.due_date && (
-          <div className="mt-2 text-xs flex items-center text-gray-500">
-            <Clock className="h-3 w-3 mr-1" />
-            <span>עד {format(new Date(milestone.due_date), "dd/MM/yyyy")}</span>
+      {/* Add Goal Dialog */}
+      <Dialog open={isAddGoalOpen} onOpenChange={setIsAddGoalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>הוספת מטרה חדשה</DialogTitle>
+            <DialogDescription>
+              הגדר מטרה חדשה ל{activeTab === 'short-term' ? 'טווח קצר' : 'טווח ארוך'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="title">כותרת המטרה*</Label>
+              <Input
+                id="title"
+                value={goalTitle}
+                onChange={(e) => setGoalTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">תיאור</Label>
+              <Textarea
+                id="description"
+                value={goalDescription}
+                onChange={(e) => setGoalDescription(e.target.value)}
+                placeholder="תאר את המטרה בכמה מילים"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="date">תאריך יעד</Label>
+              <Input
+                id="date"
+                type="date"
+                value={goalDate}
+                onChange={(e) => setGoalDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="criteria">קריטריון להצלחה</Label>
+              <Textarea
+                id="criteria"
+                value={goalCriteria}
+                onChange={(e) => setGoalCriteria(e.target.value)}
+                placeholder="כיצד תדע שהשגת את המטרה?"
+              />
+            </div>
+            {formError && <p className="text-destructive text-sm">{formError}</p>}
           </div>
-        )}
-      </div>
-      <button
-        className="text-gray-400 hover:text-red-500 flex-shrink-0"
-        onClick={() => onDelete(milestone.id)}
-        title="מחק אבן דרך"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddGoalOpen(false)}>ביטול</Button>
+            <Button onClick={handleAddGoal}>הוסף מטרה</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Goal Dialog */}
+      <Dialog open={isEditGoalOpen} onOpenChange={setIsEditGoalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>עריכת מטרה</DialogTitle>
+            <DialogDescription>
+              עדכן את פרטי המטרה
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">כותרת המטרה*</Label>
+              <Input
+                id="edit-title"
+                value={goalTitle}
+                onChange={(e) => setGoalTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">תיאור</Label>
+              <Textarea
+                id="edit-description"
+                value={goalDescription}
+                onChange={(e) => setGoalDescription(e.target.value)}
+                placeholder="תאר את המטרה בכמה מילים"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-date">תאריך יעד</Label>
+              <Input
+                id="edit-date"
+                type="date"
+                value={goalDate}
+                onChange={(e) => setGoalDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-criteria">קריטריון להצלחה</Label>
+              <Textarea
+                id="edit-criteria"
+                value={goalCriteria}
+                onChange={(e) => setGoalCriteria(e.target.value)}
+                placeholder="כיצד תדע שהשגת את המטרה?"
+              />
+            </div>
+            {formError && <p className="text-destructive text-sm">{formError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditGoalOpen(false)}>ביטול</Button>
+            <Button onClick={handleEditGoal}>שמור שינויים</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Milestone Dialog */}
+      <Dialog open={isAddMilestoneOpen} onOpenChange={setIsAddMilestoneOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>הוספת אבן דרך</DialogTitle>
+            <DialogDescription>
+              הוסף אבן דרך למטרה: {selectedGoal?.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="milestone-title">כותרת אבן הדרך*</Label>
+              <Input
+                id="milestone-title"
+                value={milestoneTitle}
+                onChange={(e) => setMilestoneTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="milestone-description">תיאור</Label>
+              <Textarea
+                id="milestone-description"
+                value={milestoneDescription}
+                onChange={(e) => setMilestoneDescription(e.target.value)}
+                placeholder="תאר את אבן הדרך בכמה מילים"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="milestone-date">תאריך יעד</Label>
+              <Input
+                id="milestone-date"
+                type="date"
+                value={milestoneDueDate}
+                onChange={(e) => setMilestoneDueDate(e.target.value)}
+              />
+            </div>
+            {formError && <p className="text-destructive text-sm">{formError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddMilestoneOpen(false)}>ביטול</Button>
+            <Button onClick={handleAddMilestone}>הוסף אבן דרך</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Milestone Dialog */}
+      <Dialog open={isEditMilestoneOpen} onOpenChange={setIsEditMilestoneOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>עריכת אבן דרך</DialogTitle>
+            <DialogDescription>
+              עדכן את פרטי אבן הדרך
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-milestone-title">כותרת אבן הדרך*</Label>
+              <Input
+                id="edit-milestone-title"
+                value={milestoneTitle}
+                onChange={(e) => setMilestoneTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-milestone-description">תיאור</Label>
+              <Textarea
+                id="edit-milestone-description"
+                value={milestoneDescription}
+                onChange={(e) => setMilestoneDescription(e.target.value)}
+                placeholder="תאר את אבן הדרך בכמה מילים"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-milestone-date">תאריך יעד</Label>
+              <Input
+                id="edit-milestone-date"
+                type="date"
+                value={milestoneDueDate}
+                onChange={(e) => setMilestoneDueDate(e.target.value)}
+              />
+            </div>
+            {formError && <p className="text-destructive text-sm">{formError}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditMilestoneOpen(false)}>ביטול</Button>
+            <Button onClick={handleEditMilestone}>שמור שינויים</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
+
+export default PlayerGoals;
