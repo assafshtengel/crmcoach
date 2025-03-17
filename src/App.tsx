@@ -10,19 +10,8 @@ import SessionsList from '@/pages/SessionsList';
 import AllMeetingSummaries from '@/pages/AllMeetingSummaries';
 import PlayersList from '@/pages/PlayersList';
 import PlayerAuth from '@/pages/PlayerAuth';
-import SignupCoach from '@/pages/SignupCoach';
-import Register from '@/pages/Register';
-import RegisterSuccess from '@/pages/RegisterSuccess';
-import NewPlayer from '@/pages/NewPlayer';
-import EditPlayer from '@/pages/EditPlayer';
-import NewSession from '@/pages/NewSession';
-import EditSession from '@/pages/EditSession';
-import TrainingSummaries from '@/pages/TrainingSummaries';
-import PlayerGameSummaries from '@/pages/PlayerGameSummaries';
-import PlayerMentalStates from '@/pages/PlayerMentalStates';
-import PublicRegistration from '@/pages/PublicRegistration';
-import PublicRegistrationSuccess from '@/pages/PublicRegistrationSuccess';
-import { pages } from '@/pages/auth/AuthPage';
+import CoachSignUp from '@/pages/CoachSignUp';
+import AuthPage from '@/pages/auth/AuthPage';
 
 function App() {
   const [coachName, setCoachName] = React.useState('');
@@ -31,23 +20,25 @@ function App() {
     <main>
       <Toaster />
       <Routes>
-        <Route path="/auth" element={<pages.Auth />} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="/player-auth" element={<PlayerAuth />} />
-        <Route path="/signup-coach" element={<SignupCoach />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/register/:token" element={<Register />} />
-        <Route path="/register-success" element={<RegisterSuccess />} />
-        <Route path="/register/success" element={<PublicRegistrationSuccess />} />
+        <Route path="/signup-coach" element={<CoachSignUp />} />
+        
+        {/* Root dashboard route with AuthGuard */}
         <Route path="/" element={
           <AuthGuard>
             <DashboardCoach />
           </AuthGuard>
         } />
+        
+        {/* Players list route */}
         <Route path="/players-list" element={
           <AuthGuard>
             <PlayersList />
           </AuthGuard>
         } />
+        
+        {/* Player profile routes */}
         <Route path="/player/:playerId" element={
           <AuthGuard playerOnly={true}>
             <PlayerProfile />
@@ -63,47 +54,15 @@ function App() {
             <PlayerProfile />
           </AuthGuard>
         } />
+        
+        {/* Sessions list route */}
         <Route path="/sessions-list" element={
           <AuthGuard>
             <SessionsList />
           </AuthGuard>
         } />
-        <Route path="/new-player" element={
-          <AuthGuard>
-            <NewPlayer />
-          </AuthGuard>
-        } />
-        <Route path="/edit-player/:playerId" element={
-          <AuthGuard>
-            <EditPlayer />
-          </AuthGuard>
-        } />
-        <Route path="/new-session" element={
-          <AuthGuard>
-            <NewSession />
-          </AuthGuard>
-        } />
-        <Route path="/edit-session" element={
-          <AuthGuard>
-            <EditSession />
-          </AuthGuard>
-        } />
-        <Route path="/training-summaries/:playerId" element={
-          <AuthGuard>
-            <TrainingSummaries />
-          </AuthGuard>
-        } />
-        <Route path="/player-game-summaries/:playerId" element={
-          <AuthGuard>
-            <PlayerGameSummaries />
-          </AuthGuard>
-        } />
-        <Route path="/player-mental-states/:playerId" element={
-          <AuthGuard>
-            <PlayerMentalStates />
-          </AuthGuard>
-        } />
-        <Route path="/public-registration/:coachId" element={<PublicRegistration />} />
+        
+        {/* Session summaries route */}
         <Route 
           path="/session-summaries" 
           element={
