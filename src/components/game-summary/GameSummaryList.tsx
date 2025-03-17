@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -25,7 +24,20 @@ export function GameSummaryList({ playerId, coachView = false }: GameSummaryList
       throw new Error(error.message);
     }
 
-    return data || [];
+    return data.map((summary: any) => ({
+      id: summary.id,
+      player_id: summary.player_id,
+      coach_id: summary.coach_id,
+      created_at: summary.created_at,
+      match_date: summary.game_date,
+      opponent_name: summary.opponent_team,
+      performance_rating: summary.performance_rating,
+      concentration_level: summary.concentration_level,
+      goals_met: summary.goals_met,
+      strongest_point: summary.strongest_point,
+      improvement_notes: summary.improvement_notes,
+      fatigue_level: summary.fatigue_level
+    }));
   };
 
   const { data: summaries, isLoading, error } = useQuery({

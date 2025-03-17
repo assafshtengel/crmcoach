@@ -30,16 +30,19 @@ export const AdminDashboard = () => {
 
       if (error) throw error;
 
-      const formattedData = forms.map(form => ({
+      const formattedData: FormData[] = forms.map((form: any) => ({
         fullName: form.full_name,
         email: form.email,
         phone: form.phone,
         matchDate: form.match_date,
         opposingTeam: form.opposing_team,
         gameType: form.game_type,
-        selectedStates: form.selected_states,
-        selectedGoals: form.selected_goals,
-        answers: form.answers,
+        selectedStates: Array.isArray(form.selected_states) ? form.selected_states : [],
+        selectedGoals: Array.isArray(form.selected_goals) ? form.selected_goals.map((goal: any) => ({
+          goal: goal.goal || '',
+          metric: goal.metric || ''
+        })) : [],
+        answers: form.answers || {},
         currentPressure: form.current_pressure,
         optimalPressure: form.optimal_pressure,
       }));

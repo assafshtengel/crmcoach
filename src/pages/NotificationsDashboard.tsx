@@ -27,13 +27,20 @@ interface Session {
 
 interface Notification {
   id: string;
-  sent_at: string;
+  sent_at: string | null;
   message_content: string;
   status: "Sent" | "Pending" | "Failed";
-  error_message?: string;
+  error_message?: string | null;
   player_name?: string;
   player_phone?: string;
-  session_id: string;
+  session_id: string | null;
+  coach_id: string;
+  sessions?: {
+    players?: {
+      full_name: string;
+      phone: string;
+    };
+  };
 }
 
 const NotificationsDashboard = () => {
@@ -77,10 +84,11 @@ const NotificationsDashboard = () => {
 
       if (sessionsError) throw sessionsError;
 
-      const formattedNotifications = notificationsData.map(notification => ({
+      const formattedNotifications: Notification[] = notificationsData.map((notification: any) => ({
         ...notification,
         player_name: notification.sessions?.players?.full_name || 'לא ידוע',
         player_phone: notification.sessions?.players?.phone || 'לא ידוע',
+        status: notification.status as "Sent" | "Pending" | "Failed"
       }));
 
       setNotifications(formattedNotifications);

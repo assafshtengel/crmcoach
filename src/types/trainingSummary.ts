@@ -23,3 +23,4 @@ export interface TrainingSummaryFormValues {
   fatigue_level: number;
   notes: string;
 }
+
