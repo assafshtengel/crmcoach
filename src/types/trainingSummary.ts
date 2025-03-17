@@ -11,6 +11,7 @@ export interface TrainingSummary {
   improvement_areas: string;
   fatigue_level: number;
   notes: string;
+  [key: string]: any; // Add index signature for Json compatibility
 }
 
 export interface TrainingSummaryFormValues {

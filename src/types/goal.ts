@@ -9,6 +9,7 @@ export interface Goal {
   is_completed?: boolean;
   created_at?: string;
   progress?: number; // Adding progress property needed by components
+  [key: string]: any; // Add index signature to make Goal compatible with Json type
 }
 
 export interface Milestone {

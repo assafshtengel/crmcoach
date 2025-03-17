@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Circle, Plus, PlusCircle, ArrowLeft, Trash2, Edit } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -81,21 +79,25 @@ const PlayerGoals = () => {
           setPlayerGoalId(playerGoalsData.id);
 
           // Parse JSON data from the playerGoalsData
-          const shortGoals = Array.isArray(playerGoalsData.short_term_goals) 
-            ? playerGoalsData.short_term_goals 
-            : [];
+          const shortGoals = typeof playerGoalsData.short_term_goals === 'string' 
+            ? JSON.parse(playerGoalsData.short_term_goals) 
+            : Array.isArray(playerGoalsData.short_term_goals) 
+              ? playerGoalsData.short_term_goals 
+              : [];
           
-          const longGoals = Array.isArray(playerGoalsData.long_term_goals) 
-            ? playerGoalsData.long_term_goals 
-            : [];
+          const longGoals = typeof playerGoalsData.long_term_goals === 'string' 
+            ? JSON.parse(playerGoalsData.long_term_goals) 
+            : Array.isArray(playerGoalsData.long_term_goals) 
+              ? playerGoalsData.long_term_goals 
+              : [];
           
           // Add progress properties if they don't exist
-          const shortGoalsWithProgress = shortGoals.map((goal: Goal) => ({
+          const shortGoalsWithProgress = shortGoals.map((goal: any) => ({
             ...goal,
             progress: goal.progress || 0
           }));
           
-          const longGoalsWithProgress = longGoals.map((goal: Goal) => ({
+          const longGoalsWithProgress = longGoals.map((goal: any) => ({
             ...goal,
             progress: goal.progress || 0
           }));
@@ -105,8 +107,8 @@ const PlayerGoals = () => {
           
           // Fetch all milestones for any goals
           const goalIds = [
-            ...shortGoalsWithProgress.map(g => g.id), 
-            ...longGoalsWithProgress.map(g => g.id)
+            ...shortGoalsWithProgress.map((g: any) => g.id), 
+            ...longGoalsWithProgress.map((g: any) => g.id)
           ].filter(Boolean);
           
           if (goalIds.length > 0) {
@@ -170,31 +172,29 @@ const PlayerGoals = () => {
         created_at: new Date().toISOString()
       };
       
-      let updatedGoals;
+      let updatedShortTermGoals = [...shortTermGoals];
+      let updatedLongTermGoals = [...longTermGoals];
       
       if (activeTab === 'short-term') {
-        updatedGoals = {
-          short_term_goals: [...shortTermGoals, newGoal],
-          long_term_goals: longTermGoals
-        };
+        updatedShortTermGoals = [...shortTermGoals, newGoal];
       } else {
-        updatedGoals = {
-          short_term_goals: shortTermGoals,
-          long_term_goals: [...longTermGoals, newGoal]
-        };
+        updatedLongTermGoals = [...longTermGoals, newGoal];
       }
       
       const { error } = await supabase
         .from('player_goals')
-        .update(updatedGoals)
+        .update({
+          short_term_goals: updatedShortTermGoals,
+          long_term_goals: updatedLongTermGoals
+        })
         .eq('id', playerGoalId);
       
       if (error) throw error;
       
       if (activeTab === 'short-term') {
-        setShortTermGoals(prev => [...prev, newGoal]);
+        setShortTermGoals(updatedShortTermGoals);
       } else {
-        setLongTermGoals(prev => [...prev, newGoal]);
+        setLongTermGoals(updatedLongTermGoals);
       }
       
       resetGoalForm();
@@ -222,39 +222,33 @@ const PlayerGoals = () => {
         success_criteria: goalCriteria || undefined,
       };
       
-      let updatedGoals;
+      let updatedShortTermGoals = [...shortTermGoals];
+      let updatedLongTermGoals = [...longTermGoals];
       
       if (activeTab === 'short-term') {
-        updatedGoals = {
-          short_term_goals: shortTermGoals.map(g => 
-            g.id === selectedGoal.id ? updatedGoal : g
-          ),
-          long_term_goals: longTermGoals
-        };
+        updatedShortTermGoals = shortTermGoals.map(g => 
+          g.id === selectedGoal.id ? updatedGoal : g
+        );
       } else {
-        updatedGoals = {
-          short_term_goals: shortTermGoals,
-          long_term_goals: longTermGoals.map(g => 
-            g.id === selectedGoal.id ? updatedGoal : g
-          )
-        };
+        updatedLongTermGoals = longTermGoals.map(g => 
+          g.id === selectedGoal.id ? updatedGoal : g
+        );
       }
       
       const { error } = await supabase
         .from('player_goals')
-        .update(updatedGoals)
+        .update({
+          short_term_goals: updatedShortTermGoals,
+          long_term_goals: updatedLongTermGoals
+        })
         .eq('id', playerGoalId);
       
       if (error) throw error;
       
       if (activeTab === 'short-term') {
-        setShortTermGoals(prev => 
-          prev.map(g => g.id === selectedGoal.id ? updatedGoal : g)
-        );
+        setShortTermGoals(updatedShortTermGoals);
       } else {
-        setLongTermGoals(prev => 
-          prev.map(g => g.id === selectedGoal.id ? updatedGoal : g)
-        );
+        setLongTermGoals(updatedLongTermGoals);
       }
       
       resetGoalForm();
@@ -277,31 +271,29 @@ const PlayerGoals = () => {
         .delete()
         .eq('goal_id', goalId);
       
-      let updatedGoals;
+      let updatedShortTermGoals = [...shortTermGoals];
+      let updatedLongTermGoals = [...longTermGoals];
       
       if (activeTab === 'short-term') {
-        updatedGoals = {
-          short_term_goals: shortTermGoals.filter(g => g.id !== goalId),
-          long_term_goals: longTermGoals
-        };
+        updatedShortTermGoals = shortTermGoals.filter(g => g.id !== goalId);
       } else {
-        updatedGoals = {
-          short_term_goals: shortTermGoals,
-          long_term_goals: longTermGoals.filter(g => g.id !== goalId)
-        };
+        updatedLongTermGoals = longTermGoals.filter(g => g.id !== goalId);
       }
       
       const { error } = await supabase
         .from('player_goals')
-        .update(updatedGoals)
+        .update({
+          short_term_goals: updatedShortTermGoals,
+          long_term_goals: updatedLongTermGoals
+        })
         .eq('id', playerGoalId);
       
       if (error) throw error;
       
       if (activeTab === 'short-term') {
-        setShortTermGoals(prev => prev.filter(g => g.id !== goalId));
+        setShortTermGoals(updatedShortTermGoals);
       } else {
-        setLongTermGoals(prev => prev.filter(g => g.id !== goalId));
+        setLongTermGoals(updatedLongTermGoals);
       }
       
       // Also remove milestones associated with this goal
