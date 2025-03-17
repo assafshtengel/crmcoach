@@ -389,9 +389,11 @@ export type Database = {
           concentration_level: number | null
           created_at: string | null
           fatigue_level: number | null
+          game_date: string | null
           goals_met: boolean | null
           id: string
           improvement_notes: string | null
+          opponent_team: string | null
           performance_rating: number | null
           player_id: string
           strongest_point: string | null
@@ -401,9 +403,11 @@ export type Database = {
           concentration_level?: number | null
           created_at?: string | null
           fatigue_level?: number | null
+          game_date?: string | null
           goals_met?: boolean | null
           id?: string
           improvement_notes?: string | null
+          opponent_team?: string | null
           performance_rating?: number | null
           player_id: string
           strongest_point?: string | null
@@ -413,9 +417,11 @@ export type Database = {
           concentration_level?: number | null
           created_at?: string | null
           fatigue_level?: number | null
+          game_date?: string | null
           goals_met?: boolean | null
           id?: string
           improvement_notes?: string | null
+          opponent_team?: string | null
           performance_rating?: number | null
           player_id?: string
           strongest_point?: string | null
@@ -593,6 +599,27 @@ export type Database = {
         }
         Relationships: []
       }
+      group_messages: {
+        Row: {
+          coach_id: string
+          content: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          coach_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          coach_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       last_meetings: {
         Row: {
           created_at: string
@@ -619,6 +646,64 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      meeting_logs: {
+        Row: {
+          achievements: string | null
+          coach_id: string | null
+          created_at: string
+          id: string
+          meeting_id: string | null
+          next_steps: string | null
+          player_id: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          achievements?: string | null
+          coach_id?: string | null
+          created_at?: string
+          id?: string
+          meeting_id?: string | null
+          next_steps?: string | null
+          player_id: string
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          achievements?: string | null
+          coach_id?: string | null
+          created_at?: string
+          id?: string
+          meeting_id?: string | null
+          next_steps?: string | null
+          player_id?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_logs_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_logs_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "player_meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_logs_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mental_commitments: {
         Row: {
@@ -752,6 +837,68 @@ export type Database = {
         }
         Relationships: []
       }
+      message_recipients: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message_id: string
+          player_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_id: string
+          player_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_id?: string
+          player_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_recipients_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "group_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       next_meetings: {
         Row: {
           created_at: string
@@ -859,6 +1006,41 @@ export type Database = {
           },
         ]
       }
+      player_access_tokens: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          player_id: string | null
+          token: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          player_id?: string | null
+          token: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          player_id?: string | null
+          token?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_access_tokens_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_details: {
         Row: {
           contract_value: number | null
@@ -962,6 +1144,63 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "player_goals_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_meetings: {
+        Row: {
+          coach_id: string | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          location: string | null
+          meeting_date: string
+          meeting_time: string
+          meeting_type: string
+          notes: string | null
+          player_id: string
+          updated_at: string
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          location?: string | null
+          meeting_date: string
+          meeting_time: string
+          meeting_type?: string
+          notes?: string | null
+          player_id: string
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          location?: string | null
+          meeting_date?: string
+          meeting_time?: string
+          meeting_type?: string
+          notes?: string | null
+          player_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_meetings_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_meetings_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
@@ -1274,6 +1513,7 @@ export type Database = {
           has_started: boolean | null
           id: string
           location: string | null
+          meeting_type: string
           notes: string | null
           player_id: string
           reminder_sent: boolean | null
@@ -1286,6 +1526,7 @@ export type Database = {
           has_started?: boolean | null
           id?: string
           location?: string | null
+          meeting_type?: string
           notes?: string | null
           player_id: string
           reminder_sent?: boolean | null
@@ -1298,6 +1539,7 @@ export type Database = {
           has_started?: boolean | null
           id?: string
           location?: string | null
+          meeting_type?: string
           notes?: string | null
           player_id?: string
           reminder_sent?: boolean | null

@@ -448,7 +448,7 @@ const DashboardCoach = () => {
       toast({
         variant: "destructive",
         title: "שגיאה בשמירת הסיכום",
-        description: "אנא נסה שוב מאוחר י��תר"
+        description: "אנא נסה שוב מאוחר יותר"
       });
     }
   };
@@ -1112,7 +1112,7 @@ const DashboardCoach = () => {
                 <Target className="h-5 w-5 text-[#27ae60]" />
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-500 mb-3">מלא טו��ס הכנה למשחק עבור השחקנים</p>
+                <p className="text-sm text-gray-500 mb-3">מלא טופס הכנה למשחק עבור השחקנים</p>
                 <Button 
                   variant="default" 
                   className="w-full bg-[#27ae60] hover:bg-[#219653]"
@@ -1298,4 +1298,3 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
-
