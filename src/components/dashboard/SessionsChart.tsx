@@ -11,23 +11,28 @@ interface SessionsChartProps {
 
 export const SessionsChart: React.FC<SessionsChartProps> = ({ stats }) => {
   const getMonthlySessionsData = () => {
-    return [{
-      name: 'לפני חודשיים',
-      מפגשים: stats.twoMonthsAgoSessions,
-      fill: '#9CA3AF'
-    }, {
-      name: 'חודש קודם',
-      מפגשים: stats.lastMonthSessions,
-      fill: '#F59E0B'
-    }, {
-      name: 'החודש (בוצעו)',
-      מפגשים: stats.currentMonthPastSessions,
-      fill: '#10B981'
-    }, {
-      name: 'החודש (מתוכננים)',
-      מפגשים: stats.currentMonthFutureSessions,
-      fill: '#3B82F6'
-    }];
+    return [
+      {
+        name: 'לפני חודשיים',
+        sessions: stats.twoMonthsAgoSessions,
+        fill: '#9CA3AF'
+      }, 
+      {
+        name: 'חודש קודם',
+        sessions: stats.lastMonthSessions,
+        fill: '#F59E0B'
+      }, 
+      {
+        name: 'החודש (בוצעו)',
+        sessions: stats.currentMonthPastSessions,
+        fill: '#10B981'
+      }, 
+      {
+        name: 'החודש (מתוכננים)',
+        sessions: stats.currentMonthFutureSessions,
+        fill: '#3B82F6'
+      }
+    ];
   };
 
   return (
@@ -40,13 +45,16 @@ export const SessionsChart: React.FC<SessionsChartProps> = ({ stats }) => {
         <CardContent>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={getMonthlySessionsData()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart 
+                data={getMonthlySessionsData()} 
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="מפגשים" />
+                <Bar dataKey="sessions" />
               </BarChart>
             </ResponsiveContainer>
           </div>
