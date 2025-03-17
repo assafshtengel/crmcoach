@@ -5,6 +5,7 @@ import { ThemeProvider } from "./components/theme-provider"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "sonner"
 import DashboardCoach from './pages/DashboardCoach';
+import Index from './pages/Index';
 import PlayersList from './pages/PlayersList';
 import Goals from './pages/Goals';
 import PlayerProfileView from './pages/player/PlayerProfileView';
@@ -32,8 +33,8 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <PlayersProvider>
             <Routes>
-              {/* Redirect root path to dashboard-coach */}
-              <Route path="/" element={<Navigate to="/dashboard-coach" replace />} />
+              {/* Redirect root path to index */}
+              <Route path="/" element={<Index />} />
               <Route path="/dashboard-coach" element={<DashboardCoach />} />
               <Route path="/players-list" element={<PlayersList />} />
               <Route path="/sessions" element={<Sessions />} />
