@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from "./components/theme-provider"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "sonner"
@@ -32,7 +32,8 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <PlayersProvider>
             <Routes>
-              <Route path="/" element={<PlayerDashboard />} />
+              {/* Redirect root path to dashboard-coach */}
+              <Route path="/" element={<Navigate to="/dashboard-coach" replace />} />
               <Route path="/dashboard-coach" element={<DashboardCoach />} />
               <Route path="/players-list" element={<PlayersList />} />
               <Route path="/sessions" element={<Sessions />} />
