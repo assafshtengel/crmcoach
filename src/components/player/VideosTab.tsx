@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,13 +36,10 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         console.log("Fetching videos for coachId:", coachId, "playerId:", playerId);
         
         if (!playerId) {
-          // For coach view - show all videos
           fetchAllVideos();
           return;
         }
         
-        // For player view - show all assigned videos (both manual and auto-scheduled)
-        // First, get manually assigned videos through player_videos table
         const { data: playerVideos, error: playerVideosError } = await supabase
           .from("player_videos")
           .select(`
@@ -61,12 +57,10 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         
         console.log("Manually assigned videos data:", playerVideos);
         
-        // Extract video objects from the nested structure
         const manuallyAssignedVideos = playerVideos
           ?.filter(pv => pv.videos) // Filter out any null video references
           .map(pv => pv.videos as Video) || [];
           
-        // Get auto-video assignments for this player that have been sent
         const { data: autoAssignments, error: autoAssignmentsError } = await supabase
           .from("auto_video_assignments")
           .select(`
@@ -85,13 +79,10 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         
         console.log("Auto-assigned videos data:", autoAssignments);
         
-        // Extract video objects from the auto assignments
         const autoAssignedVideos = autoAssignments
           ?.filter(aa => aa.videos && aa.sent) // Only include sent videos
           .map(aa => aa.videos as Video) || [];
           
-        // Combine both manually assigned and auto-assigned videos
-        // Use a map to prevent duplicates (a video might be both manually and auto assigned)
         const videoMap = new Map<string, Video>();
         
         [...manuallyAssignedVideos, ...autoAssignedVideos].forEach(video => {
@@ -104,14 +95,12 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         
         console.log("Combined assigned videos:", allAssignedVideos);
         
-        // Sort videos by creation date (newest first)
         allAssignedVideos.sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
         
         setVideos(allAssignedVideos);
         
-        // Set the first video as active if available
         if (allAssignedVideos.length > 0) {
           setActiveVideo(allAssignedVideos[0]);
         } else {
@@ -132,7 +121,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     
     const fetchAllVideos = async () => {
       try {
-        // Fetch coach videos
         const { data: coachVideos, error: coachVideosError } = await supabase
           .from("videos")
           .select("*")
@@ -142,7 +130,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           
         if (coachVideosError) throw coachVideosError;
         
-        // Fetch admin videos
         const { data: adminVideos, error: adminVideosError } = await supabase
           .from("videos")
           .select("*")
@@ -151,13 +138,11 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           
         if (adminVideosError) throw adminVideosError;
         
-        // Combine and sort videos
         const allVideos = [...(coachVideos || []), ...(adminVideos || [])];
         allVideos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         
         setVideos(allVideos);
         
-        // Set the first video as active if available
         if (allVideos.length > 0) {
           setActiveVideo(allVideos[0]);
         }
@@ -183,6 +168,13 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     if (onWatchVideo) {
       onWatchVideo(video.id);
     }
+  };
+  
+  const openVideoUrl = (url: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    window.open(url, '_blank');
   };
   
   const getEmbedUrl = (url: string) => {
@@ -252,14 +244,14 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
             <div className="mt-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-500">פורסם: {formatDate(activeVideo.created_at)}</span>
-                <a 
-                  href={activeVideo.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary flex items-center gap-1"
+                <Button 
+                  variant="ghost"
+                  size="sm"
+                  className="text-sm text-primary flex items-center gap-1 p-0 h-auto"
+                  onClick={() => openVideoUrl(activeVideo.url)}
                 >
                   צפה באתר המקורי <ExternalLink className="h-3 w-3" />
-                </a>
+                </Button>
               </div>
               <p className="whitespace-pre-line text-sm text-gray-700">{activeVideo.description}</p>
             </div>
@@ -272,7 +264,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           <Card 
             key={video.id} 
             className={`cursor-pointer hover:shadow-md transition-shadow ${activeVideo?.id === video.id ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => handleWatchVideo(video)}
+            onClick={() => openVideoUrl(video.url)}
           >
             <CardContent className="p-4">
               <div className="flex gap-3">
