@@ -17,27 +17,8 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Get the current path for easier reference
-        const currentPath = location.pathname;
-        console.log("Current path:", currentPath);
-
-        // Public routes - always allow access without any authentication
-        const publicRoutes = [
-          '/auth',
-          '/player-auth',
-          '/signup-coach'
-        ];
-        
-        // Check if current path is a public route or registration path
-        if (publicRoutes.includes(currentPath) || currentPath.includes('/register/')) {
-          console.log("Public route detected - bypassing all auth checks");
-          setIsLoading(false);
-          return;
-        }
-
-        // Player-only routes - check player authentication
+        // בדיקה אם זה נתיב שחקן
         if (playerOnly) {
-          console.log("Player-only route - checking player authentication");
           const playerSession = localStorage.getItem('playerSession');
           
           if (!playerSession) {
@@ -46,96 +27,65 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
             return;
           }
           
+          // אימות מפגש שחקן - בדיקה אם השחקן קיים במסד הנתונים
           try {
             const playerData = JSON.parse(playerSession);
-            
-            // Verify player credentials directly in the database
             const { data, error } = await supabase
               .from('players')
-              .select('id, email, password, full_name')
-              .eq('email', playerData.email)
-              .eq('password', playerData.password)
-              .single();
+              .select('id')
+              .eq('id', playerData.id)
+              .maybeSingle();
               
             if (error || !data) {
-              console.error("Invalid player session, redirecting to player login", error);
+              console.log("Invalid player session, redirecting to player login");
               localStorage.removeItem('playerSession');
               navigate("/player-auth");
               return;
             }
-            
-            // Make sure the session ID matches the database ID
-            if (data.id !== playerData.id) {
-              console.error("Player ID mismatch, redirecting to player login");
-              localStorage.removeItem('playerSession');
-              navigate("/player-auth");
-              return;
-            }
-            
-            console.log("Player authenticated successfully");
-            setIsLoading(false);
-            return;
           } catch (err) {
             console.error("Error parsing player session:", err);
             localStorage.removeItem('playerSession');
             navigate("/player-auth");
             return;
           }
-        }
-        
-        // Player profile view - allow access for both player or coach
-        if (playerId && currentPath.includes('/player-profile/')) {
-          // First check for player session (player viewing their own profile)
-          const playerSession = localStorage.getItem('playerSession');
           
-          if (playerSession) {
-            try {
-              const playerData = JSON.parse(playerSession);
-              
-              if (playerData.id === playerId) {
-                console.log("Player viewing their own profile");
-                setIsLoading(false);
-                return;
-              }
-            } catch (err) {
-              console.error("Error parsing player session:", err);
-              // Continue with coach auth check below
-            }
-          }
-
-          // If no valid player session, check for coach auth
-          const { data: { user }, error } = await supabase.auth.getUser();
-          
-          if (error || !user) {
-            console.log("No authenticated user found, redirecting to auth");
-            navigate("/auth");
-            return;
-          }
-          
-          console.log("Coach authenticated for viewing player profile");
           setIsLoading(false);
           return;
         }
         
-        // For all other coach routes, require Supabase authentication
+        // טיפול בדף פרופיל שחקן עם פרמטר ID
+        if (playerId && window.location.pathname.includes('/player-profile/')) {
+          const playerSession = localStorage.getItem('playerSession');
+          
+          if (playerSession) {
+            const playerData = JSON.parse(playerSession);
+            
+            if (playerData.id === playerId) {
+              setIsLoading(false);
+              return;
+            } else {
+              console.log("Player trying to access unauthorized profile");
+              localStorage.removeItem('playerSession');
+              navigate("/player-auth");
+              return;
+            }
+          }
+        }
+        
+        // בנתיבי מאמן, בדיקת אימות Supabase
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error || !user) {
-          console.log("No authenticated Supabase user found, redirecting to auth");
+          console.log("No authenticated Supabase user found");
           navigate("/auth");
           return;
         }
 
-        console.log("Coach authenticated successfully");
+        // מאחר שאנחנו מאפשרים למאמנים להתחבר מיד לאחר הרשמה, לא נבדוק הרשאות באופן מחמיר
         setIsLoading(false);
       } catch (error) {
         console.error("Authentication check failed:", error);
-        // Redirect based on the route type
-        if (playerOnly) {
-          navigate("/player-auth");
-        } else {
-          navigate("/auth");
-        }
+        navigate("/auth");
       }
     };
 

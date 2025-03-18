@@ -1,18 +1,22 @@
 
 import React from 'react';
-import { SuccessDialog } from './SuccessDialog';
-import { FeedbackDialog } from './FeedbackDialog';
+import { FeedbackDialog } from "./FeedbackDialog";
+import { SuccessDialog } from "./SuccessDialog";
 
 interface RegistrationDialogsProps {
   showFeedbackDialog: boolean;
-  setShowFeedbackDialog: (open: boolean) => void;
-  feedbackMessage: { title: string; message: string; isError: boolean };
+  setShowFeedbackDialog: (show: boolean) => void;
+  feedbackMessage: {
+    title: string;
+    message: string;
+    isError: boolean;
+  };
   showSuccessDialog: boolean;
-  setShowSuccessDialog: (open: boolean) => void;
-  coachName: string;
+  setShowSuccessDialog: (show: boolean) => void;
+  coachName?: string;
   handleCloseWindow: () => void;
   onFeedbackClose?: () => void;
-  generatedPassword: string;
+  generatedPassword?: string;
 }
 
 export const RegistrationDialogs = ({
@@ -26,21 +30,31 @@ export const RegistrationDialogs = ({
   onFeedbackClose,
   generatedPassword
 }: RegistrationDialogsProps) => {
+  // Handle feedback dialog close
+  const handleFeedbackClose = () => {
+    setShowFeedbackDialog(false);
+    
+    // Only show success dialog if this was not an error message
+    if (onFeedbackClose && !feedbackMessage.isError) {
+      onFeedbackClose();
+    }
+  };
+  
   return (
     <>
-      <FeedbackDialog
+      <FeedbackDialog 
         open={showFeedbackDialog}
         setOpen={setShowFeedbackDialog}
         title={feedbackMessage.title}
         message={feedbackMessage.message}
         isError={feedbackMessage.isError}
-        onClose={!feedbackMessage.isError ? onFeedbackClose : undefined}
+        onClose={handleFeedbackClose}
       />
-      
-      <SuccessDialog
-        showSuccessDialog={showSuccessDialog}
-        setShowSuccessDialog={setShowSuccessDialog}
-        coachName={coachName || "המאמן"}
+
+      <SuccessDialog 
+        showSuccessDialog={showSuccessDialog} 
+        setShowSuccessDialog={setShowSuccessDialog} 
+        coachName={coachName} 
         handleCloseWindow={handleCloseWindow}
         generatedPassword={generatedPassword}
       />

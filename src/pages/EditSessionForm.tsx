@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -103,7 +102,7 @@ const EditSessionForm = () => {
           player_id: sessionData.player_id,
           notes: sessionData.notes || '',
           location: sessionData.location || '',
-          meeting_type: (sessionData.meeting_type as 'in_person' | 'zoom') || 'in_person'
+          meeting_type: sessionData.meeting_type || 'in_person'
         });
       }
       setIsLoading(false);

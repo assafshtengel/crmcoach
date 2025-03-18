@@ -18,15 +18,17 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { format } from 'date-fns';
+import { format, isAfter } from 'date-fns';
+import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface RegistrationLink {
   id: string;
   created_at: string;
+  expires_at: string | null;
   is_active: boolean;
   custom_message: string | null;
-  registered_count?: number;
+  max_registrations?: number | null;
 }
 
 const RegistrationLinks = () => {
@@ -36,6 +38,9 @@ const RegistrationLinks = () => {
   const [loading, setLoading] = useState(true);
   const [isCreatingLink, setIsCreatingLink] = useState(false);
   const [newLinkMessage, setNewLinkMessage] = useState('');
+  const [newLinkExpiry, setNewLinkExpiry] = useState('');
+  const [maxRegistrations, setMaxRegistrations] = useState<number | undefined>(undefined);
+  const [enableLimit, setEnableLimit] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,35 +62,14 @@ const RegistrationLinks = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('משתמש לא מחובר');
 
-      const { data: linksData, error: linksError } = await supabase
+      const { data, error } = await supabase
         .from('registration_links')
         .select('*')
         .eq('coach_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (linksError) throw linksError;
-      
-      if (linksData && linksData.length > 0) {
-        const linksWithCounts = await Promise.all(
-          linksData.map(async (link) => {
-            const { count, error: countError } = await supabase
-              .from('players')
-              .select('*', { count: 'exact', head: true })
-              .eq('registration_link_id', link.id);
-              
-            if (countError) {
-              console.error('Error fetching registration count:', countError);
-              return { ...link, registered_count: 0 };
-            }
-            
-            return { ...link, registered_count: count || 0 };
-          })
-        );
-        
-        setLinks(linksWithCounts);
-      } else {
-        setLinks([]);
-      }
+      if (error) throw error;
+      setLinks(data || []);
     } catch (error) {
       console.error('Error fetching registration links:', error);
       toast({
@@ -102,62 +86,32 @@ const RegistrationLinks = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('משתמש לא מחובר');
-      
-      // Always check if coach exists first and create if missing
-      console.log("Checking for coach record with ID:", user.id);
-      const { data: existingCoach, error: coachCheckError } = await supabase
-        .from('coaches')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
-        
-      // If coach doesn't exist, create a new coach record
-      if (!existingCoach) {
-        console.log("Coach not found, creating a new coach record");
-        
-        const userData = {
-          id: user.id,
-          email: user.email,
-          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Coach'
-        };
-        
-        const { data: newCoach, error: createCoachError } = await supabase
-          .from('coaches')
-          .insert([userData])
-          .select()
-          .single();
-          
-        if (createCoachError) {
-          console.error("Error creating coach record:", createCoachError);
-          throw new Error('לא ניתן ליצור רשומת מאמן, אנא פנה למנהל המערכת');
-        }
-        
-        console.log("Created new coach record:", newCoach);
-      } else {
-        console.log("Found existing coach record:", existingCoach);
-      }
 
-      // Now create the registration link
-      const newLinkData = {
+      const newLinkData: any = {
         coach_id: user.id,
         custom_message: newLinkMessage || null,
+        expires_at: newLinkExpiry || null,
         is_active: true
       };
+      
+      // Only add max_registrations if the database column exists and limit is enabled
+      if (enableLimit && maxRegistrations) {
+        newLinkData.max_registrations = maxRegistrations;
+      }
 
-      const { data: newLink, error: linkError } = await supabase
+      const { data, error } = await supabase
         .from('registration_links')
         .insert([newLinkData])
         .select()
         .single();
 
-      if (linkError) {
-        console.error("Error creating link:", linkError);
-        throw linkError;
-      }
+      if (error) throw error;
 
-      console.log("New registration link created:", newLink);
-      setLinks([{ ...newLink, registered_count: 0 }, ...links]);
+      setLinks([data, ...links]);
       setNewLinkMessage('');
+      setNewLinkExpiry('');
+      setMaxRegistrations(undefined);
+      setEnableLimit(false);
       setIsCreatingLink(false);
       
       toast({
@@ -245,6 +199,11 @@ const RegistrationLinks = () => {
     window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
   };
 
+  const isExpired = (expiryDate: string | null): boolean => {
+    if (!expiryDate) return false;
+    return isAfter(new Date(), new Date(expiryDate));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <div className="max-w-6xl mx-auto">
@@ -294,6 +253,36 @@ const RegistrationLinks = () => {
                           className="min-h-[100px]"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="expiry">תאריך תפוגה (אופציונלי)</Label>
+                        <Input
+                          id="expiry"
+                          type="datetime-local"
+                          value={newLinkExpiry}
+                          onChange={(e) => setNewLinkExpiry(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Switch
+                          id="limit-registrations"
+                          checked={enableLimit}
+                          onCheckedChange={setEnableLimit}
+                        />
+                        <Label htmlFor="limit-registrations">הגבל מספר נרשמים</Label>
+                      </div>
+                      {enableLimit && (
+                        <div className="space-y-2">
+                          <Label htmlFor="max-registrations">מספר מקסימלי של נרשמים</Label>
+                          <Input
+                            id="max-registrations"
+                            type="number"
+                            placeholder="לדוגמה: 10"
+                            min={1}
+                            value={maxRegistrations || ''}
+                            onChange={(e) => setMaxRegistrations(parseInt(e.target.value) || undefined)}
+                          />
+                        </div>
+                      )}
                     </div>
                     <DialogFooter>
                       <Button onClick={createNewLink} className="w-full">
@@ -329,7 +318,7 @@ const RegistrationLinks = () => {
                     <TableRow>
                       <TableHead>תאריך יצירה</TableHead>
                       <TableHead>סטטוס</TableHead>
-                      <TableHead>נרשמים</TableHead>
+                      <TableHead>תאריך תפוגה</TableHead>
                       <TableHead className="text-left">פעולות</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -341,11 +330,11 @@ const RegistrationLinks = () => {
                         </TableCell>
                         <TableCell>
                           <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            link.is_active 
+                            link.is_active && !isExpired(link.expires_at)
                               ? 'bg-green-100 text-green-800'
                               : 'bg-red-100 text-red-800'
                           }`}>
-                            {link.is_active ? (
+                            {link.is_active && !isExpired(link.expires_at) ? (
                               <>
                                 <Check className="h-3 w-3 mr-1" />
                                 פעיל
@@ -359,10 +348,16 @@ const RegistrationLinks = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center">
-                            <Users className="h-4 w-4 ml-1 text-gray-500" />
-                            <span>{link.registered_count || 0}</span>
-                          </div>
+                          {link.expires_at ? (
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 ml-1 text-gray-500" />
+                              <span className={isExpired(link.expires_at) ? "text-red-500" : ""}>
+                                {format(new Date(link.expires_at), 'dd/MM/yyyy HH:mm')}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">ללא הגבלה</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2 space-x-reverse">

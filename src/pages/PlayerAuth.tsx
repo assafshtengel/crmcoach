@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,69 +24,62 @@ const PlayerAuth = () => {
     setLoading(true);
 
     try {
-      console.log("Player attempting to log in with email:", email);
-      
-      // Check if this email exists in the players table
+      // First, check if this email belongs to a player
       const { data: playerData, error: playerError } = await supabase
         .from('players')
-        .select('id, email, password, full_name')
+        .select('id, email, password')
         .eq('email', email)
         .maybeSingle();
 
       if (playerError) {
-        console.error("Database error checking player credentials:", playerError);
+        console.error("Error checking player:", playerError);
         toast({
           variant: "destructive",
-          title: "שגיאה במערכת",
-          description: "אירעה שגיאה בבדיקת פרטי השחקן. נא לנסות שוב מאוחר יותר.",
+          title: "שגיאה",
+          description: "אירעה שגיאה בבדיקת פרטי השחקן",
         });
         setLoading(false);
         return;
       }
 
-      // If no player found with this email
       if (!playerData) {
-        console.log("No player found with email:", email);
         toast({
           variant: "destructive",
-          title: "כתובת אימייל לא קיימת",
-          description: "לא נמצא שחקן רשום עם כתובת האימייל שהוזנה",
+          title: "שגיאה בהתחברות",
+          description: "לא נמצא שחקן עם כתובת האימייל הזו",
         });
         setLoading(false);
         return;
       }
 
-      // Email exists but password doesn't match
+      // Verify password
       if (playerData.password !== password) {
-        console.log("Password doesn't match for player:", email);
         toast({
           variant: "destructive",
-          title: "סיסמה שגויה",
-          description: "הסיסמה שהוזנה אינה מתאימה לחשבון זה",
+          title: "שגיאה בהתחברות",
+          description: "הסיסמה שהוזנה אינה נכונה",
         });
         setLoading(false);
         return;
       }
 
       // Login successful
-      console.log("Player login successful for:", email);
       toast({
         title: "התחברות הצליחה",
-        description: `ברוך הבא, ${playerData.full_name || 'שחקן יקר'}!`,
+        description: "מיד תועבר לפרופיל השחקן",
       });
 
-      // Store player session data in localStorage
+      // Store player session data
       localStorage.setItem('playerSession', JSON.stringify({
         id: playerData.id,
         email: playerData.email,
-        password: playerData.password,
-        fullName: playerData.full_name
+        password: playerData.password
       }));
 
       // Navigate to the player profile view
       navigate('/player/profile');
     } catch (error: any) {
-      console.error("Unexpected error during player login:", error);
+      console.error("Login error:", error);
       toast({
         variant: "destructive",
         title: "שגיאה בהתחברות",
