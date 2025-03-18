@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,6 +84,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           
         if (visibleVideosError) throw visibleVideosError;
         
+        console.log("Fetched videos for player:", visibleVideos);
         setVideos(visibleVideos || []);
         
         // Set the first video as active if available
