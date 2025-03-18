@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { ArrowRight, Bell, Send } from "lucide-react";
+import { ArrowRight, Bell, Check, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -34,6 +34,7 @@ interface Notification {
   player_name?: string;
   player_phone?: string;
   session_id: string;
+  read: boolean;
 }
 
 const NotificationsDashboard = () => {
@@ -41,6 +42,7 @@ const NotificationsDashboard = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState<Record<string, boolean>>({});
+  const [isMarkingRead, setIsMarkingRead] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -81,6 +83,7 @@ const NotificationsDashboard = () => {
         ...notification,
         player_name: notification.sessions?.players?.full_name || 'לא ידוע',
         player_phone: notification.sessions?.players?.phone || 'לא ידוע',
+        read: notification.read || false
       }));
 
       setNotifications(formattedNotifications);
@@ -139,6 +142,44 @@ const NotificationsDashboard = () => {
     }
   };
 
+  const handleMarkAsRead = async (notification: Notification) => {
+    if (isMarkingRead[notification.id] || notification.read) return;
+    
+    setIsMarkingRead(prev => ({ ...prev, [notification.id]: true }));
+    
+    try {
+      const { error } = await supabase
+        .from("notifications_log")
+        .update({ read: true })
+        .eq('id', notification.id);
+
+      if (error) throw error;
+
+      setNotifications(prev => 
+        prev.map(n => 
+          n.id === notification.id 
+            ? { ...n, read: true } 
+            : n
+        )
+      );
+
+      toast({
+        title: "✅ ההתראה סומנה כנקראה",
+        description: "ההתראה סומנה כנקראה בהצלחה",
+      });
+
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      toast({
+        variant: "destructive",
+        title: "⚠️ שגיאה בסימון ההתראה כנקראה",
+        description: "אנא נסה שוב",
+      });
+    } finally {
+      setIsMarkingRead(prev => ({ ...prev, [notification.id]: false }));
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Sent':
@@ -156,6 +197,8 @@ const NotificationsDashboard = () => {
     return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
   }
 
+  const unreadCount = notifications.filter(n => !n.read).length;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-8 px-4 md:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -172,6 +215,11 @@ const NotificationsDashboard = () => {
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent flex items-center gap-2">
             <Bell className="h-6 w-6" />
             תזכורות שנשלחו
+            {unreadCount > 0 && (
+              <span className="text-sm font-normal bg-red-500 text-white px-2 py-0.5 rounded-full">
+                {unreadCount}
+              </span>
+            )}
           </h1>
           <div className="w-10" />
         </div>
@@ -231,11 +279,12 @@ const NotificationsDashboard = () => {
                 <TableHead>טלפון</TableHead>
                 <TableHead>תוכן ההודעה</TableHead>
                 <TableHead>סטטוס</TableHead>
+                <TableHead>פעולות</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {notifications.map((notification) => (
-                <TableRow key={notification.id}>
+                <TableRow key={notification.id} className={notification.read ? "bg-gray-50" : ""}>
                   <TableCell className="font-medium">
                     {new Date(notification.sent_at || '').toLocaleString('he-IL')}
                   </TableCell>
@@ -248,6 +297,18 @@ const NotificationsDashboard = () => {
                     <span className={`px-2 py-1 rounded-full text-sm ${getStatusColor(notification.status)}`}>
                       {notification.status}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant={notification.read ? "ghost" : "outline"}
+                      size="sm"
+                      onClick={() => handleMarkAsRead(notification)}
+                      disabled={isMarkingRead[notification.id] || notification.read}
+                      className={`gap-2 ${notification.read ? "text-green-600" : ""}`}
+                    >
+                      <Check className="h-4 w-4" />
+                      {isMarkingRead[notification.id] ? 'מסמן...' : notification.read ? 'נקרא' : 'סמן כנקרא'}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
