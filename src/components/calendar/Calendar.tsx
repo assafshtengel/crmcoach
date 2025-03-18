@@ -37,6 +37,15 @@ interface CalendarEvent {
   };
 }
 
+interface SessionData {
+  player_id: string;
+  coach_id?: string;
+  session_date: string;
+  session_time: string;
+  location?: string;
+  notes?: string;
+}
+
 interface CalendarProps {
   events: CalendarEvent[];
   onEventClick: (eventId: string) => void;
@@ -73,6 +82,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
     }
   });
 
+  // Update form values when selectedPlayerId changes
   React.useEffect(() => {
     if (selectedPlayerId) {
       form.setValue('player_id', selectedPlayerId);
@@ -100,6 +110,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
   const onAddEvent = async (data: EventFormData) => {
     if (!onEventAdd) return;
     
+    // Check if player_id exists, if not, show an error
     if (!data.player_id && !selectedPlayerId) {
       toast.error('נא לבחור שחקן לפני הוספת אירוע');
       return;
@@ -112,6 +123,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       
       console.log('Saving event with player_id:', playerIdToUse);
       
+      // Format the data for the fullcalendar event format first
       const eventData = {
         title: data.title,
         start: `${data.date}T${data.time}:00`,
@@ -120,7 +132,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
           eventType: data.eventType,
           player_id: playerIdToUse,
           location: data.location,
-          playerName: data.title
+          playerName: data.title // Use the title as playerName for display
         }
       };
       
@@ -150,13 +162,13 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
   const getEventColor = (eventType?: 'reminder' | 'task' | 'other') => {
     switch (eventType) {
       case 'reminder':
-        return '#F59E0B';
+        return '#F59E0B'; // כתום
       case 'task':
-        return '#10B981';
+        return '#10B981'; // ירוק
       case 'other':
-        return '#6B7280';
+        return '#6B7280'; // אפור
       default:
-        return '#F59E0B';
+        return '#F59E0B'; // Default to reminder color (orange)
     }
   };
 

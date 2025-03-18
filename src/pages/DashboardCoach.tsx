@@ -1,26 +1,29 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, Users, LogOut, ChevronDown, ChevronUp, Send, Check, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen, Film } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { format, isBefore, isAfter, isSameDay, isPast, formatDistance, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, isBefore, isAfter, isSameDay, isPast, formatDistance } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
 import { Calendar as CalendarComponent } from '@/components/calendar/Calendar';
 import { Link } from 'react-router-dom';
+import { Wrench } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tool } from '@/types/tool';
+import AllMeetingSummaries from './AllMeetingSummaries';
+import { SessionFormDialog } from '@/components/sessions/SessionFormDialog';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { toast } from 'sonner';
-import { SessionFormDialog } from '@/components/sessions/SessionFormDialog';
-import { SessionActionsDialog } from '@/components/sessions/SessionActionsDialog';
+import { Film } from 'lucide-react';
+import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -77,14 +80,19 @@ interface CalendarEvent {
     location?: string;
     reminderSent: boolean;
     notes?: string;
-    eventType?: 'reminder' | 'task' | 'other';
-    player_id?: string;
   };
+}
+
+interface EventFormData {
+  title: string;
+  date: string;
+  time: string;
+  notes?: string;
 }
 
 const DashboardCoach = () => {
   const navigate = useNavigate();
-  const { toast: appToast } = useToast();
+  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [coachName, setCoachName] = useState('');
@@ -109,18 +117,11 @@ const DashboardCoach = () => {
   const [activeTab, setActiveTab] = useState("upcoming");
   const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
   const [isSessionFormOpen, setIsSessionFormOpen] = useState(false);
-  const [isSessionActionsOpen, setIsSessionActionsOpen] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<UpcomingSession | null>(null);
 
   useEffect(() => {
     const initUser = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       setUser(authUser);
-      
-      if (authUser) {
-        fetchData(authUser.id);
-        fetchNotifications(authUser.id);
-      }
     };
     initUser();
   }, []);
@@ -287,7 +288,7 @@ const DashboardCoach = () => {
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      appToast({
+      toast({
         variant: "destructive",
         title: "שגיאה בטעינת הנתונים",
         description: "אנא נסה שוב מאוחר יותר"
@@ -368,14 +369,14 @@ const DashboardCoach = () => {
       await supabase.from('sessions').update({
         reminder_sent: true
       }).eq('id', sessionId);
-      appToast({
+      toast({
         title: "התזכורת נשלחה בהצלחה",
         description: "השחקן יקבל הודעה על המפגש"
       });
       fetchData(user.id);
     } catch (error) {
       console.error('Error sending reminder:', error);
-      appToast({
+      toast({
         variant: "destructive",
         title: "שגיאה בשליחת התזכורת",
         description: "אנא נסה שוב מאוחר יותר"
@@ -387,13 +388,13 @@ const DashboardCoach = () => {
     try {
       await supabase.auth.signOut();
       navigate('/auth');
-      appToast({
+      toast({
         title: "התנתקת בהצלחה",
         description: "להתראות!"
       });
     } catch (error) {
       console.error('Error during logout:', error);
-      appToast({
+      toast({
         variant: "destructive",
         title: "שגיאה בהתנתקות",
         description: "אנא נסה שוב"
@@ -428,7 +429,7 @@ const DashboardCoach = () => {
         setSummarizedSessions(prev => [updatedSession, ...prev]);
       }
 
-      appToast({
+      toast({
         title: "הסיכום נשמר בהצלחה",
         description: "סיכום המפגש נשמר במערכת",
         duration: 1000
@@ -440,7 +441,7 @@ const DashboardCoach = () => {
 
     } catch (error) {
       console.error('Error saving session summary:', error);
-      appToast({
+      toast({
         variant: "destructive",
         title: "שגיאה בשמירת הסיכום",
         description: "אנא נסה שוב מאוחר יותר"
@@ -452,7 +453,7 @@ const DashboardCoach = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        appToast({
+        toast({
           variant: "destructive", 
           title: "שגיאה",
           description: "לא נמצא משתמש מחובר"
@@ -478,7 +479,7 @@ const DashboardCoach = () => {
 
       if (error) {
         console.error('Error fetching summary:', error);
-        appToast({
+        toast({
           variant: "destructive",
           title: "שגיאה בטעינת הסיכום",
           description: "לא ניתן לטעון את הסיכום כרגע, אנא נסה שוב מאוחר יותר"
@@ -489,7 +490,7 @@ const DashboardCoach = () => {
       if (summaries && summaries.length > 0) {
         navigate(`/session-summaries?id=${summaries[0].id}`);
       } else {
-        appToast({
+        toast({
           title: "אין סיכומים זמינים",
           description: `אין סיכומים זמינים עבור ${playerName}`,
           duration: 3000
@@ -497,28 +498,12 @@ const DashboardCoach = () => {
       }
     } catch (error) {
       console.error('Error in handleViewSummary:', error);
-      appToast({
+      toast({
         variant: "destructive",
         title: "שגיאה",
         description: "אירעה שגיאה בניסיון לצפות בסיכום"
       });
     }
-  };
-
-  const handleSessionClick = (session: UpcomingSession) => {
-    setSelectedSession(session);
-    setIsSessionActionsOpen(true);
-  };
-
-  const handleSessionUpdated = () => {
-    if (user?.id) {
-      fetchData(user.id);
-    }
-  };
-
-  const handleEventClick = (eventId: string) => {
-    console.log('Event clicked:', eventId);
-    // Add event click handling logic here
   };
 
   const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
@@ -534,13 +519,12 @@ const DashboardCoach = () => {
     return (
       <Card 
         key={session.id} 
-        className={`bg-gray-50 hover:bg-white transition-all duration-300 cursor-pointer ${
+        className={`bg-gray-50 hover:bg-white transition-all duration-300 ${
           isToday ? 'border-l-4 border-l-blue-500 shadow-blue-200' :
           hasNoSummary ? 'border-l-4 border-l-red-500 shadow-red-200' :
           session.has_summary ? 'border-l-4 border-l-green-500 shadow-green-200' :
           'border'
         }`}
-        onClick={() => handleSessionClick(session)}
       >
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
@@ -550,80 +534,712 @@ const DashboardCoach = () => {
                 {session.session_date} | {session.session_time}
               </p>
             </div>
+            <div>
+              {isToday && (
+                <div className="flex items-center text-blue-600 text-sm font-medium">
+                  <Clock className="h-4 w-4 mr-1" />
+                  היום
+                </div>
+              )}
+              {hasNoSummary && (
+                <div className="flex items-center text-red-600 text-sm font-medium">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  חסר סיכום
+                </div>
+              )}
+              {session.has_summary && (
+                <div className="flex items-center text-green-600 text-sm font-medium">
+                  <Check className="h-4 w-4 mr-1" />
+                  סוכם
+                </div>
+              )}
+            </div>
           </div>
         </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">{session.location || 'לא צוין מיקום'}</span>
+            <div className="flex gap-2">
+              {!session.reminder_sent && !isPastSession ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleSendReminder(session.id)}
+                  className="text-[#27AE60] hover:text-[#219A52]"
+                >
+                  <Send className="h-4 w-4 mr-1" />
+                  שלח תזכורת
+                </Button>
+              ) : !isPastSession ? (
+                <span className="text-sm text-[#27AE60] flex items-center">
+                  <Check className="h-4 w-4 mr-1" />
+                  נשלחה תזכורת
+                </span>
+              ) : null}
+              {showSummaryButton && !session.has_summary && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="flex items-center">
+                      <FileEdit className="h-4 w-4 mr-1" />
+                      סכם מפגש
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>סיכום מפגש</DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-4">
+                      <SessionSummaryForm
+                        sessionId={session.id}
+                        playerName={session.player.full_name}
+                        sessionDate={session.session_date}
+                        onSubmit={(data) => handleSaveSessionSummary(session.id, data)}
+                        onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()}
+                        forceEnable={!isPastSession}
+                      />
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+              {session.has_summary && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex items-center"
+                  onClick={() => session.player.id 
+                    ? handleViewSummary(session.player.id, session.player.full_name) 
+                    : navigate('/session-summaries')}
+                >
+                  <FileText className="h-4 w-4 mr-1" />
+                  צפה בסיכום
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
       </Card>
     );
   };
 
-  return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">לוח בקרה למאמן</h1>
-        <p className="text-gray-600">ברוך הבא, {user?.email || 'מאמן'}</p>
-      </header>
+  const fetchCalendarEvents = async (userId: string) => {
+    try {
+      const { data: rawSessions, error } = await supabase
+        .from('sessions')
+        .select(`
+          id,
+          session_date,
+          session_time,
+          location,
+          notes,
+          reminder_sent,
+          player:players!inner(
+            full_name
+          )
+        `)
+        .eq('coach_id', userId);
+
+      if (error) throw error;
+
+      const sessions = (rawSessions as any[])?.map(session => ({
+        id: session.id as string,
+        session_date: session.session_date as string,
+        session_time: session.session_time as string,
+        location: session.location as string | null,
+        notes: session.notes as string | null,
+        reminder_sent: session.reminder_sent as boolean | null,
+        player: {
+          full_name: session.player?.full_name as string
+        }
+      })) as SessionResponse[];
+
+      const events: CalendarEvent[] = sessions.map(session => ({
+        id: session.id,
+        title: session.player.full_name,
+        start: `${session.session_date}T${session.session_time}`,
+        location: session.location || undefined,
+        extendedProps: {
+          playerName: session.player.full_name,
+          location: session.location || undefined,
+          reminderSent: session.reminder_sent || false,
+          notes: session.notes || undefined
+        }
+      }));
+
+      setCalendarEvents(events);
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת המפגשים",
+        description: "אנא נסה שוב מאוחר יותר"
+      });
+    }
+  };
+
+  const handleAddEvent = async (eventData: any) => {
+    try {
+      if (!user?.id) {
+        throw new Error('משתמש לא מחובר');
+      }
+
+      const sessionData = {
+        player_id: eventData.extendedProps?.player_id || '',
+        coach_id: user.id,
+        session_date: eventData.start.split('T')[0],
+        session_time: eventData.start.split('T')[1],
+        location: eventData.extendedProps?.location || '',
+        notes: eventData.extendedProps?.notes || ''
+      };
+
+      console.log('Adding new session:', sessionData);
+
+      const { error } = await supabase
+        .from('sessions')
+        .insert(sessionData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await fetchCalendarEvents(user.id);
+      toast({
+        title: "המפגש נוסף בהצלחה",
+        description: "המפגש נוסף ללוח השנה",
+      });
+    } catch (error) {
+      console.error('Error adding event:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהוספת המפגש",
+        description: "אנא נסה שוב מאוחר יותר",
+      });
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    const initializeDashboard = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        const { data: coachData } = await supabase
+          .from('coaches')
+          .select('full_name, profile_picture')
+          .eq('id', authUser.id)
+          .single();
+        
+        if (coachData) {
+          setCoachName(coachData.full_name);
+          setProfilePicture(coachData.profile_picture);
+        }
+
+        await fetchData(authUser.id);
+        await fetchNotifications(authUser.id);
+        await fetchCalendarEvents(authUser.id);
+
+        const channel = supabase.channel('dashboard-changes').on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'notifications'
+        }, payload => {
+          if (payload.eventType === 'INSERT') {
+            toast({
+              title: "📢 התראה חדשה",
+              description: payload.new.message,
+              duration: 5000
+            });
+            fetchNotifications(authUser.id);
+          } else {
+            fetchNotifications(authUser.id);
+          }
+        }).subscribe();
+
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      }
+    };
+    initializeDashboard();
+  }, []);
+
+  const handleEventClick = (eventId: string) => {
+    const session = upcomingSessions.find(s => s.id === eventId);
+    if (session) {
+      navigate('/edit-session', { state: { sessionId: eventId } });
+    }
+  };
+
+  const getMonthlySessionsData = () => {
+    return [{
+      name: 'לפני חודשיים',
+      מפגשים: stats.twoMonthsAgoSessions,
+      fill: '#9CA3AF'
+    }, {
+      name: 'חודש קודם',
+      מפגשים: stats.lastMonthSessions,
+      fill: '#F59E0B'
+    }, {
+      name: 'החודש (בוצעו)',
+      מפגשים: stats.currentMonthPastSessions,
+      fill: '#10B981'
+    }, {
+      name: 'החודש (מתוכננים)',
+      מפגשים: stats.currentMonthFutureSessions,
+      fill: '#3B82F6'
+    }];
+  };
+
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+  
+      const { data, error } = await supabase
+        .from('players')
+        .select('id, full_name')
+        .eq('coach_id', user.id);
+  
+      if (error) {
+        console.error('Error fetching players:', error);
+        return;
+      }
+      setPlayers(data);
+    };
+
+    fetchPlayers();
+  }, []);
+
+  useEffect(() => {
+    const handleSessionSummarized = (event: any) => {
+      const { sessionId } = event.detail;
+      console.log("Session summarized event received for session:", sessionId);
+
+      setPastSessionsToSummarize(prev => prev.filter(session => session.id !== sessionId));
       
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      const summarizedSession = pastSessionsToSummarize.find(s => s.id === sessionId);
+      
+      if (summarizedSession) {
+        const updatedSession = { ...summarizedSession, has_summary: true };
+        setSummarizedSessions(prev => [updatedSession, ...prev]);
+      }
+    };
+
+    window.addEventListener('sessionSummarized', handleSessionSummarized);
+    
+    return () => {
+      window.removeEventListener('sessionSummarized', handleSessionSummarized);
+    };
+  }, [pastSessionsToSummarize]);
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
+      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>יציאה</AlertDialogTitle>
+            <AlertDialogDescription>האם אתה בטוח שברצונך להתנתק?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>יציאה</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <SessionFormDialog open={isSessionFormOpen} onOpenChange={setIsSessionFormOpen} />
+
+      <header className="w-full bg-[#2C3E50] text-white py-6 mb-8 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center overflow-hidden">
+                {profilePicture ? (
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={profilePicture} alt={coachName} />
+                    <AvatarFallback>{coachName.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <Users className="h-6 w-6 text-white/90" />
+                )}
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold animate-fade-in">
+                  {coachName ? (
+                    <span className="bg-gradient-to-r from-white to-white/80 bg-clip-text">
+                      ברוך הבא, {coachName}
+                    </span>
+                  ) : (
+                    'ברוך הבא'
+                  )}
+                </h1>
+                <p className="text-white/70 text-sm">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: he })}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} onEventAdd={handleAddEvent} />
+              <Button 
+                variant="ghost" 
+                className="text-white hover:bg-white/10"
+                onClick={() => navigate('/registration-links')}
+              >
+                <Share2 className="h-5 w-5 mr-2" />
+                <span className="hidden sm:inline">לינקי הרשמה</span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative text-white hover:bg-white/10">
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && 
+                      <span className="absolute -top-1 -right-1 bg-[#E74C3C] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                        {unreadCount}
+                      </span>
+                    }
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  <div className="p-2 border-b dark:border-gray-700">
+                    <h3 className="font-semibold text-lg px-2 py-1 dark:text-white">התראות</h3>
+                  </div>
+                  <ScrollArea className="h-[400px]">
+                    {notifications.length > 0 ? <div className="py-2">
+                        {notifications.map(notification => <div key={notification.id} className={`relative w-full text-right px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${!notification.is_read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                            <div className="flex justify-between items-start">
+                              <p className="text-sm text-gray-900 dark:text-gray-100">{notification.message}</p>
+                              {!notification.is_read && <Button variant="ghost" size="sm" className="h-6 ml-2 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={e => markAsRead(notification.id, e)}>
+                                  <Check className="h-4 w-4" />
+                                </Button>}
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {format(new Date(notification.created_at), 'dd/MM/yyyy HH:mm', {
+                        locale: he
+                      })}
+                            </p>
+                          </div>)}
+                      </div> : <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+                        אין התראות חדשות
+                      </div>}
+                  </ScrollArea>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => navigate('/profile-coach')}>
+                <Settings className="h-5 w-5 mr-2" />
+                <span className="hidden sm:inline">פרופיל</span>
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setIsLogoutDialogOpen(true)}>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="col-span-full">
-            <CardHeader>
-              <CardTitle>יומן מפגשים</CardTitle>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <Card className="bg-white/90 shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-semibold text-[#2C3E50]">שליחת הודעה למנהלים</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AdminMessageForm />
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#27AE60]">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">שחקנים פעילים</CardTitle>
+              <Users className="h-5 w-5 text-[#27AE60]" />
             </CardHeader>
             <CardContent>
-              <CalendarComponent 
-                events={calendarEvents} 
-                onEventClick={handleEventClick}
-                selectedPlayerId={players?.[0]?.id}
-              />
+              <div className="text-3xl font-bold text-[#2C3E50]">{stats.totalPlayers}</div>
+              <p className="text-sm text-gray-500 mb-3">רשומים במערכת</p>
+              <Button 
+                variant="outline" 
+                className="w-full border-[#27AE60] text-[#27AE60] hover:bg-[#27AE60]/10"
+                onClick={() => navigate('/players-list')}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                צפה ברשימת השחקנים
+              </Button>
             </CardContent>
           </Card>
-          
-          {upcomingSessions.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>מפגשים קרובים</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {upcomingSessions.map(session => renderSessionCard(session))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
-          {pastSessionsToSummarize.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>מפגשים לסיכום</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {pastSessionsToSummarize.map(session => renderSessionCard(session))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          <SessionFormDialog 
-            open={isSessionFormOpen} 
-            onOpenChange={setIsSessionFormOpen}
-            onSessionAdd={handleSessionUpdated}
-          />
-          
-          {selectedSession && (
-            <SessionActionsDialog
-              open={isSessionActionsOpen}
-              onOpenChange={setIsSessionActionsOpen}
-              session={selectedSession}
-              onSessionUpdated={handleSessionUpdated}
-            />
-          )}
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB]">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">מפגשים קרובים</CardTitle>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-1 text-[#3498DB] border-[#3498DB] hover:bg-[#3498DB]/10"
+                  onClick={() => navigate('/new-session')}
+                >
+                  <Plus className="h-4 w-4" />
+                  הוסף מפגש
+                </Button>
+                <Calendar className="h-5 w-5 text-[#3498DB]" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-[#2C3E50]">{stats.upcomingSessions}</div>
+              <p className="text-sm text-gray-500 mb-2">בשבוע הקרוב ({stats.upcomingSessions} מפגשים)</p>
+              
+              {upcomingSessions.length > 0 && (
+                <Collapsible className="mt-2">
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="w-full flex items-center justify-center text-[#3498DB]">
+                      הצג רשימת מפגשים
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="space-y-2 mt-2 max-h-[200px] overflow-y-auto pr-1">
+                      {upcomingSessions.map((session) => (
+                        <div 
+                          key={session.id} 
+                          className="p-2 rounded-md bg-gray-50 flex justify-between items-center text-sm hover:bg-gray-100 cursor-pointer"
+                          onClick={() => navigate('/edit-session', { state: { sessionId: session.id } })}
+                        >
+                          <div>
+                            <p className="font-medium">{session.player.full_name}</p>
+                            <p className="text-gray-500 text-xs">{session.session_date} | {session.session_time}</p>
+                          </div>
+                          <div className="flex items-center">
+                            {session.location && (
+                              <span className="text-xs text-gray-500 ml-2">{session.location}</span>
+                            )}
+                            <ChevronUp className="h-4 w-4 text-gray-400" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F] cursor-pointer"
+            onClick={() => navigate('/tool-management?tab=videos')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">סרטוני וידאו</CardTitle>
+              <Film className="h-5 w-5 text-[#F1C40F]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-[#2C3E50]">{stats.totalReminders}</div>
+              <p className="text-sm text-gray-500">סרטונים זמינים</p>
+            </CardContent>
+          </Card>
         </div>
-      )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9b59b6] cursor-pointer"
+            onClick={() => navigate('/new-player')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">הוספת שחקן חדש</CardTitle>
+              <UserPlus className="h-5 w-5 text-[#9b59b6]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">צור כרטיס שחקן חדש במערכת</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#9b59b6] hover:bg-[#8e44ad]"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                הוסף שחקן חדש
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#e74c3c] cursor-pointer"
+            onClick={() => navigate('/reports')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">דוחות וסטטיסטיקה</CardTitle>
+              <BarChart2 className="h-5 w-5 text-[#e74c3c]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">צפה בנתונים סטטיסטיים מפורטים</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#e74c3c] hover:bg-[#c0392b]"
+              >
+                <BarChart2 className="h-4 w-4 mr-2" />
+                צפה בדוחות
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9b87f5] cursor-pointer"
+            onClick={() => navigate('/all-meeting-summaries')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">סיכומי מפגשים</CardTitle>
+              <FileText className="h-5 w-5 text-[#9b87f5]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">צפה בסיכומי כל המפגשים, עם אפשרות סינון לפי שחקן</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#9b87f5] hover:bg-[#8a68f9]"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                צפה בכל הסיכומים
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#27ae60] cursor-pointer"
+            onClick={() => navigate('/game-prep')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">הכנה למשחק</CardTitle>
+              <Target className="h-5 w-5 text-[#27ae60]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">מלא טו��ס הכנה למשחק עבור השחקנים</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#27ae60] hover:bg-[#219653]"
+              >
+                <Target className="h-4 w-4 mr-2" />
+                מלא טופס הכנה
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#f39c12] cursor-pointer"
+            onClick={() => navigate('/player-evaluation')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">הערכת שחקן</CardTitle>
+              <ClipboardCheck className="h-5 w-5 text-[#f39c12]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">מלא טופס הערכת שחקן מקיף</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#f39c12] hover:bg-[#e67e22]"
+              >
+                <ClipboardCheck className="h-4 w-4 mr-2" />
+                הערך שחקן
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB] cursor-pointer"
+            onClick={() => navigate('/mental-library')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">הספרייה המנטאלית</CardTitle>
+              <BookOpen className="h-5 w-5 text-[#3498DB]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">רשימת ספרים מומלצים בתחום הפסיכולוגיה של הספורט</p>
+              <Button 
+                variant="default" 
+                className="w-full bg-[#3498DB] hover:bg-[#2980b9]"
+              >
+                <BookOpen className="h-4 w-4 mr-2" />
+                צפה בספרייה
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="bg-white/90 shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-semibold text-[#2C3E50]">מפגשים אחרונים</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="unsummarized" className="w-full" onValueChange={setActiveTab}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="unsummarized">ממתינים לסיכום ({pastSessionsToSummarize.length})</TabsTrigger>
+                <TabsTrigger value="summarized">מסוכמים ({summarizedSessions.length})</TabsTrigger>
+                <TabsTrigger value="upcoming">מפגשים קרובים ({upcomingSessions.length})</TabsTrigger>
+              </TabsList>
+              <TabsContent value="unsummarized" className="mt-0">
+                <div className="space-y-4">
+                  {pastSessionsToSummarize.length > 0 ? (
+                    pastSessionsToSummarize.map(session => renderSessionCard(session))
+                  ) : (
+                    <div className="text-center p-6 bg-gray-50 rounded-lg">
+                      <Check className="h-10 w-10 text-green-500 mx-auto mb-2" />
+                      <h3 className="text-lg font-medium text-gray-800">הכל מסוכם!</h3>
+                      <p className="text-gray-500 mt-1">כל המפגשים שלך מסוכמים</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="summarized" className="mt-0">
+                <div className="space-y-4">
+                  {summarizedSessions.length > 0 ? (
+                    summarizedSessions.map(session => renderSessionCard(session, true))
+                  ) : (
+                    <div className="text-center p-6 bg-gray-50 rounded-lg">
+                      <FileText className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                      <h3 className="text-lg font-medium text-gray-800">אין סיכומים</h3>
+                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים מסוכמים</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              <TabsContent value="upcoming" className="mt-0">
+                <div className="space-y-4">
+                  {upcomingSessions.length > 0 ? (
+                    upcomingSessions.map(session => renderSessionCard(session))
+                  ) : (
+                    <div className="text-center p-6 bg-gray-50 rounded-lg">
+                      <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                      <h3 className="text-lg font-medium text-gray-800">אין מפגשים קרובים</h3>
+                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים מתוכננים בשבוע הקרוב</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg lg:col-span-3">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">סיכום מפגשים חודשי</CardTitle>
+              <BarChart2 className="h-5 w-5 text-[#9b87f5]" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={getMonthlySessionsData()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="מפגשים" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="max-w-full mt-6">
+          <AdminMessageForm />
+        </div>
+      </div>
     </div>
   );
 };
