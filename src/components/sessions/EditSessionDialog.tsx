@@ -7,9 +7,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, MapPin, FileText, Trash2 } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { Calendar as CalendarIcon, Clock, MapPin, FileText, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface Session {
   id: string;
@@ -27,12 +30,14 @@ interface EditSessionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   session: Session | null;
+  onSessionUpdated?: () => void;
 }
 
 export function EditSessionDialog({ 
   open, 
   onOpenChange,
-  session
+  session,
+  onSessionUpdated
 }: EditSessionDialogProps) {
   const [date, setDate] = React.useState<Date | undefined>(
     session?.session_date ? new Date(session.session_date) : undefined
@@ -40,6 +45,8 @@ export function EditSessionDialog({
   const [time, setTime] = React.useState(session?.session_time || '');
   const [location, setLocation] = React.useState(session?.location || '');
   const [notes, setNotes] = React.useState(session?.notes || '');
+  const [isSaving, setIsSaving] = React.useState(false);
+  const navigate = useNavigate();
 
   // Update state when session changes
   React.useEffect(() => {
@@ -50,6 +57,55 @@ export function EditSessionDialog({
       setNotes(session.notes || '');
     }
   }, [session]);
+
+  const handleSaveChanges = async () => {
+    if (!session?.id || !date) {
+      toast.error('חסרים פרטים לשמירת המפגש');
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      // Format the date to ISO format (YYYY-MM-DD)
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      
+      // Update the session in Supabase
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          session_date: formattedDate,
+          session_time: time,
+          location: location,
+          notes: notes
+        })
+        .eq('id', session.id);
+      
+      if (error) throw error;
+      
+      toast.success('המפגש עודכן בהצלחה');
+      
+      // Close the dialog and notify parent component
+      onOpenChange(false);
+      
+      // Call the callback function to refresh the sessions list
+      if (onSessionUpdated) {
+        onSessionUpdated();
+      }
+    } catch (error: any) {
+      console.error('Error updating session:', error);
+      toast.error(`שגיאה בעדכון המפגש: ${error.message || 'אנא נסה שנית'}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSummarizeSession = () => {
+    if (session?.id) {
+      navigate('/edit-session', { state: { sessionId: session.id, needsSummary: true } });
+      onOpenChange(false);
+    }
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -138,13 +194,25 @@ export function EditSessionDialog({
           </div>
           
           <div className="flex flex-col gap-3 pt-2">
-            <Button className="w-full">
-              שמור שינויים
+            <Button 
+              className="w-full"
+              onClick={handleSaveChanges}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  שומר שינויים...
+                </>
+              ) : (
+                'שמור שינויים'
+              )}
             </Button>
             
             <Button 
               variant="secondary" 
               className="w-full"
+              onClick={handleSummarizeSession}
             >
               <FileText className="ml-2 h-4 w-4" />
               סכם מפגש
@@ -153,6 +221,7 @@ export function EditSessionDialog({
             <Button 
               variant="destructive" 
               className="w-full"
+              type="button"
             >
               <Trash2 className="ml-2 h-4 w-4" />
               מחק מפגש

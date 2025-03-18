@@ -440,6 +440,7 @@ const SessionsList = () => {
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
           session={selectedSession}
+          onSessionUpdated={fetchSessions}
         />
       </div>
     </div>
