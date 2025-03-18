@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { PlayIcon, ExternalLink, RefreshCcw } from "lucide-react";
+import { PlayIcon, ExternalLink, RefreshCcw, Link } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
@@ -336,34 +336,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     }
   };
   
-  const getEmbedUrl = (url: string) => {
-    if (!url || typeof url !== 'string') {
-      console.error("Invalid URL provided to getEmbedUrl:", url);
-      return "";
-    }
-    
-    try {
-      // Validate URL to prevent errors
-      new URL(url);
-      
-      if (url.includes("youtube.com/watch")) {
-        const videoId = new URL(url).searchParams.get("v");
-        return `https://www.youtube.com/embed/${videoId}`;
-      } else if (url.includes("youtu.be")) {
-        const parts = url.split("/");
-        const videoId = parts[parts.length - 1].split("?")[0];
-        return `https://www.youtube.com/embed/${videoId}`;
-      } else if (url.includes("vimeo.com")) {
-        const vimeoId = url.split("/").pop();
-        return `https://player.vimeo.com/video/${vimeoId}`;
-      }
-      return url;
-    } catch (error) {
-      console.error("Error processing URL:", url, error);
-      return "";
-    }
-  };
-  
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('he-IL', {
@@ -429,35 +401,24 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
             <CardTitle>{activeVideo.title}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="aspect-video relative rounded-md overflow-hidden bg-gray-100">
-              {activeVideo.url ? (
-                <iframe 
-                  src={getEmbedUrl(activeVideo.url)} 
-                  className="absolute top-0 left-0 w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  title={activeVideo.title}
-                ></iframe>
-              ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                  <p className="text-gray-500">לא נמצא קישור לסרטון</p>
-                </div>
-              )}
+            <div className="aspect-video relative rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+              <div className="text-center p-6 flex flex-col items-center gap-4">
+                <Link className="h-16 w-16 text-primary" />
+                <p className="text-gray-700 font-medium">לחץ על הכפתור למטה כדי לצפות בסרטון</p>
+                <Button 
+                  size="lg"
+                  onClick={() => activeVideo.url ? openVideoUrl(activeVideo.url) : null}
+                  className="mt-2 flex items-center gap-2"
+                  disabled={!activeVideo.url}
+                >
+                  צפה בסרטון
+                  <ExternalLink className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
             </div>
             <div className="mt-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-500">פורסם: {formatDate(activeVideo.created_at)}</span>
-                {activeVideo.url && (
-                  <Button 
-                    variant="ghost"
-                    size="sm"
-                    className="text-sm text-primary flex items-center gap-1 p-0 h-auto"
-                    onClick={() => openVideoUrl(activeVideo.url)}
-                  >
-                    צפה באתר המקורי <ExternalLink className="h-3 w-3" />
-                  </Button>
-                )}
               </div>
               <p className="whitespace-pre-line text-sm text-gray-700">{activeVideo.description}</p>
             </div>
@@ -476,18 +437,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
               <div className="flex gap-3">
                 <div 
                   className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0 hover:bg-gray-200 transition-colors"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (video.url) {
-                      openVideoUrl(video.url, e);
-                    } else {
-                      toast({
-                        title: "שגיאה בפתיחת סרטון",
-                        description: "לא נמצא קישור לסרטון",
-                        variant: "destructive"
-                      });
-                    }
-                  }}
                 >
                   <PlayIcon className="h-8 w-8 text-primary" />
                 </div>
