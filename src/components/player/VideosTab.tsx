@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase"; // Update to use the correct import path
 import { Button } from "@/components/ui/button";
 import { PlayIcon, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +32,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     const fetchVideos = async () => {
       try {
         setLoading(true);
+        console.log("Fetching videos for coachId:", coachId, "and playerId:", playerId);
         
         if (!playerId) {
           // For coach view - show all videos
@@ -39,55 +41,57 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         }
         
         // For player view - show only appropriate videos based on scheduling
-        const { data: playerVideos, error: playerVideosError } = await supabase
+        const { data: playerVideosData, error: playerVideosError } = await supabase
           .from("player_videos")
-          .select("video_id")
+          .select("video_id, videos(id, title, url, description, category, created_at, is_auto_scheduled, days_after_registration)")
           .eq("player_id", playerId);
           
-        if (playerVideosError) throw playerVideosError;
+        if (playerVideosError) {
+          console.error("Error fetching player videos:", playerVideosError);
+          throw playerVideosError;
+        }
+        
+        console.log("Player videos data:", playerVideosData);
+        
+        // Extract video objects from the nested structure
+        const playerVideos = playerVideosData
+          ?.filter(item => item.videos)
+          .map(item => item.videos) || [];
+        
+        console.log("Extracted videos:", playerVideos);
         
         // Get auto-video assignments for this player that have been sent
         const { data: autoAssignments, error: autoAssignmentsError } = await supabase
           .from("auto_video_assignments")
-          .select("video_id, scheduled_for, sent")
-          .eq("player_id", playerId);
+          .select("video_id, scheduled_for, sent, videos(id, title, url, description, category, created_at, is_auto_scheduled, days_after_registration)")
+          .eq("player_id", playerId)
+          .eq("sent", true);
           
-        if (autoAssignmentsError) throw autoAssignmentsError;
-        
-        // Extract video IDs that should be visible to the player
-        const sentAutoVideoIds = autoAssignments
-          ?.filter(assignment => 
-            assignment.sent || 
-            new Date(assignment.scheduled_for) <= new Date()
-          )
-          .map(assignment => assignment.video_id) || [];
-          
-        const manuallyAssignedVideoIds = playerVideos?.map(pv => pv.video_id) || [];
-        
-        // Combine all visible video IDs (both manually assigned and auto-scheduled)
-        const visibleVideoIds = [...new Set([...manuallyAssignedVideoIds, ...sentAutoVideoIds])];
-        
-        if (visibleVideoIds.length === 0) {
-          setVideos([]);
-          setLoading(false);
-          return;
+        if (autoAssignmentsError) {
+          console.error("Error fetching auto assignments:", autoAssignmentsError);
+          throw autoAssignmentsError;
         }
         
-        // Fetch all videos that should be visible to the player (both coach and admin videos)
-        // Important: Only fetch videos that are in the visibleVideoIds list
-        const { data: visibleVideos, error: visibleVideosError } = await supabase
-          .from("videos")
-          .select("*")
-          .in("id", visibleVideoIds)
-          .order("created_at", { ascending: false });
-          
-        if (visibleVideosError) throw visibleVideosError;
+        console.log("Auto assignments:", autoAssignments);
         
-        setVideos(visibleVideos || []);
+        // Extract videos from auto assignments
+        const autoVideos = autoAssignments
+          ?.filter(item => item.videos && item.sent)
+          .map(item => item.videos) || [];
+        
+        // Combine all videos and remove duplicates based on ID
+        const allVideos = [...playerVideos, ...autoVideos];
+        const uniqueVideos = Array.from(
+          new Map(allVideos.map(video => [video.id, video])).values()
+        );
+        
+        console.log("Final unique videos:", uniqueVideos);
+        
+        setVideos(uniqueVideos);
         
         // Set the first video as active if available
-        if (visibleVideos && visibleVideos.length > 0) {
-          setActiveVideo(visibleVideos[0]);
+        if (uniqueVideos.length > 0) {
+          setActiveVideo(uniqueVideos[0]);
         }
       } catch (error) {
         console.error("Error fetching videos:", error);
