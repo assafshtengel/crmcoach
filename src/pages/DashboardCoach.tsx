@@ -26,9 +26,11 @@ import { SessionFormDialog } from '@/components/sessions/SessionFormDialog';
 import { SessionSummaryListener } from '@/components/dashboard/SessionSummaryListener';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useDashboardHandlers } from '@/hooks/useDashboardHandlers';
+import { useToast } from '@/hooks/use-toast';
 
 const DashboardCoach = () => {
   const [user, setUser] = useState<any>(null);
+  const { toast } = useToast();
   
   const {
     stats,
@@ -62,7 +64,8 @@ const DashboardCoach = () => {
     setActiveTab,
     handleLogout,
     handleEventClick,
-    handleViewSummary
+    handleViewSummary,
+    navigate
   } = useDashboardHandlers();
 
   useEffect(() => {

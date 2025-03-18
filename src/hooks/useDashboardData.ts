@@ -483,6 +483,8 @@ export const useDashboardData = (userId: string | undefined) => {
     markNotificationAsRead,
     sendSessionReminder,
     saveSessionSummary,
-    addCalendarEvent
+    addCalendarEvent,
+    setPastSessionsToSummarize,
+    setSummarizedSessions
   };
 };
