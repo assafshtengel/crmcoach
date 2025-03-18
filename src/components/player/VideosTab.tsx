@@ -28,16 +28,18 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchVideos = async () => {
       try {
         setLoading(true);
+        setError(null);
         console.log("Fetching videos for coachId:", coachId, "playerId:", playerId);
         
         if (!playerId) {
-          fetchAllVideos();
+          await fetchAllVideos();
           return;
         }
         
@@ -121,21 +123,27 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         
         console.log("Combined assigned videos:", allAssignedVideos);
         
-        // Sort by date, newest first
-        allAssignedVideos.sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        // Verify all videos have required fields
+        const validVideos = allAssignedVideos.filter(video => 
+          video && video.id && video.title && video.created_at
         );
         
-        setVideos(allAssignedVideos);
-        
-        if (allAssignedVideos.length > 0) {
-          setActiveVideo(allAssignedVideos[0]);
-        } else {
+        if (validVideos.length === 0) {
+          console.log("No valid videos found for this player");
+          setVideos([]);
           setActiveVideo(null);
-          console.log("No videos available for this player");
+        } else {
+          // Sort by date, newest first
+          validVideos.sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+          
+          setVideos(validVideos);
+          setActiveVideo(validVideos[0]);
         }
       } catch (error) {
         console.error("Error fetching videos:", error);
+        setError("לא ניתן לטעון את הסרטונים");
         toast({
           title: "שגיאה בטעינת סרטונים",
           description: "לא ניתן לטעון את הסרטונים",
@@ -168,13 +176,21 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         const allVideos = [...(coachVideos || []), ...(adminVideos || [])];
         allVideos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         
-        setVideos(allVideos);
+        // Verify all videos have required fields
+        const validVideos = allVideos.filter(video => 
+          video && video.id && video.title && video.created_at
+        );
         
-        if (allVideos.length > 0) {
-          setActiveVideo(allVideos[0]);
+        setVideos(validVideos);
+        
+        if (validVideos.length > 0) {
+          setActiveVideo(validVideos[0]);
+        } else {
+          setActiveVideo(null);
         }
       } catch (error) {
         console.error("Error fetching videos:", error);
+        setError("לא ניתן לטעון את הסרטונים");
         toast({
           title: "שגיאה בטעינת סרטונים",
           description: "לא ניתן לטעון את הסרטונים",
@@ -187,12 +203,27 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     
     if (coachId) {
       fetchVideos();
+    } else {
+      setLoading(false);
+      setError("חסר מזהה מאמן");
     }
   }, [coachId, playerId, toast]);
   
   const handleWatchVideo = (video: Video) => {
     console.log("Handling watch video:", video);
     setActiveVideo(video);
+    
+    // Open the video URL if it exists
+    if (video.url) {
+      openVideoUrl(video.url);
+    } else {
+      toast({
+        title: "שגיאה בפתיחת סרטון",
+        description: "לא נמצא קישור לסרטון",
+        variant: "destructive"
+      });
+    }
+    
     if (onWatchVideo && video.id) {
       onWatchVideo(video.id);
     }
@@ -322,6 +353,23 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-red-500 font-medium">{error}</p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => window.location.reload()}
+          >
+            נסה שוב
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (videos.length === 0) {
     return (
       <Card>
@@ -341,7 +389,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           </CardHeader>
           <CardContent>
             <div className="aspect-video relative rounded-md overflow-hidden">
-              {activeVideo.url && (
+              {activeVideo.url ? (
                 <iframe 
                   src={getEmbedUrl(activeVideo.url)} 
                   className="absolute top-0 left-0 w-full h-full"
@@ -350,6 +398,10 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
                   allowFullScreen
                   title={activeVideo.title}
                 ></iframe>
+              ) : (
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                  <p className="text-gray-500">לא נמצא קישור לסרטון</p>
+                </div>
               )}
             </div>
             <div className="mt-4">
@@ -387,6 +439,12 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
                     e.stopPropagation();
                     if (video.url) {
                       openVideoUrl(video.url, e);
+                    } else {
+                      toast({
+                        title: "שגיאה בפתיחת סרטון",
+                        description: "לא נמצא קישור לסרטון",
+                        variant: "destructive"
+                      });
                     }
                   }}
                 >
