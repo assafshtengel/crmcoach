@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
-import { Calendar as CalendarComponent } from '@/components/calendar/Calendar';
+import { CalendarComponent } from '@/components/calendar/Calendar';
 import { Link } from 'react-router-dom';
 import { Wrench } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -110,7 +110,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
     }
   });
 
-  // Update form values when selectedPlayerId changes
   React.useEffect(() => {
     if (selectedPlayerId) {
       form.setValue('player_id', selectedPlayerId);
@@ -138,7 +137,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
   const onAddEvent = async (data: EventFormData) => {
     if (!onEventAdd) return;
     
-    // Check if player_id exists, if not, show an error
     if (!data.player_id && !selectedPlayerId) {
       toast.error('נא לבחור שחקן לפני הוספת אירוע');
       return;
@@ -151,7 +149,6 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
       
       console.log('Saving event with player_id:', playerIdToUse);
       
-      // Format the data for the fullcalendar event format first
       const eventData = {
         title: data.title,
         start: `${data.date}T${data.time}:00`,
@@ -160,7 +157,7 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
           eventType: data.eventType,
           player_id: playerIdToUse,
           location: data.location,
-          playerName: data.title // Use the title as playerName for display
+          playerName: data.title
         }
       };
       
@@ -190,13 +187,13 @@ export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEven
   const getEventColor = (eventType?: 'reminder' | 'task' | 'other') => {
     switch (eventType) {
       case 'reminder':
-        return '#F59E0B'; // כתום
+        return '#F59E0B';
       case 'task':
-        return '#10B981'; // ירוק
+        return '#10B981';
       case 'other':
-        return '#6B7280'; // אפור
+        return '#6B7280';
       default:
-        return '#F59E0B'; // Default to reminder color (orange)
+        return '#F59E0B';
     }
   };
 
@@ -915,3 +912,18 @@ const DashboardCoach = () => {
               <p className="text-sm text-gray-500">
                 {session.session_date} | {session.session_time}
               </p>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+    );
+  };
+
+  return (
+    <div>
+      <Calendar />
+    </div>
+  );
+};
+
+export default DashboardCoach;
