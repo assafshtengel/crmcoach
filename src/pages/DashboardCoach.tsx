@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { format, isBefore, isAfter, isSameDay, isPast, formatDistance } from 'date-fns';
+import { format, isBefore, isAfter, isSameDay, isPast, formatDistance, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -611,7 +611,7 @@ const DashboardCoach = () => {
           <SessionFormDialog 
             open={isSessionFormOpen} 
             onOpenChange={setIsSessionFormOpen}
-            onSessionSaved={handleSessionUpdated}
+            onSessionAdd={handleSessionUpdated}
           />
           
           {selectedSession && (
