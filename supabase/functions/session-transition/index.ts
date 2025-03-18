@@ -25,12 +25,12 @@ Deno.serve(async (req) => {
     
     console.log(`Running session transition check at ${currentDate} ${currentTime}`);
 
-    // Get sessions that are starting right now (matching date and time)
+    // Get sessions that should be transitioned based on date and time
+    // Either past dates OR current date with time in the past
     const { data: sessionsToTransition, error: fetchError } = await supabaseClient
       .from('sessions')
       .select('id, session_date, session_time')
-      .eq('session_date', currentDate)
-      .lt('session_time', currentTime)
+      .or(`session_date.lt.${currentDate},and(session_date.eq.${currentDate},session_time.lt.${currentTime})`)
       .is('has_started', false);
 
     if (fetchError) {
