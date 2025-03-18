@@ -717,6 +717,25 @@ const DashboardCoach = () => {
     }
   };
 
+  const handleSessionFormSubmit = async (sessionData: {
+    player_id: string;
+    session_date: string;
+    session_time: string;
+    location?: string;
+    notes?: string;
+    meeting_type: 'in_person' | 'zoom';
+  }): Promise<void> => {
+    try {
+      console.log('Session data:', sessionData);
+      
+      // Placeholder for future implementation
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error adding session:', error);
+      return Promise.reject(error);
+    }
+  };
+
   useEffect(() => {
     const initializeDashboard = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();

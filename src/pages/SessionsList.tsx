@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +23,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EditSessionDialog } from '@/components/sessions/EditSessionDialog';
 
 interface Session {
   id: string;
@@ -36,7 +36,6 @@ interface Session {
   };
 }
 
-// Define the raw type as it comes from Supabase
 interface RawSession {
   id: string;
   session_date: string;
@@ -54,11 +53,12 @@ const SessionsList = () => {
   const navigate = useNavigate();
   const [sessionToDelete, setSessionToDelete] = useState<{ id: string; playerName: string } | null>(null);
   const [activeTab, setActiveTab] = useState("table");
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchSessions();
     
-    // Set up real-time subscription for session status changes
     const channel = supabase
       .channel('session-changes')
       .on('postgres_changes', {
@@ -67,7 +67,7 @@ const SessionsList = () => {
         table: 'sessions'
       }, (payload) => {
         console.log('Session updated:', payload);
-        fetchSessions(); // Refresh sessions when updates occur
+        fetchSessions();
       })
       .subscribe();
       
@@ -99,7 +99,6 @@ const SessionsList = () => {
 
       if (error) throw error;
 
-      // Type assertion and transformation
       const rawSessions = sessionsData as unknown as RawSession[];
       const formattedSessions = rawSessions.map(session => ({
         id: session.id,
@@ -149,6 +148,11 @@ const SessionsList = () => {
     }
   };
 
+  const handleSessionCardClick = (session: Session) => {
+    setSelectedSession(session);
+    setIsEditDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
@@ -157,7 +161,6 @@ const SessionsList = () => {
     );
   }
 
-  // Filter sessions by whether they've started or not
   const upcomingSessions = sessions.filter(session => !session.has_started);
   const pastSessions = sessions.filter(session => session.has_started);
 
@@ -264,7 +267,11 @@ const SessionsList = () => {
                 <TabsContent value="cards" className="w-full">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {upcomingSessions.map((session) => (
-                      <div key={session.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
+                      <div 
+                        key={session.id} 
+                        className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4 cursor-pointer"
+                        onClick={() => handleSessionCardClick(session)}
+                      >
                         <div className="flex justify-between items-start mb-3">
                           <div className="text-right">
                             <h3 className="font-medium text-lg">{session.player.full_name}</h3>
@@ -274,7 +281,10 @@ const SessionsList = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleEditSession(session.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditSession(session.id);
+                              }}
                               className="h-8 w-8 p-0"
                             >
                               <Pencil className="h-4 w-4" />
@@ -282,10 +292,13 @@ const SessionsList = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setSessionToDelete({ 
-                                id: session.id, 
-                                playerName: session.player.full_name 
-                              })}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSessionToDelete({ 
+                                  id: session.id, 
+                                  playerName: session.player.full_name 
+                                });
+                              }}
                               className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -301,7 +314,10 @@ const SessionsList = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleSummarizeSession(session.id, false)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSummarizeSession(session.id, false);
+                            }}
                             className="text-blue-600 hover:text-blue-700"
                           >
                             סכם מפגש
@@ -419,6 +435,12 @@ const SessionsList = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        
+        <EditSessionDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          session={selectedSession}
+        />
       </div>
     </div>
   );
