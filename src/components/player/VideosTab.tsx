@@ -41,13 +41,14 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           return;
         }
         
+        // First fetch manually assigned videos from player_videos
         const { data: playerVideos, error: playerVideosError } = await supabase
           .from("player_videos")
           .select(`
             video_id,
             watched,
             watched_at,
-            videos:video_id (*)
+            videos:video_id (id, title, url, description, category, created_at)
           `)
           .eq("player_id", playerId);
           
@@ -58,17 +59,30 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         
         console.log("Manually assigned videos data:", playerVideos);
         
+        // Get complete video objects from manually assigned videos
         const manuallyAssignedVideos = playerVideos
           ?.filter(pv => pv.videos) // Filter out any null video references
-          .map(pv => pv.videos as Video) || [];
+          .map(pv => {
+            // Make sure we have the full video object with all required fields
+            if (pv.videos) {
+              return {
+                ...pv.videos,
+                watched: pv.watched,
+                watched_at: pv.watched_at
+              };
+            }
+            return null;
+          })
+          .filter(Boolean) || [];
           
+        // Then fetch auto-assigned videos that have been sent
         const { data: autoAssignments, error: autoAssignmentsError } = await supabase
           .from("auto_video_assignments")
           .select(`
             video_id,
             scheduled_for,
             sent,
-            videos:video_id (*)
+            videos:video_id (id, title, url, description, category, created_at, days_after_registration)
           `)
           .eq("player_id", playerId)
           .eq("sent", true);
@@ -80,15 +94,26 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         
         console.log("Auto-assigned videos data:", autoAssignments);
         
+        // Get complete video objects from auto-assigned videos
         const autoAssignedVideos = autoAssignments
-          ?.filter(aa => aa.videos && aa.sent) // Only include sent videos
-          .map(aa => aa.videos as Video) || [];
-          
+          ?.filter(aa => aa.videos && aa.sent) // Only include sent videos with valid data
+          .map(aa => {
+            if (aa.videos) {
+              return {
+                ...aa.videos,
+                is_auto_scheduled: true
+              };
+            }
+            return null;
+          })
+          .filter(Boolean) || [];
+        
+        // Combine all videos, removing duplicates by ID
         const videoMap = new Map<string, Video>();
         
         [...manuallyAssignedVideos, ...autoAssignedVideos].forEach(video => {
           if (video && video.id) {
-            videoMap.set(video.id, video);
+            videoMap.set(video.id, video as Video);
           }
         });
         
@@ -96,6 +121,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         
         console.log("Combined assigned videos:", allAssignedVideos);
         
+        // Sort by date, newest first
         allAssignedVideos.sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
@@ -165,15 +191,75 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
   }, [coachId, playerId, toast]);
   
   const handleWatchVideo = (video: Video) => {
+    console.log("Handling watch video:", video);
     setActiveVideo(video);
-    if (onWatchVideo) {
+    if (onWatchVideo && video.id) {
       onWatchVideo(video.id);
+    }
+    
+    // If this is a player view and the video hasn't been marked as watched
+    if (playerId && video.id) {
+      markVideoAsWatched(playerId, video.id);
+    }
+  };
+  
+  const markVideoAsWatched = async (playerId: string, videoId: string) => {
+    try {
+      // Check if this video exists in player_videos
+      const { data, error } = await supabase
+        .from('player_videos')
+        .select('*')
+        .eq('player_id', playerId)
+        .eq('video_id', videoId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error("Error checking player_videos:", error);
+        return;
+      }
+      
+      if (data) {
+        // Update existing record
+        await supabase
+          .from('player_videos')
+          .update({ 
+            watched: true,
+            watched_at: new Date().toISOString()
+          })
+          .eq('player_id', playerId)
+          .eq('video_id', videoId);
+      } else {
+        // Insert new record
+        await supabase
+          .from('player_videos')
+          .insert([{ 
+            player_id: playerId,
+            video_id: videoId,
+            watched: true,
+            watched_at: new Date().toISOString(),
+            assigned_by: coachId
+          }]);
+      }
+      
+      console.log(`Video ${videoId} marked as watched for player ${playerId}`);
+    } catch (error) {
+      console.error("Error marking video as watched:", error);
     }
   };
   
   const openVideoUrl = (url: string, event?: React.MouseEvent) => {
+    console.log("Opening video URL:", url);
     if (event) {
       event.stopPropagation();
+    }
+    
+    if (!url) {
+      toast({
+        title: "שגיאה בפתיחת סרטון",
+        description: "לא נמצא קישור לסרטון",
+        variant: "destructive"
+      });
+      return;
     }
     
     try {
@@ -191,6 +277,8 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
   };
   
   const getEmbedUrl = (url: string) => {
+    if (!url) return "";
+    
     try {
       // Validate URL to prevent errors
       new URL(url);
@@ -267,14 +355,16 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
             <div className="mt-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-500">פורסם: {formatDate(activeVideo.created_at)}</span>
-                <Button 
-                  variant="ghost"
-                  size="sm"
-                  className="text-sm text-primary flex items-center gap-1 p-0 h-auto"
-                  onClick={() => openVideoUrl(activeVideo.url)}
-                >
-                  צפה באתר המקורי <ExternalLink className="h-3 w-3" />
-                </Button>
+                {activeVideo.url && (
+                  <Button 
+                    variant="ghost"
+                    size="sm"
+                    className="text-sm text-primary flex items-center gap-1 p-0 h-auto"
+                    onClick={() => openVideoUrl(activeVideo.url)}
+                  >
+                    צפה באתר המקורי <ExternalLink className="h-3 w-3" />
+                  </Button>
+                )}
               </div>
               <p className="whitespace-pre-line text-sm text-gray-700">{activeVideo.description}</p>
             </div>
@@ -293,7 +383,12 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
               <div className="flex gap-3">
                 <div 
                   className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0"
-                  onClick={(e) => openVideoUrl(video.url, e)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (video.url) {
+                      openVideoUrl(video.url, e);
+                    }
+                  }}
                 >
                   <PlayIcon className="h-8 w-8 text-primary" />
                 </div>
