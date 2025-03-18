@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tool } from '@/types/tool';
 import AllMeetingSummaries from './AllMeetingSummaries';
 import { SessionFormDialog } from '@/components/sessions/SessionFormDialog';
+import { SessionActionsDialog } from '@/components/sessions/SessionActionsDialog';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Film } from 'lucide-react';
@@ -117,6 +118,8 @@ const DashboardCoach = () => {
   const [activeTab, setActiveTab] = useState("upcoming");
   const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
   const [isSessionFormOpen, setIsSessionFormOpen] = useState(false);
+  const [isSessionActionsOpen, setIsSessionActionsOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<UpcomingSession | null>(null);
 
   useEffect(() => {
     const initUser = async () => {
@@ -506,6 +509,18 @@ const DashboardCoach = () => {
     }
   };
 
+  const handleSessionClick = (session: UpcomingSession) => {
+    setSelectedSession(session);
+    setIsSessionActionsOpen(true);
+  };
+
+  const handleSessionUpdated = () => {
+    if (user?.id) {
+      fetchData(user.id);
+      fetchCalendarEvents(user.id);
+    }
+  };
+
   const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
     const sessionDate = new Date(session.session_date);
     const isToday = isSameDay(sessionDate, new Date());
@@ -519,12 +534,13 @@ const DashboardCoach = () => {
     return (
       <Card 
         key={session.id} 
-        className={`bg-gray-50 hover:bg-white transition-all duration-300 ${
+        className={`bg-gray-50 hover:bg-white transition-all duration-300 cursor-pointer ${
           isToday ? 'border-l-4 border-l-blue-500 shadow-blue-200' :
           hasNoSummary ? 'border-l-4 border-l-red-500 shadow-red-200' :
           session.has_summary ? 'border-l-4 border-l-green-500 shadow-green-200' :
           'border'
         }`}
+        onClick={() => handleSessionClick(session)}
       >
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
@@ -761,13 +777,6 @@ const DashboardCoach = () => {
     initializeDashboard();
   }, []);
 
-  const handleEventClick = (eventId: string) => {
-    const session = upcomingSessions.find(s => s.id === eventId);
-    if (session) {
-      navigate('/edit-session', { state: { sessionId: eventId } });
-    }
-  };
-
   const getMonthlySessionsData = () => {
     return [{
       name: 'לפני חודשיים',
@@ -852,6 +861,13 @@ const DashboardCoach = () => {
       </AlertDialog>
 
       <SessionFormDialog open={isSessionFormOpen} onOpenChange={setIsSessionFormOpen} />
+
+      <SessionActionsDialog 
+        open={isSessionActionsOpen} 
+        onOpenChange={setIsSessionActionsOpen}
+        session={selectedSession}
+        onSessionUpdated={handleSessionUpdated}
+      />
 
       <header className="w-full bg-[#2C3E50] text-white py-6 mb-8 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1002,7 +1018,7 @@ const DashboardCoach = () => {
                         <div 
                           key={session.id} 
                           className="p-2 rounded-md bg-gray-50 flex justify-between items-center text-sm hover:bg-gray-100 cursor-pointer"
-                          onClick={() => navigate('/edit-session', { state: { sessionId: session.id } })}
+                          onClick={() => handleSessionClick(session)}
                         >
                           <div>
                             <p className="font-medium">{session.player.full_name}</p>
@@ -1012,7 +1028,7 @@ const DashboardCoach = () => {
                             {session.location && (
                               <span className="text-xs text-gray-500 ml-2">{session.location}</span>
                             )}
-                            <ChevronUp className="h-4 w-4 text-gray-400" />
+                            <FileEdit className="h-4 w-4 text-gray-400" />
                           </div>
                         </div>
                       ))}
