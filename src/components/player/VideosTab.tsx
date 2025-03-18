@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -174,22 +175,42 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     if (event) {
       event.stopPropagation();
     }
-    window.open(url, '_blank');
+    
+    try {
+      // Validate URL before opening
+      new URL(url); // This will throw an error if the URL is invalid
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error("Invalid URL:", url, error);
+      toast({
+        title: "שגיאה בפתיחת סרטון",
+        description: "הקישור לסרטון אינו תקין",
+        variant: "destructive"
+      });
+    }
   };
   
   const getEmbedUrl = (url: string) => {
-    if (url.includes("youtube.com/watch")) {
-      const videoId = new URL(url).searchParams.get("v");
-      return `https://www.youtube.com/embed/${videoId}`;
-    } else if (url.includes("youtu.be")) {
-      const parts = url.split("/");
-      const videoId = parts[parts.length - 1].split("?")[0];
-      return `https://www.youtube.com/embed/${videoId}`;
-    } else if (url.includes("vimeo.com")) {
-      const vimeoId = url.split("/").pop();
-      return `https://player.vimeo.com/video/${vimeoId}`;
+    try {
+      // Validate URL to prevent errors
+      new URL(url);
+      
+      if (url.includes("youtube.com/watch")) {
+        const videoId = new URL(url).searchParams.get("v");
+        return `https://www.youtube.com/embed/${videoId}`;
+      } else if (url.includes("youtu.be")) {
+        const parts = url.split("/");
+        const videoId = parts[parts.length - 1].split("?")[0];
+        return `https://www.youtube.com/embed/${videoId}`;
+      } else if (url.includes("vimeo.com")) {
+        const vimeoId = url.split("/").pop();
+        return `https://player.vimeo.com/video/${vimeoId}`;
+      }
+      return url;
+    } catch (error) {
+      console.error("Error processing URL:", url, error);
+      return "";
     }
-    return url;
   };
   
   const formatDate = (dateString: string) => {
@@ -232,14 +253,16 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           </CardHeader>
           <CardContent>
             <div className="aspect-video relative rounded-md overflow-hidden">
-              <iframe 
-                src={getEmbedUrl(activeVideo.url)} 
-                className="absolute top-0 left-0 w-full h-full"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title={activeVideo.title}
-              ></iframe>
+              {activeVideo.url && (
+                <iframe 
+                  src={getEmbedUrl(activeVideo.url)} 
+                  className="absolute top-0 left-0 w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title={activeVideo.title}
+                ></iframe>
+              )}
             </div>
             <div className="mt-4">
               <div className="flex justify-between items-center mb-2">
@@ -264,11 +287,14 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           <Card 
             key={video.id} 
             className={`cursor-pointer hover:shadow-md transition-shadow ${activeVideo?.id === video.id ? 'ring-2 ring-primary' : ''}`}
-            onClick={() => openVideoUrl(video.url)}
+            onClick={() => handleWatchVideo(video)}
           >
             <CardContent className="p-4">
               <div className="flex gap-3">
-                <div className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
+                <div 
+                  className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0"
+                  onClick={(e) => openVideoUrl(video.url, e)}
+                >
                   <PlayIcon className="h-8 w-8 text-primary" />
                 </div>
                 <div className="flex-1 overflow-hidden">
