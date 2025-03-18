@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar as CalendarIcon, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
@@ -11,9 +11,9 @@ import { format, startOfMonth, endOfMonth, subMonths, isBefore, isAfter, isSameD
 import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
-import { CalendarComponent } from '@/components/calendar/Calendar';
+import { Calendar } from '@/components/calendar/Calendar';
 import { Link } from 'react-router-dom';
 import { Wrench } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +25,26 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
+import { 
+  Form, 
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage 
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useForm } from 'react-hook-form';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from "@/components/ui/select";
+import { toast } from 'sonner';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -81,6 +101,8 @@ interface CalendarEvent {
     location?: string;
     reminderSent: boolean;
     notes?: string;
+    eventType?: 'reminder' | 'task' | 'other';
+    player_id?: string;
   };
 }
 
@@ -89,374 +111,14 @@ interface EventFormData {
   date: string;
   time: string;
   notes?: string;
+  eventType: 'reminder' | 'task' | 'other';
+  player_id?: string;
+  location?: string;
 }
-
-export const Calendar: React.FC<CalendarProps> = ({ events, onEventClick, onEventAdd, selectedPlayerId }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [selectedView, setSelectedView] = useState<'timeGridDay' | 'timeGridWeek' | 'dayGridMonth'>('dayGridMonth');
-  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const form = useForm<EventFormData>({
-    defaultValues: {
-      title: '',
-      date: new Date().toISOString().split('T')[0],
-      time: '12:00',
-      notes: '',
-      eventType: 'reminder',
-      player_id: selectedPlayerId,
-      location: ''
-    }
-  });
-
-  React.useEffect(() => {
-    if (selectedPlayerId) {
-      form.setValue('player_id', selectedPlayerId);
-    }
-  }, [selectedPlayerId, form]);
-
-  const handleEventClick = (info: any) => {
-    const event = events.find(e => e.id === info.event.id);
-    if (event) {
-      setSelectedEvent(event);
-    }
-  };
-
-  const closeDialog = () => {
-    setSelectedEvent(null);
-  };
-
-  const handleEditClick = () => {
-    if (selectedEvent) {
-      onEventClick(selectedEvent.id);
-      setSelectedEvent(null);
-    }
-  };
-
-  const onAddEvent = async (data: EventFormData) => {
-    if (!onEventAdd) return;
-    
-    if (!data.player_id && !selectedPlayerId) {
-      toast.error('נא לבחור שחקן לפני הוספת אירוע');
-      return;
-    }
-    
-    try {
-      setIsSubmitting(true);
-      
-      const playerIdToUse = data.player_id || selectedPlayerId;
-      
-      console.log('Saving event with player_id:', playerIdToUse);
-      
-      const eventData = {
-        title: data.title,
-        start: `${data.date}T${data.time}:00`,
-        extendedProps: {
-          notes: data.notes,
-          eventType: data.eventType,
-          player_id: playerIdToUse,
-          location: data.location,
-          playerName: data.title
-        }
-      };
-      
-      console.log('Submitting event data:', eventData);
-      
-      await onEventAdd(eventData);
-      
-      setIsAddEventOpen(false);
-      form.reset({
-        title: '',
-        date: new Date().toISOString().split('T')[0],
-        time: '12:00',
-        notes: '',
-        eventType: 'reminder',
-        player_id: selectedPlayerId,
-        location: ''
-      });
-      
-    } catch (error) {
-      console.error('Error adding event:', error);
-      toast.error('אירעה שגיאה, אנא נסה שוב.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getEventColor = (eventType?: 'reminder' | 'task' | 'other') => {
-    switch (eventType) {
-      case 'reminder':
-        return '#F59E0B';
-      case 'task':
-        return '#10B981';
-      case 'other':
-        return '#6B7280';
-      default:
-        return '#F59E0B';
-    }
-  };
-
-  return (
-    <>
-      <div className="flex gap-2">
-        <Button 
-          variant="ghost" 
-          className="flex items-center gap-2 text-white hover:bg-white/10"
-          onClick={() => setIsOpen(true)}
-        >
-          <CalendarIcon className="h-5 w-5" />
-          <span>לוח מפגשים</span>
-        </Button>
-        {onEventAdd && (
-          <Button
-            variant="ghost"
-            className="flex items-center gap-2 text-white hover:bg-white/10"
-            onClick={() => setIsAddEventOpen(true)}
-          >
-            <Plus className="h-5 w-5" />
-            <span>הוסף אירוע</span>
-          </Button>
-        )}
-      </div>
-
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-6xl h-[80vh]">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">לוח אירועים</DialogTitle>
-            <DialogDescription>צפה באירועים מתוכננים</DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-auto">
-            <FullCalendar
-              plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-              initialView={selectedView}
-              headerToolbar={{
-                start: 'prev,next today',
-                center: 'title',
-                end: '',
-              }}
-              views={{
-                timeGridDay: {
-                  type: 'timeGrid',
-                  duration: { days: 1 }
-                },
-                timeGridWeek: {
-                  type: 'timeGrid',
-                  duration: { weeks: 1 }
-                },
-                dayGridMonth: {
-                  type: 'dayGrid',
-                  duration: { months: 1 }
-                }
-              }}
-              events={events}
-              eventClick={handleEventClick}
-              locale="he"
-              direction="rtl"
-              firstDay={0}
-              allDaySlot={false}
-              slotMinTime="07:00:00"
-              slotMaxTime="22:00:00"
-              eventTimeFormat={{
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              }}
-              slotLabelFormat={{
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              }}
-              eventContent={(eventInfo) => (
-                <div 
-                  className="p-1 text-sm"
-                  style={{ backgroundColor: getEventColor(eventInfo.event.extendedProps.eventType) }}
-                >
-                  <div className="font-bold text-white">{eventInfo.timeText}</div>
-                  <div className="text-white">{eventInfo.event.extendedProps.playerName}</div>
-                  {eventInfo.event.extendedProps.location && (
-                    <div className="text-xs text-white/80">{eventInfo.event.extendedProps.location}</div>
-                  )}
-                </div>
-              )}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {selectedEvent && (
-        <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>פרטי אירוע</DialogTitle>
-              <DialogDescription>מידע מפורט על האירוע</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div>
-                <h3 className="font-bold mb-1">כותרת</h3>
-                <p className="text-lg">{selectedEvent.extendedProps.playerName}</p>
-              </div>
-              <div>
-                <h3 className="font-bold mb-1">תאריך ושעה</h3>
-                <p className="text-lg">{format(new Date(selectedEvent.start), 'dd/MM/yyyy HH:mm')}</p>
-              </div>
-              {selectedEvent.extendedProps.location && (
-                <div>
-                  <h3 className="font-bold mb-1">מיקום</h3>
-                  <p className="text-lg">{selectedEvent.extendedProps.location}</p>
-                </div>
-              )}
-              {selectedEvent.extendedProps.notes && (
-                <div>
-                  <h3 className="font-bold mb-1">הערות</h3>
-                  <p className="text-lg whitespace-pre-wrap">{selectedEvent.extendedProps.notes}</p>
-                </div>
-              )}
-              <div>
-                <h3 className="font-bold mb-1">סוג אירוע</h3>
-                <p className="text-lg">{selectedEvent.extendedProps.eventType === 'reminder' ? 'תזכורת' :
-                  selectedEvent.extendedProps.eventType === 'task' ? 'משימה' : 'אחר'}</p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={closeDialog}>סגור</Button>
-              <Button onClick={handleEditClick}>ערוך</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <Dialog open={isAddEventOpen} onOpenChange={(open) => {
-        if (!open) {
-          form.reset({
-            title: '',
-            date: new Date().toISOString().split('T')[0],
-            time: '12:00',
-            notes: '',
-            eventType: 'reminder',
-            player_id: selectedPlayerId,
-            location: ''
-          });
-        }
-        setIsAddEventOpen(open);
-      }}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>הוספת אירוע חדש</DialogTitle>
-            <DialogDescription>מלא את הפרטים להוספת אירוע חדש</DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onAddEvent)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="eventType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>סוג אירוע</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="בחר סוג אירוע" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="reminder">תזכורת</SelectItem>
-                        <SelectItem value="task">משימה</SelectItem>
-                        <SelectItem value="other">אחר</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>כותרת</FormLabel>
-                    <FormControl>
-                      <Input {...field} required />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>תאריך</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} required />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="time"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>שעה</FormLabel>
-                    <FormControl>
-                      <Input type="time" {...field} required />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>מיקום</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="הוסף מיקום למפגש..." />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>הערות</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => {
-                  form.reset();
-                  setIsAddEventOpen(false);
-                }}>
-                  ביטול
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'שומר...' : 'שמור'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
 
 const DashboardCoach = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: appToast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [coachName, setCoachName] = useState('');
@@ -654,7 +316,7 @@ const DashboardCoach = () => {
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast({
+      appToast({
         variant: "destructive",
         title: "שגיאה בטעינת הנתונים",
         description: "אנא נסה שוב מאוחר יותר"
@@ -735,14 +397,14 @@ const DashboardCoach = () => {
       await supabase.from('sessions').update({
         reminder_sent: true
       }).eq('id', sessionId);
-      toast({
+      appToast({
         title: "התזכורת נשלחה בהצלחה",
         description: "השחקן יקבל הודעה על המפגש"
       });
       fetchData(user.id);
     } catch (error) {
       console.error('Error sending reminder:', error);
-      toast({
+      appToast({
         variant: "destructive",
         title: "שגיאה בשליחת התזכורת",
         description: "אנא נסה שוב מאוחר יותר"
@@ -754,13 +416,13 @@ const DashboardCoach = () => {
     try {
       await supabase.auth.signOut();
       navigate('/auth');
-      toast({
+      appToast({
         title: "התנתקת בהצלחה",
         description: "להתראות!"
       });
     } catch (error) {
       console.error('Error during logout:', error);
-      toast({
+      appToast({
         variant: "destructive",
         title: "שגיאה בהתנתקות",
         description: "אנא נסה שוב"
@@ -795,7 +457,7 @@ const DashboardCoach = () => {
         setSummarizedSessions(prev => [updatedSession, ...prev]);
       }
 
-      toast({
+      appToast({
         title: "הסיכום נשמר בהצלחה",
         description: "סיכום המפגש נשמר במערכת",
         duration: 1000
@@ -807,7 +469,7 @@ const DashboardCoach = () => {
 
     } catch (error) {
       console.error('Error saving session summary:', error);
-      toast({
+      appToast({
         variant: "destructive",
         title: "שגיאה בשמירת הסיכום",
         description: "אנא נסה שוב מאוחר יותר"
@@ -819,7 +481,7 @@ const DashboardCoach = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
+        appToast({
           variant: "destructive", 
           title: "שגיאה",
           description: "לא נמצא משתמש מחובר"
@@ -845,7 +507,7 @@ const DashboardCoach = () => {
 
       if (error) {
         console.error('Error fetching summary:', error);
-        toast({
+        appToast({
           variant: "destructive",
           title: "שגיאה בטעינת הסיכום",
           description: "לא ניתן לטעון את הסיכום כרגע, אנא נסה שוב מאוחר יותר"
@@ -856,7 +518,7 @@ const DashboardCoach = () => {
       if (summaries && summaries.length > 0) {
         navigate(`/session-summaries?id=${summaries[0].id}`);
       } else {
-        toast({
+        appToast({
           title: "אין סיכומים זמינים",
           description: `אין סיכומים זמינים עבור ${playerName}`,
           duration: 3000
@@ -864,7 +526,7 @@ const DashboardCoach = () => {
       }
     } catch (error) {
       console.error('Error in handleViewSummary:', error);
-      toast({
+      appToast({
         variant: "destructive",
         title: "שגיאה",
         description: "אירעה שגיאה בניסיון לצפות בסיכום"
@@ -880,8 +542,16 @@ const DashboardCoach = () => {
   const handleSessionUpdated = () => {
     if (user?.id) {
       fetchData(user.id);
-      fetchCalendarEvents(user.id);
+      const fetchEvents = async () => {
+        // Add calendar event fetching logic here if needed
+      };
+      fetchEvents();
     }
+  };
+
+  const handleEventClick = (eventId: string) => {
+    console.log('Event clicked:', eventId);
+    // Add event click handling logic here
   };
 
   const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
@@ -921,7 +591,11 @@ const DashboardCoach = () => {
 
   return (
     <div>
-      <Calendar />
+      <Calendar 
+        events={calendarEvents} 
+        onEventClick={handleEventClick}
+        selectedPlayerId={players?.[0]?.id} // Default to first player if available
+      />
     </div>
   );
 };
