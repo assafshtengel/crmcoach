@@ -1,50 +1,26 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar as CalendarIcon, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, Users, LogOut, ChevronDown, ChevronUp, Send, Check, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen, Film } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { format, startOfMonth, endOfMonth, subMonths, isBefore, isAfter, isSameDay, isPast, formatDistance } from 'date-fns';
+import { format, isBefore, isAfter, isSameDay, isPast, formatDistance } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
-import { Calendar } from '@/components/calendar/Calendar';
+import { Calendar as CalendarComponent } from '@/components/calendar/Calendar';
 import { Link } from 'react-router-dom';
-import { Wrench } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tool } from '@/types/tool';
-import AllMeetingSummaries from './AllMeetingSummaries';
-import { SessionFormDialog } from '@/components/sessions/SessionFormDialog';
-import { SessionActionsDialog } from '@/components/sessions/SessionActionsDialog';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Film } from 'lucide-react';
-import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
-import { 
-  Form, 
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage 
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { useForm } from 'react-hook-form';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from "@/components/ui/select";
 import { toast } from 'sonner';
+import { SessionFormDialog } from '@/components/sessions/SessionFormDialog';
+import { SessionActionsDialog } from '@/components/sessions/SessionActionsDialog';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -106,16 +82,6 @@ interface CalendarEvent {
   };
 }
 
-interface EventFormData {
-  title: string;
-  date: string;
-  time: string;
-  notes?: string;
-  eventType: 'reminder' | 'task' | 'other';
-  player_id?: string;
-  location?: string;
-}
-
 const DashboardCoach = () => {
   const navigate = useNavigate();
   const { toast: appToast } = useToast();
@@ -150,6 +116,11 @@ const DashboardCoach = () => {
     const initUser = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       setUser(authUser);
+      
+      if (authUser) {
+        fetchData(authUser.id);
+        fetchNotifications(authUser.id);
+      }
     };
     initUser();
   }, []);
@@ -542,10 +513,6 @@ const DashboardCoach = () => {
   const handleSessionUpdated = () => {
     if (user?.id) {
       fetchData(user.id);
-      const fetchEvents = async () => {
-        // Add calendar event fetching logic here if needed
-      };
-      fetchEvents();
     }
   };
 
@@ -590,12 +557,73 @@ const DashboardCoach = () => {
   };
 
   return (
-    <div>
-      <Calendar 
-        events={calendarEvents} 
-        onEventClick={handleEventClick}
-        selectedPlayerId={players?.[0]?.id} // Default to first player if available
-      />
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">לוח בקרה למאמן</h1>
+        <p className="text-gray-600">ברוך הבא, {user?.email || 'מאמן'}</p>
+      </header>
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card className="col-span-full">
+            <CardHeader>
+              <CardTitle>יומן מפגשים</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CalendarComponent 
+                events={calendarEvents} 
+                onEventClick={handleEventClick}
+                selectedPlayerId={players?.[0]?.id}
+              />
+            </CardContent>
+          </Card>
+          
+          {upcomingSessions.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>מפגשים קרובים</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {upcomingSessions.map(session => renderSessionCard(session))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {pastSessionsToSummarize.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>מפגשים לסיכום</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {pastSessionsToSummarize.map(session => renderSessionCard(session))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          <SessionFormDialog 
+            open={isSessionFormOpen} 
+            onOpenChange={setIsSessionFormOpen}
+            onSessionSaved={handleSessionUpdated}
+          />
+          
+          {selectedSession && (
+            <SessionActionsDialog
+              open={isSessionActionsOpen}
+              onOpenChange={setIsSessionActionsOpen}
+              session={selectedSession}
+              onSessionUpdated={handleSessionUpdated}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 };
