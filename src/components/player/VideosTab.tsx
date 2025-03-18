@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PlayIcon, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 interface Video {
   id: string;
@@ -27,11 +28,13 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchVideos = async () => {
       try {
         setLoading(true);
+        console.log("Fetching videos for coachId:", coachId, "playerId:", playerId);
         
         if (!playerId) {
           // For coach view - show all videos
@@ -39,60 +42,89 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           return;
         }
         
-        // For player view - show only appropriate videos based on scheduling
+        // For player view - show all assigned videos (both manual and auto-scheduled)
+        // First, get manually assigned videos through player_videos table
         const { data: playerVideos, error: playerVideosError } = await supabase
           .from("player_videos")
-          .select("video_id")
+          .select(`
+            video_id,
+            watched,
+            watched_at,
+            videos:video_id (*)
+          `)
           .eq("player_id", playerId);
           
-        if (playerVideosError) throw playerVideosError;
+        if (playerVideosError) {
+          console.error("Error fetching player_videos:", playerVideosError);
+          throw playerVideosError;
+        }
         
+        console.log("Manually assigned videos data:", playerVideos);
+        
+        // Extract video objects from the nested structure
+        const manuallyAssignedVideos = playerVideos
+          ?.filter(pv => pv.videos) // Filter out any null video references
+          .map(pv => pv.videos as Video) || [];
+          
         // Get auto-video assignments for this player that have been sent
         const { data: autoAssignments, error: autoAssignmentsError } = await supabase
           .from("auto_video_assignments")
-          .select("video_id, scheduled_for, sent")
-          .eq("player_id", playerId);
+          .select(`
+            video_id,
+            scheduled_for,
+            sent,
+            videos:video_id (*)
+          `)
+          .eq("player_id", playerId)
+          .eq("sent", true);
           
-        if (autoAssignmentsError) throw autoAssignmentsError;
-        
-        // Extract video IDs that should be visible to the player
-        const sentAutoVideoIds = autoAssignments
-          ?.filter(assignment => 
-            assignment.sent || 
-            new Date(assignment.scheduled_for) <= new Date()
-          )
-          .map(assignment => assignment.video_id) || [];
-          
-        const manuallyAssignedVideoIds = playerVideos?.map(pv => pv.video_id) || [];
-        
-        // Combine all visible video IDs (both manually assigned and auto-scheduled)
-        const visibleVideoIds = [...new Set([...manuallyAssignedVideoIds, ...sentAutoVideoIds])];
-        
-        if (visibleVideoIds.length === 0) {
-          setVideos([]);
-          setLoading(false);
-          return;
+        if (autoAssignmentsError) {
+          console.error("Error fetching auto_video_assignments:", autoAssignmentsError);
+          throw autoAssignmentsError;
         }
         
-        // Fetch all videos that should be visible to the player (both coach and admin videos)
-        // Important: Only fetch videos that are in the visibleVideoIds list
-        const { data: visibleVideos, error: visibleVideosError } = await supabase
-          .from("videos")
-          .select("*")
-          .in("id", visibleVideoIds)
-          .order("created_at", { ascending: false });
-          
-        if (visibleVideosError) throw visibleVideosError;
+        console.log("Auto-assigned videos data:", autoAssignments);
         
-        console.log("Fetched videos for player:", visibleVideos);
-        setVideos(visibleVideos || []);
+        // Extract video objects from the auto assignments
+        const autoAssignedVideos = autoAssignments
+          ?.filter(aa => aa.videos && aa.sent) // Only include sent videos
+          .map(aa => aa.videos as Video) || [];
+          
+        // Combine both manually assigned and auto-assigned videos
+        // Use a map to prevent duplicates (a video might be both manually and auto assigned)
+        const videoMap = new Map<string, Video>();
+        
+        [...manuallyAssignedVideos, ...autoAssignedVideos].forEach(video => {
+          if (video && video.id) {
+            videoMap.set(video.id, video);
+          }
+        });
+        
+        const allAssignedVideos = Array.from(videoMap.values());
+        
+        console.log("Combined assigned videos:", allAssignedVideos);
+        
+        // Sort videos by creation date (newest first)
+        allAssignedVideos.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        
+        setVideos(allAssignedVideos);
         
         // Set the first video as active if available
-        if (visibleVideos && visibleVideos.length > 0) {
-          setActiveVideo(visibleVideos[0]);
+        if (allAssignedVideos.length > 0) {
+          setActiveVideo(allAssignedVideos[0]);
+        } else {
+          setActiveVideo(null);
+          console.log("No videos available for this player");
         }
       } catch (error) {
         console.error("Error fetching videos:", error);
+        toast({
+          title: "שגיאה בטעינת סרטונים",
+          description: "לא ניתן לטעון את הסרטונים",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -131,6 +163,11 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         }
       } catch (error) {
         console.error("Error fetching videos:", error);
+        toast({
+          title: "שגיאה בטעינת סרטונים",
+          description: "לא ניתן לטעון את הסרטונים",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -139,7 +176,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     if (coachId) {
       fetchVideos();
     }
-  }, [coachId, playerId]);
+  }, [coachId, playerId, toast]);
   
   const handleWatchVideo = (video: Video) => {
     setActiveVideo(video);
