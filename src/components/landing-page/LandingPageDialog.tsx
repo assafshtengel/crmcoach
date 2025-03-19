@@ -14,10 +14,9 @@ import { uploadImage } from "@/lib/uploadImage";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseClient } from "@/lib/supabaseClient";
 import { Eye } from "lucide-react";
 
-// רשימת היתרונות האפשריים
 const ADVANTAGE_OPTIONS = [
   { id: "mental-resilience", label: "חוסן מנטלי" },
   { id: "confidence", label: "שיפור ביטחון עצמי" },
@@ -29,7 +28,6 @@ const ADVANTAGE_OPTIONS = [
   { id: "leadership", label: "פיתוח מנהיגות" },
 ];
 
-// אפשרויות לתת הכותרת
 const SUBTITLE_OPTIONS = [
   { value: "personal-training", label: "אימון אישי שיביא אותך לתוצאות" },
   { value: "professional-guidance", label: "ליווי מקצועי להצלחה ספורטיבית" },
@@ -38,7 +36,6 @@ const SUBTITLE_OPTIONS = [
   { value: "performance-enhancement", label: "העצמת היכולות המנטליות שלך" }
 ];
 
-// אפשרויות לקריאה לפעולה
 const CTA_OPTIONS = [
   { value: "free-consultation", label: "שיחת ייעוץ חינם!" },
   { value: "start-now", label: "התחל עכשיו!" },
@@ -47,9 +44,7 @@ const CTA_OPTIONS = [
   { value: "book-session", label: "קבע פגישה!" }
 ];
 
-// סכמת התיקוף לטופס
 const formSchema = z.object({
-  // שדות בסיסיים
   title: z.string().min(2, {
     message: "כותרת חייבת להכיל לפחות 2 תווים",
   }),
@@ -66,7 +61,6 @@ const formSchema = z.object({
     message: "נא להזין מספר טלפון תקין",
   }),
   
-  // שדות חדשים
   mainReason: z.string().min(5, {
     message: "נא להזין סיבה מרכזית לבחירה בך",
   }),
@@ -135,7 +129,6 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
       const file = e.target.files[0];
       setProfileImage(file);
       
-      // יצירת URL לתצוגה מקדימה של התמונה
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
     }
@@ -147,8 +140,7 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
     try {
       console.log("Form values:", values);
       
-      // בדיקת משתמש מחובר
-      const { data: session } = await supabase.auth.getSession();
+      const { data: session } = await supabaseClient.auth.getSession();
       
       if (!session?.session) {
         toast({
@@ -159,7 +151,6 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
         return;
       }
       
-      // טיפול בהעלאת התמונה אם נבחרה
       let imageUrl = null;
       if (profileImage) {
         const timestamp = new Date().getTime();
@@ -168,20 +159,16 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
         imageUrl = path;
       }
       
-      // מציאת התרגומים של היתרונות (להצגה בפורמט קריא)
       const advantageLabels = values.advantages.map(id => {
         const advantage = ADVANTAGE_OPTIONS.find(a => a.id === id);
         return advantage ? advantage.label : id;
       });
       
-      // מציאת התרגום של הטקסט לכפתור
       const ctaLabel = CTA_OPTIONS.find(option => option.value === values.ctaText)?.label || values.ctaText;
       
-      // מציאת התרגום של תת-הכותרת
       const subtitleLabel = SUBTITLE_OPTIONS.find(option => option.value === values.subtitle)?.label || values.subtitle;
       
-      // שמירת הנתונים בבסיס הנתונים
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('landing_pages')
         .insert({
           coach_id: session.session.user.id,
@@ -208,13 +195,12 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
             accentColorValue: values.accentColor[0],
             buttonColorValue: values.buttonColor[0]
           }
-        } as any)
+        })
         .select()
         .single();
       
       if (error) throw error;
       
-      // שמירת ה-ID של עמוד הנחיתה שנוצר
       setLandingPageId(data.id);
       
       toast({
@@ -222,13 +208,12 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
         description: "עכשיו תוכל לבחון את העמוד לפני פרסום",
       });
       
-      // מעבר לטאב התצוגה המקדימה
       setActiveTab("preview");
       
     } catch (error) {
       console.error("Error creating landing page:", error);
       toast({
-        title: "שגיאה ביצירת עמוד הנחיתה",
+        title: "שגיאה ביצירת עמוד נחיתה",
         description: "אירעה שגיאה בעת יצירת עמוד הנחיתה. נסה שוב מאוחר יותר.",
         variant: "destructive",
       });
@@ -243,17 +228,15 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
     setIsSubmitting(true);
     
     try {
-      // עדכון סטטוס הפרסום בבסיס הנתונים
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('landing_pages')
-        .update({ is_published: true } as any)
+        .update({ is_published: true })
         .eq('id', landingPageId)
         .select()
         .single();
       
       if (error) throw error;
       
-      // יצירת URL לצפייה בעמוד המפורסם
       const publishedUrl = `/landing/${data.id}`;
       setPublishUrl(publishedUrl);
       
@@ -274,7 +257,6 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
     }
   };
   
-  // מפה צבעים להצגה בסליידרים
   const getColorFromValue = (value: number, colorType: 'bg' | 'accent' | 'button') => {
     const colorMap = {
       bg: [
@@ -309,13 +291,11 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
       ]
     };
 
-    // המרת ערך הסליידר לאינדקס בטווח המערך
     const index = Math.min(Math.floor(value / 12.5), 7);
     return colorMap[colorType][index];
   };
 
   const handleCloseDialog = () => {
-    // איפוס הטופס והסטייט בעת סגירת הדיאלוג
     form.reset();
     setActiveTab("form");
     setLandingPageId(null);

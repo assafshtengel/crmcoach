@@ -25,7 +25,7 @@ const LandingPages = lazy(() => import('@/pages/LandingPages').then(module => ({
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
+      <Route path="/" element={<Layout>{/* Layout needs children */}</Layout>}>
         {/* Dashboard routes */}
         <Route index element={<Index />} />
         <Route path="new" element={<NewIndex />} />

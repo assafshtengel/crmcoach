@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, Copy, Trash2, Globe } from 'lucide-react';
 import { LandingPageDialog } from './LandingPageDialog';
@@ -16,14 +15,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-
-interface LandingPage {
-  id: string;
-  title: string;
-  created_at: string;
-  profile_image_path: string | null;
-  is_published: boolean;
-}
+import { LandingPage } from '@/lib/supabaseClient';
 
 export function LandingPagesList() {
   const [landingPages, setLandingPages] = useState<LandingPage[]>([]);
@@ -40,7 +32,7 @@ export function LandingPagesList() {
     try {
       setIsLoading(true);
       
-      const { data: session } = await supabase.auth.getSession();
+      const { data: session } = await supabaseClient.auth.getSession();
       
       if (!session?.session) {
         toast({
@@ -51,11 +43,11 @@ export function LandingPagesList() {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('landing_pages')
         .select('id, title, created_at, profile_image_path, is_published')
         .eq('coach_id', session.session.user.id)
-        .order('created_at', { ascending: false }) as any;
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       
@@ -76,10 +68,10 @@ export function LandingPagesList() {
     if (!deletePageId) return;
     
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('landing_pages')
         .delete()
-        .eq('id', deletePageId) as any;
+        .eq('id', deletePageId);
 
       if (error) throw error;
       

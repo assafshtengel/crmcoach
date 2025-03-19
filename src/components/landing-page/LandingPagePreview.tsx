@@ -1,9 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { LandingPage } from '@/lib/supabaseClient';
 
 interface LandingPageData {
   id: string;
@@ -37,7 +38,7 @@ export function LandingPagePreview() {
 
       try {
         setIsLoading(true);
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
           .from('landing_pages')
           .select('*')
           .eq('id', id)
