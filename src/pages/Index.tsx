@@ -186,20 +186,22 @@ const Index = () => {
               <LayoutDashboard className="h-4 w-4" />
             </Button>
           </div>
-          <div className="flex items-center gap-2">
+          
+          <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
               ברוך הבא{userEmail ? `, ${userEmail}` : ''}
             </h1>
             <Button 
               variant="purple"
               onClick={() => setShowLandingPageDialog(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white mr-2"
+              className="bg-purple-600 hover:bg-purple-700 text-white"
               size="sm"
             >
               <FileEdit className="ml-1 h-4 w-4" />
               צור לי עמוד נחיתה
             </Button>
           </div>
+          
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
