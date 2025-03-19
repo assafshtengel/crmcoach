@@ -21,11 +21,13 @@ const PublicRegistrationForm = lazy(() => import('@/pages/PublicRegistrationForm
 const PlayerEvaluation = lazy(() => import('@/pages/PlayerEvaluation').then(module => ({ default: module.default })));
 const MentalLibrary = lazy(() => import('@/pages/MentalLibrary').then(module => ({ default: module.default })));
 const LandingPages = lazy(() => import('@/pages/LandingPages').then(module => ({ default: module.default })));
+const Contract = lazy(() => import('@/pages/Contract').then(module => ({ default: module.default })));
 
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Layout>{/* Layout needs children */}</Layout>}>
+      <Route path="/" element={<Layout><Index /></Layout>} />
+      <Route path="/" element={<Layout />}>
         {/* Dashboard routes */}
         <Route index element={<Index />} />
         <Route path="new" element={<NewIndex />} />
@@ -40,6 +42,7 @@ export function AppRoutes() {
         <Route path="player-evaluation" element={<PlayerEvaluation />} />
         <Route path="mental-library" element={<MentalLibrary />} />
         <Route path="landing-pages" element={<LandingPages />} />
+        <Route path="contract" element={<Contract />} />
       </Route>
       
       {/* Public registration form */}
