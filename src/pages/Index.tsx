@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -168,4 +169,204 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-sage-50 to-white py-8 px-4 md:px-8">
       <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
-        <
+        <header className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-md">
+          <div className="flex items-center mb-4 md:mb-0">
+            <h1 className="text-2xl font-bold text-primary">שלום, {userEmail || 'אורח'}</h1>
+          </div>
+          
+          <div className="flex items-center space-x-4 rtl:space-x-reverse">
+            <Button
+              onClick={() => setShowLandingPageDialog(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md mr-3"
+            >
+              צור עמוד נחיתה
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setShowLogoutDialog(true)}
+            >
+              <LogOut className="h-4 w-4" />
+              התנתק
+            </Button>
+          </div>
+        </header>
+
+        {/* Alert Dialog for Logout Confirmation */}
+        <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>האם אתה בטוח שברצונך להתנתק?</AlertDialogTitle>
+              <AlertDialogDescription>
+                לאחר ההתנתקות תצטרך להתחבר מחדש כדי לגשת למערכת.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction onClick={handleLogout}>התנתק</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Tabs defaultValue="videos" className="w-full">
+          <TabsList className="grid grid-cols-5 mb-8">
+            <TabsTrigger value="videos" className="flex items-center gap-2">
+              <Film className="h-4 w-4" /> סרטונים
+            </TabsTrigger>
+            <TabsTrigger value="mental-prep" className="flex items-center gap-2">
+              <FileCheck className="h-4 w-4" /> הכנה מנטלית
+            </TabsTrigger>
+            <TabsTrigger value="belief-breaking" className="flex items-center gap-2">
+              <BrainCircuit className="h-4 w-4" /> שבירת אמונות
+            </TabsTrigger>
+            <TabsTrigger value="mental-library" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" /> ספריה מנטלית
+            </TabsTrigger>
+            <TabsTrigger value="admin-message" className="flex items-center gap-2">
+              <Send className="h-4 w-4" /> הודעה למנהל
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="videos" className="space-y-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">הסרטונים שלי</h2>
+              <Button variant="outline" onClick={refreshVideos} className="flex items-center gap-2">
+                <ArrowRight className="h-4 w-4" /> רענן רשימה
+              </Button>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-8">טוען סרטונים...</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {assignedVideos.length > 0 ? (
+                  assignedVideos.map((video) => (
+                    <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      <CardHeader className="bg-gray-50 p-4">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-lg font-medium">
+                            {video.videos.title}
+                          </CardTitle>
+                          {video.watched ? (
+                            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                              <CheckCircle className="h-3 w-3 mr-1" /> נצפה
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                              חדש
+                            </Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <p className="text-sm text-gray-600 mb-4">
+                          {video.videos.description || 'אין תיאור זמין'}
+                        </p>
+                        <div className="flex justify-between items-center">
+                          <Button
+                            variant="link"
+                            className="flex items-center text-primary p-0"
+                            onClick={() => handleVideoClick(video.videos.url)}
+                          >
+                            <ExternalLink className="h-4 w-4 mr-1" /> לצפייה בסרטון
+                          </Button>
+                          {!video.watched && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() => markVideoAsWatched(video.id)}
+                            >
+                              סמן כנצפה
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="col-span-2 text-center py-8 bg-gray-50 rounded-lg">
+                    <p className="text-gray-500">לא נמצאו סרטונים שהוקצו לך</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {allVideos.length > 0 && (
+              <div className="mt-8">
+                <h2 className="text-xl font-bold mb-4">סרטונים כלליים</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {allVideos.map((video) => (
+                    <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                      <CardHeader className="bg-gray-50 p-4">
+                        <CardTitle className="text-lg font-medium">{video.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <p className="text-sm text-gray-600 mb-4">
+                          {video.description || 'אין תיאור זמין'}
+                        </p>
+                        <Button
+                          variant="link"
+                          className="flex items-center text-primary p-0"
+                          onClick={() => handleVideoClick(video.url)}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-1" /> לצפייה בסרטון
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="mental-prep">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl font-bold">הכנה מנטלית</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MentalPrepForm />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="belief-breaking">
+            <BeliefBreakingCard />
+          </TabsContent>
+
+          <TabsContent value="mental-library">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl font-bold">ספריה מנטלית</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MentalLibrary />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="admin-message">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl font-bold">שלח הודעה למנהל</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AdminMessageForm />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Landing Page Dialog */}
+      <LandingPageDialog
+        open={showLandingPageDialog}
+        onOpenChange={setShowLandingPageDialog}
+      />
+    </div>
+  );
+};
+
+export default Index;
