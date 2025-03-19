@@ -26,23 +26,22 @@ const Contract = lazy(() => import('@/pages/Contract').then(module => ({ default
 export function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Layout><Index /></Layout>} />
-      <Route path="/" element={<Layout />}>
-        {/* Dashboard routes */}
-        <Route index element={<Index />} />
-        <Route path="new" element={<NewIndex />} />
-        <Route path="next" element={<Next />} />
-        <Route path="players" element={<PlayersList />} />
-        <Route path="player/:id" element={<PlayerProfile />} />
-        <Route path="player-statistics/:id" element={<PlayerStatistics />} />
-        <Route path="auth" element={<AuthPage />} />
-        <Route path="dashboard-coach" element={<DashboardCoach />} />
-        <Route path="profile-coach" element={<ProfileCoach />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="player-evaluation" element={<PlayerEvaluation />} />
-        <Route path="mental-library" element={<MentalLibrary />} />
-        <Route path="landing-pages" element={<LandingPages />} />
-        <Route path="contract" element={<Contract />} />
+      {/* Main layout with nested routes */}
+      <Route element={<Layout />}>
+        <Route path="/" element={<Index />} />
+        <Route path="/new" element={<NewIndex />} />
+        <Route path="/next" element={<Next />} />
+        <Route path="/players" element={<PlayersList />} />
+        <Route path="/player/:id" element={<PlayerProfile />} />
+        <Route path="/player-statistics/:id" element={<PlayerStatistics />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/dashboard-coach" element={<DashboardCoach />} />
+        <Route path="/profile-coach" element={<ProfileCoach />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/player-evaluation" element={<PlayerEvaluation />} />
+        <Route path="/mental-library" element={<MentalLibrary />} />
+        <Route path="/landing-pages" element={<LandingPages />} />
+        <Route path="/contract" element={<Contract />} />
       </Route>
       
       {/* Public registration form */}
