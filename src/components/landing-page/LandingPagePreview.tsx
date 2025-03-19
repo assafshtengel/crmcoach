@@ -21,6 +21,7 @@ interface LandingPageData {
   accent_color: string;
   button_color: string;
   is_dark_text: boolean;
+  is_published?: boolean;
 }
 
 export function LandingPagePreview() {
@@ -49,7 +50,7 @@ export function LandingPagePreview() {
           throw new Error('עמוד זה אינו זמין');
         }
 
-        setPageData(data);
+        setPageData(data as LandingPageData);
       } catch (error) {
         console.error('Error loading landing page:', error);
         toast({

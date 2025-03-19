@@ -55,7 +55,7 @@ export function LandingPagesList() {
         .from('landing_pages')
         .select('id, title, created_at, profile_image_path, is_published')
         .eq('coach_id', session.session.user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any;
 
       if (error) throw error;
       
@@ -79,7 +79,7 @@ export function LandingPagesList() {
       const { error } = await supabase
         .from('landing_pages')
         .delete()
-        .eq('id', deletePageId);
+        .eq('id', deletePageId) as any;
 
       if (error) throw error;
       

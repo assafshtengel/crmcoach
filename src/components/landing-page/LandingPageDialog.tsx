@@ -15,7 +15,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Preview } from "lucide-react";
+import { Eye } from "lucide-react";
 
 // רשימת היתרונות האפשריים
 const ADVANTAGE_OPTIONS = [
@@ -208,7 +208,7 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
             accentColorValue: values.accentColor[0],
             buttonColorValue: values.buttonColor[0]
           }
-        })
+        } as any)
         .select()
         .single();
       
@@ -246,7 +246,7 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
       // עדכון סטטוס הפרסום בבסיס הנתונים
       const { data, error } = await supabase
         .from('landing_pages')
-        .update({ is_published: true })
+        .update({ is_published: true } as any)
         .eq('id', landingPageId)
         .select()
         .single();
