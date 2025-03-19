@@ -190,7 +190,7 @@ const Index = () => {
           </h1>
           <div className="flex items-center gap-2">
             <Button 
-              variant="primary"
+              variant="purple"
               onClick={() => setShowLandingPageDialog(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white"
               size="sm"
