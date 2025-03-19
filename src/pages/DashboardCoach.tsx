@@ -24,6 +24,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
+import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
 
 interface DashboardStats {
   totalPlayers: number;
@@ -117,6 +118,7 @@ const DashboardCoach = () => {
   const [activeTab, setActiveTab] = useState("upcoming");
   const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
   const [isSessionFormOpen, setIsSessionFormOpen] = useState(false);
+  const [showLandingPageDialog, setShowLandingPageDialog] = useState(false);
 
   useEffect(() => {
     const initUser = async () => {
@@ -855,6 +857,8 @@ const DashboardCoach = () => {
     </div>;
   }
 
+  console.log("Rendering DashboardCoach with landing page button");
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
@@ -899,7 +903,17 @@ const DashboardCoach = () => {
                 <p className="text-white/70 text-sm">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: he })}</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <Button
+                onClick={() => setShowLandingPageDialog(true)}
+                variant="green"
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700"
+                size="lg"
+              >
+                <FileEdit className="h-4 w-4" />
+                צור עמוד נחיתה אישי
+              </Button>
+              
               <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} onEventAdd={handleAddEvent} />
               <Button 
                 variant="ghost" 
@@ -1259,6 +1273,11 @@ const DashboardCoach = () => {
           <AdminMessageForm />
         </div>
       </div>
+
+      <LandingPageDialog
+        open={showLandingPageDialog}
+        onOpenChange={setShowLandingPageDialog}
+      />
     </div>
   );
 };
