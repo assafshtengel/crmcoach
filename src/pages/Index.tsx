@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -164,6 +165,7 @@ const Index = () => {
   };
 
   console.log("Landing page dialog state:", showLandingPageDialog);
+  console.log("Rendering header with landing page button");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sage-50 to-white py-8 px-4 md:px-8">
@@ -173,7 +175,7 @@ const Index = () => {
             <h1 className="text-2xl font-bold text-primary">שלום, {userEmail || 'אורח'}</h1>
           </div>
           
-          <div className="flex items-center space-x-4 rtl:space-x-reverse">
+          <div className="flex flex-wrap gap-3 items-center">
             <Button
               onClick={() => setShowLandingPageDialog(true)}
               variant="green"
