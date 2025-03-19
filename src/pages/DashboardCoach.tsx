@@ -25,6 +25,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
+
 interface DashboardStats {
   totalPlayers: number;
   upcomingSessions: number;
@@ -34,6 +35,7 @@ interface DashboardStats {
   twoMonthsAgoSessions: number;
   totalReminders: number;
 }
+
 interface UpcomingSession {
   id: string;
   session_date: string;
@@ -47,6 +49,7 @@ interface UpcomingSession {
   };
   has_summary?: boolean;
 }
+
 interface SessionResponse {
   id: string;
   session_date: string;
@@ -58,6 +61,7 @@ interface SessionResponse {
     full_name: string;
   };
 }
+
 interface Notification {
   id: string;
   message: string;
@@ -65,6 +69,7 @@ interface Notification {
   is_read: boolean;
   type: string;
 }
+
 interface CalendarEvent {
   id: string;
   title: string;
@@ -78,12 +83,14 @@ interface CalendarEvent {
     notes?: string;
   };
 }
+
 interface EventFormData {
   title: string;
   date: string;
   time: string;
   notes?: string;
 }
+
 const DashboardCoach = () => {
   const navigate = useNavigate();
   const {
@@ -117,6 +124,7 @@ const DashboardCoach = () => {
   }[]>([]);
   const [isSessionFormOpen, setIsSessionFormOpen] = useState(false);
   const [showLandingPageDialog, setShowLandingPageDialog] = useState(false);
+
   useEffect(() => {
     const initUser = async () => {
       const {
@@ -128,6 +136,7 @@ const DashboardCoach = () => {
     };
     initUser();
   }, []);
+
   const fetchData = async (userId: string) => {
     try {
       const today = new Date();
@@ -258,6 +267,7 @@ const DashboardCoach = () => {
       setIsLoading(false);
     }
   };
+
   const fetchNotifications = async (userId: string) => {
     try {
       const {
@@ -273,6 +283,7 @@ const DashboardCoach = () => {
       console.error('Error fetching notifications:', error);
     }
   };
+
   const markAsRead = async (notificationId: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
@@ -293,6 +304,7 @@ const DashboardCoach = () => {
       console.error('Error marking notification as read:', error);
     }
   };
+
   const handleSendReminder = async (sessionId: string) => {
     try {
       const {
@@ -341,6 +353,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -358,6 +371,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleSaveSessionSummary = async (sessionId: string, data: any) => {
     try {
       const {
@@ -405,6 +419,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleViewSummary = async (playerId: string, playerName: string) => {
     try {
       const {
@@ -461,6 +476,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
     const sessionDate = new Date(session.session_date);
     const isToday = isSameDay(sessionDate, new Date());
@@ -530,6 +546,7 @@ const DashboardCoach = () => {
         </CardContent>
       </Card>;
   };
+
   const fetchCalendarEvents = async (userId: string) => {
     try {
       const {
@@ -580,6 +597,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleAddEvent = async (eventData: any) => {
     try {
       if (!user?.id) {
@@ -613,6 +631,7 @@ const DashboardCoach = () => {
       throw error;
     }
   };
+
   const handleSessionFormSubmit = async (sessionData: {
     player_id: string;
     session_date: string;
@@ -631,6 +650,7 @@ const DashboardCoach = () => {
       return Promise.reject(error);
     }
   };
+
   useEffect(() => {
     const initializeDashboard = async () => {
       const {
@@ -672,6 +692,7 @@ const DashboardCoach = () => {
     };
     initializeDashboard();
   }, []);
+
   const handleEventClick = (eventId: string) => {
     const session = upcomingSessions.find(s => s.id === eventId);
     if (session) {
@@ -682,6 +703,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const getMonthlySessionsData = () => {
     return [{
       name: 'לפני חודשיים',
@@ -701,6 +723,7 @@ const DashboardCoach = () => {
       fill: '#3B82F6'
     }];
   };
+
   useEffect(() => {
     const fetchPlayers = async () => {
       const {
@@ -721,6 +744,7 @@ const DashboardCoach = () => {
     };
     fetchPlayers();
   }, []);
+
   useEffect(() => {
     const handleSessionSummarized = (event: any) => {
       const {
@@ -742,6 +766,7 @@ const DashboardCoach = () => {
       window.removeEventListener('sessionSummarized', handleSessionSummarized);
     };
   }, [pastSessionsToSummarize]);
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -764,7 +789,7 @@ const DashboardCoach = () => {
 
       <SessionFormDialog open={isSessionFormOpen} onOpenChange={setIsSessionFormOpen} />
 
-      <header className="w-full bg-[#2C3E50] text-white py-6 mb-8 shadow-lg">
+      <header className="w-full bg-[#2C3E50] text-white py-4 mb-8 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
@@ -785,20 +810,27 @@ const DashboardCoach = () => {
                 })}</p>
               </div>
             </div>
-            <div className="flex items-center gap-4 flex-wrap my-0 mx-0 px-0 py-0">
-              <Button onClick={() => setShowLandingPageDialog(true)} variant="green" size="lg" className="flex items-center gap-2 text-center bg-slate-950 hover:bg-slate-800 text-sm font-normal rounded-2xl">
-                <FileEdit className="h-4 w-4" />
-                צור עמוד נחיתה אישי
-              </Button>
+
+            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+              <div className="hidden md:flex">
+                <Button onClick={() => setShowLandingPageDialog(true)} variant="green" size="sm" className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-sm font-normal rounded-lg">
+                  <FileEdit className="h-3.5 w-3.5" />
+                  <span>צור עמוד נחיתה</span>
+                </Button>
+              </div>
               
               <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} onEventAdd={handleAddEvent} />
-              <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => navigate('/registration-links')}>
-                <Share2 className="h-5 w-5 mr-2" />
-                <span className="hidden sm:inline">לינקי הרשמה</span>
-              </Button>
+              
+              <div className="hidden sm:block">
+                <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => navigate('/registration-links')}>
+                  <Share2 className="h-5 w-5 mr-1" />
+                  <span className="text-xs">לינקי הרשמה</span>
+                </Button>
+              </div>
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative text-white hover:bg-white/10">
+                  <Button variant="ghost" className="relative text-white hover:bg-white/10 h-9 w-9 p-0">
                     <Bell className="h-5 w-5" />
                     {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-[#E74C3C] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                         {unreadCount}
@@ -830,13 +862,34 @@ const DashboardCoach = () => {
                   </ScrollArea>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => navigate('/profile-coach')}>
-                <Settings className="h-5 w-5 mr-2" />
-                <span className="hidden sm:inline">פרופיל</span>
+              
+              <Button variant="ghost" className="text-white hover:bg-white/10 h-9 w-9 p-0" onClick={() => navigate('/profile-coach')}>
+                <Settings className="h-5 w-5" />
               </Button>
-              <Button variant="destructive" size="sm" onClick={() => setIsLogoutDialogOpen(true)}>
+              
+              <Button variant="destructive" size="sm" onClick={() => setIsLogoutDialogOpen(true)} className="h-8 w-8 p-0">
                 <LogOut className="h-4 w-4" />
               </Button>
+              
+              <div className="block md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="text-white border-white/20 bg-white/10 hover:bg-white/20">
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setShowLandingPageDialog(true)} className="cursor-pointer">
+                      <FileEdit className="h-4 w-4 mr-2" />
+                      צור עמוד נחיתה
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/registration-links')} className="cursor-pointer">
+                      <Share2 className="h-4 w-4 mr-2" />
+                      לינקי הרשמה
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
         </div>
@@ -1088,4 +1141,5 @@ const DashboardCoach = () => {
       <LandingPageDialog open={showLandingPageDialog} onOpenChange={setShowLandingPageDialog} />
     </div>;
 };
+
 export default DashboardCoach;
