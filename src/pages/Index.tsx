@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -167,7 +166,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-sage-50 to-white py-8 px-4 md:px-8">
       <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
+        {/* Header section */}
         <div className="flex justify-between items-center p-4 bg-white/80 backdrop-blur-sm rounded-xl shadow-sm">
+          {/* Left navigation buttons */}
           <div className="flex items-center gap-4">
             <Button
               variant="outline"
@@ -187,6 +188,7 @@ const Index = () => {
             </Button>
           </div>
           
+          {/* Center title and landing page button */}
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
               ברוך הבא{userEmail ? `, ${userEmail}` : ''}
@@ -202,6 +204,7 @@ const Index = () => {
             </Button>
           </div>
           
+          {/* Right logout button */}
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
@@ -459,6 +462,12 @@ const Index = () => {
             </CardContent>
           </Card>
         </div>
+      
+        {/* Add this at the end, before the closing div */}
+        <LandingPageDialog 
+          open={showLandingPageDialog} 
+          onOpenChange={setShowLandingPageDialog} 
+        />
       </div>
 
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
@@ -477,11 +486,6 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
-      <LandingPageDialog 
-        open={showLandingPageDialog} 
-        onOpenChange={setShowLandingPageDialog} 
-      />
     </div>
   );
 };
