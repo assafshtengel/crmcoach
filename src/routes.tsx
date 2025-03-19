@@ -1,6 +1,6 @@
 
 import { lazy } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, Outlet } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { LandingPagePreview } from '@/components/landing-page/LandingPagePreview';
 

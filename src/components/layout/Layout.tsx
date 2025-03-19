@@ -1,15 +1,11 @@
 
-import React, { ReactNode, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation, Outlet } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Home, Calendar, Users, Wrench, FileText, Settings, Menu, X, Target } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-interface LayoutProps {
-  children: ReactNode;
-}
-
-export function Layout({ children }: LayoutProps) {
+export function Layout() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   
@@ -98,7 +94,9 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </div>
       </header>
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <Outlet />
+      </main>
     </div>
   );
 }
