@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format, startOfMonth, endOfMonth, subMonths, isBefore, isAfter, isSameDay, isPast, formatDistance } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -592,7 +592,7 @@ const DashboardCoach = () => {
       console.error('Error fetching calendar events:', error);
       toast({
         variant: "destructive",
-        title: "שגיאה בטעינת המפגשים",
+        title: "שגיאה בטעינת ה��פגשים",
         description: "אנא נסה שוב מאוחר יותר"
       });
     }
