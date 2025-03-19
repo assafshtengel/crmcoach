@@ -1,9 +1,10 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen } from "lucide-react";
+import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen, FileEdit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -21,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AdminMessageForm } from "@/components/admin/AdminMessageForm";
 import { BeliefBreakingCard } from "@/components/ui/BeliefBreakingCard";
 import { MentalLibrary } from "@/components/mental-library/MentalLibrary";
+import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
 
 const Index = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -28,7 +30,8 @@ const Index = () => {
   const [assignedVideos, setAssignedVideos] = useState<any[]>([]);
   const [allVideos, setAllVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null); // Added userId state
+  const [userId, setUserId] = useState<string | null>(null);
+  const [showLandingPageDialog, setShowLandingPageDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -197,6 +200,17 @@ const Index = () => {
             onClick={() => setShowLogoutDialog(true)}
           >
             <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        {/* Create Landing Page Button - New Addition */}
+        <div className="flex justify-center">
+          <Button 
+            onClick={() => setShowLandingPageDialog(true)}
+            className="bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all"
+          >
+            <FileEdit className="mr-2 h-5 w-5" />
+            צור עמוד נחיתה אישי
           </Button>
         </div>
         
@@ -467,6 +481,12 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Landing Page Dialog */}
+      <LandingPageDialog 
+        open={showLandingPageDialog} 
+        onOpenChange={setShowLandingPageDialog} 
+      />
     </div>
   );
 };
