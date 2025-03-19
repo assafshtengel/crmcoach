@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -177,9 +176,11 @@ const Index = () => {
           <div className="flex items-center space-x-4 rtl:space-x-reverse">
             <Button
               onClick={() => setShowLandingPageDialog(true)}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md mr-3"
+              variant="green"
+              className="flex items-center gap-2"
             >
-              צור עמוד נחיתה
+              <FileEdit className="h-4 w-4" />
+              צור עמוד נחיתה אישי
             </Button>
             
             <Button 
@@ -193,7 +194,6 @@ const Index = () => {
           </div>
         </header>
 
-        {/* Alert Dialog for Logout Confirmation */}
         <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -360,7 +360,6 @@ const Index = () => {
         </Tabs>
       </div>
 
-      {/* Landing Page Dialog */}
       <LandingPageDialog
         open={showLandingPageDialog}
         onOpenChange={setShowLandingPageDialog}
