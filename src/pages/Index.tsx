@@ -188,25 +188,25 @@ const Index = () => {
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
             ברוך הבא{userEmail ? `, ${userEmail}` : ''}
           </h1>
-          <Button 
-            variant="outline" 
-            size="icon"
-            className="text-destructive hover:bg-destructive hover:text-white transition-colors"
-            onClick={() => setShowLogoutDialog(true)}
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="flex justify-center mt-4">
-          <Button 
-            onClick={() => setShowLandingPageDialog(true)}
-            className="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all text-lg"
-            size="lg"
-          >
-            <FileEdit className="mr-2 h-6 w-6" />
-            צור עמוד נחיתה אישי
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="primary"
+              onClick={() => setShowLandingPageDialog(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+              size="sm"
+            >
+              <FileEdit className="mr-1 h-4 w-4" />
+              צור עמוד נחיתה אישי
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon"
+              className="text-destructive hover:bg-destructive hover:text-white transition-colors"
+              onClick={() => setShowLogoutDialog(true)}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         
         <div className="grid grid-cols-1 gap-6">
