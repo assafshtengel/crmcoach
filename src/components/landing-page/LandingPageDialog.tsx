@@ -9,10 +9,50 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { uploadImage } from "@/lib/uploadImage";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 
+// רשימת היתרונות האפשריים
+const ADVANTAGE_OPTIONS = [
+  { id: "mental-resilience", label: "חוסן מנטלי" },
+  { id: "confidence", label: "שיפור ביטחון עצמי" },
+  { id: "goal-setting", label: "הצבת מטרות והשגתן" },
+  { id: "stress-management", label: "ניהול לחץ ומתח" },
+  { id: "focus-improvement", label: "שיפור ריכוז ומיקוד" },
+  { id: "teamwork", label: "עבודת צוות יעילה" },
+  { id: "performance-boost", label: "שיפור ביצועים" },
+  { id: "leadership", label: "פיתוח מנהיגות" },
+];
+
+// אפשרויות לתת הכותרת
+const SUBTITLE_OPTIONS = [
+  { value: "personal-training", label: "אימון אישי שיביא אותך לתוצאות" },
+  { value: "professional-guidance", label: "ליווי מקצועי להצלחה ספורטיבית" },
+  { value: "mental-coaching", label: "אימון מנטלי לשיפור הביצועים" },
+  { value: "holistic-approach", label: "גישה הוליסטית לפיתוח ספורטאים" },
+  { value: "performance-enhancement", label: "העצמת היכולות המנטליות שלך" }
+];
+
+// אפשרויות לקריאה לפעולה
+const CTA_OPTIONS = [
+  { value: "free-consultation", label: "שיחת ייעוץ חינם!" },
+  { value: "start-now", label: "התחל עכשיו!" },
+  { value: "join-program", label: "הצטרף לתוכנית האימון!" },
+  { value: "contact-me", label: "צור קשר עוד היום!" },
+  { value: "book-session", label: "קבע פגישה!" }
+];
+
+// סכמת התיקוף לטופס
 const formSchema = z.object({
+  // שדות בסיסיים
   title: z.string().min(2, {
     message: "כותרת חייבת להכיל לפחות 2 תווים",
+  }),
+  subtitle: z.string({
+    required_error: "נא לבחור תת-כותרת",
   }),
   description: z.string().min(10, {
     message: "תיאור חייב להכיל לפחות 10 תווים",
@@ -23,6 +63,32 @@ const formSchema = z.object({
   contactPhone: z.string().min(9, {
     message: "נא להזין מספר טלפון תקין",
   }),
+  
+  // שדות חדשים
+  mainReason: z.string().min(5, {
+    message: "נא להזין סיבה מרכזית לבחירה בך",
+  }),
+  advantages: z.array(z.string()).min(1, {
+    message: "נא לבחור לפחות יתרון אחד",
+  }).max(5, {
+    message: "ניתן לבחור עד 5 יתרונות",
+  }),
+  workStep1: z.string().min(5, {
+    message: "נא למלא את השלב הראשון בתהליך",
+  }),
+  workStep2: z.string().min(5, {
+    message: "נא למלא את השלב השני בתהליך",
+  }),
+  workStep3: z.string().min(5, {
+    message: "נא למלא את השלב השלישי בתהליך",
+  }),
+  ctaText: z.string({
+    required_error: "נא לבחור טקסט לכפתור",
+  }),
+  bgColor: z.number().array().length(1),
+  accentColor: z.number().array().length(1),
+  buttonColor: z.number().array().length(1),
+  isDarkText: z.boolean(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -34,36 +100,70 @@ interface LandingPageDialogProps {
 
 export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { toast } = useToast();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
+      subtitle: "",
       description: "",
       contactEmail: "",
       contactPhone: "",
+      mainReason: "",
+      advantages: [],
+      workStep1: "",
+      workStep2: "",
+      workStep3: "",
+      ctaText: "",
+      bgColor: [50],
+      accentColor: [50],
+      buttonColor: [50],
+      isDarkText: true,
     },
   });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setProfileImage(file);
+      
+      // יצירת URL לתצוגה מקדימה של התמונה
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+    }
+  };
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     
     try {
-      // Here you would handle the actual form submission
       console.log("Form values:", values);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // טיפול בהעלאת התמונה אם נבחרה
+      let imageUrl = null;
+      if (profileImage) {
+        const timestamp = new Date().getTime();
+        const path = `landing_pages/${timestamp}_${profileImage.name}`;
+        await uploadImage(profileImage, 'landing-pages', path);
+        imageUrl = path;
+      }
+      
+      // כאן תוכל להוסיף את הלוגיקה לשמירת עמוד הנחיתה
+      // עם הנתונים מהטופס והתמונה שהועלתה
       
       toast({
         title: "עמוד הנחיתה נוצר בהצלחה!",
         description: "עמוד הנחיתה שלך נוצר ויהיה זמין בקרוב",
       });
       
-      // Close the dialog and reset form
+      // סגירת הדיאלוג ואיפוס הטופס
       onOpenChange(false);
       form.reset();
+      setProfileImage(null);
+      setImagePreview(null);
     } catch (error) {
       console.error("Error creating landing page:", error);
       toast({
@@ -75,10 +175,50 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
       setIsSubmitting(false);
     }
   };
+  
+  // מפה צבעים להצגה בסליידרים
+  const getColorFromValue = (value: number, colorType: 'bg' | 'accent' | 'button') => {
+    const colorMap = {
+      bg: [
+        "#ffffff", // לבן
+        "#F1F0FB", // אפור בהיר
+        "#E5DEFF", // סגול רך
+        "#D3E4FD", // כחול רך
+        "#FEF7CD", // צהוב רך
+        "#F2FCE2", // ירוק רך
+        "#FFDEE2", // ורוד רך
+        "#FDE1D3"  // אפרסק
+      ],
+      accent: [
+        "#1A1F2C", // סגול כהה
+        "#8B5CF6", // סגול חי
+        "#0EA5E9", // כחול אוקיינוס
+        "#F97316", // כתום בהיר
+        "#D946EF", // ורוד מגנטה
+        "#403E43", // אפור פחם
+        "#1EAEDB", // כחול בהיר
+        "#EA384C"  // אדום
+      ],
+      button: [
+        "#9b87f5", // סגול ראשי
+        "#8B5CF6", // סגול חי
+        "#0EA5E9", // כחול אוקיינוס
+        "#F97316", // כתום בהיר
+        "#D946EF", // ורוד מגנטה
+        "#1EAEDB", // כחול בהיר
+        "#EA384C", // אדום
+        "#1A1F2C"  // שחור
+      ]
+    };
+
+    // המרת ערך הסליידר לאינדקס בטווח המערך
+    const index = Math.min(Math.floor(value / 12.5), 7);
+    return colorMap[colorType][index];
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">יצירת עמוד נחיתה אישי</DialogTitle>
           <DialogDescription>
@@ -87,55 +227,22 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>כותרת עמוד הנחיתה</FormLabel>
-                  <FormControl>
-                    <Input placeholder="הזן כותרת..." {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    הכותרת הראשית שתופיע בעמוד הנחיתה שלך
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>תיאור</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="תאר את השירות או המוצר שלך..." 
-                      {...field} 
-                      className="min-h-[120px]"
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    תיאור מפורט שיופיע בעמוד הנחיתה
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <div className="space-y-4">
+              <h3 className="text-md font-semibold border-b pb-1">פרטים בסיסיים</h3>
+              
               <FormField
                 control={form.control}
-                name="contactEmail"
+                name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>אימייל ליצירת קשר</FormLabel>
+                    <FormLabel>כותרת ראשית</FormLabel>
                     <FormControl>
-                      <Input placeholder="your@email.com" {...field} />
+                      <Input placeholder="הדרך שלך להצלחה מתחילה כאן..." {...field} />
                     </FormControl>
+                    <FormDescription>
+                      הכותרת הראשית שתופיע בעמוד הנחיתה שלך
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -143,17 +250,367 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
               
               <FormField
                 control={form.control}
-                name="contactPhone"
+                name="subtitle"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>טלפון ליצירת קשר</FormLabel>
-                    <FormControl>
-                      <Input placeholder="050-1234567" {...field} />
-                    </FormControl>
+                    <FormLabel>תת-כותרת</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="בחר תת-כותרת" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SUBTITLE_OPTIONS.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      הסבר קצר שיופיע מתחת לכותרת הראשית
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
+              <FormField
+                control={form.control}
+                name="mainReason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>סיבה מרכזית לבחור בך</FormLabel>
+                    <FormControl>
+                      <Input placeholder="7 שנות ניסיון בליווי להצלחה..." {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      הסבר קצר למה כדאי לבחור דווקא בך
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="text-md font-semibold border-b pb-1">יתרונות ותהליך עבודה</h3>
+              
+              <FormField
+                control={form.control}
+                name="advantages"
+                render={() => (
+                  <FormItem>
+                    <div className="mb-2">
+                      <FormLabel>בחר 3-5 יתרונות מרכזיים</FormLabel>
+                      <FormDescription>
+                        הגורמים שמבדלים אותך משאר המאמנים
+                      </FormDescription>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {ADVANTAGE_OPTIONS.map((item) => (
+                        <FormField
+                          key={item.id}
+                          control={form.control}
+                          name="advantages"
+                          render={({ field }) => {
+                            return (
+                              <FormItem
+                                key={item.id}
+                                className="flex flex-row items-start space-x-2 space-x-reverse"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes(item.id)}
+                                    onCheckedChange={(checked) => {
+                                      return checked
+                                        ? field.onChange([...field.value, item.id])
+                                        : field.onChange(
+                                            field.value?.filter(
+                                              (value) => value !== item.id
+                                            )
+                                          )
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="mr-2 font-normal cursor-pointer">
+                                  {item.label}
+                                </FormLabel>
+                              </FormItem>
+                            )
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 gap-4">
+                <FormField
+                  control={form.control}
+                  name="workStep1"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>שלב 1 בתהליך העבודה</FormLabel>
+                      <FormControl>
+                        <Input placeholder="פגישת היכרות ואבחון צרכים..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="workStep2"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>שלב 2 בתהליך העבודה</FormLabel>
+                      <FormControl>
+                        <Input placeholder="בניית תוכנית אימון אישית..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="workStep3"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>שלב 3 בתהליך העבודה</FormLabel>
+                      <FormControl>
+                        <Input placeholder="מפגשי אימון והתקדמות מתמדת..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="text-md font-semibold border-b pb-1">תיאור, פרטי קשר וקריאה לפעולה</h3>
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>תיאור</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="תאר את השירות או המוצר שלך..." 
+                        {...field} 
+                        className="min-h-[100px]"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      תיאור מפורט שיופיע בעמוד הנחיתה
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="contactEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>אימייל ליצירת קשר</FormLabel>
+                      <FormControl>
+                        <Input placeholder="your@email.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="contactPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>טלפון ליצירת קשר</FormLabel>
+                      <FormControl>
+                        <Input placeholder="050-1234567" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="ctaText"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>טקסט לכפתור קריאה לפעולה</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="בחר טקסט לכפתור" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {CTA_OPTIONS.map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      הטקסט שיופיע על הכפתור המרכזי בעמוד
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="text-md font-semibold border-b pb-1">עיצוב ותמונה</h3>
+              
+              <div className="space-y-4">
+                <FormItem>
+                  <FormLabel>תמונה אישית</FormLabel>
+                  <div className="flex items-center gap-4">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="max-w-[220px]"
+                    />
+                    {imagePreview && (
+                      <div className="h-20 w-20 rounded-md overflow-hidden border">
+                        <img 
+                          src={imagePreview} 
+                          alt="תצוגה מקדימה" 
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <FormDescription>
+                    העלה תמונה אישית שתופיע בעמוד הנחיתה
+                  </FormDescription>
+                </FormItem>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="bgColor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>צבע רקע עיקרי</FormLabel>
+                      <div className="flex items-center gap-4">
+                        <FormControl>
+                          <Slider
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            max={100}
+                            step={1}
+                            className="flex-1"
+                          />
+                        </FormControl>
+                        <div 
+                          className="h-8 w-8 rounded-full border" 
+                          style={{ backgroundColor: getColorFromValue(field.value[0], 'bg') }}
+                        />
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="accentColor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>צבע הדגשה משני</FormLabel>
+                      <div className="flex items-center gap-4">
+                        <FormControl>
+                          <Slider
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            max={100}
+                            step={1}
+                            className="flex-1"
+                          />
+                        </FormControl>
+                        <div 
+                          className="h-8 w-8 rounded-full border" 
+                          style={{ backgroundColor: getColorFromValue(field.value[0], 'accent') }}
+                        />
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="buttonColor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>צבע כפתורים</FormLabel>
+                      <div className="flex items-center gap-4">
+                        <FormControl>
+                          <Slider
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            max={100}
+                            step={1}
+                            className="flex-1"
+                          />
+                        </FormControl>
+                        <div 
+                          className="h-8 w-8 rounded-full border" 
+                          style={{ backgroundColor: getColorFromValue(field.value[0], 'button') }}
+                        />
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="isDarkText"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between space-x-3 space-x-reverse">
+                      <div className="space-y-0.5">
+                        <FormLabel>צבע טקסט כהה</FormLabel>
+                        <FormDescription>
+                          השתמש בטקסט כהה (אחרת יהיה בצבע לבן)
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
             
             <DialogFooter>
