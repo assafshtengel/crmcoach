@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -165,7 +164,7 @@ const Index = () => {
   };
 
   console.log("Landing page dialog state:", showLandingPageDialog);
-  console.log("Rendering header with landing page button");
+  console.log("Rendering Index.tsx page with landing page button");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sage-50 to-white py-8 px-4 md:px-8">
@@ -180,6 +179,7 @@ const Index = () => {
               onClick={() => setShowLandingPageDialog(true)}
               variant="green"
               className="flex items-center gap-2"
+              size="lg"
             >
               <FileEdit className="h-4 w-4" />
               צור עמוד נחיתה אישי
