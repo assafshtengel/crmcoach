@@ -25,7 +25,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
-
 interface DashboardStats {
   totalPlayers: number;
   upcomingSessions: number;
@@ -35,7 +34,6 @@ interface DashboardStats {
   twoMonthsAgoSessions: number;
   totalReminders: number;
 }
-
 interface UpcomingSession {
   id: string;
   session_date: string;
@@ -49,7 +47,6 @@ interface UpcomingSession {
   };
   has_summary?: boolean;
 }
-
 interface SessionResponse {
   id: string;
   session_date: string;
@@ -61,7 +58,6 @@ interface SessionResponse {
     full_name: string;
   };
 }
-
 interface Notification {
   id: string;
   message: string;
@@ -69,7 +65,6 @@ interface Notification {
   is_read: boolean;
   type: string;
 }
-
 interface CalendarEvent {
   id: string;
   title: string;
@@ -83,17 +78,17 @@ interface CalendarEvent {
     notes?: string;
   };
 }
-
 interface EventFormData {
   title: string;
   date: string;
   time: string;
   notes?: string;
 }
-
 const DashboardCoach = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [coachName, setCoachName] = useState('');
@@ -116,60 +111,48 @@ const DashboardCoach = () => {
   const [pastSessionsToSummarize, setPastSessionsToSummarize] = useState<UpcomingSession[]>([]);
   const [summarizedSessions, setSummarizedSessions] = useState<UpcomingSession[]>([]);
   const [activeTab, setActiveTab] = useState("upcoming");
-  const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
+  const [players, setPlayers] = useState<{
+    id: string;
+    full_name: string;
+  }[]>([]);
   const [isSessionFormOpen, setIsSessionFormOpen] = useState(false);
   const [showLandingPageDialog, setShowLandingPageDialog] = useState(false);
-
   useEffect(() => {
     const initUser = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user: authUser
+        }
+      } = await supabase.auth.getUser();
       setUser(authUser);
     };
     initUser();
   }, []);
-
   const fetchData = async (userId: string) => {
     try {
       const today = new Date();
       const nextWeek = new Date(today);
       nextWeek.setDate(today.getDate() + 7);
-      
       const firstDayOfMonth = startOfMonth(today);
       const lastDayOfMonth = endOfMonth(today);
       const lastMonth = subMonths(today, 1);
       const twoMonthsAgo = subMonths(today, 2);
-      
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('sessions')
-        .select('session_date')
-        .eq('coach_id', userId);
-      
+      const {
+        data: sessionsData,
+        error: sessionsError
+      } = await supabase.from('sessions').select('session_date').eq('coach_id', userId);
       if (sessionsError) throw sessionsError;
-
-      const currentMonthPastSessions = sessionsData?.filter(session => 
-        isBefore(new Date(session.session_date), today) && 
-        isAfter(new Date(session.session_date), firstDayOfMonth)
-      )?.length || 0;
-
+      const currentMonthPastSessions = sessionsData?.filter(session => isBefore(new Date(session.session_date), today) && isAfter(new Date(session.session_date), firstDayOfMonth))?.length || 0;
       const currentMonthFutureSessions = sessionsData?.filter(session => {
         const sessionDate = new Date(session.session_date);
-        return (isAfter(sessionDate, today) || isSameDay(sessionDate, today)) && 
-               isBefore(sessionDate, lastDayOfMonth);
+        return (isAfter(sessionDate, today) || isSameDay(sessionDate, today)) && isBefore(sessionDate, lastDayOfMonth);
       })?.length || 0;
-
-      const lastMonthSessions = sessionsData?.filter(session => 
-        isBefore(new Date(session.session_date), firstDayOfMonth) && 
-        isAfter(new Date(session.session_date), startOfMonth(lastMonth))
-      )?.length || 0;
-
-      const twoMonthsAgoSessions = sessionsData?.filter(session => 
-        isBefore(new Date(session.session_date), startOfMonth(lastMonth)) && 
-        isAfter(new Date(session.session_date), startOfMonth(twoMonthsAgo))
-      )?.length || 0;
-
-      const { data: upcomingSessions, error: upcomingError } = await supabase
-        .from('sessions')
-        .select(`
+      const lastMonthSessions = sessionsData?.filter(session => isBefore(new Date(session.session_date), firstDayOfMonth) && isAfter(new Date(session.session_date), startOfMonth(lastMonth)))?.length || 0;
+      const twoMonthsAgoSessions = sessionsData?.filter(session => isBefore(new Date(session.session_date), startOfMonth(lastMonth)) && isAfter(new Date(session.session_date), startOfMonth(twoMonthsAgo)))?.length || 0;
+      const {
+        data: upcomingSessions,
+        error: upcomingError
+      } = await supabase.from('sessions').select(`
           id,
           session_date,
           session_time,
@@ -183,29 +166,14 @@ const DashboardCoach = () => {
           session_summaries (
             id
           )
-        `)
-        .eq('coach_id', userId)
-        .gte('session_date', today.toISOString().split('T')[0])
-        .lte('session_date', nextWeek.toISOString().split('T')[0])
-        .order('session_date', { ascending: true })
-        .order('session_time', { ascending: true });
-
+        `).eq('coach_id', userId).gte('session_date', today.toISOString().split('T')[0]).lte('session_date', nextWeek.toISOString().split('T')[0]).order('session_date', {
+        ascending: true
+      }).order('session_time', {
+        ascending: true
+      });
       if (upcomingError) throw upcomingError;
-
       const upcomingSessionsCount = upcomingSessions?.length || 0;
-
-      const [playersCountResult, remindersResult] = await Promise.all([
-        supabase
-          .from('players')
-          .select('id')
-          .eq('coach_id', userId),
-        supabase
-          .from('notifications_log')
-          .select('id')
-          .eq('coach_id', userId)
-          .eq('status', 'Sent')
-      ]);
-
+      const [playersCountResult, remindersResult] = await Promise.all([supabase.from('players').select('id').eq('coach_id', userId), supabase.from('notifications_log').select('id').eq('coach_id', userId).eq('status', 'Sent')]);
       if (upcomingSessions) {
         const formattedSessions: UpcomingSession[] = upcomingSessions.map((session: any) => ({
           id: session.id,
@@ -222,7 +190,6 @@ const DashboardCoach = () => {
         }));
         setUpcomingSessions(formattedSessions);
       }
-
       setStats({
         totalPlayers: playersCountResult.data?.length || 0,
         upcomingSessions: upcomingSessionsCount,
@@ -232,10 +199,10 @@ const DashboardCoach = () => {
         twoMonthsAgoSessions,
         totalReminders: remindersResult.data?.length || 0
       });
-
-      const { data: pastSessions, error: pastSessionsError } = await supabase
-        .from('sessions')
-        .select(`
+      const {
+        data: pastSessions,
+        error: pastSessionsError
+      } = await supabase.from('sessions').select(`
           id,
           session_date,
           session_time,
@@ -249,18 +216,13 @@ const DashboardCoach = () => {
           session_summaries (
             id
           )
-        `)
-        .eq('coach_id', userId)
-        .lt('session_date', today.toISOString().split('T')[0])
-        .order('session_date', { ascending: false })
-        .limit(10);
-
+        `).eq('coach_id', userId).lt('session_date', today.toISOString().split('T')[0]).order('session_date', {
+        ascending: false
+      }).limit(10);
       if (pastSessionsError) throw pastSessionsError;
-
       if (pastSessions) {
         const sessionsToSummarize: UpcomingSession[] = [];
         const summarizedSessions: UpcomingSession[] = [];
-
         pastSessions.forEach((session: any) => {
           const hasSummary = Array.isArray(session.session_summaries) && session.session_summaries.length > 0;
           const formattedSession: UpcomingSession = {
@@ -276,18 +238,15 @@ const DashboardCoach = () => {
             },
             has_summary: hasSummary
           };
-
           if (hasSummary) {
             summarizedSessions.push(formattedSession);
           } else {
             sessionsToSummarize.push(formattedSession);
           }
         });
-
         setPastSessionsToSummarize(sessionsToSummarize);
         setSummarizedSessions(summarizedSessions);
       }
-
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast({
@@ -299,7 +258,6 @@ const DashboardCoach = () => {
       setIsLoading(false);
     }
   };
-
   const fetchNotifications = async (userId: string) => {
     try {
       const {
@@ -315,7 +273,6 @@ const DashboardCoach = () => {
       console.error('Error fetching notifications:', error);
     }
   };
-
   const markAsRead = async (notificationId: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
@@ -336,7 +293,6 @@ const DashboardCoach = () => {
       console.error('Error marking notification as read:', error);
     }
   };
-
   const handleSendReminder = async (sessionId: string) => {
     try {
       const {
@@ -385,7 +341,6 @@ const DashboardCoach = () => {
       });
     }
   };
-
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -403,13 +358,17 @@ const DashboardCoach = () => {
       });
     }
   };
-
   const handleSaveSessionSummary = async (sessionId: string, data: any) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) throw new Error('לא נמצא משתמש מחובר');
-
-      const { error } = await supabase.from('session_summaries').insert({
+      const {
+        error
+      } = await supabase.from('session_summaries').insert({
         session_id: sessionId,
         coach_id: user.id,
         summary_text: data.summary_text,
@@ -419,28 +378,24 @@ const DashboardCoach = () => {
         progress_rating: data.progress_rating,
         next_session_focus: data.next_session_focus
       });
-
       if (error) throw error;
-
       setPastSessionsToSummarize(prev => prev.filter(session => session.id !== sessionId));
-      
       const summarizedSession = pastSessionsToSummarize.find(s => s.id === sessionId);
-      
       if (summarizedSession) {
-        const updatedSession = { ...summarizedSession, has_summary: true };
+        const updatedSession = {
+          ...summarizedSession,
+          has_summary: true
+        };
         setSummarizedSessions(prev => [updatedSession, ...prev]);
       }
-
       toast({
         title: "הסיכום נשמר בהצלחה",
         description: "סיכום המפגש נשמר במערכת",
         duration: 1000
       });
-
       setTimeout(() => {
         document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click();
       }, 1000);
-
     } catch (error) {
       console.error('Error saving session summary:', error);
       toast({
@@ -450,22 +405,25 @@ const DashboardCoach = () => {
       });
     }
   };
-
   const handleViewSummary = async (playerId: string, playerName: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) {
         toast({
-          variant: "destructive", 
+          variant: "destructive",
           title: "שגיאה",
           description: "לא נמצא משתמש מחובר"
         });
         return;
       }
-
-      const { data: summaries, error } = await supabase
-        .from('session_summaries')
-        .select(`
+      const {
+        data: summaries,
+        error
+      } = await supabase.from('session_summaries').select(`
           id,
           session:sessions (
             player:players!inner (
@@ -473,12 +431,9 @@ const DashboardCoach = () => {
               full_name
             )
           )
-        `)
-        .eq('coach_id', user.id)
-        .eq('sessions.player_id', playerId)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
+        `).eq('coach_id', user.id).eq('sessions.player_id', playerId).order('created_at', {
+        ascending: false
+      }).limit(1);
       if (error) {
         console.error('Error fetching summary:', error);
         toast({
@@ -488,7 +443,6 @@ const DashboardCoach = () => {
         });
         return;
       }
-
       if (summaries && summaries.length > 0) {
         navigate(`/session-summaries?id=${summaries[0].id}`);
       } else {
@@ -507,27 +461,15 @@ const DashboardCoach = () => {
       });
     }
   };
-
   const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
     const sessionDate = new Date(session.session_date);
     const isToday = isSameDay(sessionDate, new Date());
     const isPastSession = isPast(sessionDate);
     const hasNoSummary = isPastSession && !session.has_summary;
-
     if (isPastSession && session.has_summary && !showSummaryButton) {
       return null;
     }
-
-    return (
-      <Card 
-        key={session.id} 
-        className={`bg-gray-50 hover:bg-white transition-all duration-300 ${
-          isToday ? 'border-l-4 border-l-blue-500 shadow-blue-200' :
-          hasNoSummary ? 'border-l-4 border-l-red-500 shadow-red-200' :
-          session.has_summary ? 'border-l-4 border-l-green-500 shadow-green-200' :
-          'border'
-        }`}
-      >
+    return <Card key={session.id} className={`bg-gray-50 hover:bg-white transition-all duration-300 ${isToday ? 'border-l-4 border-l-blue-500 shadow-blue-200' : hasNoSummary ? 'border-l-4 border-l-red-500 shadow-red-200' : session.has_summary ? 'border-l-4 border-l-green-500 shadow-green-200' : 'border'}`}>
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
             <div>
@@ -537,24 +479,18 @@ const DashboardCoach = () => {
               </p>
             </div>
             <div>
-              {isToday && (
-                <div className="flex items-center text-blue-600 text-sm font-medium">
+              {isToday && <div className="flex items-center text-blue-600 text-sm font-medium">
                   <Clock className="h-4 w-4 mr-1" />
                   היום
-                </div>
-              )}
-              {hasNoSummary && (
-                <div className="flex items-center text-red-600 text-sm font-medium">
+                </div>}
+              {hasNoSummary && <div className="flex items-center text-red-600 text-sm font-medium">
                   <AlertCircle className="h-4 w-4 mr-1" />
                   חסר סיכום
-                </div>
-              )}
-              {session.has_summary && (
-                <div className="flex items-center text-green-600 text-sm font-medium">
+                </div>}
+              {session.has_summary && <div className="flex items-center text-green-600 text-sm font-medium">
                   <Check className="h-4 w-4 mr-1" />
                   סוכם
-                </div>
-              )}
+                </div>}
             </div>
           </div>
         </CardHeader>
@@ -562,24 +498,14 @@ const DashboardCoach = () => {
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-500">{session.location || 'לא צוין מיקום'}</span>
             <div className="flex gap-2">
-              {!session.reminder_sent && !isPastSession ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleSendReminder(session.id)}
-                  className="text-[#27AE60] hover:text-[#219A52]"
-                >
+              {!session.reminder_sent && !isPastSession ? <Button variant="ghost" size="sm" onClick={() => handleSendReminder(session.id)} className="text-[#27AE60] hover:text-[#219A52]">
                   <Send className="h-4 w-4 mr-1" />
                   שלח תזכורת
-                </Button>
-              ) : !isPastSession ? (
-                <span className="text-sm text-[#27AE60] flex items-center">
+                </Button> : !isPastSession ? <span className="text-sm text-[#27AE60] flex items-center">
                   <Check className="h-4 w-4 mr-1" />
                   נשלחה תזכורת
-                </span>
-              ) : null}
-              {showSummaryButton && !session.has_summary && (
-                <Dialog>
+                </span> : null}
+              {showSummaryButton && !session.has_summary && <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="ghost" size="sm" className="flex items-center">
                       <FileEdit className="h-4 w-4 mr-1" />
@@ -591,43 +517,25 @@ const DashboardCoach = () => {
                       <DialogTitle>סיכום מפגש</DialogTitle>
                     </DialogHeader>
                     <div className="mt-4">
-                      <SessionSummaryForm
-                        sessionId={session.id}
-                        playerName={session.player.full_name}
-                        sessionDate={session.session_date}
-                        onSubmit={(data) => handleSaveSessionSummary(session.id, data)}
-                        onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()}
-                        forceEnable={!isPastSession}
-                      />
+                      <SessionSummaryForm sessionId={session.id} playerName={session.player.full_name} sessionDate={session.session_date} onSubmit={data => handleSaveSessionSummary(session.id, data)} onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()} forceEnable={!isPastSession} />
                     </div>
                   </DialogContent>
-                </Dialog>
-              )}
-              {session.has_summary && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex items-center"
-                  onClick={() => session.player.id 
-                    ? handleViewSummary(session.player.id, session.player.full_name) 
-                    : navigate('/session-summaries')}
-                >
+                </Dialog>}
+              {session.has_summary && <Button variant="ghost" size="sm" className="flex items-center" onClick={() => session.player.id ? handleViewSummary(session.player.id, session.player.full_name) : navigate('/session-summaries')}>
                   <FileText className="h-4 w-4 mr-1" />
                   צפה בסיכום
-                </Button>
-              )}
+                </Button>}
             </div>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   };
-
   const fetchCalendarEvents = async (userId: string) => {
     try {
-      const { data: rawSessions, error } = await supabase
-        .from('sessions')
-        .select(`
+      const {
+        data: rawSessions,
+        error
+      } = await supabase.from('sessions').select(`
           id,
           session_date,
           session_time,
@@ -637,11 +545,8 @@ const DashboardCoach = () => {
           player:players!inner(
             full_name
           )
-        `)
-        .eq('coach_id', userId);
-
+        `).eq('coach_id', userId);
       if (error) throw error;
-
       const sessions = (rawSessions as any[])?.map(session => ({
         id: session.id as string,
         session_date: session.session_date as string,
@@ -653,7 +558,6 @@ const DashboardCoach = () => {
           full_name: session.player?.full_name as string
         }
       })) as SessionResponse[];
-
       const events: CalendarEvent[] = sessions.map(session => ({
         id: session.id,
         title: session.player.full_name,
@@ -666,7 +570,6 @@ const DashboardCoach = () => {
           notes: session.notes || undefined
         }
       }));
-
       setCalendarEvents(events);
     } catch (error) {
       console.error('Error fetching calendar events:', error);
@@ -677,13 +580,11 @@ const DashboardCoach = () => {
       });
     }
   };
-
   const handleAddEvent = async (eventData: any) => {
     try {
       if (!user?.id) {
         throw new Error('משתמש לא מחובר');
       }
-
       const sessionData = {
         player_id: eventData.extendedProps?.player_id || '',
         coach_id: user.id,
@@ -692,33 +593,26 @@ const DashboardCoach = () => {
         location: eventData.extendedProps?.location || '',
         notes: eventData.extendedProps?.notes || ''
       };
-
       console.log('Adding new session:', sessionData);
-
-      const { error } = await supabase
-        .from('sessions')
-        .insert(sessionData)
-        .select()
-        .single();
-
+      const {
+        error
+      } = await supabase.from('sessions').insert(sessionData).select().single();
       if (error) throw error;
-
       await fetchCalendarEvents(user.id);
       toast({
         title: "המפגש נוסף בהצלחה",
-        description: "המפגש נוסף ללוח השנה",
+        description: "המפגש נוסף ללוח השנה"
       });
     } catch (error) {
       console.error('Error adding event:', error);
       toast({
         variant: "destructive",
         title: "שגיאה בהוספת המפגש",
-        description: "אנא נסה שוב מאוחר יותר",
+        description: "אנא נסה שוב מאוחר יותר"
       });
       throw error;
     }
   };
-
   const handleSessionFormSubmit = async (sessionData: {
     player_id: string;
     session_date: string;
@@ -729,7 +623,7 @@ const DashboardCoach = () => {
   }): Promise<void> => {
     try {
       console.log('Session data:', sessionData);
-      
+
       // Placeholder for future implementation
       return Promise.resolve();
     } catch (error) {
@@ -737,26 +631,24 @@ const DashboardCoach = () => {
       return Promise.reject(error);
     }
   };
-
   useEffect(() => {
     const initializeDashboard = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user: authUser
+        }
+      } = await supabase.auth.getUser();
       if (authUser) {
-        const { data: coachData } = await supabase
-          .from('coaches')
-          .select('full_name, profile_picture')
-          .eq('id', authUser.id)
-          .single();
-        
+        const {
+          data: coachData
+        } = await supabase.from('coaches').select('full_name, profile_picture').eq('id', authUser.id).single();
         if (coachData) {
           setCoachName(coachData.full_name);
           setProfilePicture(coachData.profile_picture);
         }
-
         await fetchData(authUser.id);
         await fetchNotifications(authUser.id);
         await fetchCalendarEvents(authUser.id);
-
         const channel = supabase.channel('dashboard-changes').on('postgres_changes', {
           event: '*',
           schema: 'public',
@@ -773,7 +665,6 @@ const DashboardCoach = () => {
             fetchNotifications(authUser.id);
           }
         }).subscribe();
-
         return () => {
           supabase.removeChannel(channel);
         };
@@ -781,14 +672,16 @@ const DashboardCoach = () => {
     };
     initializeDashboard();
   }, []);
-
   const handleEventClick = (eventId: string) => {
     const session = upcomingSessions.find(s => s.id === eventId);
     if (session) {
-      navigate('/edit-session', { state: { sessionId: eventId } });
+      navigate('/edit-session', {
+        state: {
+          sessionId: eventId
+        }
+      });
     }
   };
-
   const getMonthlySessionsData = () => {
     return [{
       name: 'לפני חודשיים',
@@ -808,59 +701,54 @@ const DashboardCoach = () => {
       fill: '#3B82F6'
     }];
   };
-
   useEffect(() => {
     const fetchPlayers = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
-  
-      const { data, error } = await supabase
-        .from('players')
-        .select('id, full_name')
-        .eq('coach_id', user.id);
-  
+      const {
+        data,
+        error
+      } = await supabase.from('players').select('id, full_name').eq('coach_id', user.id);
       if (error) {
         console.error('Error fetching players:', error);
         return;
       }
       setPlayers(data);
     };
-
     fetchPlayers();
   }, []);
-
   useEffect(() => {
     const handleSessionSummarized = (event: any) => {
-      const { sessionId } = event.detail;
+      const {
+        sessionId
+      } = event.detail;
       console.log("Session summarized event received for session:", sessionId);
-
       setPastSessionsToSummarize(prev => prev.filter(session => session.id !== sessionId));
-      
       const summarizedSession = pastSessionsToSummarize.find(s => s.id === sessionId);
-      
       if (summarizedSession) {
-        const updatedSession = { ...summarizedSession, has_summary: true };
+        const updatedSession = {
+          ...summarizedSession,
+          has_summary: true
+        };
         setSummarizedSessions(prev => [updatedSession, ...prev]);
       }
     };
-
     window.addEventListener('sessionSummarized', handleSessionSummarized);
-    
     return () => {
       window.removeEventListener('sessionSummarized', handleSessionSummarized);
     };
   }, [pastSessionsToSummarize]);
-
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>;
   }
-
   console.log("Rendering DashboardCoach with landing page button");
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
+  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -881,45 +769,30 @@ const DashboardCoach = () => {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center overflow-hidden">
-                {profilePicture ? (
-                  <Avatar className="w-12 h-12">
+                {profilePicture ? <Avatar className="w-12 h-12">
                     <AvatarImage src={profilePicture} alt={coachName} />
                     <AvatarFallback>{coachName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <Users className="h-6 w-6 text-white/90" />
-                )}
+                  </Avatar> : <Users className="h-6 w-6 text-white/90" />}
               </div>
               <div>
-                <h1 className="text-2xl font-bold animate-fade-in">
-                  {coachName ? (
-                    <span className="bg-gradient-to-r from-white to-white/80 bg-clip-text">
+                <h1 className="font-bold animate-fade-in text-sm">
+                  {coachName ? <span className="bg-gradient-to-r from-white to-white/80 bg-clip-text">
                       ברוך הבא, {coachName}
-                    </span>
-                  ) : (
-                    'ברוך הבא'
-                  )}
+                    </span> : 'ברוך הבא'}
                 </h1>
-                <p className="text-white/70 text-sm">{format(new Date(), 'EEEE, dd MMMM yyyy', { locale: he })}</p>
+                <p className="text-white/70 text-xs">{format(new Date(), 'EEEE, dd MMMM yyyy', {
+                  locale: he
+                })}</p>
               </div>
             </div>
-            <div className="flex items-center gap-4 flex-wrap">
-              <Button
-                onClick={() => setShowLandingPageDialog(true)}
-                variant="green"
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700"
-                size="lg"
-              >
+            <div className="flex items-center gap-4 flex-wrap my-0 mx-0 px-0 py-0">
+              <Button onClick={() => setShowLandingPageDialog(true)} variant="green" size="lg" className="flex items-center gap-2 text-center bg-slate-950 hover:bg-slate-800 text-sm font-normal rounded-2xl">
                 <FileEdit className="h-4 w-4" />
                 צור עמוד נחיתה אישי
               </Button>
               
               <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} onEventAdd={handleAddEvent} />
-              <Button 
-                variant="ghost" 
-                className="text-white hover:bg-white/10"
-                onClick={() => navigate('/registration-links')}
-              >
+              <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => navigate('/registration-links')}>
                 <Share2 className="h-5 w-5 mr-2" />
                 <span className="hidden sm:inline">לינקי הרשמה</span>
               </Button>
@@ -927,11 +800,9 @@ const DashboardCoach = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative text-white hover:bg-white/10">
                     <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && 
-                      <span className="absolute -top-1 -right-1 bg-[#E74C3C] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                    {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-[#E74C3C] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                         {unreadCount}
-                      </span>
-                    }
+                      </span>}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80">
@@ -949,8 +820,8 @@ const DashboardCoach = () => {
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               {format(new Date(notification.created_at), 'dd/MM/yyyy HH:mm', {
-                        locale: he
-                      })}
+                          locale: he
+                        })}
                             </p>
                           </div>)}
                       </div> : <div className="py-8 text-center text-gray-500 dark:text-gray-400">
@@ -990,11 +861,7 @@ const DashboardCoach = () => {
             <CardContent>
               <div className="text-3xl font-bold text-[#2C3E50]">{stats.totalPlayers}</div>
               <p className="text-sm text-gray-500 mb-3">רשומים במערכת</p>
-              <Button 
-                variant="outline" 
-                className="w-full border-[#27AE60] text-[#27AE60] hover:bg-[#27AE60]/10"
-                onClick={() => navigate('/players-list')}
-              >
+              <Button variant="outline" className="w-full border-[#27AE60] text-[#27AE60] hover:bg-[#27AE60]/10" onClick={() => navigate('/players-list')}>
                 <Users className="h-4 w-4 mr-2" />
                 צפה ברשימת השחקנים
               </Button>
@@ -1005,12 +872,7 @@ const DashboardCoach = () => {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">מפגשים קרובים</CardTitle>
               <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex items-center gap-1 text-[#3498DB] border-[#3498DB] hover:bg-[#3498DB]/10"
-                  onClick={() => navigate('/new-session')}
-                >
+                <Button variant="outline" size="sm" className="flex items-center gap-1 text-[#3498DB] border-[#3498DB] hover:bg-[#3498DB]/10" onClick={() => navigate('/new-session')}>
                   <Plus className="h-4 w-4" />
                   הוסף מפגש
                 </Button>
@@ -1021,8 +883,7 @@ const DashboardCoach = () => {
               <div className="text-3xl font-bold text-[#2C3E50]">{stats.upcomingSessions}</div>
               <p className="text-sm text-gray-500 mb-2">בשבוע הקרוב ({stats.upcomingSessions} מפגשים)</p>
               
-              {upcomingSessions.length > 0 && (
-                <Collapsible className="mt-2">
+              {upcomingSessions.length > 0 && <Collapsible className="mt-2">
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm" className="w-full flex items-center justify-center text-[#3498DB]">
                       הצג רשימת מפגשים
@@ -1031,34 +892,27 @@ const DashboardCoach = () => {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="space-y-2 mt-2 max-h-[200px] overflow-y-auto pr-1">
-                      {upcomingSessions.map((session) => (
-                        <div 
-                          key={session.id} 
-                          className="p-2 rounded-md bg-gray-50 flex justify-between items-center text-sm hover:bg-gray-100 cursor-pointer"
-                          onClick={() => navigate('/edit-session', { state: { sessionId: session.id } })}
-                        >
+                      {upcomingSessions.map(session => <div key={session.id} className="p-2 rounded-md bg-gray-50 flex justify-between items-center text-sm hover:bg-gray-100 cursor-pointer" onClick={() => navigate('/edit-session', {
+                    state: {
+                      sessionId: session.id
+                    }
+                  })}>
                           <div>
                             <p className="font-medium">{session.player.full_name}</p>
                             <p className="text-gray-500 text-xs">{session.session_date} | {session.session_time}</p>
                           </div>
                           <div className="flex items-center">
-                            {session.location && (
-                              <span className="text-xs text-gray-500 ml-2">{session.location}</span>
-                            )}
+                            {session.location && <span className="text-xs text-gray-500 ml-2">{session.location}</span>}
                             <ChevronUp className="h-4 w-4 text-gray-400" />
                           </div>
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
                   </CollapsibleContent>
-                </Collapsible>
-              )}
+                </Collapsible>}
             </CardContent>
           </Card>
 
-          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F] cursor-pointer"
-            onClick={() => navigate('/tool-management?tab=videos')}
-          >
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F] cursor-pointer" onClick={() => navigate('/tool-management?tab=videos')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">סרטוני וידאו</CardTitle>
               <Film className="h-5 w-5 text-[#F1C40F]" />
@@ -1071,120 +925,84 @@ const DashboardCoach = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card 
-            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9b59b6] cursor-pointer"
-            onClick={() => navigate('/new-player')}
-          >
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9b59b6] cursor-pointer" onClick={() => navigate('/new-player')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">הוספת שחקן חדש</CardTitle>
               <UserPlus className="h-5 w-5 text-[#9b59b6]" />
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 mb-3">צור כרטיס שחקן חדש במערכת</p>
-              <Button 
-                variant="default" 
-                className="w-full bg-[#9b59b6] hover:bg-[#8e44ad]"
-              >
+              <Button variant="default" className="w-full bg-[#9b59b6] hover:bg-[#8e44ad]">
                 <UserPlus className="h-4 w-4 mr-2" />
                 הוסף שחקן חדש
               </Button>
             </CardContent>
           </Card>
 
-          <Card 
-            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#e74c3c] cursor-pointer"
-            onClick={() => navigate('/reports')}
-          >
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#e74c3c] cursor-pointer" onClick={() => navigate('/reports')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">דוחות וסטטיסטיקה</CardTitle>
               <BarChart2 className="h-5 w-5 text-[#e74c3c]" />
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 mb-3">צפה בנתונים סטטיסטיים מפורטים</p>
-              <Button 
-                variant="default" 
-                className="w-full bg-[#e74c3c] hover:bg-[#c0392b]"
-              >
+              <Button variant="default" className="w-full bg-[#e74c3c] hover:bg-[#c0392b]">
                 <BarChart2 className="h-4 w-4 mr-2" />
                 צפה בדוחות
               </Button>
             </CardContent>
           </Card>
 
-          <Card 
-            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9b87f5] cursor-pointer"
-            onClick={() => navigate('/all-meeting-summaries')}
-          >
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9b87f5] cursor-pointer" onClick={() => navigate('/all-meeting-summaries')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">סיכומי מפגשים</CardTitle>
               <FileText className="h-5 w-5 text-[#9b87f5]" />
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 mb-3">צפה בסיכומי כל המפגשים, עם אפשרות סינון לפי שחקן</p>
-              <Button 
-                variant="default" 
-                className="w-full bg-[#9b87f5] hover:bg-[#8a68f9]"
-              >
+              <Button variant="default" className="w-full bg-[#9b87f5] hover:bg-[#8a68f9]">
                 <Eye className="h-4 w-4 mr-2" />
                 צפה בכל הסיכומים
               </Button>
             </CardContent>
           </Card>
 
-          <Card 
-            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#27ae60] cursor-pointer"
-            onClick={() => navigate('/game-prep')}
-          >
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#27ae60] cursor-pointer" onClick={() => navigate('/game-prep')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">הכנה למשחק</CardTitle>
               <Target className="h-5 w-5 text-[#27ae60]" />
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 mb-3">מלא טו��ס הכנה למשחק עבור השחקנים</p>
-              <Button 
-                variant="default" 
-                className="w-full bg-[#27ae60] hover:bg-[#219653]"
-              >
+              <Button variant="default" className="w-full bg-[#27ae60] hover:bg-[#219653]">
                 <Target className="h-4 w-4 mr-2" />
                 מלא טופס הכנה
               </Button>
             </CardContent>
           </Card>
 
-          <Card 
-            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#f39c12] cursor-pointer"
-            onClick={() => navigate('/player-evaluation')}
-          >
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#f39c12] cursor-pointer" onClick={() => navigate('/player-evaluation')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">הערכת שחקן</CardTitle>
               <ClipboardCheck className="h-5 w-5 text-[#f39c12]" />
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 mb-3">מלא טופס הערכת שחקן מקיף</p>
-              <Button 
-                variant="default" 
-                className="w-full bg-[#f39c12] hover:bg-[#e67e22]"
-              >
+              <Button variant="default" className="w-full bg-[#f39c12] hover:bg-[#e67e22]">
                 <ClipboardCheck className="h-4 w-4 mr-2" />
                 הערך שחקן
               </Button>
             </CardContent>
           </Card>
 
-          <Card 
-            className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB] cursor-pointer"
-            onClick={() => navigate('/mental-library')}
-          >
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB] cursor-pointer" onClick={() => navigate('/mental-library')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">הספרייה המנטאלית</CardTitle>
               <BookOpen className="h-5 w-5 text-[#3498DB]" />
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-500 mb-3">רשימת ספרים מומלצים בתחום הפסיכולוגיה של הספורט</p>
-              <Button 
-                variant="default" 
-                className="w-full bg-[#3498DB] hover:bg-[#2980b9]"
-              >
+              <Button variant="default" className="w-full bg-[#3498DB] hover:bg-[#2980b9]">
                 <BookOpen className="h-4 w-4 mr-2" />
                 צפה בספרייה
               </Button>
@@ -1205,41 +1023,29 @@ const DashboardCoach = () => {
               </TabsList>
               <TabsContent value="unsummarized" className="mt-0">
                 <div className="space-y-4">
-                  {pastSessionsToSummarize.length > 0 ? (
-                    pastSessionsToSummarize.map(session => renderSessionCard(session))
-                  ) : (
-                    <div className="text-center p-6 bg-gray-50 rounded-lg">
+                  {pastSessionsToSummarize.length > 0 ? pastSessionsToSummarize.map(session => renderSessionCard(session)) : <div className="text-center p-6 bg-gray-50 rounded-lg">
                       <Check className="h-10 w-10 text-green-500 mx-auto mb-2" />
                       <h3 className="text-lg font-medium text-gray-800">הכל מסוכם!</h3>
                       <p className="text-gray-500 mt-1">כל המפגשים שלך מסוכמים</p>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </TabsContent>
               <TabsContent value="summarized" className="mt-0">
                 <div className="space-y-4">
-                  {summarizedSessions.length > 0 ? (
-                    summarizedSessions.map(session => renderSessionCard(session, true))
-                  ) : (
-                    <div className="text-center p-6 bg-gray-50 rounded-lg">
+                  {summarizedSessions.length > 0 ? summarizedSessions.map(session => renderSessionCard(session, true)) : <div className="text-center p-6 bg-gray-50 rounded-lg">
                       <FileText className="h-10 w-10 text-gray-400 mx-auto mb-2" />
                       <h3 className="text-lg font-medium text-gray-800">אין סיכומים</h3>
                       <p className="text-gray-500 mt-1">לא נמצאו מפגשים מסוכמים</p>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </TabsContent>
               <TabsContent value="upcoming" className="mt-0">
                 <div className="space-y-4">
-                  {upcomingSessions.length > 0 ? (
-                    upcomingSessions.map(session => renderSessionCard(session))
-                  ) : (
-                    <div className="text-center p-6 bg-gray-50 rounded-lg">
+                  {upcomingSessions.length > 0 ? upcomingSessions.map(session => renderSessionCard(session)) : <div className="text-center p-6 bg-gray-50 rounded-lg">
                       <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-2" />
                       <h3 className="text-lg font-medium text-gray-800">אין מפגשים קרובים</h3>
                       <p className="text-gray-500 mt-1">לא נמצאו מפגשים מתוכננים בשבוע הקרוב</p>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </TabsContent>
             </Tabs>
@@ -1255,7 +1061,12 @@ const DashboardCoach = () => {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={getMonthlySessionsData()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <BarChart data={getMonthlySessionsData()} margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 5
+                }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
@@ -1274,12 +1085,7 @@ const DashboardCoach = () => {
         </div>
       </div>
 
-      <LandingPageDialog
-        open={showLandingPageDialog}
-        onOpenChange={setShowLandingPageDialog}
-      />
-    </div>
-  );
+      <LandingPageDialog open={showLandingPageDialog} onOpenChange={setShowLandingPageDialog} />
+    </div>;
 };
-
 export default DashboardCoach;
