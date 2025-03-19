@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -41,7 +40,7 @@ const Index = () => {
       setUserEmail(user?.email || null);
       
       if (user) {
-        setUserId(user.id); // Set the user ID
+        setUserId(user.id);
         fetchVideos(user.id);
       } else {
         console.log("No authenticated user found");
@@ -57,7 +56,6 @@ const Index = () => {
     try {
       console.log("Fetching videos for player:", userId);
       
-      // First, fetch assigned videos for the user
       const { data: assignedVideoData, error: assignedError } = await supabase
         .from('player_videos')
         .select(`
@@ -81,11 +79,9 @@ const Index = () => {
       
       console.log("Assigned videos fetched:", assignedVideoData);
       
-      // Filter out any null entries that might exist
       const filteredAssignedVideos = assignedVideoData?.filter(video => video.videos) || [];
       setAssignedVideos(filteredAssignedVideos);
       
-      // Then, fetch all admin videos
       const { data: allVideoData, error: allError } = await supabase
         .from('videos')
         .select('*')
@@ -157,7 +153,6 @@ const Index = () => {
     navigate("/auth");
   };
 
-  // Function to manually refresh videos
   const refreshVideos = () => {
     if (userId) {
       fetchVideos(userId);
@@ -203,19 +198,18 @@ const Index = () => {
           </Button>
         </div>
         
-        {/* Create Landing Page Button - New Addition */}
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-4">
           <Button 
             onClick={() => setShowLandingPageDialog(true)}
-            className="bg-primary hover:bg-primary/90 text-white shadow-md hover:shadow-lg transition-all"
+            className="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all text-lg"
+            size="lg"
           >
-            <FileEdit className="mr-2 h-5 w-5" />
+            <FileEdit className="mr-2 h-6 w-6" />
             צור עמוד נחיתה אישי
           </Button>
         </div>
         
         <div className="grid grid-cols-1 gap-6">
-          {/* Mental Prep Form */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl transform -rotate-1"></div>
             <div className="relative">
@@ -223,7 +217,6 @@ const Index = () => {
             </div>
           </div>
           
-          {/* New Belief Breaking Techniques Card */}
           <Card className="bg-white shadow-md overflow-hidden border border-purple-100">
             <CardHeader className="bg-purple-50 py-4">
               <div className="flex items-center justify-between">
@@ -251,7 +244,6 @@ const Index = () => {
           
           <BeliefBreakingCard />
           
-          {/* Mental Library Card */}
           <Card className="bg-white shadow-md overflow-hidden border border-amber-100">
             <CardHeader className="bg-amber-50 py-4">
               <div className="flex items-center justify-between">
@@ -289,7 +281,6 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* New Mental Assessment Card */}
           <Card className="bg-white shadow-md overflow-hidden border border-indigo-100">
             <CardHeader className="bg-indigo-50 py-4">
               <div className="flex items-center justify-between">
@@ -482,7 +473,6 @@ const Index = () => {
         </AlertDialogContent>
       </AlertDialog>
       
-      {/* Landing Page Dialog */}
       <LandingPageDialog 
         open={showLandingPageDialog} 
         onOpenChange={setShowLandingPageDialog} 
