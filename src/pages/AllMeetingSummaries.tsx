@@ -21,6 +21,7 @@ interface SessionSummary {
   progress_rating: number;
   next_session_focus: string;
   additional_notes?: string;
+  player_id: string;
   session: {
     id: string;
     session_date: string;
@@ -61,19 +62,22 @@ const AllMeetingSummaries = () => {
       .eq('coach_id', user.id)
       .order('created_at', { ascending: false });
 
+    // If a player is selected, filter by player_id
     if (selectedPlayer !== 'all') {
-      query.eq('session.player.id', selectedPlayer);
+      query.eq('player_id', selectedPlayer);
     }
 
     const { data, error } = await query;
     if (error) {
       console.error('Error fetching summaries:', error);
+      setIsLoading(false);
       return;
     }
     
+    console.log("Fetched all meeting summaries:", data);
+    
     const uniqueSessions = new Map<string, SessionSummary>();
-    data?.forEach((summary: SessionSummary) => {
-      // Add null check for session and player
+    (data as SessionSummary[]).forEach((summary: SessionSummary) => {
       if (summary.session && summary.session.id) {
         uniqueSessions.set(summary.session.id, summary);
       }

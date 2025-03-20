@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -172,6 +171,35 @@ const PlayerProfile = () => {
     localStorage.setItem('playerSession', JSON.stringify(playerSession));
     
     window.open('/game-prep', '_blank');
+  };
+
+  // We need to add a section that will display session summaries for this specific player
+
+  // Inside the existing component, we'll add this new function that fetches summaries:
+  const fetchPlayerSummaries = async (playerId) => {
+    try {
+      const { data, error } = await supabase
+        .from('session_summaries')
+        .select(`
+          *,
+          session:sessions (
+            id,
+            session_date,
+            player_id,
+            player:players (
+              full_name
+            )
+          )
+        `)
+        .eq('player_id', playerId)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching player summaries:", error);
+      return [];
+    }
   };
 
   if (loading) {

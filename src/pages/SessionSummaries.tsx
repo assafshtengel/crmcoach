@@ -19,11 +19,11 @@ interface SessionSummary {
   progress_rating: number;
   next_session_focus: string;
   additional_notes?: string;
-  player_id?: string; // הוספנו שדה player_id ישירות לסיכום
+  player_id: string;
   session: {
     id: string;
     session_date: string;
-    player_id: string; // הוספנו שדה player_id כדי שנוכל לסנן לפיו
+    player_id: string;
     player: {
       full_name: string;
     } | null;
@@ -55,29 +55,25 @@ const SessionSummaries = () => {
           )
         )
       `)
-      .eq('coach_id', user.id)
-      .order('created_at', { ascending: false });
+      .eq('coach_id', user.id);
+      
+    if (selectedPlayer !== 'all') {
+      query.eq('player_id', selectedPlayer);
+    }
+    
+    query.order('created_at', { ascending: false });
 
     const { data, error } = await query;
     if (error) {
       console.error('Error fetching summaries:', error);
+      setIsLoading(false);
       return;
     }
     
-    // Filter summaries based on the selected player
-    let filteredSummaries = data as SessionSummary[];
+    console.log("Fetched session summaries:", data);
     
-    if (selectedPlayer !== 'all') {
-      filteredSummaries = filteredSummaries.filter(
-        summary => (summary.player_id === selectedPlayer) || 
-                  (summary.session && summary.session.player_id === selectedPlayer)
-      );
-    }
-    
-    // Create a Map to ensure unique sessions (by session ID)
     const uniqueSessions = new Map<string, SessionSummary>();
-    filteredSummaries.forEach((summary: SessionSummary) => {
-      // Add null check for session and player
+    (data as SessionSummary[]).forEach((summary: SessionSummary) => {
       if (summary.session && summary.session.id) {
         uniqueSessions.set(summary.session.id, summary);
       }
