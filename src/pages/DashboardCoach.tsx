@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -14,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -23,6 +24,15 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { SessionSummaryForm } from "@/components/session/SessionSummaryForm";
 import { supabase } from '@/lib/supabase';
 import { FormValues } from "@/components/session/summary-form/schemaValidation";
+import { 
+  Dialog, 
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
 
 const formSchema = z.object({
   description: z.string().min(2, {
@@ -55,7 +65,6 @@ const DashboardCoach: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSessionForSummary, setSelectedSessionForSummary] = useState<Session | null>(null);
   const [isSessionSummaryOpen, setIsSessionSummaryOpen] = useState(false);
-  const { toast } = useToast()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -219,45 +228,53 @@ const DashboardCoach: React.FC = () => {
     setIsSessionSummaryOpen(false);
   };
 
-  const handleSaveSessionSummary = async (sessionId: string, data: FormValues & { tools_used: string[] }) => {
+  const handleSaveSessionSummary = async (data: FormValues & { tools_used: string[] }) => {
     try {
-      // Find the session to get the player_id
-      const session = upcomingSessions.find(s => s.id === sessionId) || 
-                       pastSessions.find(s => s.id === sessionId);
-    
-    if (!session) {
-      toast.error("לא נמצא המפגש");
-      return;
-    }
-    
-    const playerId = session.player?.id;
-    if (!playerId) {
-      toast.error("לא נמצא השחקן");
-      return;
-    }
-    
-    const { error } = await supabase.from('session_summaries').insert({
-      session_id: sessionId,
-      coach_id: user.id,
-      player_id: playerId, // Add player_id when creating summary
-      summary_text: data.summary_text,
-      achieved_goals: data.achieved_goals.split('\n').filter(Boolean),
-      future_goals: data.future_goals.split('\n').filter(Boolean),
-      progress_rating: data.progress_rating,
-      next_session_focus: data.next_session_focus,
-      additional_notes: data.additional_notes,
-      tools_used: data.tools_used
-    });
+      if (!selectedSessionForSummary || !user) {
+        toast({
+          title: "שגיאה",
+          description: "לא נמצא המפגש",
+        });
+        return;
+      }
+      
+      const playerId = selectedSessionForSummary.player?.id;
+      if (!playerId) {
+        toast({
+          title: "שגיאה",
+          description: "לא נמצא השחקן",
+        });
+        return;
+      }
+      
+      const { error } = await supabase.from('session_summaries').insert({
+        session_id: selectedSessionForSummary.id,
+        coach_id: user.id,
+        player_id: playerId,
+        summary_text: data.summary_text,
+        achieved_goals: data.achieved_goals.split('\n').filter(Boolean),
+        future_goals: data.future_goals.split('\n').filter(Boolean),
+        progress_rating: data.progress_rating,
+        next_session_focus: data.next_session_focus,
+        additional_notes: data.additional_notes,
+        tools_used: data.tools_used
+      });
 
-    if (error) throw error;
-    
-    toast.success("סיכום המפגש נשמר בהצלחה");
-    fetchSessions(); // Refresh sessions data
-  } catch (error) {
-    console.error("Error saving session summary:", error);
-    toast.error("שגיאה בשמירת סיכום המפגש");
-  }
-};
+      if (error) throw error;
+      
+      toast({
+        title: "הצלחה",
+        description: "סיכום המפגש נשמר בהצלחה"
+      });
+      fetchSessions(); // Refresh sessions data
+    } catch (error) {
+      console.error("Error saving session summary:", error);
+      toast({
+        title: "שגיאה",
+        description: "שגיאה בשמירת סיכום המפגש"
+      });
+    }
+  };
 
   const handleSessionSummarized = (event: CustomEvent) => {
     const { sessionId, playerId } = event.detail;
@@ -473,77 +490,59 @@ const DashboardCoach: React.FC = () => {
                 )}
               />
               <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={() => (
-                    <FormItem className="col-span-1">
-                      <FormLabel>תאריך</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-[150px] justify-start text-left font-normal",
-                                !selectedDate && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarDays className="mr-2 h-4 w-4" />
-                              {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: he }) : <span>בחר תאריך</span>}
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            locale={he}
-                            selected={selectedDate}
-                            onSelect={handleDateSelect}
-                            disabled={(date) =>
-                              date < new Date()
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormDescription>
-                        בחר תאריך למפגש
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="player"
-                  render={() => (
-                    <FormItem className="col-span-1">
-                      <FormLabel>שחקן</FormLabel>
-                      <Select onValueChange={handlePlayerSelect}>
-                        <FormControl>
-                          <SelectTrigger className="w-[150px]">
-                            <SelectValue placeholder="בחר שחקן" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {players.map(player => (
-                            <SelectItem key={player.id} value={player.id}>
-                              {player.full_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        בחר שחקן למפגש
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="col-span-1">
+                  <FormLabel>תאריך</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-[150px] justify-start text-left font-normal",
+                          !selectedDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: he }) : <span>בחר תאריך</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        locale={he}
+                        selected={selectedDate}
+                        onSelect={handleDateSelect}
+                        disabled={(date) =>
+                          date < new Date()
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>
+                    בחר תאריך למפגש
+                  </FormDescription>
+                </div>
+                <div className="col-span-1">
+                  <FormLabel>שחקן</FormLabel>
+                  <Select onValueChange={handlePlayerSelect}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="בחר שחקן" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {players.map(player => (
+                        <SelectItem key={player.id} value={player.id}>
+                          {player.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    בחר שחקן למפגש
+                  </FormDescription>
+                </div>
               </div>
               <div className="flex justify-end">
-                <Button type="button" variant="secondary" onClick={handleCreateSessionClose}>
+                <Button type="button" variant="secondary" onClick={handleCreateSessionClose} className="mr-2">
                   ביטול
                 </Button>
                 <Button type="submit" disabled={isSaving}>
@@ -573,9 +572,10 @@ const DashboardCoach: React.FC = () => {
               sessionId={selectedSessionForSummary.id}
               playerName={selectedSessionForSummary.player?.full_name || "Unknown Player"}
               sessionDate={format(new Date(selectedSessionForSummary.session_date), 'dd/MM/yyyy', { locale: he })}
-              playerId={selectedSessionForSummary.player?.id}
+              playerId={selectedSessionForSummary.player?.id || ""}
               onSubmit={handleSaveSessionSummary}
               onCancel={handleCloseSessionSummary}
+              forceEnable={false}
             />
           )}
         </DialogContent>
