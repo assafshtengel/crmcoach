@@ -125,6 +125,9 @@ const EditSessionForm = () => {
     if (!sessionId) return;
     
     try {
+      console.log("Saving session summary with player ID:", formData.player_id);
+      console.log("Summary data:", data);
+      
       const { error } = await supabase
         .from('session_summaries')
         .insert({

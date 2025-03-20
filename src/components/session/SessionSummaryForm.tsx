@@ -58,7 +58,10 @@ export function SessionSummaryForm({
   const handleSubmit = async (data: FormValues) => {
     setIsSaving(true);
     try {
-      console.log("Submitting form data:", { ...data, tools_used: selectedTools });
+      console.log("Submitting form data with player ID:", playerId);
+      console.log("Complete form data:", { ...data, tools_used: selectedTools, playerId });
+      
+      // Pass the player_id explicitly to onSubmit
       await onSubmit({ ...data, tools_used: selectedTools });
       console.log("Form submitted successfully");
       
@@ -103,7 +106,7 @@ export function SessionSummaryForm({
         .from('session_summaries')
         .select('id')
         .eq('session_id', sessionId)
-        .eq('player_id', playerId); // ווידוא סינון לפי מזהה השחקן
+        .eq('player_id', playerId); // Verify filtering by player_id
       
       if (checkError) {
         console.error("Error checking session summary status:", checkError);

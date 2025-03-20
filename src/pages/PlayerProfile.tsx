@@ -175,6 +175,8 @@ const PlayerProfile = () => {
 
   const fetchPlayerSessionSummaries = async (playerId: string) => {
     try {
+      console.log("Fetching session summaries for player ID:", playerId);
+      
       const { data, error } = await supabase
         .from('session_summaries')
         .select(`
@@ -196,6 +198,7 @@ const PlayerProfile = () => {
         throw error;
       }
 
+      console.log("Retrieved session summaries:", data);
       return data;
     } catch (error) {
       console.error('Error in fetchPlayerSessionSummaries:', error);

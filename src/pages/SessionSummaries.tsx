@@ -65,16 +65,22 @@ const SessionSummaries = () => {
       return;
     }
     
+    console.log("All fetched summaries before filtering:", data);
+    
     // Filter summaries based on the selected player
     let filteredSummaries = data as SessionSummary[];
     
     if (selectedPlayer !== 'all') {
+      console.log("Filtering summaries for player ID:", selectedPlayer);
+      
       filteredSummaries = filteredSummaries.filter(
         summary => 
-          // סינון מחמיר שמוודא שמזהה השחקן מתאים לשחקן שנבחר
+          // Strict filtering to ensure player ID matches selected player
           (summary.player_id === selectedPlayer) || 
           (summary.session && summary.session.player_id === selectedPlayer)
       );
+      
+      console.log("Filtered summaries:", filteredSummaries);
     }
     
     // Create a Map to ensure unique sessions (by session ID)
