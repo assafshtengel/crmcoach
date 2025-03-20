@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { SessionSummaryForm } from '@/components/session/SessionSummaryForm';
 
 interface Player {
   id: string;
@@ -120,6 +121,43 @@ const EditSessionForm = () => {
     }
   }, [navigate, location]);
 
+  const onSubmitSummary = async (data: any) => {
+    if (!sessionId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('session_summaries')
+        .insert({
+          session_id: sessionId,
+          coach_id: (await supabase.auth.getUser()).data.user?.id,
+          player_id: formData.player_id,
+          summary_text: data.summary_text,
+          achieved_goals: data.achieved_goals.split('\n').filter(Boolean),
+          future_goals: data.future_goals.split('\n').filter(Boolean),
+          progress_rating: data.progress_rating,
+          next_session_focus: data.next_session_focus,
+          additional_notes: data.additional_notes || null,
+          tools_used: data.tools_used || []
+        });
+
+      if (error) throw error;
+
+      const playerName = players.find(p => p.id === formData.player_id)?.full_name;
+      toast.success(`סיכום המפגש עם ${playerName} נשמר בהצלחה!`);
+      
+      await supabase
+        .from('sessions')
+        .update({ has_summary: true })
+        .eq('id', sessionId);
+        
+      navigate('/sessions-list');
+      
+    } catch (error: any) {
+      console.error('Error submitting summary:', error);
+      toast.error('שגיאה בשמירת סיכום המפגש');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -164,6 +202,20 @@ const EditSessionForm = () => {
       <div className="text-center py-8">
         טוען...
       </div>
+    );
+  }
+
+  if (needsSummary) {
+    return (
+      <SessionSummaryForm
+        sessionId={sessionId || ''}
+        playerName={players.find(p => p.id === formData.player_id)?.full_name || ''}
+        sessionDate={formData.session_date}
+        playerId={formData.player_id}
+        onSubmit={onSubmitSummary}
+        onCancel={() => navigate('/sessions-list')}
+        forceEnable={forceEnable}
+      />
     );
   }
 

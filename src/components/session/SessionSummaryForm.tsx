@@ -19,6 +19,7 @@ interface SessionSummaryFormProps {
   sessionId: string;
   playerName: string;
   sessionDate: string;
+  playerId: string; // נוסיף שדה של מזהה השחקן
   onSubmit: (data: FormValues & { tools_used: string[] }) => Promise<void>;
   onCancel: () => void;
   forceEnable?: boolean;
@@ -27,7 +28,8 @@ interface SessionSummaryFormProps {
 export function SessionSummaryForm({ 
   sessionId, 
   playerName, 
-  sessionDate, 
+  sessionDate,
+  playerId, // נוסיף את השדה החדש למפתח של הפונקציה
   onSubmit, 
   onCancel,
   forceEnable = false
@@ -64,7 +66,7 @@ export function SessionSummaryForm({
       // we don't need to update the session status since it's not started yet
       if (!forceEnable) {
         // Update the session status in the frontend
-        updateSessionSummaryStatus(sessionId);
+        updateSessionSummaryStatus(sessionId, playerId); // נעביר גם את מזהה השחקן
       }
       
       // Show success feedback dialog
@@ -94,13 +96,15 @@ export function SessionSummaryForm({
   };
 
   // Function to update the session status after summary is created
-  const updateSessionSummaryStatus = async (sessionId: string) => {
+  // עדכנו את הפונקציה כדי שתקבל גם את מזהה השחקן
+  const updateSessionSummaryStatus = async (sessionId: string, playerId: string) => {
     try {
       // Check if the summary exists (for verification)
       const { data: summaries, error: checkError } = await supabase
         .from('session_summaries')
         .select('id')
-        .eq('session_id', sessionId);
+        .eq('session_id', sessionId)
+        .eq('player_id', playerId); // נוסיף פילטור לפי מזהה השחקן
       
       if (checkError) {
         console.error("Error checking session summary status:", checkError);
@@ -115,10 +119,10 @@ export function SessionSummaryForm({
         if (window.dispatchEvent) {
           // Create a custom event to notify that a session was summarized
           const event = new CustomEvent('sessionSummarized', { 
-            detail: { sessionId } 
+            detail: { sessionId, playerId } // נוסיף את מזהה השחקן לאירוע
           });
           window.dispatchEvent(event);
-          console.log("Dispatched sessionSummarized event for session:", sessionId);
+          console.log("Dispatched sessionSummarized event for session:", sessionId, "and player:", playerId);
         }
       }
     } catch (error) {

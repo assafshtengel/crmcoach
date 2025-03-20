@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -20,6 +19,7 @@ interface SessionSummary {
   progress_rating: number;
   next_session_focus: string;
   additional_notes?: string;
+  player_id?: string; // הוספנו שדה player_id ישירות לסיכום
   session: {
     id: string;
     session_date: string;
@@ -69,7 +69,8 @@ const SessionSummaries = () => {
     
     if (selectedPlayer !== 'all') {
       filteredSummaries = filteredSummaries.filter(
-        summary => summary.session && summary.session.player_id === selectedPlayer
+        summary => (summary.player_id === selectedPlayer) || 
+                  (summary.session && summary.session.player_id === selectedPlayer)
       );
     }
     
