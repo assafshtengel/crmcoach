@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabaseClient } from '@/lib/supabaseClient';
@@ -106,6 +105,27 @@ export function LandingPagePreview() {
     return phone.startsWith('0') ? phone : `0${phone}`;
   };
 
+  // Helper function to get image URL
+  const getImageUrl = (imagePath: string | null) => {
+    if (!imagePath) return null;
+    
+    // Check if it's a full URL already (e.g. starts with http or https)
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    try {
+      const { data } = supabaseClient.storage
+        .from('landing-pages')
+        .getPublicUrl(imagePath);
+        
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Error getting public URL:", error);
+      return null;
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: pageData.bg_color }}>
       {/* Header with preview banner */}
@@ -144,7 +164,7 @@ export function LandingPagePreview() {
               {pageData.profile_image_path ? (
                 <div className="rounded-full overflow-hidden h-64 w-64 border-4 shadow-lg" style={{ borderColor: pageData.accent_color }}>
                   <img 
-                    src={`/storage/landing-pages/${pageData.profile_image_path}`} 
+                    src={getImageUrl(pageData.profile_image_path)} 
                     alt="תמונת פרופיל" 
                     className="h-full w-full object-cover"
                   />

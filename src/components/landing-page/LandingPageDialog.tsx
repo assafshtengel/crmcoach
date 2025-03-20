@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { Eye } from "lucide-react";
+import { useCreateBucket } from '@/hooks/useCreateBucket';
 
 const ADVANTAGE_OPTIONS = [
   { id: "mental-resilience", label: "חוסן מנטלי" },
@@ -124,6 +125,8 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
     },
   });
 
+  const { createBucket } = useCreateBucket();
+  
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -161,12 +164,21 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
       
       console.log("User session confirmed:", sessionData.session.user.id);
       
+      // Try to create the bucket if it doesn't exist
+      try {
+        await createBucket('landing-pages');
+        console.log("Bucket exists or was created successfully");
+      } catch (bucketError) {
+        // If the error is because the bucket already exists, that's fine
+        console.log("Bucket creation error (might already exist):", bucketError);
+      }
+      
       let imageUrl = null;
       if (profileImage) {
         try {
           console.log("Starting image upload");
           const timestamp = new Date().getTime();
-          const path = `landing_pages/${timestamp}_${profileImage.name}`;
+          const path = `${timestamp}_${profileImage.name}`;
           await uploadImage(profileImage, 'landing-pages', path);
           imageUrl = path;
           console.log("Image uploaded successfully:", imageUrl);
