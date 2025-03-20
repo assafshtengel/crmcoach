@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -19,11 +20,11 @@ interface SessionSummary {
   progress_rating: number;
   next_session_focus: string;
   additional_notes?: string;
-  player_id?: string; // הוספנו שדה player_id ישירות לסיכום
+  player_id?: string; // מזהה שחקן ישירות בסיכום
   session: {
     id: string;
     session_date: string;
-    player_id: string; // הוספנו שדה player_id כדי שנוכל לסנן לפיו
+    player_id: string;
     player: {
       full_name: string;
     } | null;
@@ -69,8 +70,10 @@ const SessionSummaries = () => {
     
     if (selectedPlayer !== 'all') {
       filteredSummaries = filteredSummaries.filter(
-        summary => (summary.player_id === selectedPlayer) || 
-                  (summary.session && summary.session.player_id === selectedPlayer)
+        summary => 
+          // סינון מחמיר שמוודא שמזהה השחקן מתאים לשחקן שנבחר
+          (summary.player_id === selectedPlayer) || 
+          (summary.session && summary.session.player_id === selectedPlayer)
       );
     }
     

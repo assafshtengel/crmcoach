@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -172,6 +171,36 @@ const PlayerProfile = () => {
     localStorage.setItem('playerSession', JSON.stringify(playerSession));
     
     window.open('/game-prep', '_blank');
+  };
+
+  const fetchPlayerSessionSummaries = async (playerId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('session_summaries')
+        .select(`
+          *,
+          session:sessions (
+            id,
+            session_date,
+            player_id,
+            player:players (
+              full_name
+            )
+          )
+        `)
+        .or(`player_id.eq.${playerId},session.player_id.eq.${playerId}`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching player session summaries:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in fetchPlayerSessionSummaries:', error);
+      return [];
+    }
   };
 
   if (loading) {
