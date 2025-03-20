@@ -533,7 +533,15 @@ const DashboardCoach = () => {
                       <DialogTitle>סיכום מפגש</DialogTitle>
                     </DialogHeader>
                     <div className="mt-4">
-                      <SessionSummaryForm sessionId={session.id} playerName={session.player.full_name} sessionDate={session.session_date} onSubmit={data => handleSaveSessionSummary(session.id, data)} onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()} forceEnable={!isPastSession} />
+                      <SessionSummaryForm 
+                        sessionId={session.id} 
+                        playerName={session.player.full_name} 
+                        sessionDate={session.session_date} 
+                        playerId={session.player.id || ''} 
+                        onSubmit={data => handleSaveSessionSummary(session.id, data)} 
+                        onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()} 
+                        forceEnable={!isPastSession} 
+                      />
                     </div>
                   </DialogContent>
                 </Dialog>}
