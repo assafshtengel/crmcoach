@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { getImageUrl } from '@/lib/getImageUrl';
 
 interface LandingPageData {
   id: string;
@@ -103,27 +105,6 @@ export function LandingPagePreview() {
   // Format phone number with a link
   const formatPhone = (phone: string) => {
     return phone.startsWith('0') ? phone : `0${phone}`;
-  };
-
-  // Helper function to get image URL
-  const getImageUrl = (imagePath: string | null) => {
-    if (!imagePath) return null;
-    
-    // Check if it's a full URL already (e.g. starts with http or https)
-    if (imagePath.startsWith('http')) {
-      return imagePath;
-    }
-    
-    try {
-      const { data } = supabaseClient.storage
-        .from('landing-pages')
-        .getPublicUrl(imagePath);
-        
-      return data.publicUrl;
-    } catch (error) {
-      console.error("Error getting public URL:", error);
-      return null;
-    }
   };
 
   return (

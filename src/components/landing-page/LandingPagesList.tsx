@@ -6,6 +6,7 @@ import { supabaseClient, LandingPage } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, Copy, Trash2, Globe } from 'lucide-react';
 import { LandingPageDialog } from './LandingPageDialog';
+import { getImageUrl } from '@/lib/getImageUrl';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -171,7 +172,7 @@ export function LandingPagesList() {
               <div className="h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
                 {page.profile_image_path ? (
                   <img 
-                    src={`/storage/landing-pages/${page.profile_image_path}`} 
+                    src={getImageUrl(page.profile_image_path)} 
                     alt={page.title} 
                     className="w-full h-full object-cover"
                   />
@@ -224,7 +225,7 @@ export function LandingPagesList() {
         </div>
       )}
       
-      <LandingPageDialog open={openDialog} onOpenChange={setOpenDialog} />
+      <LandingPageDialog open={openDialog} onOpenChange={setOpenDialog} onPageCreated={fetchLandingPages} />
       
       <AlertDialog open={!!deletePageId} onOpenChange={(open) => !open && setDeletePageId(null)}>
         <AlertDialogContent>

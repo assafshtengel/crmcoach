@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -93,9 +94,10 @@ type FormValues = z.infer<typeof formSchema>;
 interface LandingPageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onPageCreated?: () => void;
 }
 
-export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps) {
+export function LandingPageDialog({ open, onOpenChange, onPageCreated }: LandingPageDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -252,6 +254,11 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
       
       setActiveTab("preview");
       
+      // Call onPageCreated callback if provided
+      if (onPageCreated) {
+        onPageCreated();
+      }
+      
     } catch (error: any) {
       console.error("Error creating landing page:", error);
       toast({
@@ -292,6 +299,11 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
         title: "עמוד הנחיתה פורסם בהצלחה!",
         description: "כעת הוא זמין לצפייה באינטרנט",
       });
+      
+      // Call onPageCreated callback if provided
+      if (onPageCreated) {
+        onPageCreated();
+      }
       
     } catch (error: any) {
       console.error("Error publishing landing page:", error);

@@ -650,6 +650,81 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_pages: {
+        Row: {
+          accent_color: string | null
+          advantages: string[] | null
+          advantages_ids: string[] | null
+          bg_color: string | null
+          button_color: string | null
+          coach_id: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          cta_id: string | null
+          cta_text: string | null
+          description: string | null
+          id: string
+          is_dark_text: boolean | null
+          is_published: boolean | null
+          main_reason: string | null
+          profile_image_path: string | null
+          styles: Json | null
+          subtitle: string | null
+          subtitle_id: string | null
+          title: string
+          work_steps: string[] | null
+        }
+        Insert: {
+          accent_color?: string | null
+          advantages?: string[] | null
+          advantages_ids?: string[] | null
+          bg_color?: string | null
+          button_color?: string | null
+          coach_id: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          cta_id?: string | null
+          cta_text?: string | null
+          description?: string | null
+          id?: string
+          is_dark_text?: boolean | null
+          is_published?: boolean | null
+          main_reason?: string | null
+          profile_image_path?: string | null
+          styles?: Json | null
+          subtitle?: string | null
+          subtitle_id?: string | null
+          title: string
+          work_steps?: string[] | null
+        }
+        Update: {
+          accent_color?: string | null
+          advantages?: string[] | null
+          advantages_ids?: string[] | null
+          bg_color?: string | null
+          button_color?: string | null
+          coach_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          cta_id?: string | null
+          cta_text?: string | null
+          description?: string | null
+          id?: string
+          is_dark_text?: boolean | null
+          is_published?: boolean | null
+          main_reason?: string | null
+          profile_image_path?: string | null
+          styles?: Json | null
+          subtitle?: string | null
+          subtitle_id?: string | null
+          title?: string
+          work_steps?: string[] | null
+        }
+        Relationships: []
+      }
       last_meetings: {
         Row: {
           created_at: string
