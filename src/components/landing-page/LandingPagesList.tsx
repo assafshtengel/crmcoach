@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabaseClient, LandingPage } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, Copy, Trash2, Globe } from 'lucide-react';
 import { LandingPageDialog } from './LandingPageDialog';
@@ -15,7 +15,6 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { LandingPage } from '@/lib/supabaseClient';
 
 export function LandingPagesList() {
   const [landingPages, setLandingPages] = useState<LandingPage[]>([]);
@@ -45,13 +44,13 @@ export function LandingPagesList() {
 
       const { data, error } = await supabaseClient
         .from('landing_pages')
-        .select('id, title, created_at, profile_image_path, is_published')
+        .select('*')
         .eq('coach_id', session.session.user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      setLandingPages(data || []);
+      setLandingPages(data as LandingPage[]);
     } catch (error) {
       console.error('Error fetching landing pages:', error);
       toast({
