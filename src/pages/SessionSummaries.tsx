@@ -23,6 +23,7 @@ interface SessionSummary {
   session: {
     id: string;
     session_date: string;
+    player_id: string; // הוספנו שדה player_id כדי שנוכל לסנן לפיו
     player: {
       full_name: string;
     } | null;
@@ -48,6 +49,7 @@ const SessionSummaries = () => {
         session:sessions (
           id,
           session_date,
+          player_id,
           player:players (
             full_name
           )
@@ -56,18 +58,24 @@ const SessionSummaries = () => {
       .eq('coach_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (selectedPlayer !== 'all') {
-      query.eq('sessions.player_id', selectedPlayer);
-    }
-
     const { data, error } = await query;
     if (error) {
       console.error('Error fetching summaries:', error);
       return;
     }
     
+    // Filter summaries based on the selected player
+    let filteredSummaries = data as SessionSummary[];
+    
+    if (selectedPlayer !== 'all') {
+      filteredSummaries = filteredSummaries.filter(
+        summary => summary.session && summary.session.player_id === selectedPlayer
+      );
+    }
+    
+    // Create a Map to ensure unique sessions (by session ID)
     const uniqueSessions = new Map<string, SessionSummary>();
-    data?.forEach((summary: SessionSummary) => {
+    filteredSummaries.forEach((summary: SessionSummary) => {
       // Add null check for session and player
       if (summary.session && summary.session.id) {
         uniqueSessions.set(summary.session.id, summary);
