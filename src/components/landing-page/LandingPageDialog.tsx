@@ -136,13 +136,20 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
+    console.log("Form submission started");
     
     try {
       console.log("Form values:", values);
       
-      const { data: session } = await supabaseClient.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
       
-      if (!session?.session) {
+      if (sessionError) {
+        console.error("Error getting session:", sessionError);
+        throw new Error("שגיאה בקבלת נתוני המשתמש: " + sessionError.message);
+      }
+      
+      if (!sessionData?.session) {
+        console.error("No session found");
         toast({
           title: "שגיאה",
           description: "עליך להתחבר למערכת כדי ליצור עמוד נחיתה",
@@ -152,9 +159,12 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
         return;
       }
       
+      console.log("User session confirmed:", sessionData.session.user.id);
+      
       let imageUrl = null;
       if (profileImage) {
         try {
+          console.log("Starting image upload");
           const timestamp = new Date().getTime();
           const path = `landing_pages/${timestamp}_${profileImage.name}`;
           await uploadImage(profileImage, 'landing-pages', path);
@@ -180,8 +190,8 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
       
       const subtitleLabel = SUBTITLE_OPTIONS.find(option => option.value === values.subtitle)?.label || values.subtitle;
       
-      console.log("Creating landing page with data:", {
-        coach_id: session.session.user.id,
+      const landingPageData = {
+        coach_id: sessionData.session.user.id,
         title: values.title,
         subtitle: subtitleLabel,
         subtitle_id: values.subtitle,
@@ -205,42 +215,19 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
           accentColorValue: values.accentColor[0],
           buttonColorValue: values.buttonColor[0]
         }
-      });
+      };
+      
+      console.log("Creating landing page with data:", landingPageData);
       
       const { data, error } = await supabaseClient
         .from('landing_pages')
-        .insert({
-          coach_id: session.session.user.id,
-          title: values.title,
-          subtitle: subtitleLabel,
-          subtitle_id: values.subtitle,
-          description: values.description,
-          contact_email: values.contactEmail,
-          contact_phone: values.contactPhone,
-          main_reason: values.mainReason,
-          advantages: advantageLabels,
-          advantages_ids: values.advantages,
-          work_steps: [values.workStep1, values.workStep2, values.workStep3],
-          cta_text: ctaLabel,
-          cta_id: values.ctaText,
-          profile_image_path: imageUrl,
-          bg_color: getColorFromValue(values.bgColor[0], 'bg'),
-          accent_color: getColorFromValue(values.accentColor[0], 'accent'),
-          button_color: getColorFromValue(values.buttonColor[0], 'button'),
-          is_dark_text: values.isDarkText,
-          is_published: false,
-          styles: {
-            bgColorValue: values.bgColor[0],
-            accentColorValue: values.accentColor[0],
-            buttonColorValue: values.buttonColor[0]
-          }
-        })
+        .insert(landingPageData)
         .select()
         .single();
       
       if (error) {
         console.error("Error creating landing page:", error);
-        throw error;
+        throw new Error("שגיאה ביצירת עמוד הנחיתה: " + error.message);
       }
       
       console.log("Landing page created successfully:", data);
@@ -253,15 +240,16 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
       
       setActiveTab("preview");
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating landing page:", error);
       toast({
         title: "שגיאה ביצירת עמוד נחיתה",
-        description: "אירעה שגיאה בעת יצירת עמוד הנחיתה. נסה שוב מאוחר יותר.",
+        description: error.message || "אירעה שגיאה בעת יצירת עמוד הנחיתה. נסה שוב מאוחר יותר.",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
+      console.log("Form submission completed");
     }
   };
   
@@ -269,6 +257,7 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
     if (!landingPageId) return;
     
     setIsSubmitting(true);
+    console.log("Publishing landing page:", landingPageId);
     
     try {
       const { data, error } = await supabaseClient
@@ -278,25 +267,30 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error publishing landing page:", error);
+        throw new Error("שגיאה בפרסום עמוד הנחיתה: " + error.message);
+      }
       
       const publishedUrl = `/landing/${data.id}`;
       setPublishUrl(publishedUrl);
+      console.log("Landing page published successfully:", publishedUrl);
       
       toast({
         title: "עמוד הנחיתה פורסם בהצלחה!",
         description: "כעת הוא זמין לצפייה באינטרנט",
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error publishing landing page:", error);
       toast({
         title: "שגיאה בפרסום עמוד הנחיתה",
-        description: "אירעה שגיאה בעת פרסום עמוד הנחיתה. נסה שוב מאוחר יותר.",
+        description: error.message || "אירעה שגיאה בעת פרסום עמוד הנחיתה. נסה שוב מאוחר יותר.",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
+      console.log("Publishing process completed");
     }
   };
   

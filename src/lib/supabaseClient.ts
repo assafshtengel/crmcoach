@@ -30,8 +30,7 @@ export type LandingPage = {
   styles?: any;
 };
 
-// Create a custom typed client
-export const customSupabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+// Create a single client instance to avoid multiple instance warnings
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// Cast the client to any to allow for our custom tables
-export const supabaseClient = customSupabase as any;
+export { supabaseClient };
