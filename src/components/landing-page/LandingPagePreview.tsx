@@ -1,10 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { LandingPage } from '@/lib/supabaseClient';
 
 interface LandingPageData {
   id: string;
@@ -30,6 +29,7 @@ export function LandingPagePreview() {
   const [pageData, setPageData] = useState<LandingPageData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const isPreview = window.location.pathname.includes('/preview/');
 
   useEffect(() => {
@@ -38,13 +38,20 @@ export function LandingPagePreview() {
 
       try {
         setIsLoading(true);
+        console.log("Fetching landing page with ID:", id);
+        
         const { data, error } = await supabaseClient
           .from('landing_pages')
           .select('*')
           .eq('id', id)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching landing page:", error);
+          throw error;
+        }
+        
+        console.log("Landing page data:", data);
         
         // If not in preview mode, check if the page is published
         if (!isPreview && !data.is_published) {

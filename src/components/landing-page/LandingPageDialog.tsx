@@ -148,15 +148,27 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
           description: "עליך להתחבר למערכת כדי ליצור עמוד נחיתה",
           variant: "destructive",
         });
+        setIsSubmitting(false);
         return;
       }
       
       let imageUrl = null;
       if (profileImage) {
-        const timestamp = new Date().getTime();
-        const path = `landing_pages/${timestamp}_${profileImage.name}`;
-        await uploadImage(profileImage, 'landing-pages', path);
-        imageUrl = path;
+        try {
+          const timestamp = new Date().getTime();
+          const path = `landing_pages/${timestamp}_${profileImage.name}`;
+          await uploadImage(profileImage, 'landing-pages', path);
+          imageUrl = path;
+          console.log("Image uploaded successfully:", imageUrl);
+        } catch (uploadError) {
+          console.error("Error uploading image:", uploadError);
+          toast({
+            title: "שגיאה בהעלאת התמונה",
+            description: "לא הצלחנו להעלות את התמונה. אנא נסה שנית.",
+            variant: "destructive",
+          });
+          // Continue without image
+        }
       }
       
       const advantageLabels = values.advantages.map(id => {
@@ -167,6 +179,33 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
       const ctaLabel = CTA_OPTIONS.find(option => option.value === values.ctaText)?.label || values.ctaText;
       
       const subtitleLabel = SUBTITLE_OPTIONS.find(option => option.value === values.subtitle)?.label || values.subtitle;
+      
+      console.log("Creating landing page with data:", {
+        coach_id: session.session.user.id,
+        title: values.title,
+        subtitle: subtitleLabel,
+        subtitle_id: values.subtitle,
+        description: values.description,
+        contact_email: values.contactEmail,
+        contact_phone: values.contactPhone,
+        main_reason: values.mainReason,
+        advantages: advantageLabels,
+        advantages_ids: values.advantages,
+        work_steps: [values.workStep1, values.workStep2, values.workStep3],
+        cta_text: ctaLabel,
+        cta_id: values.ctaText,
+        profile_image_path: imageUrl,
+        bg_color: getColorFromValue(values.bgColor[0], 'bg'),
+        accent_color: getColorFromValue(values.accentColor[0], 'accent'),
+        button_color: getColorFromValue(values.buttonColor[0], 'button'),
+        is_dark_text: values.isDarkText,
+        is_published: false,
+        styles: {
+          bgColorValue: values.bgColor[0],
+          accentColorValue: values.accentColor[0],
+          buttonColorValue: values.buttonColor[0]
+        }
+      });
       
       const { data, error } = await supabaseClient
         .from('landing_pages')
@@ -199,8 +238,12 @@ export function LandingPageDialog({ open, onOpenChange }: LandingPageDialogProps
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating landing page:", error);
+        throw error;
+      }
       
+      console.log("Landing page created successfully:", data);
       setLandingPageId(data.id);
       
       toast({

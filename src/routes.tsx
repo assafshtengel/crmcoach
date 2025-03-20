@@ -1,4 +1,3 @@
-
 import { lazy } from 'react';
 import { Route, Routes, Outlet } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
@@ -44,6 +43,7 @@ export function AppRoutes() {
         <Route path="/landing-pages" element={<LandingPages />} />
         <Route path="/contract" element={<Contract />} />
         <Route path="/goals" element={<Goals />} />
+        <Route path="/player-form" element={<PlayerForm />} />
       </Route>
       
       {/* Public registration form */}
