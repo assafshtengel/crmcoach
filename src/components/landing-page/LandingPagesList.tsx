@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,15 +43,55 @@ export function LandingPagesList() {
         return;
       }
 
+      console.log("Fetching landing pages for coach:", session.session.user.id);
+      
       const { data, error } = await supabaseClient
         .from('landing_pages')
         .select('*')
         .eq('coach_id', session.session.user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase query error:", error);
+        throw error;
+      }
       
-      setLandingPages(data as LandingPage[]);
+      if (!data) {
+        console.log("No landing pages data returned");
+        setLandingPages([]);
+        return;
+      }
+      
+      console.log("Landing pages data:", data);
+      
+      // Ensure all required fields are present, with safe defaults for optional ones
+      const typedData: LandingPage[] = data.map(page => ({
+        id: page.id,
+        coach_id: page.coach_id,
+        title: page.title,
+        subtitle: page.subtitle || "",
+        description: page.description || "",
+        contact_email: page.contact_email || "",
+        contact_phone: page.contact_phone || "",
+        main_reason: page.main_reason || "",
+        advantages: page.advantages || [],
+        work_steps: page.work_steps || [],
+        cta_text: page.cta_text || "",
+        profile_image_path: page.profile_image_path,
+        is_published: page.is_published || false,
+        created_at: page.created_at,
+        // Include other fields with defaults
+        subtitle_id: page.subtitle_id,
+        advantages_ids: page.advantages_ids,
+        cta_id: page.cta_id,
+        bg_color: page.bg_color || "#ffffff",
+        accent_color: page.accent_color || "#000000",
+        button_color: page.button_color || "#3b82f6",
+        is_dark_text: page.is_dark_text !== undefined ? page.is_dark_text : true,
+        styles: page.styles
+      }));
+      
+      setLandingPages(typedData);
     } catch (error) {
       console.error('Error fetching landing pages:', error);
       toast({
