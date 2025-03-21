@@ -8,14 +8,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
 
-type AuthMode = "login" | "reset-password";
+type AuthMode = "login";
 
 const PlayerAuth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<AuthMode>("login");
+  const [showContactCoachDialog, setShowContactCoachDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -90,170 +98,99 @@ const PlayerAuth = () => {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      // Check if email exists in players table
-      const { data: playerData, error: playerError } = await supabase
-        .from('players')
-        .select('id, email')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (playerError) {
-        throw new Error("שגיאה בבדיקת פרטי השחקן");
-      }
-
-      if (!playerData) {
-        throw new Error("לא נמצא שחקן עם כתובת האימייל הזו");
-      }
-
-      // Generate a new random password
-      const newPassword = Math.random().toString(36).slice(-10);
-
-      // Update the player's password
-      const { error: updateError } = await supabase
-        .from('players')
-        .update({ password: newPassword })
-        .eq('id', playerData.id);
-
-      if (updateError) {
-        throw new Error("שגיאה בעדכון הסיסמה");
-      }
-
-      // For a real application, you would send an email with the new password
-      // For now, we'll display it in the toast
-      toast({
-        title: "הסיסמה אופסה בהצלחה",
-        description: `הסיסמה החדשה שלך היא: ${newPassword}`,
-        duration: 10000, // Longer duration so user can see the password
-      });
-
-      setMode("login");
-    } catch (error: any) {
-      console.error("Reset password error:", error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה באיפוס הסיסמה",
-        description: error.message || "אירעה שגיאה באיפוס הסיסמה. אנא נסה שוב.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">
-            {mode === "login" ? "כניסה לשחקנים" : "איפוס סיסמה"}
+            כניסה לשחקנים
           </CardTitle>
           <CardDescription>
-            {mode === "login" 
-              ? "התחבר כדי לגשת לפרופיל השחקן שלך" 
-              : "הזן את כתובת המייל שלך לאיפוס הסיסמה"
-            }
+            התחבר כדי לגשת לפרופיל השחקן שלך
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {mode === "login" ? (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">כתובת אימייל</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="הזן את האימייל שלך"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">כתובת אימייל</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="הזן את האימייל שלך"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  required
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">סיסמה</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="הזן את הסיסמה שלך"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">סיסמה</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="הזן את הסיסמה שלך"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10"
+                  required
+                />
               </div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={loading}
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? "מתחבר..." : "התחבר"}
+            </Button>
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={() => setShowContactCoachDialog(true)}
+                className="text-sm text-primary hover:underline"
               >
-                {loading ? "מתחבר..." : "התחבר"}
-              </Button>
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => setMode("reset-password")}
-                  className="text-sm text-primary hover:underline"
-                >
-                  שכחת סיסמה?
-                </button>
-              </div>
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => navigate('/auth')}
-                  className="text-sm text-primary hover:underline"
-                >
-                  כניסה למאמנים
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="reset-email">כתובת אימייל</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                  <Input
-                    id="reset-email"
-                    type="email"
-                    placeholder="הזן את האימייל שלך"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={loading}
+                שכחת סיסמה?
+              </button>
+            </div>
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={() => navigate('/auth')}
+                className="text-sm text-primary hover:underline"
               >
-                {loading ? "שולח..." : "אפס סיסמה"}
-              </Button>
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => setMode("login")}
-                  className="text-sm text-primary hover:underline"
-                >
-                  חזרה להתחברות
-                </button>
-              </div>
-            </form>
-          )}
+                כניסה למאמנים
+              </button>
+            </div>
+          </form>
         </CardContent>
       </Card>
+
+      {/* Contact Coach Dialog */}
+      <Dialog open={showContactCoachDialog} onOpenChange={setShowContactCoachDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">שכחת סיסמה</DialogTitle>
+            <DialogDescription className="text-center">
+              נא לפנות למאמן האישי שלך
+            </DialogDescription>
+          </DialogHeader>
+          <div className="my-4 text-center">
+            <p className="text-gray-700">
+              איפוס סיסמה זמין רק באמצעות המאמן האישי שלך.
+              <br />
+              אנא צור קשר עם המאמן האישי שלך לקבלת סיסמה חדשה.
+            </p>
+          </div>
+          <DialogFooter className="sm:justify-center">
+            <Button onClick={() => setShowContactCoachDialog(false)}>הבנתי</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
