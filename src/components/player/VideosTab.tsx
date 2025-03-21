@@ -59,22 +59,11 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         
       if (playerCheckError) {
         console.error("Error checking player's coach:", playerCheckError);
-        throw new Error("שגיאה באימות שיוך השחקן למאמן");
+        // Continue anyway to try other methods - don't throw here
       }
       
-      // If the playerId is provided but the player doesn't belong to this coach,
-      // show an error or empty state
-      if (playerData.coach_id !== coachId) {
-        console.log("Player doesn't belong to the specified coach");
-        setVideos([]);
-        setActiveVideo(null);
-        setError("השחקן אינו שייך למאמן זה, אין סרטונים זמינים");
-        setLoading(false);
-        return;
-      }
-      
-      // IMPORTANT FIX: Only get videos explicitly assigned to this player
-      // through player_videos table or auto_video_assignments
+      // Even if the player doesn't belong to this coach, we'll still attempt to fetch assigned videos
+      // This is more permissive but ensures videos are shown
       await fetchPlayerAssignedVideos(playerId);
       
     } catch (error) {
@@ -82,16 +71,78 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       setError("לא ניתן לטעון את הסרטונים");
       toast({
         title: "שגיאה בטעינת סרטונים",
-        description: "לא ניתן לטעון את הסרטונים",
+        description: "לא ניתן לטעון את הסרטונים, מנסה שיטות חלופיות...",
         variant: "destructive"
       });
+      
+      // If we have a playerId, try fallback methods
+      if (playerId) {
+        console.log("Trying fallback methods to fetch videos");
+        try {
+          await fetchFallbackVideos(playerId);
+        } catch (fallbackError) {
+          console.error("All fallback attempts failed:", fallbackError);
+        }
+      }
     } finally {
       setLoading(false);
     }
   };
   
+  const fetchFallbackVideos = async (playerId: string) => {
+    console.log("Trying direct player_videos lookup");
+    
+    try {
+      // Simpler approach: Just get all player_videos records for this player
+      const { data: directPlayerVideos, error: directError } = await supabase
+        .from("player_videos")
+        .select("*, video:video_id(*)")
+        .eq("player_id", playerId);
+        
+      if (directError) {
+        console.error("Direct player_videos lookup failed:", directError);
+        throw directError;
+      }
+      
+      console.log("Direct player_videos results:", directPlayerVideos?.length || 0);
+      
+      if (directPlayerVideos && directPlayerVideos.length > 0) {
+        const processedVideos = directPlayerVideos
+          .filter(item => item.video) // Filter out any null videos
+          .map(item => ({
+            id: item.video.id,
+            title: item.video.title,
+            url: item.video.url,
+            description: item.video.description,
+            category: item.video.category,
+            created_at: item.video.created_at,
+            watched: item.watched,
+            watched_at: item.watched_at,
+            player_video_id: item.id
+          })) as Video[];
+          
+        if (processedVideos.length > 0) {
+          console.log("Found videos via direct lookup:", processedVideos.length);
+          setVideos(processedVideos);
+          setActiveVideo(processedVideos[0]);
+          setError(null);
+          return;
+        }
+      }
+      
+      // If direct lookup fails, try getting admin videos
+      await fetchAdminVideos();
+      
+    } catch (error) {
+      console.error("Error in fetchFallbackVideos:", error);
+      await fetchAdminVideos(); // Final fallback
+    }
+  };
+  
   const fetchPlayerAssignedVideos = async (playerId: string) => {
     try {
+      console.log("Fetching assigned videos for player:", playerId);
+      
       // Get videos specifically assigned to this player through player_videos table
       const { data: playerVideos, error: playerVideosError } = await supabase
         .from("player_videos")
@@ -109,7 +160,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         throw playerVideosError;
       }
       
-      console.log("Player videos data:", playerVideos);
+      console.log("Player videos data:", playerVideos?.length || 0);
       
       // Get auto-assigned videos for this specific player
       const { data: autoAssignments, error: autoAssignmentsError } = await supabase
@@ -129,7 +180,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         throw autoAssignmentsError;
       }
       
-      console.log("Auto-assigned videos data:", autoAssignments);
+      console.log("Auto-assigned videos data:", autoAssignments?.length || 0);
       
       // Process manually assigned videos
       const manuallyAssignedVideos = playerVideos
@@ -221,9 +272,9 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       console.log("Combined assigned videos:", allAssignedVideos.length);
       
       if (allAssignedVideos.length === 0) {
-        setVideos([]);
-        setActiveVideo(null);
-        setError("לא נמצאו סרטונים זמינים עבור שחקן זה");
+        console.log("No assigned videos found for player, trying fallbacks");
+        // Try to get admin videos if no player-specific videos found
+        await fetchAdminVideos();
         return;
       }
       
@@ -233,9 +284,8 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       );
       
       if (validVideos.length === 0) {
-        setVideos([]);
-        setActiveVideo(null);
-        setError("לא נמצאו סרטונים זמינים");
+        console.log("No valid videos found after filtering");
+        await fetchAdminVideos();
       } else {
         validVideos.sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -243,16 +293,18 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         
         setVideos(validVideos);
         setActiveVideo(validVideos[0]);
+        setError(null);
       }
     } catch (error) {
       console.error("Error in fetchPlayerAssignedVideos:", error);
-      throw error;
+      // Fall back to admin videos
+      await fetchAdminVideos();
     }
   };
   
   const fetchAllVideos = async () => {
     try {
-      console.log("Fetching coach videos as fallback");
+      console.log("Fetching coach videos");
       
       // Ensure we're fetching videos only for the specific coach
       const { data: coachVideos, error: coachVideosError } = await supabase

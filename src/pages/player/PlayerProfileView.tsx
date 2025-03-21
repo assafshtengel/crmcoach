@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,7 +94,6 @@ const PlayerProfileView = () => {
 
         setPlayer(data);
         
-        // Load player goals
         await loadPlayerGoals(data.id);
         
         const { data: videosData, error: videosError } = await supabase
@@ -340,7 +338,7 @@ const PlayerProfileView = () => {
             <CardContent className="p-8 text-center">
               <p className="text-red-500 mb-4">לא נמצאו פרטי שחקן. אנא התחבר מחדש.</p>
               <Button onClick={() => navigate("/player-auth")}>
-                חזרה לדף ההתחברות
+                חזרה ל��ף ההתחברות
               </Button>
             </CardContent>
           </Card>

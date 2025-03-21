@@ -58,7 +58,7 @@ const Index = () => {
           console.error("Error fetching player's coach ID:", playerError);
         }
         
-        fetchVideos(user.id);
+        // We no longer need to manually fetch videos here since that's handled in the VideosTab
       } else {
         console.log("No authenticated user found");
         setLoading(false);
@@ -252,7 +252,13 @@ const Index = () => {
               <h2 className="text-xl font-bold">הסרטונים שלי</h2>
               <Button 
                 variant="outline" 
-                onClick={refreshVideos} 
+                onClick={() => {
+                  if (userId && coachId) {
+                    // This just refreshes the component
+                    setLoading(true);
+                    setTimeout(() => setLoading(false), 100);
+                  }
+                }}
                 className="flex items-center gap-2"
                 disabled={loading}
               >
@@ -261,7 +267,6 @@ const Index = () => {
               </Button>
             </div>
 
-            {/* Use VideosTab component instead of inline implementation */}
             {userId && coachId ? (
               <VideosTab 
                 coachId={coachId} 
