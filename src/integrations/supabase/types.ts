@@ -1221,6 +1221,129 @@ export type Database = {
         }
         Relationships: []
       }
+      player_game_evaluations: {
+        Row: {
+          body_language: number | null
+          body_language_notes: string | null
+          coach_feedback_notes: string | null
+          coach_feedback_response: number | null
+          coach_id: string | null
+          confidence_presence: number | null
+          confidence_presence_notes: string | null
+          consistency: number | null
+          consistency_notes: string | null
+          created_at: string
+          error_response: number | null
+          error_response_notes: string | null
+          focus_attention: number | null
+          focus_attention_notes: string | null
+          game_date: string
+          general_notes: string | null
+          id: string
+          initiative_activity: number | null
+          initiative_activity_notes: string | null
+          mental_routines: number | null
+          mental_routines_notes: string | null
+          opponent: string
+          overall_rating: number | null
+          player_communication: number | null
+          player_communication_notes: string | null
+          player_id: string
+          postgame_behavior: number | null
+          postgame_behavior_notes: string | null
+          pressure_response: number | null
+          pressure_response_notes: string | null
+          substitution_reaction: number | null
+          substitution_reaction_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          body_language?: number | null
+          body_language_notes?: string | null
+          coach_feedback_notes?: string | null
+          coach_feedback_response?: number | null
+          coach_id?: string | null
+          confidence_presence?: number | null
+          confidence_presence_notes?: string | null
+          consistency?: number | null
+          consistency_notes?: string | null
+          created_at?: string
+          error_response?: number | null
+          error_response_notes?: string | null
+          focus_attention?: number | null
+          focus_attention_notes?: string | null
+          game_date: string
+          general_notes?: string | null
+          id?: string
+          initiative_activity?: number | null
+          initiative_activity_notes?: string | null
+          mental_routines?: number | null
+          mental_routines_notes?: string | null
+          opponent: string
+          overall_rating?: number | null
+          player_communication?: number | null
+          player_communication_notes?: string | null
+          player_id: string
+          postgame_behavior?: number | null
+          postgame_behavior_notes?: string | null
+          pressure_response?: number | null
+          pressure_response_notes?: string | null
+          substitution_reaction?: number | null
+          substitution_reaction_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body_language?: number | null
+          body_language_notes?: string | null
+          coach_feedback_notes?: string | null
+          coach_feedback_response?: number | null
+          coach_id?: string | null
+          confidence_presence?: number | null
+          confidence_presence_notes?: string | null
+          consistency?: number | null
+          consistency_notes?: string | null
+          created_at?: string
+          error_response?: number | null
+          error_response_notes?: string | null
+          focus_attention?: number | null
+          focus_attention_notes?: string | null
+          game_date?: string
+          general_notes?: string | null
+          id?: string
+          initiative_activity?: number | null
+          initiative_activity_notes?: string | null
+          mental_routines?: number | null
+          mental_routines_notes?: string | null
+          opponent?: string
+          overall_rating?: number | null
+          player_communication?: number | null
+          player_communication_notes?: string | null
+          player_id?: string
+          postgame_behavior?: number | null
+          postgame_behavior_notes?: string | null
+          pressure_response?: number | null
+          pressure_response_notes?: string | null
+          substitution_reaction?: number | null
+          substitution_reaction_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_game_evaluations_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_game_evaluations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_goals: {
         Row: {
           created_at: string | null

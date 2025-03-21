@@ -760,12 +760,19 @@ const PlayerProfileView = () => {
                   <CardContent className="p-5">
                     <div className="space-y-4">
                       <p className="text-gray-700">
-                        כאן תוכל לאבחן את הביצועים שלך במהלך משחקים ולעקוב אחר ההתקדמות.
+                        כאן תוכל לאבחן את הביצועים שלך במהלך משחקים ולעקוב אחר ההתקדמות המנטלית שלך.
                       </p>
+                      
+                      <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 mb-4">
+                        <p className="text-amber-800 text-sm">
+                          האיבחון כולל 12 פרמטרים מנטליים חשובים שיעזרו לך להבין את הצדדים החזקים והחלשים 
+                          של הביצועים שלך במהלך משחק.
+                        </p>
+                      </div>
                       
                       <Button 
                         className="w-full bg-primary hover:bg-primary/90"
-                        onClick={() => navigate(`/player-game-evaluation/${player?.id}`)}
+                        onClick={() => navigate(`/player/game-evaluation/${player?.id}`)}
                       >
                         לאיבחון חדש
                         <ArrowRight className="mr-2 h-4 w-4" />

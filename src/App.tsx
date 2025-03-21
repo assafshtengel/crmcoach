@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -48,7 +49,7 @@ import Goals from '@/pages/Goals';
 import PlayerProfileView from '@/pages/player/PlayerProfileView';
 import NotFound from '@/pages/NotFound';
 import MentalLibrary from '@/pages/MentalLibrary';
-import PlayerGameEvaluation from '@/pages/player/PlayerGameEvaluation';
+import PlayerGameEvaluationForm from '@/pages/player/PlayerGameEvaluationForm';
 
 import "./App.css";
 
@@ -104,7 +105,7 @@ function App() {
             <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} />
             <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} />
             <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-            <Route path="/player-game-evaluation/:playerId" element={<AuthGuard playerOnly={true}><PlayerGameEvaluation /></AuthGuard>} />
+            <Route path="/player/game-evaluation/:playerId" element={<AuthGuard playerOnly={true}><PlayerGameEvaluationForm /></AuthGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ThemeProvider>
