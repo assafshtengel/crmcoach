@@ -1,10 +1,6 @@
 
 import * as React from "react";
-import { 
-  Toast,
-  ToastActionElement,
-  ToastProps
-} from "@/components/ui/toast";
+import { Toast, ToastActionElement, ToastProps } from "@/components/ui/toast";
 
 const TOAST_LIMIT = 5;
 const TOAST_REMOVE_DELAY = 1000000;
@@ -65,7 +61,7 @@ const addToRemoveQueue = (toastId: string) => {
     toastTimeouts.delete(toastId);
     dispatch({
       type: actionTypes.REMOVE_TOAST,
-      toastId,
+      toastId: toastId,
     });
   }, TOAST_REMOVE_DELAY);
 
@@ -111,7 +107,6 @@ export const reducer = (state: State, action: Action): State => {
         ),
       };
     }
-
     case actionTypes.REMOVE_TOAST:
       if (action.toastId === undefined) {
         return {
@@ -126,7 +121,7 @@ export const reducer = (state: State, action: Action): State => {
   }
 };
 
-const listeners: Array<(state: State) => void> = [];
+const listeners: ((state: State) => void)[] = [];
 
 let memoryState: State = { toasts: [] };
 
@@ -137,7 +132,7 @@ function dispatch(action: Action) {
   });
 }
 
-interface Toast extends Omit<ToasterToast, "id"> {}
+type Toast = Omit<ToasterToast, "id">;
 
 function toast({ ...props }: Toast) {
   const id = genId();
@@ -147,7 +142,6 @@ function toast({ ...props }: Toast) {
       type: actionTypes.UPDATE_TOAST,
       toast: { ...props, id },
     });
-
   const dismiss = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
 
   dispatch({
@@ -163,7 +157,7 @@ function toast({ ...props }: Toast) {
   });
 
   return {
-    id,
+    id: id,
     dismiss,
     update,
   };
@@ -190,4 +184,3 @@ function useToast() {
 }
 
 export { useToast, toast };
-export default useToast;
