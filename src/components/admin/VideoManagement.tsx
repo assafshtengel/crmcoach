@@ -419,7 +419,7 @@ export default function VideoManagement() {
     setOpenAssignDialog(true);
     
     try {
-      // Get existing assignments for this specific video
+      // Important fix: Get existing assignments for THIS SPECIFIC video
       const { data, error } = await supabase
         .from('player_videos')
         .select('player_id')
