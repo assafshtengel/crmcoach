@@ -7,10 +7,12 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Eye, Search } from 'lucide-react';
+import { ArrowRight, FileText, Eye, Search, Calendar, Check, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from '@/components/ui/input';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SessionSummary {
   id: string;
@@ -39,6 +41,7 @@ const AllMeetingSummaries = () => {
   const [selectedPlayer, setSelectedPlayer] = useState<string>(searchParams.get('playerId') || 'all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   const fetchSummaries = async () => {
     setIsLoading(true);
@@ -134,34 +137,40 @@ const AllMeetingSummaries = () => {
         <div className="space-y-6 text-right">
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#6E59A5]">סיכום המפגש</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{summary.summary_text}</p>
+            <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{summary.summary_text}</p>
           </div>
 
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#7E69AB]">מטרות שהושגו</h3>
-            <ul className="list-disc list-inside space-y-1 mr-4">
+            <div className="space-y-2">
               {summary.achieved_goals.map((goal, index) => (
-                <li key={index} className="text-gray-700">{goal}</li>
+                <div key={index} className="flex items-start gap-2 bg-green-50 p-3 rounded-lg border border-green-100">
+                  <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-700">{goal}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#9b87f5]">מטרות להמשך</h3>
-            <ul className="list-disc list-inside space-y-1 mr-4">
+            <div className="space-y-2">
               {summary.future_goals.map((goal, index) => (
-                <li key={index} className="text-gray-700">{goal}</li>
+                <div key={index} className="flex items-start gap-2 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                  <Calendar className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-700">{goal}</p>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
-          <div>
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
             <h3 className="text-lg font-semibold mb-2 text-[#D6BCFA]">פוקוס למפגש הבא</h3>
             <p className="text-gray-700">{summary.next_session_focus}</p>
           </div>
 
           {summary.additional_notes && (
-            <div>
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <h3 className="text-lg font-semibold mb-2 text-[#8B5CF6]">הערות נוספות</h3>
               <p className="text-gray-700 whitespace-pre-wrap">{summary.additional_notes}</p>
             </div>
@@ -174,29 +183,33 @@ const AllMeetingSummaries = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F2FCE2] to-[#E5DEFF]">
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/')}>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/')}
+              className="hover:bg-white/20 transition-colors"
+            >
               <ArrowRight className="h-5 w-5" />
               חזרה לדשבורד
             </Button>
             <h1 className="text-2xl font-bold text-[#6E59A5]">סיכומי מפגשים</h1>
           </div>
-          <div className="flex gap-4">
-            <div className="relative">
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+            <div className="relative w-full md:w-auto">
               <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
               <Input
                 placeholder="חיפוש לפי תוכן..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[200px] text-right pl-10"
+                className="w-full md:w-[200px] text-right pl-10 bg-white/90 border-gray-200 focus:border-[#6E59A5]"
               />
             </div>
             <Select
               value={selectedPlayer}
               onValueChange={handlePlayerChange}
             >
-              <SelectTrigger className="w-[200px] text-right">
+              <SelectTrigger className="w-full md:w-[200px] text-right bg-white/90 border-gray-200">
                 <SelectValue placeholder="בחר שחקן" />
               </SelectTrigger>
               <SelectContent>
@@ -216,69 +229,92 @@ const AllMeetingSummaries = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
           </div>
         ) : summaries.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {summaries.map(summary => (
-              <Card key={summary.id} className="bg-white/90 hover:bg-white transition-all duration-300 hover:shadow-lg hover:shadow-purple-100">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <div className="text-right w-full">
-                      <CardTitle className="text-lg font-medium text-[#6E59A5]">
-                        {summary.session?.player?.full_name || "שחקן לא ידוע"}
-                      </CardTitle>
-                      <p className="text-sm text-gray-500">
-                        {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 mr-2">
-                      <FileText className="h-5 w-5 text-[#9b87f5]" />
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Eye className="h-4 w-4 text-[#7E69AB] hover:text-[#6E59A5]" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-3xl max-h-screen">
-                          <DialogHeader>
-                            <DialogTitle className="flex items-center justify-between mb-4 text-right">
-                              <span className="text-[#6E59A5]">סיכום מפגש - {summary.session?.player?.full_name || "שחקן לא ידוע"}</span>
-                              <span className="text-sm font-normal text-gray-500">
-                                {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
-                              </span>
-                            </DialogTitle>
-                          </DialogHeader>
-                          {renderSummaryDetails(summary)}
-                          <div className="flex items-center justify-between pt-4 border-t mt-4">
-                            <div className="text-gray-600 text-right w-full">
-                              דירוג התקדמות: <span className="font-semibold text-[#6E59A5]">{summary.progress_rating}/5</span>
-                            </div>
-                            <DialogClose asChild>
-                              <Button variant="outline">סגור</Button>
-                            </DialogClose>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4 text-right">
-                    <div>
-                      <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">סיכום המפגש</h3>
-                      <p className="text-sm text-gray-600 line-clamp-3">{summary.summary_text}</p>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-500 text-xs">
-                        {format(new Date(summary.created_at), 'HH:mm dd/MM/yyyy', { locale: he })}
-                      </span>
-                      <span className="text-[#6E59A5]">דירוג התקדמות: {summary.progress_rating}/5</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <AnimatePresence>
+            <motion.div 
+              className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2 lg:grid-cols-3'} gap-6`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ staggerChildren: 0.05 }}
+            >
+              {summaries.map((summary, index) => (
+                <motion.div
+                  key={summary.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                >
+                  <Card className="bg-white/90 hover:bg-white transition-all duration-300 hover:shadow-lg border border-gray-100 overflow-hidden">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <div className="text-right w-full">
+                          <CardTitle className="text-lg font-medium text-[#6E59A5]">
+                            {summary.session?.player?.full_name || "שחקן לא ידוע"}
+                          </CardTitle>
+                          <p className="text-sm text-gray-500">
+                            {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 mr-2">
+                          <FileText className="h-5 w-5 text-[#9b87f5]" />
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/10 transition-colors">
+                                <Eye className="h-4 w-4 text-[#7E69AB] hover:text-[#6E59A5]" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl max-h-screen">
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center justify-between mb-4 text-right">
+                                  <span className="text-[#6E59A5]">סיכום מפגש - {summary.session?.player?.full_name || "שחקן לא ידוע"}</span>
+                                  <span className="text-sm font-normal text-gray-500">
+                                    {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
+                                  </span>
+                                </DialogTitle>
+                              </DialogHeader>
+                              {renderSummaryDetails(summary)}
+                              <div className="flex items-center justify-between pt-4 border-t mt-4">
+                                <div className="text-gray-600 text-right w-full">
+                                  דירוג התקדמות: <span className="font-semibold text-[#6E59A5]">{summary.progress_rating}/5</span>
+                                </div>
+                                <DialogClose asChild>
+                                  <Button variant="outline">סגור</Button>
+                                </DialogClose>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4 text-right">
+                        <div>
+                          <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">סיכום המפגש</h3>
+                          <p className="text-sm text-gray-600 line-clamp-3 bg-gray-50 p-2 rounded-lg">{summary.summary_text}</p>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-500 text-xs">
+                            {format(new Date(summary.created_at), 'HH:mm dd/MM/yyyy', { locale: he })}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium
+                            ${summary.progress_rating >= 4 ? 'bg-green-100 text-green-800' : 
+                              summary.progress_rating >= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
+                            דירוג התקדמות: {summary.progress_rating}/5
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         ) : (
-          <div className="text-center py-12 bg-white/80 rounded-lg shadow">
+          <motion.div 
+            className="text-center py-12 bg-white/80 rounded-lg shadow-md"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">לא נמצאו סיכומי מפגשים</h3>
             <p className="text-gray-500">
@@ -286,7 +322,7 @@ const AllMeetingSummaries = () => {
                 ? 'אין סיכומי מפגשים לשחקן זה' 
                 : 'לא נמצאו סיכומי מפגשים במערכת'}
             </p>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

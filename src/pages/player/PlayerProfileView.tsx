@@ -6,7 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideosTab } from "@/components/player/VideosTab";
-import { Bell, User, LogOut, Calendar, Target, FileText, Video, CheckSquare, PencilLine, Clock, ArrowRight, ExternalLink } from 'lucide-react';
+import { useScreenSize } from "@/hooks/use-screen-size";
+import { Bell, User, LogOut, Calendar, Target, FileText, Video, CheckSquare, PencilLine, Clock, ArrowRight, ExternalLink, ChevronRight } from 'lucide-react';
 import { 
   Popover, 
   PopoverContent, 
@@ -14,7 +15,9 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { AnimatePresence, motion } from "framer-motion";
 import type { Json } from "@/integrations/supabase/types";
 
 interface PlayerData {
@@ -55,6 +58,7 @@ interface PlayerGoals {
 
 const PlayerProfileView = () => {
   const navigate = useNavigate();
+  const { isMobile } = useScreenSize();
   const [player, setPlayer] = useState<PlayerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
@@ -324,8 +328,8 @@ const PlayerProfileView = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-page">
-        <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#F2FCE2] to-[#E5DEFF]">
+        <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
   }
@@ -334,11 +338,11 @@ const PlayerProfileView = () => {
     return (
       <div className="page-container">
         <div className="content-container">
-          <Card>
+          <Card className="shadow-lg">
             <CardContent className="p-8 text-center">
-              <p className="text-red-500 mb-4">לא נמצאו פרטי שחקן. אנא התחבר מחדש.</p>
-              <Button onClick={() => navigate("/player-auth")}>
-                חזרה ל��ף ההתחברות
+              <p className="text-red-500 mb-4 font-medium">לא נמצאו פרטי שחקן. אנא התחבר מחדש.</p>
+              <Button onClick={() => navigate("/player-auth")} className="bg-primary hover:bg-primary/90 transition-all">
+                חזרה לדף ההתחברות
               </Button>
             </CardContent>
           </Card>
@@ -355,62 +359,111 @@ const PlayerProfileView = () => {
   };
 
   const renderTabs = () => (
-    <TabsList className="tabs-list w-full rounded-xl grid grid-cols-7 md:grid-cols-7 lg:grid-cols-7 text-xs md:text-sm">
+    <TabsList className={`tabs-list w-full rounded-xl grid ${isMobile ? 'grid-cols-4 gap-1 p-1' : 'grid-cols-7 gap-0'} text-xs font-medium`}>
       <TabsTrigger value="profile" className="tab-trigger">
-        <User className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-        <span className="hidden sm:inline">פרופיל</span>
-        <span className="sm:hidden">פרופיל</span>
+        <User className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
+        {!isMobile && <span className="hidden sm:inline">פרופיל</span>}
       </TabsTrigger>
-      <TabsTrigger value="videos" className="tab-trigger">
-        <Video className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-        <span className="hidden sm:inline">סרטונים</span>
-        <span className="sm:hidden">סרטונים</span>
+      <TabsTrigger value="videos" className="tab-trigger relative">
+        <Video className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
+        {!isMobile && <span className="hidden sm:inline">סרטונים</span>}
         {unreadCount > 0 && (
-          <Badge variant="default" className="ml-1 md:ml-2 bg-red-500 h-4 min-w-4 md:h-5 md:min-w-5 flex items-center justify-center text-[10px] md:text-xs">
+          <Badge variant="default" className={`absolute ${isMobile ? '-top-1 -right-1' : 'ml-1 md:ml-2'} bg-red-500 h-4 min-w-4 md:h-5 md:min-w-5 flex items-center justify-center text-[10px] md:text-xs`}>
             {unreadCount}
           </Badge>
         )}
       </TabsTrigger>
       <TabsTrigger value="sessions" className="tab-trigger">
-        <Calendar className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-        <span className="hidden sm:inline">מפגשים</span>
-        <span className="sm:hidden">מפגשים</span>
+        <Calendar className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
+        {!isMobile && <span className="hidden sm:inline">מפגשים</span>}
       </TabsTrigger>
       <TabsTrigger value="summaries" className="tab-trigger">
-        <FileText className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-        <span className="hidden sm:inline">סיכומים</span>
-        <span className="sm:hidden">סיכומים</span>
+        <FileText className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
+        {!isMobile && <span className="hidden sm:inline">סיכומים</span>}
       </TabsTrigger>
-      <TabsTrigger value="belief-breaking" className="tab-trigger">
-        <ExternalLink className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-        <span className="hidden sm:inline">שחרור אמונות</span>
-        <span className="sm:hidden">אמונות</span>
-      </TabsTrigger>
-      <TabsTrigger value="goals" className="tab-trigger">
-        <Target className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-        <span className="hidden sm:inline">מטרות</span>
-        <span className="sm:hidden">מטרות</span>
-      </TabsTrigger>
-      <TabsTrigger value="game-prep" className="tab-trigger">
-        <CheckSquare className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-        <span className="hidden sm:inline">הכנה למשחק</span>
-        <span className="sm:hidden">הכנה</span>
-      </TabsTrigger>
+      {!isMobile && (
+        <>
+          <TabsTrigger value="belief-breaking" className="tab-trigger">
+            <ExternalLink className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">שחרור אמונות</span>
+          </TabsTrigger>
+          <TabsTrigger value="goals" className="tab-trigger">
+            <Target className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">מטרות</span>
+          </TabsTrigger>
+          <TabsTrigger value="game-prep" className="tab-trigger">
+            <CheckSquare className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">הכנה למשחק</span>
+          </TabsTrigger>
+        </>
+      )}
     </TabsList>
   );
 
+  // Mobile-specific navigation for tabs not shown in primary tab list
+  const renderMobileMoreMenu = () => {
+    if (!isMobile) return null;
+    
+    return (
+      <div className="grid grid-cols-3 gap-3 mt-4">
+        <Card 
+          className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white/90 hover:bg-white"
+          onClick={() => setActiveTab('belief-breaking')}
+        >
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+              <ExternalLink className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-xs font-medium text-gray-800">שחרור אמונות</p>
+          </CardContent>
+        </Card>
+        
+        <Card 
+          className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white/90 hover:bg-white"
+          onClick={() => setActiveTab('goals')}
+        >
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+              <Target className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-xs font-medium text-gray-800">מטרות</p>
+          </CardContent>
+        </Card>
+        
+        <Card 
+          className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white/90 hover:bg-white"
+          onClick={() => setActiveTab('game-prep')}
+        >
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+              <CheckSquare className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-xs font-medium text-gray-800">הכנה למשחק</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const cardAnimationProps = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+    transition: { duration: 0.3 }
+  };
+
   return (
-    <div className="page-container">
-      <header className="w-full bg-primary text-white py-5 shadow-md sticky top-0 z-10">
+    <div className="min-h-screen bg-gradient-to-br from-[#F2FCE2] to-[#E5DEFF]">
+      <header className="w-full bg-primary text-white py-3 shadow-lg sticky top-0 z-10 backdrop-blur-sm bg-opacity-95">
         <div className="container mx-auto px-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">פרופיל שחקן</h1>
-          <div className="flex items-center gap-3">
+          <h1 className="text-lg md:text-2xl font-bold">פרופיל שחקן</h1>
+          <div className="flex items-center gap-2">
             <Popover open={showNotifications} onOpenChange={setShowNotifications}>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative text-white hover:bg-primary-light/20">
+                <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10 transition-colors">
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[18px] h-[18px] bg-red-500" variant="default">
+                    <Badge className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[18px] h-[18px] bg-red-500 shadow-sm" variant="default">
                       {unreadCount}
                     </Badge>
                   )}
@@ -424,60 +477,67 @@ const PlayerProfileView = () => {
                       <p>אין התראות חדשות</p>
                     </div>
                   ) : (
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                      {notifications.map(notification => (
-                        <div 
-                          key={notification.id} 
-                          className={`p-3 border rounded-lg ${notification.read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'} cursor-pointer hover:shadow-sm transition-all`}
-                          onClick={() => {
-                            if (notification.type === 'video') {
-                              markNotificationAsRead(notification.id);
-                              setActiveTab('videos');
-                              setShowNotifications(false);
-                            }
-                          }}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex gap-3 items-start">
-                              <div className="bg-primary/10 p-2 rounded-full text-primary">
-                                <Video className="h-4 w-4" />
+                    <ScrollArea className="max-h-[300px] overflow-y-auto">
+                      <div className="space-y-2">
+                        {notifications.map(notification => (
+                          <div 
+                            key={notification.id} 
+                            className={`p-3 border rounded-lg ${notification.read ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'} cursor-pointer hover:shadow-sm transition-all`}
+                            onClick={() => {
+                              if (notification.type === 'video') {
+                                markNotificationAsRead(notification.id);
+                                setActiveTab('videos');
+                                setShowNotifications(false);
+                              }
+                            }}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex gap-3 items-start">
+                                <div className="bg-primary/10 p-2 rounded-full text-primary">
+                                  <Video className="h-4 w-4" />
+                                </div>
+                                <div>
+                                  <p className="font-medium">{notification.title}</p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {notification.type === 'video' ? 'סרטון חדש' : 'הודעה חדשה'}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-medium">{notification.title}</p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {notification.type === 'video' ? 'סרטון חדש' : 'הודעה חדשה'}
-                                </p>
-                              </div>
+                              {!notification.read && (
+                                <Badge variant="default" className="text-xs bg-primary shadow-sm">חדש</Badge>
+                              )}
                             </div>
-                            {!notification.read && (
-                              <Badge variant="default" className="text-xs bg-primary">חדש</Badge>
-                            )}
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   )}
                 </div>
               </PopoverContent>
             </Popover>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:bg-primary-light/20">
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:bg-white/10 transition-colors">
               <LogOut className="h-4 w-4 mr-2" />
-              התנתק
+              {!isMobile && "התנתק"}
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="content-container">
-        <Card className="mb-6 overflow-hidden shadow-card">
-          <div className="relative h-24 bg-gradient-to-r from-primary to-primary-light"></div>
-          <CardContent className="p-0">
+      <div className="container mx-auto px-4 py-6">
+        <motion.div 
+          className="mb-6 overflow-hidden shadow-lg rounded-xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="relative h-24 md:h-32 bg-gradient-to-r from-primary to-[#7E69AB] rounded-t-xl"></div>
+          <div className="bg-white rounded-b-xl p-0">
             <div className="flex flex-col md:flex-row items-center gap-6 p-6 relative -mt-12">
-              <div className="w-24 h-24 relative rounded-full overflow-hidden flex-shrink-0 border-4 border-white bg-white shadow-md">
+              <div className="w-24 h-24 relative rounded-full overflow-hidden flex-shrink-0 border-4 border-white bg-white shadow-lg">
                 <img
                   src={profileImageUrl}
                   alt={player.full_name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover rounded-full"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = 'https://via.placeholder.com/150?text=' + encodeURIComponent(player.full_name[0] || 'U');
@@ -488,397 +548,178 @@ const PlayerProfileView = () => {
                 <h2 className="text-2xl font-bold text-gray-900">{player.full_name}</h2>
                 <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
                   {player.sport_field && (
-                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 shadow-sm">
                       {player.sport_field}
                     </Badge>
                   )}
                   {player.club && (
-                    <Badge variant="outline" className="bg-gray-100 text-gray-800">
+                    <Badge variant="outline" className="bg-gray-100 text-gray-800 shadow-sm">
                       {player.club}
                     </Badge>
                   )}
                   {player.year_group && (
-                    <Badge variant="outline" className="bg-gray-100 text-gray-800">
+                    <Badge variant="outline" className="bg-gray-100 text-gray-800 shadow-sm">
                       {player.year_group}
                     </Badge>
                   )}
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </motion.div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 player-tabs modern-tabs">
           {renderTabs()}
+          {isMobile && renderMobileMoreMenu()}
           
-          <TabsContent value="profile" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary" />
-                  פרטים אישיים
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="data-label">שם מלא</p>
-                  <p className="data-value">{player.full_name}</p>
-                </div>
-                <div>
-                  <p className="data-label">כתובת אימייל</p>
-                  <p dir="ltr" className="font-mono text-sm data-value">{player.email}</p>
-                </div>
-                <div>
-                  <p className="data-label">ענף ספורט</p>
-                  <p className="data-value">{player.sport_field || "-"}</p>
-                </div>
-                <div>
-                  <p className="data-label">מועדון</p>
-                  <p className="data-value">{player.club || "-"}</p>
-                </div>
-                <div>
-                  <p className="data-label">שכבת גיל</p>
-                  <p className="data-value">{player.year_group || "-"}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="videos">
-            <VideosTab 
-              coachId={player?.coach_id || ''} 
-              playerId={player?.id}
-              onWatchVideo={(videoId) => {
-                const notificationIndex = notifications.findIndex(n => n.id === videoId && !n.read);
-                if (notificationIndex !== -1) {
-                  markNotificationAsRead(videoId);
-                }
-              }}
-            />
-          </TabsContent>
-          
-          <TabsContent value="sessions">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  מפגשים מתוכננים
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {upcomingSessions.length > 0 ? (
-                  <div className="space-y-4">
-                    {upcomingSessions.map((session) => (
-                      <div key={session.id} className="p-4 border border-gray-100 rounded-lg hover:shadow-sm transition-all">
-                        <div className="flex flex-col md:flex-row justify-between gap-4">
-                          <div className="flex gap-4 items-start">
-                            <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
-                              <Clock className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-lg">{formatDate(session.session_date)}</p>
-                              <p className="text-gray-500">{session.session_time}</p>
-                              {session.location && (
-                                <p className="text-gray-700 mt-1">מיקום: {session.location}</p>
-                              )}
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="status-badge active self-start md:self-center">
-                            מתוכנן
-                          </Badge>
-                        </div>
-                        {session.notes && (
-                          <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
-                            <p className="text-sm text-gray-600">{session.notes}</p>
-                          </div>
-                        )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <TabsContent value="profile" className="space-y-4 mt-4">
+                <Card className="overflow-hidden shadow-md">
+                  <CardHeader className="bg-gradient-to-r from-[#F2FCE2]/50 to-[#E5DEFF]/50 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <User className="h-5 w-5 text-primary" />
+                      פרטים אישיים
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-5">
+                    <div className="space-y-4">
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">שם מלא</p>
+                        <p className="font-medium">{player.full_name}</p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 rounded-lg p-8 text-center">
-                    <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500">אין מפגשים מתוכננים כרגע</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="summaries">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  סיכומי מפגשים אחרונים
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {sessionSummaries.length > 0 ? (
-                  <div className="space-y-4">
-                    {sessionSummaries.map((summary) => (
-                      <div key={summary.id} className="p-4 border border-gray-100 rounded-lg hover:shadow-sm transition-all">
-                        <div className="flex flex-col md:flex-row justify-between gap-4 mb-3">
-                          <div className="flex gap-4 items-start">
-                            <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
-                              <FileText className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-lg">
-                                {summary.session && formatDate(summary.session.session_date)}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge 
-                            variant="outline" 
-                            className={`rounded-full px-3 py-1 ${summary.progress_rating >= 4 ? 'bg-green-100 text-green-700' : summary.progress_rating >= 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'} self-start md:self-center`}
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">כתובת אימייל</p>
+                        <p dir="ltr" className="font-mono text-sm">{player.email}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">ענף ספורט</p>
+                        <p className="font-medium">{player.sport_field || "-"}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-xs text-gray-500 mb-1">מועדון</p>
+                          <p className="font-medium">{player.club || "-"}</p>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-xs text-gray-500 mb-1">שכבת גיל</p>
+                          <p className="font-medium">{player.year_group || "-"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="videos">
+                <VideosTab 
+                  coachId={player?.coach_id || ''} 
+                  playerId={player?.id}
+                  onWatchVideo={(videoId) => {
+                    const notificationIndex = notifications.findIndex(n => n.id === videoId && !n.read);
+                    if (notificationIndex !== -1) {
+                      markNotificationAsRead(videoId);
+                    }
+                  }}
+                />
+              </TabsContent>
+              
+              <TabsContent value="sessions">
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gradient-to-r from-[#F2FCE2]/50 to-[#E5DEFF]/50 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Calendar className="h-5 w-5 text-primary" />
+                      מפגשים מתוכננים
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {upcomingSessions.length > 0 ? (
+                      <div className="space-y-4">
+                        {upcomingSessions.map((session) => (
+                          <motion.div 
+                            key={session.id} 
+                            className="p-4 border border-gray-100 rounded-lg hover:shadow-md transition-all bg-white"
+                            {...cardAnimationProps}
                           >
-                            דירוג התקדמות: {summary.progress_rating}/5
-                          </Badge>
-                        </div>
-                        
-                        <div className="bg-gray-50 p-3 rounded-lg text-gray-700 text-sm">
-                          {summary.summary_text}
-                        </div>
-                        
-                        {summary.achieved_goals && summary.achieved_goals.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
-                            <p className="text-sm font-medium mb-1 text-gray-700">מטרות שהושגו:</p>
-                            <ul className="list-disc list-inside text-sm text-gray-600">
-                              {summary.achieved_goals.map((goal, index) => (
-                                <li key={index} className="py-0.5">{goal}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                            <div className="flex flex-col md:flex-row justify-between gap-4">
+                              <div className="flex gap-4 items-start">
+                                <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
+                                  <Clock className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-lg">{formatDate(session.session_date)}</p>
+                                  <p className="text-gray-500">{session.session_time}</p>
+                                  {session.location && (
+                                    <p className="text-gray-700 mt-1">מיקום: {session.location}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="status-badge active self-start md:self-center shadow-sm">
+                                מתוכנן
+                              </Badge>
+                            </div>
+                            {session.notes && (
+                              <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
+                                <p className="text-sm text-gray-600">{session.notes}</p>
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 rounded-lg p-8 text-center">
-                    <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500">אין סיכומי מפגשים זמינים כרגע</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="belief-breaking">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ExternalLink className="h-5 w-5 text-primary" />
-                  טופס לשחרור האמונות המגבילות
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center space-y-6 py-8">
-                <div className="max-w-2xl text-center space-y-4">
-                  <p className="text-lg text-gray-700">
-                    שיטת ביירון קייטי מאפשרת לך לזהות ולשחרר אמונות מגבילות שעלולות לעכב את הביצועים והפוטנציאל שלך.
-                  </p>
-                  <p className="text-gray-600">
-                    באמצעות ארבע שאלות פשוטות וסיבוב התודעה (היפוך), תוכל/י לבחון את האמונות והמחשבות שלך ולגלות אמיתות עמוקות יותר.
-                  </p>
-                </div>
-                
-                <div className="flex flex-col md:flex-row max-w-3xl w-full items-center gap-6 p-6 bg-primary/5 rounded-xl border border-primary/10">
-                  <div className="flex-shrink-0 bg-white p-4 rounded-full shadow-sm">
-                    <ExternalLink className="h-16 w-16 text-primary" />
-                  </div>
-                  <div className="flex-1 space-y-4 text-center md:text-right">
-                    <h3 className="text-xl font-medium text-primary">טופס "העבודה" של ביירון קייטי</h3>
-                    <p className="text-gray-600">
-                      לחץ על הכפתור מטה כדי לפתוח את הטופס המקוון ולהתחיל בתהליך השחרור של אמונות מגבילות.
-                    </p>
-                    <Button 
-                      size="lg"
-                      className="gap-2"
-                      onClick={() => window.open('https://belief-breaker.lovable.app/', '_blank')}
-                    >
-                      פתח את הטופס המקוון
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="mt-6 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm max-w-2xl">
-                  <p>
-                    <strong>טיפ:</strong> מומלץ להשתמש בטופס זה באופן קבוע, במיוחד לפני אירועים חשובים או כאשר מתמודדים עם מחשבות מגבילות ספציפיות.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="goals">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-primary" />
-                  המטרות שלי
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* Short-term goals */}
-                <div className="space-y-4 mb-8">
-                  <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
-                    <Badge variant="outline" className="font-normal bg-orange-50 text-orange-700 border-orange-200">
-                      קצר טווח
-                    </Badge>
-                    מטרות קצרות טווח
-                  </h3>
-                  <div className="space-y-3">
-                    {shortTermGoals.map(goal => (
-                      <div key={goal.id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:shadow-sm transition-all border border-gray-100">
-                        <div className="flex-1">
-                          {editingGoal === goal.id ? (
-                            <Textarea 
-                              value={editedGoalText} 
-                              onChange={(e) => setEditedGoalText(e.target.value)}
-                              className="min-h-[60px]"
-                            />
-                          ) : (
-                            <p className={`${goal.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-700'}`}>
-                              {goal.title}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                          {editingGoal === goal.id ? (
-                            <Button 
-                              size="sm" 
-                              onClick={() => handleSaveGoal(goal.id, "short")}
-                              disabled={savingGoals}
-                            >
-                              {savingGoals ? "שומר..." : "שמור"}
-                            </Button>
-                          ) : (
-                            <>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                onClick={() => handleEditGoal(goal.id, goal.title)}
-                                className="hover:bg-gray-100"
-                              >
-                                <PencilLine className="h-4 w-4 text-gray-500" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant={goal.status === 'completed' ? 'default' : 'outline'}
-                                onClick={() => handleToggleGoalStatus(goal.id, "short")}
-                                className={goal.status === 'completed' ? '' : 'hover:bg-primary/5'}
-                                disabled={savingGoals}
-                              >
-                                {goal.status === 'completed' ? 'הושלם' : 'סמן כהושלם'}
-                              </Button>
-                            </>
-                          )}
-                        </div>
+                    ) : (
+                      <div className="bg-gray-50 rounded-lg p-8 text-center">
+                        <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500">אין מפגשים מתוכננים כרגע</p>
                       </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Long-term goals */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
-                    <Badge variant="outline" className="font-normal bg-blue-50 text-blue-700 border-blue-200">
-                      ארוך טווח
-                    </Badge>
-                    מטרות ארוכות טווח
-                  </h3>
-                  <div className="space-y-3">
-                    {longTermGoals.map(goal => (
-                      <div key={goal.id} className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg hover:shadow-sm transition-all border border-gray-100">
-                        <div className="flex-1">
-                          {editingGoal === goal.id ? (
-                            <Textarea 
-                              value={editedGoalText} 
-                              onChange={(e) => setEditedGoalText(e.target.value)}
-                              className="min-h-[60px]"
-                            />
-                          ) : (
-                            <p className={`${goal.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-700'}`}>
-                              {goal.title}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                          {editingGoal === goal.id ? (
-                            <Button 
-                              size="sm" 
-                              onClick={() => handleSaveGoal(goal.id, "long")}
-                              disabled={savingGoals}
-                            >
-                              {savingGoals ? "שומר..." : "שמור"}
-                            </Button>
-                          ) : (
-                            <>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                onClick={() => handleEditGoal(goal.id, goal.title)}
-                                className="hover:bg-gray-100"
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="summaries">
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gradient-to-r from-[#F2FCE2]/50 to-[#E5DEFF]/50 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <FileText className="h-5 w-5 text-primary" />
+                      סיכומי מפגשים אחרונים
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {sessionSummaries.length > 0 ? (
+                      <div className="space-y-4">
+                        {sessionSummaries.map((summary) => (
+                          <motion.div 
+                            key={summary.id} 
+                            className="p-4 border border-gray-100 rounded-lg hover:shadow-md transition-all bg-white"
+                            {...cardAnimationProps}
+                          >
+                            <div className="flex flex-col md:flex-row justify-between gap-4 mb-3">
+                              <div className="flex gap-4 items-start">
+                                <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
+                                  <FileText className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-lg">
+                                    {summary.session && formatDate(summary.session.session_date)}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge 
+                                variant="outline" 
+                                className={`rounded-full px-3 py-1 ${summary.progress_rating >= 4 ? 'bg-green-100 text-green-700' : summary.progress_rating >= 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'} self-start md:self-center shadow-sm`}
                               >
-                                <PencilLine className="h-4 w-4 text-gray-500" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant={goal.status === 'completed' ? 'default' : 'outline'}
-                                onClick={() => handleToggleGoalStatus(goal.id, "long")}
-                                className={goal.status === 'completed' ? '' : 'hover:bg-primary/5'}
-                                disabled={savingGoals}
-                              >
-                                {goal.status === 'completed' ? 'הושלם' : 'סמן כהושלם'}
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="game-prep">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckSquare className="h-5 w-5 text-primary" />
-                  הכנה למשחק
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center md:items-start text-center md:text-right">
-                <div className="max-w-xl w-full mb-6">
-                  <p className="text-gray-600 mb-4">מלא טופס הכנה מנטלית לפני משחק חשוב. הטופס יעזור לך להתכונן באופן מנטלי למשחק ולשפר את הביצועים שלך.</p>
-                </div>
-                
-                <div className="bg-primary/5 rounded-xl p-6 border border-primary/10 w-full max-w-xl shadow-sm mb-6">
-                  <div className="flex flex-col md:flex-row items-center gap-4">
-                    <div className="bg-primary/10 p-3 rounded-full">
-                      <CheckSquare className="h-8 w-8 text-primary" />
-                    </div>
-                    <div className="flex-1 text-center md:text-right">
-                      <h3 className="text-lg font-medium text-gray-900">טופס הכנה מנטלית למשחק</h3>
-                      <p className="text-gray-500 text-sm mt-1">מילוי הטופס יעזור לך להתכונן באופן מיטבי למשחק</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <Button onClick={() => navigate('/game-prep')} className="gap-2">
-                  פתח טופס הכנה למשחק
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
-};
-
-export default PlayerProfileView;
+                                דירוג התקדמות: {summary.progress_rating}/5
+                              </Badge>
+                            </div>
+                            
+                            <div className="bg-gray-50 p-3 rounded-lg text-gray-700 text-sm">
+                              {summary.summary_text}
+                            </div>
+                            
+                            {summary.achieved_goals && summary.ach
