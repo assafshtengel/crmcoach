@@ -48,7 +48,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         return;
       }
       
-      // First fetch manually assigned videos from player_videos
       const { data: playerVideos, error: playerVideosError } = await supabase
         .from("player_videos")
         .select(`
@@ -67,11 +66,13 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       console.log("Player videos data:", playerVideos);
       
-      // Get complete video objects from manually assigned videos
+      if (!playerVideos || playerVideos.length === 0) {
+        console.log("No player_videos entries found for player ID:", playerId);
+      }
+      
       const manuallyAssignedVideos = playerVideos
-        ?.filter(pv => pv.videos) // Filter out any null video references
+        ?.filter(pv => pv.videos)
         .map(pv => {
-          // Make sure we have the full video object with all required fields
           if (pv.videos) {
             return {
               ...pv.videos,
@@ -83,8 +84,9 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           return null;
         })
         .filter(Boolean) || [];
-        
-      // Then fetch auto-assigned videos that have been sent
+      
+      console.log("Valid manually assigned videos:", manuallyAssignedVideos.length);
+      
       const { data: autoAssignments, error: autoAssignmentsError } = await supabase
         .from("auto_video_assignments")
         .select(`
@@ -104,32 +106,43 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       console.log("Auto-assigned videos data:", autoAssignments);
       
-      // Check if we have entries in auto_video_assignments but no videos data
-      const missingVideoIds = autoAssignments
-        ?.filter(aa => !aa.videos && aa.video_id)
-        .map(aa => aa.video_id) || [];
+      const videoIds = new Set<string>();
+      let missingVideoIds: string[] = [];
       
-      let additionalVideos: any[] = [];
+      playerVideos?.forEach(pv => {
+        if (pv.video_id && !pv.videos) {
+          videoIds.add(pv.video_id);
+          missingVideoIds.push(pv.video_id);
+        }
+      });
+      
+      autoAssignments?.forEach(aa => {
+        if (aa.video_id && !aa.videos && !videoIds.has(aa.video_id)) {
+          videoIds.add(aa.video_id);
+          missingVideoIds.push(aa.video_id);
+        }
+      });
+      
+      console.log("Missing video IDs to fetch:", missingVideoIds);
+      
+      let missingVideos: any[] = [];
       
       if (missingVideoIds.length > 0) {
-        console.log("Fetching missing videos:", missingVideoIds);
-        const { data: missingVideos, error: missingError } = await supabase
+        const { data: fetchedVideos, error: missingError } = await supabase
           .from("videos")
           .select("*")
           .in("id", missingVideoIds);
           
-        if (!missingError && missingVideos) {
-          additionalVideos = missingVideos.map(v => ({
-            ...v,
-            is_auto_scheduled: true
-          }));
-          console.log("Found missing videos:", additionalVideos);
+        if (missingError) {
+          console.error("Error fetching missing videos:", missingError);
+        } else if (fetchedVideos) {
+          missingVideos = fetchedVideos;
+          console.log("Fetched missing videos:", missingVideos.length);
         }
       }
       
-      // Get complete video objects from auto-assigned videos
       const autoAssignedVideos = autoAssignments
-        ?.filter(aa => aa.videos && aa.sent) // Only include sent videos with valid data
+        ?.filter(aa => aa.videos && aa.sent)
         .map(aa => {
           if (aa.videos) {
             return {
@@ -141,10 +154,26 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         })
         .filter(Boolean) || [];
       
-      // Combine all videos, removing duplicates by ID
+      console.log("Valid auto-assigned videos:", autoAssignedVideos.length);
+      
+      const mappedMissingVideos = missingVideos.map(mv => {
+        const playerVideo = playerVideos?.find(pv => pv.video_id === mv.id);
+        if (playerVideo) {
+          return {
+            ...mv,
+            watched: playerVideo.watched,
+            watched_at: playerVideo.watched_at,
+            player_video_id: playerVideo.id
+          };
+        }
+        return mv;
+      });
+      
+      console.log("Mapped missing videos:", mappedMissingVideos.length);
+      
       const videoMap = new Map<string, Video>();
       
-      [...manuallyAssignedVideos, ...autoAssignedVideos, ...additionalVideos].forEach(video => {
+      [...manuallyAssignedVideos, ...autoAssignedVideos, ...mappedMissingVideos].forEach(video => {
         if (video && video.id) {
           videoMap.set(video.id, video as Video);
         }
@@ -152,16 +181,14 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       const allAssignedVideos = Array.from(videoMap.values());
       
-      console.log("Combined assigned videos:", allAssignedVideos);
+      console.log("Combined assigned videos:", allAssignedVideos.length);
       
-      // If we got no videos from player assignments, try fetching coach videos
       if (allAssignedVideos.length === 0) {
         console.log("No assigned videos found, fetching coach videos instead");
-        await fetchAllVideos();
+        await fetchCoachVideos();
         return;
       }
       
-      // Verify all videos have required fields
       const validVideos = allAssignedVideos.filter(video => 
         video && video.id && video.title && video.created_at
       );
@@ -172,7 +199,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         setActiveVideo(null);
         setError("לא נמצאו סרטונים זמינים");
       } else {
-        // Sort by date, newest first
         validVideos.sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
@@ -185,17 +211,20 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       setError("לא ניתן לטעון את הסרטונים");
       toast({
         title: "שגיאה בטעינת סרטונים",
-        description: "לא ניתן לטעון את הסרטונים",
+        description: "לא ניתן לטעון את הסרטונים, מנסה לטעון סרטונים מהמאמן",
         variant: "destructive"
       });
+      
+      await fetchCoachVideos();
     } finally {
       setLoading(false);
     }
   };
   
-  const fetchAllVideos = async () => {
+  const fetchCoachVideos = async () => {
     try {
-      // Fetch both coach-specific and admin videos
+      console.log("Fetching coach videos as fallback");
+      
       const { data: coachVideos, error: coachVideosError } = await supabase
         .from("videos")
         .select("*")
@@ -208,6 +237,34 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         throw coachVideosError;
       }
       
+      console.log("Coach videos:", coachVideos?.length || 0);
+      
+      if (!coachVideos || coachVideos.length === 0) {
+        console.log("No coach videos found, fetching admin videos");
+        await fetchAdminVideos();
+        return;
+      }
+      
+      setVideos(coachVideos);
+      
+      if (coachVideos.length > 0) {
+        setActiveVideo(coachVideos[0]);
+        setError(null);
+      } else {
+        setActiveVideo(null);
+        setError("לא נמצאו סרטונים זמינים");
+      }
+    } catch (error) {
+      console.error("Error fetching coach videos:", error);
+      
+      await fetchAdminVideos();
+    }
+  };
+  
+  const fetchAdminVideos = async () => {
+    try {
+      console.log("Fetching admin videos as final fallback");
+      
       const { data: adminVideos, error: adminVideosError } = await supabase
         .from("videos")
         .select("*")
@@ -219,34 +276,30 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         throw adminVideosError;
       }
       
-      console.log("Coach videos:", coachVideos?.length || 0, "Admin videos:", adminVideos?.length || 0);
+      console.log("Admin videos:", adminVideos?.length || 0);
       
-      const allVideos = [...(coachVideos || []), ...(adminVideos || [])];
+      setVideos(adminVideos || []);
       
-      if (allVideos.length === 0) {
-        setError("לא נמצאו סרטונים זמינים");
-        setVideos([]);
-        setActiveVideo(null);
-        return;
-      }
-      
-      allVideos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      
-      // Verify all videos have required fields
-      const validVideos = allVideos.filter(video => 
-        video && video.id && video.title && video.created_at
-      );
-      
-      setVideos(validVideos);
-      
-      if (validVideos.length > 0) {
-        setActiveVideo(validVideos[0]);
+      if (adminVideos && adminVideos.length > 0) {
+        setActiveVideo(adminVideos[0]);
+        setError(null);
       } else {
         setActiveVideo(null);
-        setError("לא נמצאו סרטונים תקינים");
+        setError("לא נמצאו סרטונים זמינים");
       }
     } catch (error) {
-      console.error("Error fetching all videos:", error);
+      console.error("Error fetching admin videos:", error);
+      setVideos([]);
+      setActiveVideo(null);
+      setError("לא ניתן לטעון את הסרטונים");
+    }
+  };
+  
+  const fetchAllVideos = async () => {
+    try {
+      await fetchCoachVideos();
+    } catch (error) {
+      console.error("Error in fetchAllVideos:", error);
       setError("לא ניתן לטעון את הסרטונים");
       toast({
         title: "שגיאה בטעינת סרטונים",
@@ -269,7 +322,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     console.log("Handling watch video:", video);
     setActiveVideo(video);
     
-    // Open the video URL if it exists
     if (video.url) {
       openVideoUrl(video.url);
     } else {
@@ -284,13 +336,10 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       onWatchVideo(video.id);
     }
     
-    // If this is a player view and the video hasn't been marked as watched
     if (playerId && video.id && !video.watched) {
       if (video.player_video_id) {
-        // If we have the player_video_id, use it directly
         markVideoAsWatched(playerId, video.id, video.player_video_id);
       } else {
-        // Otherwise, mark it by player_id and video_id
         markVideoAsWatched(playerId, video.id);
       }
     }
@@ -298,8 +347,9 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
   
   const markVideoAsWatched = async (playerId: string, videoId: string, playerVideoId?: string) => {
     try {
+      console.log("Marking video as watched:", { playerId, videoId, playerVideoId });
+      
       if (playerVideoId) {
-        // Update existing record using its ID
         const { error } = await supabase
           .from('player_videos')
           .update({ 
@@ -313,7 +363,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           return;
         }
       } else {
-        // Check if this video exists in player_videos
         const { data, error } = await supabase
           .from('player_videos')
           .select('id')
@@ -327,7 +376,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         }
         
         if (data) {
-          // Update existing record
           await supabase
             .from('player_videos')
             .update({ 
@@ -336,7 +384,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
             })
             .eq('id', data.id);
         } else {
-          // Insert new record
           await supabase
             .from('player_videos')
             .insert([{ 
@@ -349,7 +396,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         }
       }
       
-      // Update local state to reflect the change
       setVideos(prevVideos => 
         prevVideos.map(v => 
           v.id === videoId ? { ...v, watched: true, watched_at: new Date().toISOString() } : v
@@ -384,9 +430,14 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     }
     
     try {
-      // Validate URL before opening
-      new URL(url); // This will throw an error if the URL is invalid
-      window.open(url, '_blank');
+      let cleanUrl = url.trim();
+      
+      if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+        cleanUrl = 'https://' + cleanUrl;
+      }
+      
+      new URL(cleanUrl);
+      window.open(cleanUrl, '_blank');
     } catch (error) {
       console.error("Invalid URL:", url, error);
       toast({
