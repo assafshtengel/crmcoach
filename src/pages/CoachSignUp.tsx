@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -166,6 +165,14 @@ export default function CoachSignUp() {
           <CardTitle className="text-center text-2xl">הרשמה כמאמן</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="p-3 bg-blue-50 text-blue-800 rounded-md mb-4 text-sm">
+            <p className="text-center">
+              ברוך הבא! עברת את אימות הקוד בהצלחה.
+              <br />
+              אנא מלא את הפרטים להרשמה כמאמן
+            </p>
+          </div>
+          
           <form onSubmit={handleSignUp} className="space-y-4">
             <div>
               <Input

@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
+import { SecurityCodeDialog } from "./SecurityCodeDialog";
 
 interface LoginFormProps {
   onSignUpClick: () => void;
@@ -15,6 +16,7 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showSecurityDialog, setShowSecurityDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -71,6 +73,11 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
     }
   };
 
+  const handleSecurityDialogSuccess = () => {
+    setShowSecurityDialog(false);
+    navigate('/signup-coach');
+  };
+
   return (
     <form onSubmit={handleLogin} className="space-y-4">
       <div>
@@ -108,12 +115,19 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
         </button>
         <button
           type="button"
-          onClick={() => navigate('/signup-coach')}
+          onClick={() => setShowSecurityDialog(true)}
           className="text-primary hover:underline"
         >
           אין לך חשבון? הירשם עכשיו
         </button>
       </div>
+      
+      {/* Security Code Dialog */}
+      <SecurityCodeDialog 
+        open={showSecurityDialog} 
+        onClose={() => setShowSecurityDialog(false)} 
+        onSuccess={handleSecurityDialogSuccess}
+      />
     </form>
   );
 };

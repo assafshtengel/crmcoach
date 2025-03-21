@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -99,6 +98,14 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
 
   return (
     <form onSubmit={handleSignUp} className="space-y-4">
+      <div className="p-3 bg-blue-50 text-blue-800 rounded-md mb-4 text-sm">
+        <p className="text-center">
+          ברוך הבא! עברת את אימות הקוד בהצלחה.
+          <br />
+          אנא מלא את הפרטים להרשמה כמאמן
+        </p>
+      </div>
+      
       <div className="space-y-2">
         <Label htmlFor="fullName">שם מלא</Label>
         <Input
