@@ -72,6 +72,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         return;
       }
       
+      // Get videos specifically assigned to this player through player_videos table
       const { data: playerVideos, error: playerVideosError } = await supabase
         .from("player_videos")
         .select(`
@@ -111,6 +112,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       console.log("Valid manually assigned videos:", manuallyAssignedVideos.length);
       
+      // Get auto-assigned videos for this specific player
       const { data: autoAssignments, error: autoAssignmentsError } = await supabase
         .from("auto_video_assignments")
         .select(`
@@ -208,8 +210,11 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       console.log("Combined assigned videos:", allAssignedVideos.length);
       
       if (allAssignedVideos.length === 0) {
-        console.log("No assigned videos found, fetching coach videos instead");
-        await fetchCoachVideos();
+        console.log("No assigned videos found, showing empty state");
+        setVideos([]);
+        setActiveVideo(null);
+        setError("לא נמצאו סרטונים זמינים עבור שחקן זה");
+        setLoading(false);
         return;
       }
       
