@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -721,5 +722,24 @@ const PlayerProfileView = () => {
                             <div className="bg-gray-50 p-3 rounded-lg text-gray-700 text-sm">
                               {summary.summary_text}
                             </div>
-                            
-                            {summary.achieved_goals && summary.ach
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 rounded-lg p-8 text-center">
+                        <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500">אין סיכומי מפגשים זמינים</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </motion.div>
+          </AnimatePresence>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default PlayerProfileView;
