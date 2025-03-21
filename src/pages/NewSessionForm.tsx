@@ -158,13 +158,26 @@ const NewSessionForm = () => {
         notes: formData.notes
       };
       
-      const { error: sessionError } = await supabase.from('sessions').insert(sessionData);
+      const { data: newSession, error: sessionError } = await supabase.from('sessions').insert(sessionData).select().single();
       
       if (sessionError) {
         console.error('Error creating session:', sessionError);
         throw new Error(sessionError.message || 'שגיאה בקביעת המפגש');
       }
 
+      const notificationData = {
+        coach_id: user.id,
+        type: 'new_session',
+        message: `נקבע מפגש חדש עם המאמן בתאריך ${formData.session_date} בשעה ${formData.session_time}`,
+        player_id: formData.player_id
+      };
+      
+      const { error: notificationError } = await supabase.from('notifications').insert(notificationData);
+      
+      if (notificationError) {
+        console.error('Error creating notification:', notificationError);
+      }
+      
       if (formData.meeting_type === 'zoom' && formData.location && !defaultZoomLink) {
         const saveDefaultLink = window.confirm('האם ברצונך לשמור את קישור הזום כקישור ברירת מחדל לשימוש בפגישות עתידיות?');
         if (saveDefaultLink) {
@@ -183,18 +196,6 @@ const NewSessionForm = () => {
         }
       }
 
-      const notificationData = {
-        coach_id: user.id,
-        type: 'new_session',
-        message: `נקבע מפגש חדש עם ${selectedPlayer?.full_name} בתאריך ${formData.session_date}`
-      };
-      
-      const { error: notificationError } = await supabase.from('notifications').insert(notificationData);
-      
-      if (notificationError) {
-        console.error('Error creating notification:', notificationError);
-      }
-      
       const meetingTypeText = formData.meeting_type === 'in_person' ? 'פרונטלי' : 'בזום';
       toast.success(`המפגש ${meetingTypeText} עם ${selectedPlayer?.full_name} נקבע בהצלחה ל-${formData.session_date} בשעה ${formData.session_time}!`);
       navigate('/');
