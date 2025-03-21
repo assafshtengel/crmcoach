@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -357,7 +356,7 @@ export default function VideoManagement() {
     if (!selectedVideo) return;
 
     try {
-      console.log("Attempting to delete video with ID:", selectedVideo.id);
+      console.log("Starting video deletion process for ID:", selectedVideo.id);
       
       // First delete auto assignments
       const { error: assignmentsAutoError } = await supabase
@@ -367,10 +366,9 @@ export default function VideoManagement() {
 
       if (assignmentsAutoError) {
         console.error('Error deleting auto assignments:', assignmentsAutoError);
-        throw assignmentsAutoError;
+      } else {
+        console.log("Auto assignments deleted successfully");
       }
-      
-      console.log("Auto assignments deleted successfully");
       
       // Get player_videos assignments to decrement counts
       const { data: assignmentsData, error: assignmentsError } = await supabase
@@ -380,36 +378,35 @@ export default function VideoManagement() {
 
       if (assignmentsError) {
         console.error('Error fetching video assignments:', assignmentsError);
-        throw assignmentsError;
-      }
-      
-      console.log("Found assignments to delete:", assignmentsData?.length || 0);
+      } else {
+        console.log("Found assignments to delete:", assignmentsData?.length || 0);
 
-      // Decrement video counts for each player
-      for (const assignment of (assignmentsData || [])) {
-        const { error: decrementError } = await supabase.rpc(
-          'decrement_player_video_count',
-          { player_id_param: assignment.player_id }
-        );
-        
-        if (decrementError) {
-          console.error('Error decrementing video count:', decrementError);
-          // Continue with deletion even if count update fails
+        // Decrement video counts for each player
+        if (assignmentsData && assignmentsData.length > 0) {
+          for (const assignment of assignmentsData) {
+            const { error: decrementError } = await supabase.rpc(
+              'decrement_player_video_count',
+              { player_id_param: assignment.player_id }
+            );
+            
+            if (decrementError) {
+              console.error('Error decrementing video count:', decrementError);
+            }
+          }
+        }
+
+        // Delete player_videos assignments
+        const { error: deleteAssignmentsError } = await supabase
+          .from('player_videos')
+          .delete()
+          .eq('video_id', selectedVideo.id);
+
+        if (deleteAssignmentsError) {
+          console.error('Error deleting video assignments:', deleteAssignmentsError);
+        } else {
+          console.log("All video assignments deleted successfully");
         }
       }
-
-      // Delete assignments
-      const { error: deleteAssignmentsError } = await supabase
-        .from('player_videos')
-        .delete()
-        .eq('video_id', selectedVideo.id);
-
-      if (deleteAssignmentsError) {
-        console.error('Error deleting video assignments:', deleteAssignmentsError);
-        throw deleteAssignmentsError;
-      }
-      
-      console.log("All video assignments deleted successfully");
 
       // Finally delete the video itself
       const { error: deleteVideoError } = await supabase
@@ -525,7 +522,7 @@ export default function VideoManagement() {
         }
       }
 
-      // Update video count for each player
+      // Update video count for each player and send notifications
       for (const playerId of newAssignments) {
         const { error: incrementError } = await supabase.rpc(
           'increment_player_video_count',
@@ -535,13 +532,6 @@ export default function VideoManagement() {
         if (incrementError) console.error('Error incrementing video count:', incrementError);
         
         // Send notification to the player about the new video
-        const { data: playerData } = await supabase
-          .from('players')
-          .select('full_name')
-          .eq('id', playerId)
-          .single();
-        
-        // Add a notification for the new video assignment
         const notificationData = {
           coach_id: user.id,
           type: 'video_assigned',
@@ -960,142 +950,4 @@ export default function VideoManagement() {
           <DialogHeader>
             <DialogTitle>מחיקת סרטון</DialogTitle>
             <DialogDescription>
-              האם אתה בטוח שברצונך למחוק את הסרטון? פעולה זו אינה ניתנת לביטול.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end space-x-2 rtl:space-x-reverse">
-            <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>ביטול</Button>
-            <Button variant="destructive" onClick={handleDeleteVideo}>
-              מחק סרטון
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={openAssignDialog} onOpenChange={setOpenAssignDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>הקצה סרטון לשחקנים</DialogTitle>
-            <DialogDescription>
-              בחר את השחקנים שברצונך להקצות להם את הסרטון {selectedVideo?.title}
-            </DialogDescription>
-          </DialogHeader>
-          {players.length === 0 ? (
-            <div className="text-center py-4">
-              <User className="mx-auto h-12 w-12 text-gray-300" />
-              <p className="mt-2 text-gray-500">אין שחקנים זמינים</p>
-            </div>
-          ) : (
-            <ScrollArea className="h-72">
-              <div className="space-y-2">
-                {players.map((player) => (
-                  <div 
-                    key={player.id} 
-                    className={`flex items-center p-2 rounded-md cursor-pointer transition-colors ${
-                      playersWithAssignments[player.id] 
-                        ? "bg-green-50 text-green-700" 
-                        : selectedPlayers.includes(player.id) 
-                          ? "bg-blue-50" 
-                          : "hover:bg-gray-50"
-                    }`}
-                    onClick={() => !playersWithAssignments[player.id] && togglePlayerSelection(player.id)}
-                  >
-                    <div className="flex flex-1 items-center">
-                      {playersWithAssignments[player.id] ? (
-                        <CheckCircle className="h-5 w-5 text-green-500 mr-2 rtl:ml-2 rtl:mr-0" />
-                      ) : (
-                        <input
-                          type="checkbox"
-                          checked={selectedPlayers.includes(player.id)}
-                          onChange={() => togglePlayerSelection(player.id)}
-                          className="mr-2 rtl:ml-2 rtl:mr-0"
-                        />
-                      )}
-                      <span className={playersWithAssignments[player.id] ? "text-green-700" : ""}>
-                        {player.full_name}
-                      </span>
-                    </div>
-                    {playersWithAssignments[player.id] && (
-                      <Badge variant="outline" className="bg-green-100 text-green-800">כבר הוקצה</Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול</Button>
-            <Button 
-              type="submit" 
-              onClick={handleAssignVideo}
-              disabled={selectedPlayers.length === 0 || players.length === 0}
-            >
-              הקצה ל-{selectedPlayers.length} שחקנים
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>הגדר תזמון אוטומטי</DialogTitle>
-            <DialogDescription>
-              הגדר מתי הסרטון ישלח אוטומטית לשחקנים חדשים
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="auto-schedule">תזמון אוטומטי</Label>
-                <p className="text-sm text-muted-foreground">שלח סרטון זה לשחקנים חדשים באופן אוטומטי</p>
-              </div>
-              <Switch 
-                id="auto-schedule" 
-                checked={autoScheduleData.is_auto_scheduled}
-                onCheckedChange={(checked) => handleAutoScheduleChange("is_auto_scheduled", checked)}
-              />
-            </div>
-
-            {autoScheduleData.is_auto_scheduled && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="days-after">מספר ימים לאחר הרישום</Label>
-                  <Input
-                    id="days-after"
-                    type="number"
-                    min={0}
-                    value={autoScheduleData.days_after_registration}
-                    onChange={(e) => handleAutoScheduleChange("days_after_registration", parseInt(e.target.value) || 0)}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    הסרטון ישלח אוטומטית אחרי {autoScheduleData.days_after_registration} ימים מרגע רישום השחקן
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sequence-order">סדר ברצף</Label>
-                  <Input
-                    id="sequence-order"
-                    type="number"
-                    min={1}
-                    value={autoScheduleData.auto_sequence_order}
-                    onChange={(e) => handleAutoScheduleChange("auto_sequence_order", parseInt(e.target.value) || 1)}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    סדר השליחה כאשר יש מספר סרטונים שמוגדרים לאותו יום 
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
-            <Button type="submit" onClick={handleAutoScheduleSave}>
-              שמור הגדרות תזמון
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+              האם אתה בטוח שברצונך למחוק את הסרטון

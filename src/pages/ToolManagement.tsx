@@ -7,6 +7,7 @@ import { ToolsList } from "@/components/tools/ToolsList";
 import VideoManagement from "@/components/admin/VideoManagement";
 import { VideoIcon, ArrowRight, Calendar } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 export default function ToolManagement() {
   const location = useLocation();
