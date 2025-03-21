@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +46,29 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       if (!playerId) {
         await fetchAllVideos();
+        return;
+      }
+      
+      // First check if this player belongs to the specified coach
+      const { data: playerData, error: playerCheckError } = await supabase
+        .from("players")
+        .select("coach_id")
+        .eq("id", playerId)
+        .single();
+        
+      if (playerCheckError) {
+        console.error("Error checking player's coach:", playerCheckError);
+        throw new Error("שגיאה באימות שיוך השחקן למאמן");
+      }
+      
+      // If the playerId is provided but the player doesn't belong to this coach,
+      // show an error or empty state
+      if (playerData.coach_id !== coachId) {
+        console.log("Player doesn't belong to the specified coach");
+        setVideos([]);
+        setActiveVideo(null);
+        setError("השחקן אינו שייך למאמן זה, אין סרטונים זמינים");
+        setLoading(false);
         return;
       }
       
@@ -225,6 +249,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     try {
       console.log("Fetching coach videos as fallback");
       
+      // Ensure we're fetching videos only for the specific coach
       const { data: coachVideos, error: coachVideosError } = await supabase
         .from("videos")
         .select("*")
