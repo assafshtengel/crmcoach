@@ -62,7 +62,8 @@ const AllMeetingSummaries = () => {
       .order('created_at', { ascending: false });
 
     if (selectedPlayer !== 'all') {
-      query.eq('session.player.id', selectedPlayer);
+      // Filter by player_id directly in the session_summaries table
+      query.eq('player_id', selectedPlayer);
     }
 
     const { data, error } = await query;
