@@ -1069,6 +1069,20 @@ const DashboardCoach = () => {
               </Button>
             </CardContent>
           </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9C27B0] cursor-pointer" onClick={() => navigate('/players-list', { state: { showGameEvaluation: true } })}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">איבחון במשחק</CardTitle>
+              <ClipboardCheck className="h-5 w-5 text-[#9C27B0]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">איבחון התנהגות שחקן במהלך משחק</p>
+              <Button variant="default" className="w-full bg-[#9C27B0] hover:bg-[#7B1FA2]">
+                <ClipboardCheck className="h-4 w-4 mr-2" />
+                מלא איבחון משחק
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="bg-white/90 shadow-lg">
@@ -1151,3 +1165,4 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
+
