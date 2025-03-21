@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +15,9 @@ interface Video {
   created_at: string;
   is_auto_scheduled?: boolean;
   days_after_registration?: number;
+  watched?: boolean;
+  watched_at?: string;
+  player_video_id?: string;
 }
 
 interface VideosTabProps {
@@ -50,6 +52,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       const { data: playerVideos, error: playerVideosError } = await supabase
         .from("player_videos")
         .select(`
+          id,
           video_id,
           watched,
           watched_at,
@@ -62,7 +65,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         throw playerVideosError;
       }
       
-      console.log("Manually assigned videos data:", playerVideos);
+      console.log("Player videos data:", playerVideos);
       
       // Get complete video objects from manually assigned videos
       const manuallyAssignedVideos = playerVideos
@@ -73,7 +76,8 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
             return {
               ...pv.videos,
               watched: pv.watched,
-              watched_at: pv.watched_at
+              watched_at: pv.watched_at,
+              player_video_id: pv.id
             };
           }
           return null;
@@ -84,6 +88,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       const { data: autoAssignments, error: autoAssignmentsError } = await supabase
         .from("auto_video_assignments")
         .select(`
+          id,
           video_id,
           scheduled_for,
           sent,
@@ -98,6 +103,29 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       }
       
       console.log("Auto-assigned videos data:", autoAssignments);
+      
+      // Check if we have entries in auto_video_assignments but no videos data
+      const missingVideoIds = autoAssignments
+        ?.filter(aa => !aa.videos && aa.video_id)
+        .map(aa => aa.video_id) || [];
+      
+      let additionalVideos: any[] = [];
+      
+      if (missingVideoIds.length > 0) {
+        console.log("Fetching missing videos:", missingVideoIds);
+        const { data: missingVideos, error: missingError } = await supabase
+          .from("videos")
+          .select("*")
+          .in("id", missingVideoIds);
+          
+        if (!missingError && missingVideos) {
+          additionalVideos = missingVideos.map(v => ({
+            ...v,
+            is_auto_scheduled: true
+          }));
+          console.log("Found missing videos:", additionalVideos);
+        }
+      }
       
       // Get complete video objects from auto-assigned videos
       const autoAssignedVideos = autoAssignments
@@ -116,7 +144,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       // Combine all videos, removing duplicates by ID
       const videoMap = new Map<string, Video>();
       
-      [...manuallyAssignedVideos, ...autoAssignedVideos].forEach(video => {
+      [...manuallyAssignedVideos, ...autoAssignedVideos, ...additionalVideos].forEach(video => {
         if (video && video.id) {
           videoMap.set(video.id, video as Video);
         }
@@ -257,50 +285,83 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     }
     
     // If this is a player view and the video hasn't been marked as watched
-    if (playerId && video.id) {
-      markVideoAsWatched(playerId, video.id);
+    if (playerId && video.id && !video.watched) {
+      if (video.player_video_id) {
+        // If we have the player_video_id, use it directly
+        markVideoAsWatched(playerId, video.id, video.player_video_id);
+      } else {
+        // Otherwise, mark it by player_id and video_id
+        markVideoAsWatched(playerId, video.id);
+      }
     }
   };
   
-  const markVideoAsWatched = async (playerId: string, videoId: string) => {
+  const markVideoAsWatched = async (playerId: string, videoId: string, playerVideoId?: string) => {
     try {
-      // Check if this video exists in player_videos
-      const { data, error } = await supabase
-        .from('player_videos')
-        .select('*')
-        .eq('player_id', playerId)
-        .eq('video_id', videoId)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-        console.error("Error checking player_videos:", error);
-        return;
-      }
-      
-      if (data) {
-        // Update existing record
-        await supabase
+      if (playerVideoId) {
+        // Update existing record using its ID
+        const { error } = await supabase
           .from('player_videos')
           .update({ 
             watched: true,
             watched_at: new Date().toISOString()
           })
-          .eq('player_id', playerId)
-          .eq('video_id', videoId);
+          .eq('id', playerVideoId);
+          
+        if (error) {
+          console.error("Error updating player_videos by ID:", error);
+          return;
+        }
       } else {
-        // Insert new record
-        await supabase
+        // Check if this video exists in player_videos
+        const { data, error } = await supabase
           .from('player_videos')
-          .insert([{ 
-            player_id: playerId,
-            video_id: videoId,
-            watched: true,
-            watched_at: new Date().toISOString(),
-            assigned_by: coachId
-          }]);
+          .select('id')
+          .eq('player_id', playerId)
+          .eq('video_id', videoId)
+          .maybeSingle();
+        
+        if (error) {
+          console.error("Error checking player_videos:", error);
+          return;
+        }
+        
+        if (data) {
+          // Update existing record
+          await supabase
+            .from('player_videos')
+            .update({ 
+              watched: true,
+              watched_at: new Date().toISOString()
+            })
+            .eq('id', data.id);
+        } else {
+          // Insert new record
+          await supabase
+            .from('player_videos')
+            .insert([{ 
+              player_id: playerId,
+              video_id: videoId,
+              watched: true,
+              watched_at: new Date().toISOString(),
+              assigned_by: coachId
+            }]);
+        }
       }
       
+      // Update local state to reflect the change
+      setVideos(prevVideos => 
+        prevVideos.map(v => 
+          v.id === videoId ? { ...v, watched: true, watched_at: new Date().toISOString() } : v
+        )
+      );
+      
       console.log(`Video ${videoId} marked as watched for player ${playerId}`);
+      
+      toast({
+        title: "סרטון סומן כנצפה",
+        description: "הסטטוס עודכן בהצלחה",
+      });
     } catch (error) {
       console.error("Error marking video as watched:", error);
     }
@@ -419,6 +480,11 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
             <div className="mt-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-500">פורסם: {formatDate(activeVideo.created_at)}</span>
+                {activeVideo.watched && (
+                  <span className="text-sm text-green-600 flex items-center">
+                    <PlayIcon className="h-3 w-3 mr-1" /> נצפה
+                  </span>
+                )}
               </div>
               <p className="whitespace-pre-line text-sm text-gray-700">{activeVideo.description}</p>
             </div>
@@ -445,9 +511,16 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
                   <p className="text-gray-500 text-sm truncate">
                     {video.category || "כללי"}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {formatDate(video.created_at)}
-                  </p>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-xs text-gray-400">
+                      {formatDate(video.created_at)}
+                    </p>
+                    {video.watched && (
+                      <span className="text-xs text-green-600 flex items-center">
+                        <PlayIcon className="h-3 w-3 mr-1" /> נצפה
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>

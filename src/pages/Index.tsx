@@ -1,9 +1,10 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen, FileEdit } from "lucide-react";
+import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen, FileEdit, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -22,6 +23,7 @@ import { AdminMessageForm } from "@/components/admin/AdminMessageForm";
 import { BeliefBreakingCard } from "@/components/ui/BeliefBreakingCard";
 import { MentalLibrary } from "@/components/mental-library/MentalLibrary";
 import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
+import { VideosTab } from "@/components/player/VideosTab";
 
 const Index = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -31,23 +33,38 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [showLandingPageDialog, setShowLandingPageDialog] = useState(false);
+  const [coachId, setCoachId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const getUserEmail = async () => {
+    const getUserInfo = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUserEmail(user?.email || null);
       
       if (user) {
         setUserId(user.id);
+        
+        // Get the user's coach ID (from the players table)
+        const { data: playerData, error: playerError } = await supabase
+          .from('players')
+          .select('coach_id')
+          .eq('id', user.id)
+          .single();
+          
+        if (!playerError && playerData) {
+          setCoachId(playerData.coach_id);
+        } else {
+          console.error("Error fetching player's coach ID:", playerError);
+        }
+        
         fetchVideos(user.id);
       } else {
         console.log("No authenticated user found");
         setLoading(false);
       }
     };
-    getUserEmail();
+    getUserInfo();
   }, []);
 
   const fetchVideos = async (userId: string) => {
@@ -233,92 +250,26 @@ const Index = () => {
           <TabsContent value="videos" className="space-y-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">הסרטונים שלי</h2>
-              <Button variant="outline" onClick={refreshVideos} className="flex items-center gap-2">
-                <ArrowRight className="h-4 w-4" /> רענן רשימה
+              <Button 
+                variant="outline" 
+                onClick={refreshVideos} 
+                className="flex items-center gap-2"
+                disabled={loading}
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                רענן רשימה
               </Button>
             </div>
 
-            {loading ? (
-              <div className="text-center py-8">טוען סרטונים...</div>
+            {/* Use VideosTab component instead of inline implementation */}
+            {userId && coachId ? (
+              <VideosTab 
+                coachId={coachId} 
+                playerId={userId} 
+              />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {assignedVideos.length > 0 ? (
-                  assignedVideos.map((video) => (
-                    <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                      <CardHeader className="bg-gray-50 p-4">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-lg font-medium">
-                            {video.videos.title}
-                          </CardTitle>
-                          {video.watched ? (
-                            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                              <CheckCircle className="h-3 w-3 mr-1" /> נצפה
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                              חדש
-                            </Badge>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        <p className="text-sm text-gray-600 mb-4">
-                          {video.videos.description || 'אין תיאור זמין'}
-                        </p>
-                        <div className="flex justify-between items-center">
-                          <Button
-                            variant="link"
-                            className="flex items-center text-primary p-0"
-                            onClick={() => handleVideoClick(video.videos.url)}
-                          >
-                            <ExternalLink className="h-4 w-4 mr-1" /> לצפייה בסרטון
-                          </Button>
-                          {!video.watched && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs"
-                              onClick={() => markVideoAsWatched(video.id)}
-                            >
-                              סמן כנצפה
-                            </Button>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="col-span-2 text-center py-8 bg-gray-50 rounded-lg">
-                    <p className="text-gray-500">לא נמצאו סרטונים שהוקצו לך</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {allVideos.length > 0 && (
-              <div className="mt-8">
-                <h2 className="text-xl font-bold mb-4">סרטונים כלליים</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {allVideos.map((video) => (
-                    <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                      <CardHeader className="bg-gray-50 p-4">
-                        <CardTitle className="text-lg font-medium">{video.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        <p className="text-sm text-gray-600 mb-4">
-                          {video.description || 'אין תיאור זמין'}
-                        </p>
-                        <Button
-                          variant="link"
-                          className="flex items-center text-primary p-0"
-                          onClick={() => handleVideoClick(video.url)}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-1" /> לצפייה בסרטון
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+              <div className="text-center py-8">
+                <p className="text-gray-500">טוען מידע...</p>
               </div>
             )}
           </TabsContent>

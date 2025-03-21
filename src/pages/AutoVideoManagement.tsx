@@ -30,7 +30,8 @@ import {
   Info,
   Eye,
   RefreshCw,
-  UserPlus
+  UserPlus,
+  Wrench
 } from "lucide-react";
 import { format, isAfter, parseISO } from "date-fns";
 
@@ -70,6 +71,8 @@ export default function AutoVideoManagement() {
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [newPlayerEmail, setNewPlayerEmail] = useState("");
+  const [isFixingVideos, setIsFixingVideos] = useState(false);
+  const [fixResult, setFixResult] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -186,6 +189,42 @@ export default function AutoVideoManagement() {
         description: "לא ניתן לעבד את הסרטונים האוטומטיים",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleFixVideos = async () => {
+    try {
+      setIsFixingVideos(true);
+      setFixResult(null);
+      
+      const { data, error } = await supabase.functions.invoke('fix-player-videos', {
+        method: 'POST',
+        body: {}
+      });
+      
+      if (error) {
+        console.error("Error fixing player videos:", error);
+        throw error;
+      }
+      
+      console.log("Fix videos result:", data);
+      setFixResult(data);
+      
+      await refreshAssignments();
+      
+      toast({
+        title: "סרטוני השחקנים תוקנו בהצלחה",
+        description: `${data.fixed_player_videos || 0} סרטוני שחקנים תוקנו`
+      });
+    } catch (error) {
+      console.error("Error in handleFixVideos:", error);
+      toast({
+        title: "שגיאה בתיקון סרטוני השחקנים",
+        description: "לא ניתן לתקן את סרטוני השחקנים",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFixingVideos(false);
     }
   };
 
@@ -440,6 +479,15 @@ export default function AutoVideoManagement() {
                 <RefreshCw className={`h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0 ${refreshing ? 'animate-spin' : ''}`} />
                 רענן נתונים
               </Button>
+              <Button
+                onClick={handleFixVideos}
+                variant="outline"
+                disabled={isFixingVideos}
+                className="flex items-center"
+              >
+                <Wrench className={`h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0 ${isFixingVideos ? 'animate-spin' : ''}`} />
+                תקן סרטוני שחקנים
+              </Button>
               <Button onClick={handleProcess}>
                 עבד סרטונים
               </Button>
@@ -580,20 +628,37 @@ export default function AutoVideoManagement() {
               </div>
             )}
 
-            {processResult && (
+            {(processResult || fixResult) && (
               <Card className="mt-4 bg-blue-50 border-blue-200">
                 <CardContent className="pt-4">
                   <div className="flex items-start">
                     <Info className="h-5 w-5 text-blue-500 mr-2 rtl:ml-2 rtl:mr-0 mt-0.5" />
                     <div>
                       <h3 className="font-medium text-blue-700">תוצאות עיבוד סרטונים</h3>
-                      <p className="text-sm text-blue-600 mt-1">
-                        {processResult.sent_in_last_24h} סרטונים נשלחו ב-24 השעות האחרונות
-                      </p>
-                      {processResult.fixed_null_dates > 0 && (
-                        <p className="text-sm text-blue-600 mt-1">
-                          {processResult.fixed_null_dates} הקצאות תוקנו
-                        </p>
+                      {processResult && (
+                        <>
+                          <p className="text-sm text-blue-600 mt-1">
+                            {processResult.sent_in_last_24h} סרטונים נשלחו ב-24 השעות האחרונות
+                          </p>
+                          {processResult.fixed_null_dates > 0 && (
+                            <p className="text-sm text-blue-600 mt-1">
+                              {processResult.fixed_null_dates} הקצאות תוקנו
+                            </p>
+                          )}
+                        </>
+                      )}
+                      {fixResult && (
+                        <>
+                          <p className="text-sm text-blue-600 mt-1">
+                            {fixResult.fixed_player_videos} סרטוני שחקן תוקנו
+                          </p>
+                          <p className="text-sm text-blue-600 mt-1">
+                            {fixResult.fixed_null_sent} רשומות עם סטטוס ריק תוקנו
+                          </p>
+                          <p className="text-sm text-blue-600 mt-1">
+                            {fixResult.processed_past_due} סרטונים בפיגור טופלו
+                          </p>
+                        </>
                       )}
                     </div>
                   </div>
@@ -675,6 +740,20 @@ export default function AutoVideoManagement() {
                   )}
                 </div>
               </div>
+              
+              {selectedAssignment.videos?.url && (
+                <div className="space-y-1">
+                  <h4 className="text-sm font-medium">קישור לסרטון</h4>
+                  <Button 
+                    variant="link" 
+                    className="px-0"
+                    onClick={() => window.open(selectedAssignment.videos?.url, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    צפה בסרטון
+                  </Button>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
