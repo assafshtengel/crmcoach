@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideosTab } from "@/components/player/VideosTab";
 import { useScreenSize } from "@/hooks/use-screen-size";
-import { Bell, User, LogOut, Calendar, Target, FileText, Video, CheckSquare, PencilLine, Clock, ArrowRight, ExternalLink, ChevronRight } from 'lucide-react';
+import { Bell, User, LogOut, Calendar, Target, FileText, Video, CheckSquare, PencilLine, Clock, ArrowRight, ExternalLink, ChevronRight, ClipboardCheck } from 'lucide-react';
 import { 
   Popover, 
   PopoverContent, 
@@ -360,7 +359,7 @@ const PlayerProfileView = () => {
   };
 
   const renderTabs = () => (
-    <TabsList className={`tabs-list w-full rounded-xl grid ${isMobile ? 'grid-cols-4 gap-1 p-1' : 'grid-cols-7 gap-0'} text-xs font-medium`}>
+    <TabsList className={`tabs-list w-full rounded-xl grid ${isMobile ? 'grid-cols-5 gap-1 p-1' : 'grid-cols-8 gap-0'} text-xs font-medium`}>
       <TabsTrigger value="profile" className="tab-trigger">
         <User className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
         {!isMobile && <span className="hidden sm:inline">פרופיל</span>}
@@ -382,6 +381,10 @@ const PlayerProfileView = () => {
         <FileText className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
         {!isMobile && <span className="hidden sm:inline">סיכומים</span>}
       </TabsTrigger>
+      <TabsTrigger value="evaluation" className="tab-trigger">
+        <ClipboardCheck className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
+        {!isMobile && <span className="hidden sm:inline">איבחון</span>}
+      </TabsTrigger>
       {!isMobile && (
         <>
           <TabsTrigger value="belief-breaking" className="tab-trigger">
@@ -401,12 +404,11 @@ const PlayerProfileView = () => {
     </TabsList>
   );
 
-  // Mobile-specific navigation for tabs not shown in primary tab list
   const renderMobileMoreMenu = () => {
     if (!isMobile) return null;
     
     return (
-      <div className="grid grid-cols-3 gap-3 mt-4">
+      <div className="grid grid-cols-4 gap-3 mt-4">
         <Card 
           className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white/90 hover:bg-white"
           onClick={() => setActiveTab('belief-breaking')}
@@ -440,6 +442,18 @@ const PlayerProfileView = () => {
               <CheckSquare className="h-5 w-5 text-primary" />
             </div>
             <p className="text-xs font-medium text-gray-800">הכנה למשחק</p>
+          </CardContent>
+        </Card>
+        
+        <Card 
+          className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white/90 hover:bg-white"
+          onClick={() => setActiveTab('evaluation')}
+        >
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+              <ClipboardCheck className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-xs font-medium text-gray-800">איבחון</p>
           </CardContent>
         </Card>
       </div>
@@ -731,6 +745,38 @@ const PlayerProfileView = () => {
                         <p className="text-gray-500">אין סיכומי מפגשים זמינים</p>
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="evaluation">
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gradient-to-r from-[#F2FCE2]/50 to-[#E5DEFF]/50 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <ClipboardCheck className="h-5 w-5 text-primary" />
+                      איבחון שחקן במהלך משחק
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-5">
+                    <div className="space-y-4">
+                      <p className="text-gray-700">
+                        כאן תוכל לאבחן את הביצועים שלך במהלך משחקים ולעקוב אחר ההתקדמות.
+                      </p>
+                      
+                      <Button 
+                        className="w-full bg-primary hover:bg-primary/90"
+                        onClick={() => navigate(`/player-game-evaluation/${player?.id}`)}
+                      >
+                        לאיבחון חדש
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                      </Button>
+                      
+                      <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
+                        <p className="text-yellow-800 text-sm">
+                          המאמן שלך יוכל לראות את תוצאות האיבחון ולהשתמש בהן כדי לעזור לך להשתפר.
+                        </p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -8,7 +7,6 @@ import { Layout } from '@/components/layout/Layout';
 import ToolManagement from '@/pages/ToolManagement';
 import AutoVideoManagement from '@/pages/AutoVideoManagement';
 
-// Import all the missing page components
 import DashboardCoach from '@/pages/DashboardCoach';
 import Index from '@/pages/Index';
 import NewIndex from '@/pages/NewIndex';
@@ -49,7 +47,8 @@ import AllMeetingSummaries from '@/pages/AllMeetingSummaries';
 import Goals from '@/pages/Goals';
 import PlayerProfileView from '@/pages/player/PlayerProfileView';
 import NotFound from '@/pages/NotFound';
-import MentalLibrary from '@/pages/MentalLibrary'; // Import the new MentalLibrary page
+import MentalLibrary from '@/pages/MentalLibrary';
+import PlayerGameEvaluation from '@/pages/player/PlayerGameEvaluation';
 
 import "./App.css";
 
@@ -103,10 +102,9 @@ function App() {
             <Route path="/auto-video-management" element={<AuthGuard><AutoVideoManagement /></AuthGuard>} />
             <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
             <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} />
-            <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} /> {/* Add the new route for the Mental Library */}
-            
+            <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} />
             <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-            
+            <Route path="/player-game-evaluation/:playerId" element={<AuthGuard playerOnly={true}><PlayerGameEvaluation /></AuthGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ThemeProvider>
