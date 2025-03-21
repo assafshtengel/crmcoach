@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -955,4 +956,146 @@ export default function VideoManagement() {
       </Dialog>
 
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
-        <DialogContent className="sm
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>מחיקת סרטון</DialogTitle>
+            <DialogDescription>
+              האם אתה בטוח שברצונך למחוק את הסרטון? פעולה זו אינה ניתנת לביטול.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 rtl:space-x-reverse">
+            <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>ביטול</Button>
+            <Button variant="destructive" onClick={handleDeleteVideo}>
+              מחק סרטון
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openAssignDialog} onOpenChange={setOpenAssignDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>הקצה סרטון לשחקנים</DialogTitle>
+            <DialogDescription>
+              בחר את השחקנים שברצונך להקצות להם את הסרטון {selectedVideo?.title}
+            </DialogDescription>
+          </DialogHeader>
+          {players.length === 0 ? (
+            <div className="text-center py-4">
+              <User className="mx-auto h-12 w-12 text-gray-300" />
+              <p className="mt-2 text-gray-500">אין שחקנים זמינים</p>
+            </div>
+          ) : (
+            <ScrollArea className="h-72">
+              <div className="space-y-2">
+                {players.map((player) => (
+                  <div 
+                    key={player.id} 
+                    className={`flex items-center p-2 rounded-md cursor-pointer transition-colors ${
+                      playersWithAssignments[player.id] 
+                        ? "bg-green-50 text-green-700" 
+                        : selectedPlayers.includes(player.id) 
+                          ? "bg-blue-50" 
+                          : "hover:bg-gray-50"
+                    }`}
+                    onClick={() => !playersWithAssignments[player.id] && togglePlayerSelection(player.id)}
+                  >
+                    <div className="flex flex-1 items-center">
+                      {playersWithAssignments[player.id] ? (
+                        <CheckCircle className="h-5 w-5 text-green-500 mr-2 rtl:ml-2 rtl:mr-0" />
+                      ) : (
+                        <input
+                          type="checkbox"
+                          checked={selectedPlayers.includes(player.id)}
+                          onChange={() => togglePlayerSelection(player.id)}
+                          className="mr-2 rtl:ml-2 rtl:mr-0"
+                        />
+                      )}
+                      <span className={playersWithAssignments[player.id] ? "text-green-700" : ""}>
+                        {player.full_name}
+                      </span>
+                    </div>
+                    {playersWithAssignments[player.id] && (
+                      <Badge variant="outline" className="bg-green-100 text-green-800">כבר הוקצה</Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול</Button>
+            <Button 
+              type="submit" 
+              onClick={handleAssignVideo}
+              disabled={selectedPlayers.length === 0 || players.length === 0}
+            >
+              הקצה ל-{selectedPlayers.length} שחקנים
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>הגדר תזמון אוטומטי</DialogTitle>
+            <DialogDescription>
+              הגדר מתי הסרטון ישלח אוטומטית לשחקנים חדשים
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="auto-schedule">תזמון אוטומטי</Label>
+                <p className="text-sm text-muted-foreground">שלח סרטון זה לשחקנים חדשים באופן אוטומטי</p>
+              </div>
+              <Switch 
+                id="auto-schedule" 
+                checked={autoScheduleData.is_auto_scheduled}
+                onCheckedChange={(checked) => handleAutoScheduleChange("is_auto_scheduled", checked)}
+              />
+            </div>
+
+            {autoScheduleData.is_auto_scheduled && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="days-after">מספר ימים לאחר הרישום</Label>
+                  <Input
+                    id="days-after"
+                    type="number"
+                    min={0}
+                    value={autoScheduleData.days_after_registration}
+                    onChange={(e) => handleAutoScheduleChange("days_after_registration", parseInt(e.target.value) || 0)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    הסרטון ישלח אוטומטית אחרי {autoScheduleData.days_after_registration} ימים מרגע רישום השחקן
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sequence-order">סדר ברצף</Label>
+                  <Input
+                    id="sequence-order"
+                    type="number"
+                    min={1}
+                    value={autoScheduleData.auto_sequence_order}
+                    onChange={(e) => handleAutoScheduleChange("auto_sequence_order", parseInt(e.target.value) || 1)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    סדר השליחה כאשר יש מספר סרטונים שמוגדרים לאותו יום 
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
+            <Button type="submit" onClick={handleAutoScheduleSave}>
+              שמור הגדרות תזמון
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
