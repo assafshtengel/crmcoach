@@ -48,142 +48,118 @@ serve(async (req) => {
 
   try {
     console.log("Starting to fix player videos");
+    let fixedPlayerVideos = 0;
+    let fixedNullSent = 0;
+    let processedPastDue = 0;
     
-    // First, get all player_videos entries
-    const { data: playerVideos, error: pvError } = await supabase
-      .from("player_videos")
-      .select("id, player_id, video_id, watched, watched_at")
-      .is("watched", null);
-      
-    if (pvError) {
-      console.error("Error fetching player_videos:", pvError);
-      throw pvError;
-    }
-    
-    console.log(`Found ${playerVideos?.length || 0} player videos to fix`);
-    
-    let fixedCount = 0;
-    
-    if (playerVideos && playerVideos.length > 0) {
-      for (const pv of playerVideos) {
-        try {
-          // Update the player_video entry to set watched = false
-          const { error: updateError } = await supabase
-            .from("player_videos")
-            .update({ watched: false })
-            .eq("id", pv.id);
-            
-          if (updateError) {
-            console.error(`Error updating player_video ${pv.id}:`, updateError);
-          } else {
-            fixedCount++;
-          }
-        } catch (err) {
-          console.error(`Error processing player_video ${pv.id}:`, err);
-        }
-      }
-    }
-    
-    console.log(`Fixed ${fixedCount} player videos`);
-    
-    // Check for auto_video_assignments with null sent values
-    const { data: nullAssignments, error: nullError } = await supabase
+    // Fix auto_video_assignments with NULL sent values
+    const { data: nullSentAssignments, error: nullSentError } = await supabase
       .from("auto_video_assignments")
-      .select("id, player_id, video_id, scheduled_for")
+      .select("id")
       .is("sent", null);
       
-    if (nullError) {
-      console.error("Error fetching null sent assignments:", nullError);
-    } else {
-      console.log(`Found ${nullAssignments?.length || 0} auto assignments with null sent values`);
+    if (nullSentError) {
+      console.error("Error fetching null sent assignments:", nullSentError);
+    } else if (nullSentAssignments && nullSentAssignments.length > 0) {
+      fixedNullSent = nullSentAssignments.length;
+      console.log(`Found ${fixedNullSent} assignments with null sent values, fixing...`);
       
-      let fixedSentCount = 0;
-      
-      if (nullAssignments && nullAssignments.length > 0) {
-        for (const assignment of nullAssignments) {
-          try {
-            // Update the assignment to set sent = false
-            const { error: updateError } = await supabase
-              .from("auto_video_assignments")
-              .update({ sent: false })
-              .eq("id", assignment.id);
-              
-            if (updateError) {
-              console.error(`Error updating assignment ${assignment.id}:`, updateError);
-            } else {
-              fixedSentCount++;
-            }
-          } catch (err) {
-            console.error(`Error processing assignment ${assignment.id}:`, err);
-          }
-        }
+      const { error: updateError } = await supabase
+        .from("auto_video_assignments")
+        .update({ sent: false })
+        .is("sent", null);
+        
+      if (updateError) {
+        console.error("Error updating null sent assignments:", updateError);
       }
-      
-      console.log(`Fixed ${fixedSentCount} auto assignments with null sent values`);
     }
     
-    // Check for auto_video_assignments past their scheduled date but not sent
+    // Process past due auto video assignments
     const { data: pastDueAssignments, error: pastDueError } = await supabase
       .from("auto_video_assignments")
-      .select("id, player_id, video_id, scheduled_for")
+      .select("*")
       .eq("sent", false)
       .lt("scheduled_for", new Date().toISOString());
       
     if (pastDueError) {
       console.error("Error fetching past due assignments:", pastDueError);
-    } else {
-      console.log(`Found ${pastDueAssignments?.length || 0} past due assignments`);
+    } else if (pastDueAssignments && pastDueAssignments.length > 0) {
+      processedPastDue = pastDueAssignments.length;
+      console.log(`Found ${processedPastDue} past due assignments, processing...`);
       
-      let processedCount = 0;
-      
-      if (pastDueAssignments && pastDueAssignments.length > 0) {
-        for (const assignment of pastDueAssignments) {
-          try {
-            // Create player_videos entry
-            const { error: insertError } = await supabase
-              .from("player_videos")
-              .insert({
-                player_id: assignment.player_id,
-                video_id: assignment.video_id,
-                watched: false,
-                assigned_by: await getCoachIdForPlayer(supabase, assignment.player_id)
-              });
-              
-            if (insertError) {
-              if (insertError.code === "23505") { // Unique violation
-                console.log(`Player video already exists for assignment ${assignment.id}`);
-              } else {
-                console.error(`Error creating player_video for assignment ${assignment.id}:`, insertError);
-                continue;
-              }
-            }
+      // Process each past due assignment
+      for (const assignment of pastDueAssignments) {
+        // Get the coach ID for the player
+        const { data: playerData, error: playerError } = await supabase
+          .from("players")
+          .select("coach_id")
+          .eq("id", assignment.player_id)
+          .single();
+          
+        if (playerError) {
+          console.error(`Error getting coach ID for player ${assignment.player_id}:`, playerError);
+          continue;
+        }
+        
+        // Create player_videos entry if it doesn't exist
+        const { data: existingEntry, error: checkError } = await supabase
+          .from("player_videos")
+          .select("id")
+          .eq("player_id", assignment.player_id)
+          .eq("video_id", assignment.video_id)
+          .maybeSingle();
+          
+        if (checkError) {
+          console.error("Error checking existing player_videos entry:", checkError);
+          continue;
+        }
+        
+        if (!existingEntry) {
+          // Create new player_videos entry
+          const { error: insertError } = await supabase
+            .from("player_videos")
+            .insert({
+              player_id: assignment.player_id,
+              video_id: assignment.video_id,
+              assigned_by: playerData.coach_id,
+              watched: false
+            });
             
-            // Mark the assignment as sent
-            const { error: updateError } = await supabase
-              .from("auto_video_assignments")
-              .update({ sent: true })
-              .eq("id", assignment.id);
-              
-            if (updateError) {
-              console.error(`Error updating assignment ${assignment.id}:`, updateError);
-            } else {
-              processedCount++;
+          if (insertError) {
+            console.error("Error creating player_videos entry:", insertError);
+          } else {
+            fixedPlayerVideos++;
+            
+            // Update video count for player
+            const { error: incrementError } = await supabase.rpc(
+              "increment_player_video_count",
+              { player_id_param: assignment.player_id }
+            );
+            
+            if (incrementError) {
+              console.error("Error incrementing player video count:", incrementError);
             }
-          } catch (err) {
-            console.error(`Error processing assignment ${assignment.id}:`, err);
           }
         }
+        
+        // Mark auto assignment as sent
+        const { error: updateError } = await supabase
+          .from("auto_video_assignments")
+          .update({ sent: true })
+          .eq("id", assignment.id);
+          
+        if (updateError) {
+          console.error("Error updating auto assignment:", updateError);
+        }
       }
-      
-      console.log(`Processed ${processedCount} past due assignments`);
     }
-
+    
     return new Response(
       JSON.stringify({ 
         success: true,
-        fixed_player_videos: fixedCount,
-        fixed_null_sent: fixedSentCount || 0,
-        processed_past_due: processedCount || 0
+        fixed_player_videos: fixedPlayerVideos,
+        fixed_null_sent: fixedNullSent,
+        processed_past_due: processedPastDue
       }),
       { 
         status: 200, 
@@ -194,7 +170,7 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error("Error:", error);
+    console.error("Error fixing player videos:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -207,23 +183,3 @@ serve(async (req) => {
     );
   }
 });
-
-async function getCoachIdForPlayer(supabase: any, playerId: string): Promise<string | null> {
-  try {
-    const { data, error } = await supabase
-      .from("players")
-      .select("coach_id")
-      .eq("id", playerId)
-      .single();
-      
-    if (error) {
-      console.error("Error fetching coach ID for player:", error);
-      return null;
-    }
-    
-    return data?.coach_id || null;
-  } catch (err) {
-    console.error("Error in getCoachIdForPlayer:", err);
-    return null;
-  }
-}

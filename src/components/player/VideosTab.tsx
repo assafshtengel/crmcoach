@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,11 +58,9 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         
       if (playerCheckError) {
         console.error("Error checking player's coach:", playerCheckError);
-        // Continue anyway to try other methods - don't throw here
       }
       
       // Even if the player doesn't belong to this coach, we'll still attempt to fetch assigned videos
-      // This is more permissive but ensures videos are shown
       await fetchPlayerAssignedVideos(playerId);
       
     } catch (error) {
@@ -160,7 +157,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         throw playerVideosError;
       }
       
-      console.log("Player videos data:", playerVideos?.length || 0);
+      console.log("Player videos data:", playerVideos?.length || 0, playerVideos);
       
       // Get auto-assigned videos for this specific player
       const { data: autoAssignments, error: autoAssignmentsError } = await supabase

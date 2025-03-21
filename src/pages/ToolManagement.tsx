@@ -7,12 +7,13 @@ import { ToolsList } from "@/components/tools/ToolsList";
 import VideoManagement from "@/components/admin/VideoManagement";
 import { VideoIcon, ArrowRight, Calendar } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ToolManagement() {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("mental-tools");
+  const { toast } = useToast();
   
   useEffect(() => {
     // Check if we're coming from the dashboard video card
