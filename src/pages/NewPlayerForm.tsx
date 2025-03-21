@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -33,7 +32,6 @@ const NewPlayerForm = () => {
   const [createdPlayerId, setCreatedPlayerId] = React.useState<string>('');
   const [generatedPassword, setGeneratedPassword] = React.useState<string>('');
 
-  // Format current date and time in a user-friendly format
   const currentDateTime = format(new Date(), 'dd/MM/yyyy HH:mm');
 
   const form = useForm<PlayerFormValues>({
@@ -111,9 +109,8 @@ const NewPlayerForm = () => {
   };
 
   const createPlayer = async (userId: string, values: PlayerFormValues, imageUrl: string = '', password: string) => {
-    console.log('Creating player with values:', values); // Debug log
-    
-    // Determine the final sport field value
+    console.log('Creating player with values:', values);
+
     const finalSportField = values.sportField === 'other' && values.otherSportField
       ? values.otherSportField
       : values.sportField === 'other'
@@ -154,8 +151,8 @@ const NewPlayerForm = () => {
   };
 
   async function onSubmit(values: PlayerFormValues) {
-    console.log('Form submitted with values:', values); // Debug log
-    
+    console.log('Form submitted with values:', values);
+
     if (isSubmitting) return;
 
     try {
@@ -178,7 +175,7 @@ const NewPlayerForm = () => {
         try {
           profileImageUrl = await uploadProfileImage(user.id, profileImage);
         } catch (error) {
-          console.error('Error uploading image:', error); // Debug log
+          console.error('Error uploading image:', error);
           toast({
             variant: "destructive",
             title: "שגיאה בהעלאת התמונה",
@@ -187,14 +184,12 @@ const NewPlayerForm = () => {
         }
       }
 
-      // Generate a random password for the player
       const password = generatePassword(10);
       setGeneratedPassword(password);
       
       const playerData = await createPlayer(user.id, values, profileImageUrl, password);
-      console.log('Player created successfully:', playerData); // Debug log
-      
-      // Store the player ID for redirection
+      console.log('Player created successfully:', playerData);
+
       setCreatedPlayerId(playerData.id);
 
       toast({
@@ -290,26 +285,19 @@ const NewPlayerForm = () => {
             <DialogTitle>פרטי השחקן נשמרו בהצלחה!</DialogTitle>
           </DialogHeader>
           <div className="my-4">
-            <p className="mb-2">סיסמת הגישה של השחקן:</p>
-            <div className="flex items-center justify-center gap-2 bg-gray-100 p-3 rounded">
-              <span className="font-mono font-semibold text-lg">{generatedPassword}</span>
-              <Button variant="outline" size="icon" onClick={handleCopyPassword} title="העתק סיסמה">
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="mt-4 text-sm text-gray-600">
-              שמור את הסיסמה הזו - השחקן יזדקק לה כדי להתחבר למערכת יחד עם האימייל שלו.
+            <p className="text-sm text-gray-600">
+              השחקן נוסף בהצלחה לרשימת השחקנים שלך.
             </p>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button 
               onClick={() => {
                 setShowSuccessDialog(false);
-                navigate(`/player-profile/${createdPlayerId}`);
+                navigate('/');
               }}
               className="flex-1"
             >
-              מעבר לפרופיל השחקן
+              חזרה לדף הבית
             </Button>
             <Button 
               variant="outline"
