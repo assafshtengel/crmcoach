@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Home, CalendarIcon, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -17,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FeedbackDialog } from '@/components/public-registration/FeedbackDialog';
 
 interface Player {
   id: string;
@@ -62,6 +62,12 @@ const NewSessionForm = () => {
     meeting_type: 'in_person'
   });
   const [open, setOpen] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successDialogData, setSuccessDialogData] = useState({
+    playerName: '',
+    sessionDate: '',
+    sessionTime: ''
+  });
 
   useEffect(() => {
     if (selectedDate) {
@@ -157,7 +163,11 @@ const NewSessionForm = () => {
     e.preventDefault();
     
     if (!validateForm()) {
-      toast.error('נא למלא את כל שדות החובה');
+      toast({
+        title: "שגיאה",
+        description: "נא למלא את כל שדות החובה",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -170,7 +180,11 @@ const NewSessionForm = () => {
         }
       } = await supabase.auth.getUser();
       if (!user) {
-        toast.error('לא נמצא משתמש מחובר');
+        toast({
+          title: "שגיאה",
+          description: "לא נמצא משתמש מחובר",
+          variant: "destructive",
+        });
         navigate('/auth');
         return;
       }
@@ -217,18 +231,30 @@ const NewSessionForm = () => {
           if (profileError) {
             console.error('Error saving default Zoom link:', profileError);
           } else {
-            toast.success('קישור הזום נשמר כברירת מחדל');
+            toast({
+              title: "הצלחה",
+              description: "קישור הזום נשמר כברירת מחדל",
+            });
             setDefaultZoomLink(formData.location);
           }
         }
       }
 
       const meetingTypeText = formData.meeting_type === 'in_person' ? 'פרונטלי' : 'בזום';
-      toast.success(`המפגש ${meetingTypeText} עם ${selectedPlayer?.full_name} נקבע בהצלחה ל-${formData.session_date} בשעה ${formData.session_time}!`);
-      navigate('/');
+      setSuccessDialogData({
+        playerName: selectedPlayer?.full_name || '',
+        sessionDate: formData.session_date,
+        sessionTime: formData.session_time
+      });
+      setShowSuccessDialog(true);
+      
     } catch (error: any) {
       console.error('Form submission error:', error);
-      toast.error(error.message || 'אירעה שגיאה בקביעת המפגש');
+      toast({
+        title: "שגיאה",
+        description: error.message || 'אירעה שגיאה בקביעת המפגש',
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -263,7 +289,7 @@ const NewSessionForm = () => {
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12">
       <div className="max-w-md mx-auto px-4">
         <div className="flex justify-end mb-6">
-          <Button variant="outline" size="icon" onClick={() => navigate('/')} title="חזרה לדף הראשי">
+          <Button variant="outline" size="icon" onClick={() => navigate('/dashboard-coach')} title="חזרה לדף הראשי">
             <Home className="h-4 w-4" />
           </Button>
         </div>
@@ -410,7 +436,7 @@ const NewSessionForm = () => {
               </div>
 
               <div className="flex gap-4 justify-end pt-4">
-                <Button variant="outline" type="button" onClick={() => navigate(-1)}>
+                <Button variant="outline" type="button" onClick={() => navigate('/dashboard-coach')}>
                   ביטול
                 </Button>
                 <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700">
@@ -421,6 +447,15 @@ const NewSessionForm = () => {
           </CardContent>
         </Card>
       </div>
+
+      <FeedbackDialog
+        open={showSuccessDialog}
+        setOpen={setShowSuccessDialog}
+        title="המפגש נקבע בהצלחה"
+        message={`המפגש עם ${successDialogData.playerName} נקבע בהצלחה ל-${successDialogData.sessionDate} בשעה ${successDialogData.sessionTime}!`}
+        isError={false}
+        onClose={handleSuccessDialogClose}
+      />
     </div>;
 };
 

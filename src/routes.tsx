@@ -27,6 +27,7 @@ const Goals = lazy(() => import('@/pages/Goals').then(module => ({ default: modu
 const QuestionnairesPage = lazy(() => import('@/pages/QuestionnairesPage').then(module => ({ default: module.default })));
 const PlayerQuestionnaires = lazy(() => import('@/pages/player/PlayerQuestionnaires').then(module => ({ default: module.default })));
 const PlayerQuestionnaireForm = lazy(() => import('@/pages/player/PlayerQuestionnaireForm').then(module => ({ default: module.default })));
+const NewSessionForm = lazy(() => import('@/pages/NewSessionForm').then(module => ({ default: module.default })));
 
 export function AppRoutes() {
   return (
@@ -53,6 +54,7 @@ export function AppRoutes() {
         <Route path="/questionnaires" element={<QuestionnairesPage />} />
         <Route path="/player/questionnaires" element={<PlayerQuestionnaires />} />
         <Route path="/player/questionnaire/:id" element={<PlayerQuestionnaireForm />} />
+        <Route path="/new-session" element={<NewSessionForm />} />
       </Route>
       
       {/* Public registration form */}
