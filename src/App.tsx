@@ -109,6 +109,7 @@ function App() {
             <Route path="/player/game-evaluation/:playerId" element={<AuthGuard playerOnly={true}><PlayerGameEvaluationForm /></AuthGuard>} />
             <Route path="/game-evaluation/:playerId" element={<AuthGuard><PlayerGameEvaluationForm /></AuthGuard>} />
             <Route path="/questionnaires" element={<AuthGuard><QuestionnairesPage /></AuthGuard>} />
+            <Route path="/player/questionnaires" element={<AuthGuard playerOnly={true}><PlayerQuestionnaires /></AuthGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ThemeProvider>
