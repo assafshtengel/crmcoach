@@ -26,6 +26,8 @@ const Contract = lazy(() => import('@/pages/Contract').then(module => ({ default
 const Goals = lazy(() => import('@/pages/Goals').then(module => ({ default: module.default })));
 const QuestionnairesPage = lazy(() => import('@/pages/QuestionnairesPage').then(module => ({ default: module.default })));
 const PlayerQuestionnaires = lazy(() => import('@/pages/player/PlayerQuestionnaires').then(module => ({ default: module.default })));
+// Future route for questionnaire filling page
+// const PlayerQuestionnaireForm = lazy(() => import('@/pages/player/PlayerQuestionnaireForm').then(module => ({ default: module.default })));
 
 export function AppRoutes() {
   return (
@@ -51,6 +53,8 @@ export function AppRoutes() {
         <Route path="/player-form" element={<PlayerForm />} />
         <Route path="/questionnaires" element={<QuestionnairesPage />} />
         <Route path="/player/questionnaires" element={<PlayerQuestionnaires />} />
+        {/* Add a future route for the questionnaire filling page */}
+        {/* <Route path="/player/questionnaire/:id" element={<PlayerQuestionnaireForm />} /> */}
       </Route>
       
       {/* Public registration form */}

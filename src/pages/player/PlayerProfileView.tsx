@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideosTab } from "@/components/player/VideosTab";
 import { useScreenSize } from "@/hooks/use-screen-size";
-import { Bell, User, LogOut, Calendar, Target, FileText, Video, CheckSquare, PencilLine, Clock, ArrowRight, ExternalLink, ChevronRight, ClipboardCheck } from 'lucide-react';
+import { Bell, User, LogOut, Calendar, Target, FileText, Video, CheckSquare, PencilLine, Clock, ArrowRight, ExternalLink, ChevronRight, ClipboardCheck, ClipboardList } from 'lucide-react';
 import { 
   Popover, 
   PopoverContent, 
@@ -72,6 +72,41 @@ const PlayerProfileView = () => {
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [editedGoalText, setEditedGoalText] = useState("");
   const [savingGoals, setSavingGoals] = useState(false);
+  const [questionnaires, setQuestionnaires] = useState([]);
+  const [loadingQuestionnaires, setLoadingQuestionnaires] = useState(false);
+
+  const fetchPlayerQuestionnaires = async (playerId: string) => {
+    try {
+      setLoadingQuestionnaires(true);
+      
+      const { data, error } = await supabase
+        .from('assigned_questionnaires')
+        .select(`
+          *,
+          coach:coach_id(full_name)
+        `)
+        .eq('player_id', playerId)
+        .eq('status', 'pending');
+
+      if (error) {
+        console.error("Error fetching questionnaires:", error);
+        throw error;
+      }
+
+      const questionnairesWithTitles = data?.map(q => {
+        return {
+          ...q,
+          questionnaire_title: `שאלון ${q.questionnaire_id}`
+        };
+      }) || [];
+      
+      setQuestionnaires(questionnairesWithTitles);
+    } catch (error) {
+      console.error("Error in fetchPlayerQuestionnaires:", error);
+    } finally {
+      setLoadingQuestionnaires(false);
+    }
+  };
 
   useEffect(() => {
     const loadPlayerData = async () => {
@@ -97,6 +132,8 @@ const PlayerProfileView = () => {
         }
 
         setPlayer(data);
+        
+        await fetchPlayerQuestionnaires(data.id);
         
         await loadPlayerGoals(data.id);
         
@@ -326,6 +363,10 @@ const PlayerProfileView = () => {
     toast.success("סטטוס המטרה עודכן בהצלחה");
   };
 
+  const handleAnswerQuestionnaire = (questionnaireId: string) => {
+    navigate(`/player/questionnaire/${questionnaireId}`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#F2FCE2] to-[#E5DEFF]">
@@ -381,12 +422,16 @@ const PlayerProfileView = () => {
         <FileText className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
         {!isMobile && <span className="hidden sm:inline">סיכומים</span>}
       </TabsTrigger>
-      <TabsTrigger value="evaluation" className="tab-trigger">
-        <ClipboardCheck className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
-        {!isMobile && <span className="hidden sm:inline">איבחון</span>}
+      <TabsTrigger value="questionnaires" className="tab-trigger">
+        <ClipboardList className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
+        {!isMobile && <span className="hidden sm:inline">שאלונים</span>}
       </TabsTrigger>
       {!isMobile && (
         <>
+          <TabsTrigger value="evaluation" className="tab-trigger">
+            <ClipboardCheck className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">איבחון</span>
+          </TabsTrigger>
           <TabsTrigger value="belief-breaking" className="tab-trigger">
             <ExternalLink className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
             <span className="hidden sm:inline">שחרור אמונות</span>
@@ -394,10 +439,6 @@ const PlayerProfileView = () => {
           <TabsTrigger value="goals" className="tab-trigger">
             <Target className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
             <span className="hidden sm:inline">מטרות</span>
-          </TabsTrigger>
-          <TabsTrigger value="game-prep" className="tab-trigger">
-            <CheckSquare className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-            <span className="hidden sm:inline">הכנה למשחק</span>
           </TabsTrigger>
         </>
       )}
@@ -435,18 +476,6 @@ const PlayerProfileView = () => {
         
         <Card 
           className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white/90 hover:bg-white"
-          onClick={() => setActiveTab('game-prep')}
-        >
-          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
-              <CheckSquare className="h-5 w-5 text-primary" />
-            </div>
-            <p className="text-xs font-medium text-gray-800">הכנה למשחק</p>
-          </CardContent>
-        </Card>
-        
-        <Card 
-          className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white/90 hover:bg-white"
           onClick={() => setActiveTab('evaluation')}
         >
           <CardContent className="p-4 flex flex-col items-center justify-center text-center">
@@ -454,6 +483,18 @@ const PlayerProfileView = () => {
               <ClipboardCheck className="h-5 w-5 text-primary" />
             </div>
             <p className="text-xs font-medium text-gray-800">איבחון</p>
+          </CardContent>
+        </Card>
+        
+        <Card 
+          className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white/90 hover:bg-white"
+          onClick={() => setActiveTab('questionnaires')}
+        >
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+              <ClipboardList className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-xs font-medium text-gray-800">שאלונים</p>
           </CardContent>
         </Card>
       </div>
@@ -743,6 +784,64 @@ const PlayerProfileView = () => {
                       <div className="bg-gray-50 rounded-lg p-8 text-center">
                         <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
                         <p className="text-gray-500">אין סיכומי מפגשים זמינים</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="questionnaires">
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gradient-to-r from-[#F2FCE2]/50 to-[#E5DEFF]/50 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <ClipboardList className="h-5 w-5 text-primary" />
+                      השאלונים שלי
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {loadingQuestionnaires ? (
+                      <div className="flex justify-center p-8">
+                        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                      </div>
+                    ) : questionnaires.length > 0 ? (
+                      <div className="space-y-4">
+                        {questionnaires.map((questionnaire) => (
+                          <motion.div 
+                            key={questionnaire.id} 
+                            className="p-4 border border-gray-100 rounded-lg hover:shadow-md transition-all bg-white"
+                            {...cardAnimationProps}
+                          >
+                            <div className="flex flex-col md:flex-row justify-between gap-4">
+                              <div className="flex gap-4 items-start">
+                                <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
+                                  <ClipboardList className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-lg">{questionnaire.questionnaire_title}</p>
+                                  {questionnaire.coach && (
+                                    <p className="text-gray-500">מאמן: {questionnaire.coach.full_name}</p>
+                                  )}
+                                  <p className="text-gray-500 text-sm mt-1">תאריך: {formatDate(questionnaire.assigned_at)}</p>
+                                </div>
+                              </div>
+                              <div className="self-end md:self-center">
+                                <Button 
+                                  variant="default"
+                                  className="bg-primary hover:bg-primary/90 gap-2"
+                                  onClick={() => handleAnswerQuestionnaire(questionnaire.id)}
+                                >
+                                  ענה עכשיו
+                                  <ArrowRight className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 rounded-lg p-8 text-center">
+                        <ClipboardList className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500">לא הוקצו לך שאלונים כרגע</p>
                       </div>
                     )}
                   </CardContent>
