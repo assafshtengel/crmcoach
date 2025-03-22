@@ -17,7 +17,7 @@ export function Layout() {
     { path: "/dashboard-coach", label: "בית", icon: Home },
     { path: "/sessions-list", label: "מפגשים", icon: Calendar },
     { path: "/players-list", label: "שחקנים", icon: Users },
-    { path: "/goals", label: "מטרות", icon: Target }, // New Goals navigation item
+    { path: "/goals", label: "מטרות", icon: Target },
     { path: "/tool-management", label: "ניהול כלים", icon: Wrench },
     { path: "/session-summaries", label: "סיכומים", icon: FileText },
     { path: "/profile-coach", label: "הגדרות", icon: Settings },
@@ -27,6 +27,15 @@ export function Layout() {
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
+          {/* Logo in the top left */}
+          <div className="flex items-center mr-auto">
+            <img 
+              src="/lovable-uploads/40b936c5-746e-4c0e-8ba6-673d576cf884.png" 
+              alt="לוגו" 
+              className="h-8 w-auto"
+            />
+          </div>
+          
           <Link to="/" className="mr-4 hidden md:flex">
             <Button variant="ghost" className="px-2">
               <Home className="h-5 w-5" />
