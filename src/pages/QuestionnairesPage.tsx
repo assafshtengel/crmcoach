@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+import QuestionnaireAccordion from '@/components/questionnaires/QuestionnaireAccordion';
+import { systemTemplates } from '@/data/systemTemplates';
 
 const QuestionnairesPage = () => {
   const navigate = useNavigate();
@@ -60,8 +62,10 @@ const QuestionnairesPage = () => {
 
               <div>
                 <h2 className="text-xl font-semibold mb-4">תבניות שאלונים מובנות</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* System templates would be mapped here */}
+                <div className="grid grid-cols-1 gap-4">
+                  {systemTemplates.map((template) => (
+                    <QuestionnaireAccordion key={template.id} template={template} />
+                  ))}
                 </div>
               </div>
             </div>
