@@ -12,8 +12,16 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Question, QuestionnaireTemplate } from '@/types/questionnaire';
-import { Pencil, Save, X } from 'lucide-react';
+import { Pencil, Save, X, Check } from 'lucide-react';
+import { usePlayers } from '@/contexts/PlayersContext';
 
 interface QuestionnaireAccordionProps {
   template: QuestionnaireTemplate;
@@ -22,6 +30,8 @@ interface QuestionnaireAccordionProps {
 const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ template }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedQuestions, setEditedQuestions] = useState<Question[]>(template.questions);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
+  const { players } = usePlayers();
 
   const openQuestions = editedQuestions.filter(q => q.type === 'open');
   const closedQuestions = editedQuestions.filter(q => q.type === 'closed');
@@ -42,6 +52,11 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
   const handleCancel = () => {
     setEditedQuestions(template.questions);
     setIsEditing(false);
+  };
+
+  const handleAssignQuestionnaire = () => {
+    // TODO: Implement assignment logic
+    console.log(`Assigning questionnaire ${template.id} to player ${selectedPlayerId}`);
   };
 
   return (
@@ -83,12 +98,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                             dir="rtl"
                           />
                         ) : (
-                          <>
-                            <p className="text-right">{question.question_text}</p>
-                            <div className="border-b border-gray-200 pb-2">
-                              <p className="text-sm text-gray-500">תאריך מילוי: ________</p>
-                            </div>
-                          </>
+                          <p className="text-right">{question.question_text}</p>
                         )}
                       </div>
                     ))}
@@ -141,6 +151,42 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                     <Save className="h-4 w-4 ml-2" />
                     שמור שינויים
                   </Button>
+                </div>
+              )}
+
+              {!isEditing && (
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <h3 className="font-semibold text-md mb-3">הקצאת שאלון לשחקן</h3>
+                  <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3 sm:items-center">
+                    <div className="flex-1">
+                      <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
+                        <SelectTrigger className="w-full" dir="rtl">
+                          <SelectValue placeholder="בחר שחקן מתוך הרשימה" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {players.length > 0 ? (
+                            players.map((player) => (
+                              <SelectItem key={player.id} value={player.id}>
+                                {player.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-players" disabled>
+                              אין שחקנים זמינים
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button 
+                      onClick={handleAssignQuestionnaire}
+                      disabled={!selectedPlayerId}
+                      className="sm:mr-3 sm:flex-shrink-0"
+                    >
+                      <Check className="h-4 w-4 ml-2" />
+                      שייך את השאלון לשחקן
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
