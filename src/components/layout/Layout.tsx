@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Home, Calendar, Users, Wrench, FileText, Settings, Menu, X, Target } from "lucide-react";
+import { Home, Calendar, Users, Wrench, FileText, Settings, Menu, X, Target } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export function Layout() {
@@ -25,30 +25,18 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center">
+      <header className="sticky top-0 z-50 w-full bg-white shadow-sm">
+        <div className="container flex h-16 items-center">
           {/* Logo and site name in the top left */}
-          <div className="flex items-center mr-auto gap-2">
+          <div className="flex items-center mr-auto gap-3">
             <img 
               src="/lovable-uploads/40b936c5-746e-4c0e-8ba6-673d576cf884.png" 
               alt="CASSABOOM Logo" 
-              className="h-8 w-auto"
+              className="h-10 w-auto"
             />
-            <span className="font-bold text-lg hidden sm:block">CASSABOOM</span>
+            <span className="font-bold text-xl text-primary hidden sm:block">CASSABOOM</span>
           </div>
           
-          <Link to="/" className="mr-4 hidden md:flex">
-            <Button variant="ghost" className="px-2">
-              <Home className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="mr-4 flex flex-1 md:hidden">
-            <Link to="/">
-              <Button variant="ghost" size="icon">
-                <ArrowRight className="h-5 w-5" />
-              </Button>
-            </Link>
-          </div>
           <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-2 rtl:space-x-reverse">
@@ -73,13 +61,13 @@ export function Layout() {
                 <div className="flex flex-col h-full">
                   <div className="p-4 border-b">
                     <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <img 
                           src="/lovable-uploads/40b936c5-746e-4c0e-8ba6-673d576cf884.png" 
                           alt="CASSABOOM Logo" 
-                          className="h-6 w-auto"
+                          className="h-8 w-auto"
                         />
-                        <span className="font-bold">CASSABOOM</span>
+                        <span className="font-bold text-lg text-primary">CASSABOOM</span>
                       </div>
                       <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
                         <X className="h-5 w-5" />
