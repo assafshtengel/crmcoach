@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook, Edit, Save, X, Plus, Film, FileQuestion } from "lucide-react";
+import { Search, LogOut, ArrowRight, Video, Target, Calendar, BookOpen, Play, Check, Trash2, Instagram, Facebook, Edit, Save, X, Plus, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -775,26 +775,6 @@ const Dashboard = () => {
                 <p className="text-gray-600">חומרי קריאה והקלטות נוספות יהיו זמינים כאן</p>
               </div>
             </CardContent>
-          </Card>
-
-          <Card className="col-span-1">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                שאלונים
-              </CardTitle>
-              <FileQuestion className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">שאלונים</div>
-              <p className="text-xs text-muted-foreground">
-                צפייה בתשובות לשאלונים
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button asChild variant="ghost" className="w-full">
-                <Link to="/questionnaires">לעמוד השאלונים</Link>
-              </Button>
-            </CardFooter>
           </Card>
 
           <AdminMessageForm />
