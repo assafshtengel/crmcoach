@@ -24,6 +24,7 @@ const LandingPages = lazy(() => import('@/pages/LandingPages').then(module => ({
 const CoachLandingTemplate = lazy(() => import('@/pages/CoachLandingTemplate').then(module => ({ default: module.default })));
 const Contract = lazy(() => import('@/pages/Contract').then(module => ({ default: module.default })));
 const Goals = lazy(() => import('@/pages/Goals').then(module => ({ default: module.default })));
+const QuestionnairesPage = lazy(() => import('@/pages/QuestionnairesPage').then(module => ({ default: module.default })));
 
 export function AppRoutes() {
   return (
@@ -47,6 +48,7 @@ export function AppRoutes() {
         <Route path="/contract" element={<Contract />} />
         <Route path="/goals" element={<Goals />} />
         <Route path="/player-form" element={<PlayerForm />} />
+        <Route path="/questionnaires" element={<QuestionnairesPage />} />
       </Route>
       
       {/* Public registration form */}

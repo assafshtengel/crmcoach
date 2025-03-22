@@ -25,6 +25,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
+import { ClipboardList } from 'lucide-react';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -1083,6 +1084,20 @@ const DashboardCoach = () => {
               </Button>
             </CardContent>
           </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#FF5722] cursor-pointer" onClick={() => navigate('/questionnaires')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">שאלונים</CardTitle>
+              <ClipboardList className="h-5 w-5 text-[#FF5722]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">צפה בשאלונים שמולאו על ידי השחקנים</p>
+              <Button variant="default" className="w-full bg-[#FF5722] hover:bg-[#E64A19]">
+                <ClipboardList className="h-4 w-4 mr-2" />
+                צפה בשאלונים
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="bg-white/90 shadow-lg">
@@ -1165,4 +1180,3 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
-
