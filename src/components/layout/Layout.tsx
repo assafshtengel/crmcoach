@@ -27,13 +27,14 @@ export function Layout() {
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
-          {/* Logo in the top left */}
-          <div className="flex items-center mr-auto">
+          {/* Logo and site name in the top left */}
+          <div className="flex items-center mr-auto gap-2">
             <img 
               src="/lovable-uploads/40b936c5-746e-4c0e-8ba6-673d576cf884.png" 
-              alt="לוגו" 
+              alt="CASSABOOM Logo" 
               className="h-8 w-auto"
             />
+            <span className="font-bold text-lg hidden sm:block">CASSABOOM</span>
           </div>
           
           <Link to="/" className="mr-4 hidden md:flex">
@@ -72,7 +73,14 @@ export function Layout() {
                 <div className="flex flex-col h-full">
                   <div className="p-4 border-b">
                     <div className="flex justify-between items-center">
-                      <h2 className="text-lg font-semibold">תפריט</h2>
+                      <div className="flex items-center gap-2">
+                        <img 
+                          src="/lovable-uploads/40b936c5-746e-4c0e-8ba6-673d576cf884.png" 
+                          alt="CASSABOOM Logo" 
+                          className="h-6 w-auto"
+                        />
+                        <span className="font-bold">CASSABOOM</span>
+                      </div>
                       <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
                         <X className="h-5 w-5" />
                       </Button>
