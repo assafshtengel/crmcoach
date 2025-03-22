@@ -1,275 +1,346 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/lib/supabase';
-import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Eye } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface SessionSummary {
-  id: string;
-  created_at: string;
-  summary_text: string;
-  achieved_goals: string[];
-  future_goals: string[];
-  progress_rating: number;
-  next_session_focus: string;
-  additional_notes?: string;
-  player_id?: string; // מזהה שחקן ישירות בסיכום
-  session: {
-    id: string;
-    session_date: string;
-    player_id: string;
-    player: {
-      full_name: string;
-    } | null;
-  };
-}
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+import { 
+  Dialog, 
+  DialogTrigger, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogDescription,
+  DialogFooter 
+} from '@/components/ui/dialog';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { 
+  Clock, 
+  MoreVertical, 
+  Pencil, 
+  Trash2,
+  Calendar,
+  CheckCircle2,
+  FileText,
+  ArrowRight
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { format, parseISO, isAfter, isSameDay } from 'date-fns';
+import { he } from 'date-fns/locale';
 
 const SessionSummaries = () => {
   const navigate = useNavigate();
-  const [summaries, setSummaries] = useState<SessionSummary[]>([]);
-  const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
-  const [selectedPlayer, setSelectedPlayer] = useState<string>('all');
-  const [isLoading, setIsLoading] = useState(true);
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [sessionSummaries, setSessionSummaries] = useState({});
 
-  const fetchSummaries = async () => {
-    setIsLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate('/auth');
+          return;
+        }
 
-    const query = supabase
-      .from('session_summaries')
-      .select(`
-        *,
-        session:sessions (
-          id,
-          session_date,
-          player_id,
-          player:players (
-            full_name
-          )
-        )
-      `)
-      .eq('coach_id', user.id)
-      .order('created_at', { ascending: false });
+        console.log("Fetching sessions for coach:", user.id);
 
-    const { data, error } = await query;
-    if (error) {
-      console.error('Error fetching summaries:', error);
-      return;
-    }
-    
-    console.log("All fetched summaries before filtering:", data);
-    
-    // Filter summaries based on the selected player
-    let filteredSummaries = data as SessionSummary[];
-    
-    if (selectedPlayer !== 'all') {
-      console.log("Filtering summaries for player ID:", selectedPlayer);
-      
-      filteredSummaries = filteredSummaries.filter(
-        summary => 
-          // Strict filtering to ensure player ID matches selected player
-          (summary.player_id === selectedPlayer) || 
-          (summary.session && summary.session.player_id === selectedPlayer)
-      );
-      
-      console.log("Filtered summaries:", filteredSummaries);
-    }
-    
-    // Create a Map to ensure unique sessions (by session ID)
-    const uniqueSessions = new Map<string, SessionSummary>();
-    filteredSummaries.forEach((summary: SessionSummary) => {
-      // Add null check for session and player
-      if (summary.session && summary.session.id) {
-        uniqueSessions.set(summary.session.id, summary);
+        const { data: sessionsData, error } = await supabase
+          .from('sessions')
+          .select(`
+            *,
+            player:players(full_name)
+          `)
+          .eq('coach_id', user.id)
+          .order('session_date', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching sessions:', error);
+          toast.error('שגיאה בטעינת רשימת המפגשים');
+          return;
+        }
+
+        console.log("Sessions fetched:", sessionsData?.length || 0);
+
+        // Fetch summary information for each session
+        const summariesPromises = sessionsData.map(async (session) => {
+          const { data, error } = await supabase
+            .from('session_summaries')
+            .select('*')
+            .eq('session_id', session.id)
+            .maybeSingle();
+
+          if (!error && data) {
+            return { [session.id]: data };
+          }
+          return { [session.id]: null };
+        });
+
+        const summariesResults = await Promise.all(summariesPromises);
+        const summariesMap = summariesResults.reduce((acc, curr) => {
+          return { ...acc, ...curr };
+        }, {});
+
+        setSessions(sessionsData || []);
+        setSessionSummaries(summariesMap);
+      } catch (error) {
+        console.error('Error in fetchSessions:', error);
+        toast.error('שגיאה בטעינת המפגשים');
+      } finally {
+        setLoading(false);
       }
-    });
-    
-    setSummaries(Array.from(uniqueSessions.values()));
-    setIsLoading(false);
-  };
+    };
 
-  const fetchPlayers = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    fetchSessions();
+  }, [navigate]);
 
-    const { data, error } = await supabase
-      .from('players')
-      .select('id, full_name')
-      .eq('coach_id', user.id);
+  const handleDelete = async () => {
+    if (!selectedSession) return;
 
-    if (error) {
-      console.error('Error fetching players:', error);
-      return;
+    try {
+      // Delete any summaries first
+      const { error: summaryError } = await supabase
+        .from('session_summaries')
+        .delete()
+        .eq('session_id', selectedSession.id);
+
+      if (summaryError) {
+        console.error('Error deleting session summary:', summaryError);
+      }
+
+      // Then delete the session
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('id', selectedSession.id);
+
+      if (error) throw error;
+
+      setSessions(prevSessions => 
+        prevSessions.filter(session => session.id !== selectedSession.id)
+      );
+      toast.success('המפגש נמחק בהצלחה');
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      toast.error('שגיאה במחיקת המפגש');
+    } finally {
+      setDeleteDialogOpen(false);
+      setSelectedSession(null);
     }
-    setPlayers(data);
   };
 
-  useEffect(() => {
-    fetchPlayers();
-  }, []);
+  const handleEdit = (session) => {
+    navigate('/edit-session', { state: { sessionId: session.id } });
+  };
 
-  useEffect(() => {
-    fetchSummaries();
-  }, [selectedPlayer]);
+  const handleAddSummary = (session) => {
+    navigate('/edit-session', { 
+      state: { 
+        sessionId: session.id, 
+        needsSummary: true,
+        forceEnable: isAfter(new Date(), parseISO(session.session_date)) || isSameDay(new Date(), parseISO(session.session_date))
+      } 
+    });
+  };
 
-  const renderSummaryDetails = (summary: SessionSummary) => {
+  const handleViewSummary = (session) => {
+    navigate('/edit-session', { 
+      state: { 
+        sessionId: session.id, 
+        needsSummary: true 
+      } 
+    });
+  };
+
+  const formatDate = (dateString) => {
+    try {
+      return format(parseISO(dateString), 'dd/MM/yyyy', { locale: he });
+    } catch (e) {
+      console.error("Error formatting date:", e);
+      return dateString;
+    }
+  };
+
+  const isSessionPast = (dateString) => {
+    const sessionDate = parseISO(dateString);
+    return isAfter(new Date(), sessionDate);
+  };
+
+  const getSessionStatus = (session) => {
+    const isPast = isSessionPast(session.session_date);
+    const hasSummary = sessionSummaries[session.id] !== null;
+    
+    if (isPast && hasSummary) return "completed";
+    if (isPast) return "past";
+    return "upcoming";
+  };
+
+  if (loading) {
     return (
-      <ScrollArea className="h-[calc(100vh-200px)] px-4">
-        <div className="space-y-6 text-right">
-          <div>
-            <h3 className="text-lg font-semibold mb-2 text-[#6E59A5]">סיכום המפגש</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{summary.summary_text}</p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-2 text-[#7E69AB]">מטרות שהושגו</h3>
-            <ul className="list-disc list-inside space-y-1 mr-4">
-              {summary.achieved_goals.map((goal, index) => (
-                <li key={index} className="text-gray-700">{goal}</li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-2 text-[#9b87f5]">מטרות להמשך</h3>
-            <ul className="list-disc list-inside space-y-1 mr-4">
-              {summary.future_goals.map((goal, index) => (
-                <li key={index} className="text-gray-700">{goal}</li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-2 text-[#D6BCFA]">פוקוס למפגש הבא</h3>
-            <p className="text-gray-700">{summary.next_session_focus}</p>
-          </div>
-
-          {summary.additional_notes && (
-            <div>
-              <h3 className="text-lg font-semibold mb-2 text-[#8B5CF6]">הערות נוספות</h3>
-              <p className="text-gray-700 whitespace-pre-wrap">{summary.additional_notes}</p>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
     );
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F2FCE2] to-[#E5DEFF]">
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/')}>
-              <ArrowRight className="h-5 w-5" />
-              חזרה
-            </Button>
-            <h1 className="text-2xl font-bold text-[#6E59A5]">סיכומי מפגשים</h1>
-          </div>
-          <Select
-            value={selectedPlayer}
-            onValueChange={(value) => setSelectedPlayer(value)}
-          >
-            <SelectTrigger className="w-[200px] text-right">
-              <SelectValue placeholder="בחר שחקן" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">כל השחקנים</SelectItem>
-              {players.map(player => (
-                <SelectItem key={player.id} value={player.id}>
-                  {player.full_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="container mx-auto py-8 px-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+        <h1 className="text-2xl font-bold mb-4 md:mb-0">רשימת מפגשים</h1>
+        <Button onClick={() => navigate('/new-session')} className="bg-green-600 hover:bg-green-700">
+          קבע מפגש חדש
+        </Button>
+      </div>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
-          </div>
-        ) : summaries.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {summaries.map(summary => (
-              <Card key={summary.id} className="bg-white/90 hover:bg-white transition-all duration-300 hover:shadow-lg hover:shadow-purple-100">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <div className="text-right w-full">
-                      <CardTitle className="text-lg font-medium text-[#6E59A5]">
-                        {summary.session?.player?.full_name || "שחקן לא ידוע"}
-                      </CardTitle>
-                      <p className="text-sm text-gray-500">
-                        {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
-                      </p>
+      {sessions.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Calendar className="h-16 w-16 text-gray-300 mb-4" />
+            <p className="text-xl font-medium text-gray-500 mb-2">אין מפגשים</p>
+            <p className="text-gray-400 mb-6">לא נמצאו מפגשים קיימים</p>
+            <Button onClick={() => navigate('/new-session')}>
+              קבע מפגש חדש
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-6">
+          {sessions.map((session) => {
+            const status = getSessionStatus(session);
+            const isPast = status === 'past' || status === 'completed';
+            const hasSummary = sessionSummaries[session.id] !== null;
+            
+            return (
+              <Card key={session.id} className="overflow-hidden">
+                <div className={`h-2 w-full ${status === 'completed' ? 'bg-green-500' : status === 'past' ? 'bg-orange-400' : 'bg-blue-500'}`}></div>
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row justify-between">
+                    <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                      <div className="bg-gray-100 p-3 rounded-full">
+                        <Clock className="h-6 w-6 text-gray-700" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold">{formatDate(session.session_date)}</h3>
+                        <p className="text-gray-500">{session.session_time}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs font-normal">
+                            {session.player.full_name}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs font-normal">
+                            {session.meeting_type === 'in_person' ? 'פגישה פרונטלית' : 'פגישת זום'}
+                          </Badge>
+                        </div>
+                        {session.location && (
+                          <p className="text-sm text-gray-600 mt-2">
+                            מיקום: {session.location}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 mr-2">
-                      <FileText className="h-5 w-5 text-[#9b87f5]" />
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Eye className="h-4 w-4 text-[#7E69AB] hover:text-[#6E59A5]" />
+
+                    <div className="flex items-center gap-2 mt-4 md:mt-0">
+                      {status === 'completed' ? (
+                        <Badge className="bg-green-500">הושלם</Badge>
+                      ) : status === 'past' ? (
+                        <Badge variant="outline" className="border-orange-400 text-orange-600">
+                          מפגש עבר
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-blue-400 text-blue-600">
+                          מתוכנן
+                        </Badge>
+                      )}
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-5 w-5" />
                           </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-3xl max-h-screen">
-                          <DialogHeader>
-                            <DialogTitle className="flex items-center justify-between mb-4 text-right">
-                              <span className="text-[#6E59A5]">סיכום מפגש - {summary.session?.player?.full_name || "שחקן לא ידוע"}</span>
-                              <span className="text-sm font-normal text-gray-500">
-                                {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
-                              </span>
-                            </DialogTitle>
-                          </DialogHeader>
-                          {renderSummaryDetails(summary)}
-                          <div className="flex items-center justify-between pt-4 border-t mt-4">
-                            <div className="text-gray-600 text-right w-full">
-                              דירוג התקדמות: <span className="font-semibold text-[#6E59A5]">{summary.progress_rating}/5</span>
-                            </div>
-                            <DialogClose asChild>
-                              <Button variant="outline">סגור</Button>
-                            </DialogClose>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(session)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            ערוך פרטים
+                          </DropdownMenuItem>
+                          {isPast && !hasSummary && (
+                            <DropdownMenuItem onClick={() => handleAddSummary(session)}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              הוסף סיכום
+                            </DropdownMenuItem>
+                          )}
+                          {hasSummary && (
+                            <DropdownMenuItem onClick={() => handleViewSummary(session)}>
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              צפה בסיכום
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => {
+                              setSelectedSession(session);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            מחק
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4 text-right">
-                    <div>
-                      <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">סיכום המפגש</h3>
-                      <p className="text-sm text-gray-600 line-clamp-3">{summary.summary_text}</p>
+
+                  {session.notes && (
+                    <div className="mt-4 pt-4 border-t border-dashed border-gray-200">
+                      <p className="text-gray-600 whitespace-pre-line">{session.notes}</p>
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-500 text-xs">
-                        {format(new Date(summary.created_at), 'HH:mm dd/MM/yyyy', { locale: he })}
-                      </span>
-                      <span className="text-[#6E59A5]">דירוג התקדמות: {summary.progress_rating}/5</span>
+                  )}
+                  
+                  {isPast && !hasSummary && (
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        variant="outline"
+                        className="text-primary"
+                        onClick={() => handleAddSummary(session)}
+                      >
+                        הוסף סיכום
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                      </Button>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-white/80 rounded-lg shadow">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">לא נמצאו סיכומי מפגשים</h3>
-            <p className="text-gray-500">
-              {selectedPlayer !== 'all' 
-                ? 'אין סיכומי מפגשים לשחקן זה' 
-                : 'לא נמצאו סיכומי מפגשים במערכת'}
-            </p>
-          </div>
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>מחיקת מפגש</DialogTitle>
+            <DialogDescription>
+              האם אתה בטוח שברצונך למחוק את המפגש הזה? פעולה זו אינה ניתנת לביטול.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              ביטול
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              מחק
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
