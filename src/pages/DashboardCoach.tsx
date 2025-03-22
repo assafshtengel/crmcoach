@@ -1,117 +1,149 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from 'next-themes';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthGuard } from '@/components/auth/AuthGuard';
-import { Layout } from '@/components/layout/Layout';
-import ToolManagement from '@/pages/ToolManagement';
-import AutoVideoManagement from '@/pages/AutoVideoManagement';
 
-import DashboardCoach from '@/pages/DashboardCoach';
-import Index from '@/pages/Index';
-import NewIndex from '@/pages/NewIndex';
-import Dashboard from '@/pages/Dashboard';
-import PlayerProfile from '@/pages/PlayerProfile';
-import Huze from '@/pages/Huze';
-import Contract from '@/pages/Contract';
-import MentalCommitment from '@/pages/MentalCommitment';
-import Admin from '@/pages/Admin';
-import MentalTools from '@/pages/MentalTools';
-import ShortTermGoals from '@/pages/ShortTermGoals';
-import DailyChallenge from '@/pages/DailyChallenge';
-import PlayerForm from '@/pages/PlayerForm';
-import SessionsList from '@/pages/SessionsList';
-import PlayersList from '@/pages/PlayersList';
-import NewSessionForm from '@/pages/NewSessionForm';
-import EditSessionForm from '@/pages/EditSessionForm';
-import GoalDetailsQuestions from '@/pages/GoalDetailsQuestions';
-import ProfileCoach from '@/pages/ProfileCoach';
-import CoachSignUp from '@/pages/CoachSignUp';
-import Reports from '@/pages/Reports';
-import Contact from '@/pages/Contact';
-import Next from '@/pages/Next';
-import PlayerEvaluation from '@/pages/PlayerEvaluation';
-import AnalyticsDashboard from '@/pages/AnalyticsDashboard';
-import PlayerStatistics from '@/pages/PlayerStatistics';
-import GamePreparation from '@/pages/GamePreparation';
-import NotificationsDashboard from '@/pages/NotificationsDashboard';
-import AuthPage from '@/pages/auth/AuthPage';
-import PlayerAuth from '@/pages/PlayerAuth';
-import ActionPlan from '@/pages/ActionPlan';
-import SessionSummaries from '@/pages/SessionSummaries';
-import NewPlayerForm from '@/pages/NewPlayerForm';
-import EditPlayerForm from '@/pages/EditPlayerForm';
-import RegistrationLinks from '@/pages/RegistrationLinks';
-import PublicRegistrationForm from '@/pages/PublicRegistrationForm';
-import AllMeetingSummaries from '@/pages/AllMeetingSummaries';
-import Goals from '@/pages/Goals';
-import PlayerProfileView from '@/pages/player/PlayerProfileView';
-import NotFound from '@/pages/NotFound';
-import MentalLibrary from '@/pages/MentalLibrary';
-import PlayerGameEvaluationForm from '@/pages/player/PlayerGameEvaluationForm';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Activity, Users, Calendar, FileText, Video, CheckSquare, BookOpen, Award, FileQuestion } from 'lucide-react';
 
-import "./App.css";
+const DashboardCoach = () => {
+  const navigate = useNavigate();
 
-function App() {
   return (
-    <Router>
-      <QueryClientProvider client={new QueryClient()}>
-        <ThemeProvider attribute="class">
-          <Toaster />
-          <Routes>
-            <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
-            <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
-            <Route path="/new" element={<AuthGuard><NewIndex /></AuthGuard>} />
-            <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
-            <Route path="/dashboard/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
-            <Route path="/huze" element={<AuthGuard><Huze /></AuthGuard>} />
-            <Route path="/contract" element={<AuthGuard><Contract /></AuthGuard>} />
-            <Route path="/mental-commitment" element={<AuthGuard><MentalCommitment /></AuthGuard>} />
-            <Route path="/admin" element={<AuthGuard><Admin /></AuthGuard>} />
-            <Route path="/mental-tools" element={<AuthGuard><MentalTools /></AuthGuard>} />
-            <Route path="/short-term-goals" element={<AuthGuard><ShortTermGoals /></AuthGuard>} />
-            <Route path="/daily-challenge" element={<AuthGuard><DailyChallenge /></AuthGuard>} />
-            <Route path="/player-form" element={<AuthGuard><PlayerForm /></AuthGuard>} />
-            <Route path="/sessions-list" element={<AuthGuard><SessionsList /></AuthGuard>} />
-            <Route path="/players-list" element={<AuthGuard><PlayersList /></AuthGuard>} />
-            <Route path="/new-session" element={<AuthGuard><NewSessionForm /></AuthGuard>} />
-            <Route path="/edit-session" element={<AuthGuard><EditSessionForm /></AuthGuard>} />
-            <Route path="/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
-            <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
-            <Route path="/goal-details-questions" element={<AuthGuard><GoalDetailsQuestions /></AuthGuard>} />
-            <Route path="/profile-coach" element={<AuthGuard><ProfileCoach /></AuthGuard>} />
-            <Route path="/signup-coach" element={<CoachSignUp />} />
-            <Route path="/reports" element={<AuthGuard><Reports /></AuthGuard>} />
-            <Route path="/contact" element={<AuthGuard><Contact /></AuthGuard>} />
-            <Route path="/next" element={<AuthGuard><Next /></AuthGuard>} />
-            <Route path="/player-evaluation" element={<AuthGuard><PlayerEvaluation /></AuthGuard>} />
-            <Route path="/analytics" element={<AuthGuard><AnalyticsDashboard /></AuthGuard>} />
-            <Route path="/player-statistics" element={<AuthGuard><PlayerStatistics /></AuthGuard>} />
-            <Route path="/game-prep" element={<AuthGuard><GamePreparation /></AuthGuard>} />
-            <Route path="/notifications" element={<AuthGuard><NotificationsDashboard /></AuthGuard>} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/player-auth" element={<PlayerAuth />} />
-            <Route path="/action-plan" element={<AuthGuard><ActionPlan /></AuthGuard>} />
-            <Route path="/session-summaries" element={<AuthGuard><SessionSummaries /></AuthGuard>} />
-            <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />
-            <Route path="/edit-player" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
-            <Route path="/edit-player/:playerId" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
-            <Route path="/registration-links" element={<AuthGuard><RegistrationLinks /></AuthGuard>} />
-            <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
-            <Route path="/tool-management" element={<AuthGuard><ToolManagement /></AuthGuard>} />
-            <Route path="/auto-video-management" element={<AuthGuard><AutoVideoManagement /></AuthGuard>} />
-            <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
-            <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} />
-            <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} />
-            <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-            <Route path="/player/game-evaluation/:playerId" element={<AuthGuard playerOnly={true}><PlayerGameEvaluationForm /></AuthGuard>} />
-            <Route path="/game-evaluation/:playerId" element={<AuthGuard><PlayerGameEvaluationForm /></AuthGuard>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </Router>
-  );
-}
+    <div className="container mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-6 text-right">לוח בקרה מאמן</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* אבחון */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <Activity className="h-10 w-10 text-primary" />
+              <h2 className="text-2xl font-bold">אבחון</h2>
+            </div>
+            <p className="text-gray-600 mb-6">הוסף אבחונים לשחקנים שלך כדי לעקוב אחרי ההתקדמות שלהם</p>
+            <Button onClick={() => navigate('/player-evaluation')} className="w-full">
+              לאבחון
+            </Button>
+          </CardContent>
+        </Card>
 
-export default App;
+        {/* שחקנים */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <Users className="h-10 w-10 text-primary" />
+              <h2 className="text-2xl font-bold">שחקנים</h2>
+            </div>
+            <p className="text-gray-600 mb-6">נהל את השחקנים שלך, ספריית סרטונים והערות</p>
+            <Button onClick={() => navigate('/players-list')} className="w-full">
+              לשחקנים
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* פגישות */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <Calendar className="h-10 w-10 text-primary" />
+              <h2 className="text-2xl font-bold">פגישות</h2>
+            </div>
+            <p className="text-gray-600 mb-6">נהל את הפגישות שלך, תזמן פגישות חדשות ומעקב</p>
+            <Button onClick={() => navigate('/sessions-list')} className="w-full">
+              לפגישות
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* סיכומי פגישות */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <FileText className="h-10 w-10 text-primary" />
+              <h2 className="text-2xl font-bold">סיכומי פגישות</h2>
+            </div>
+            <p className="text-gray-600 mb-6">צפה בסיכומי פגישות מנטליות עם שחקנים</p>
+            <Button onClick={() => navigate('/all-meeting-summaries')} className="w-full">
+              לסיכומים
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* ספריית וידאו */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <Video className="h-10 w-10 text-primary" />
+              <h2 className="text-2xl font-bold">ספריית וידאו</h2>
+            </div>
+            <p className="text-gray-600 mb-6">נהל את ספריית הסרטונים שלך לשחקנים</p>
+            <Button onClick={() => navigate('/tool-management')} className="w-full">
+              לספרייה
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* רישום שחקנים */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <CheckSquare className="h-10 w-10 text-primary" />
+              <h2 className="text-2xl font-bold">רישום שחקנים</h2>
+            </div>
+            <p className="text-gray-600 mb-6">צור קישורים לרישום שחקנים חדשים</p>
+            <Button onClick={() => navigate('/registration-links')} className="w-full">
+              לרישום
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* ספרייה מנטלית */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <BookOpen className="h-10 w-10 text-primary" />
+              <h2 className="text-2xl font-bold">ספרייה מנטלית</h2>
+            </div>
+            <p className="text-gray-600 mb-6">גישה לכלים ומקורות מנטליים לאימון</p>
+            <Button onClick={() => navigate('/mental-library')} className="w-full">
+              לספרייה
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* אבחון במשחק */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <Award className="h-10 w-10 text-primary" />
+              <h2 className="text-2xl font-bold">אבחון במשחק</h2>
+            </div>
+            <p className="text-gray-600 mb-6">אבחון מנטלי והתנהגותי של שחקן במהלך משחק</p>
+            <Button 
+              onClick={() => navigate('/players-list', { state: { showGameEvaluation: true } })} 
+              className="w-full"
+            >
+              לאבחון במשחק
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* שאלונים */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <FileQuestion className="h-10 w-10 text-primary" />
+              <h2 className="text-2xl font-bold">שאלונים</h2>
+            </div>
+            <p className="text-gray-600 mb-6">צפייה בשאלונים שמולאו על ידי השחקנים</p>
+            <Button onClick={() => navigate('/questionnaires')} className="w-full">
+              לשאלונים
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardCoach;
