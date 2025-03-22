@@ -22,6 +22,8 @@ import {
 import { Question, QuestionnaireTemplate } from '@/types/questionnaire';
 import { Pencil, Save, X, Check } from 'lucide-react';
 import { usePlayers } from '@/contexts/PlayersContext';
+import { supabaseClient } from '@/lib/supabaseClient';
+import { useToast } from "@/components/ui/use-toast";
 
 interface QuestionnaireAccordionProps {
   template: QuestionnaireTemplate;
@@ -31,7 +33,9 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
   const [isEditing, setIsEditing] = useState(false);
   const [editedQuestions, setEditedQuestions] = useState<Question[]>(template.questions);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
+  const [isAssigning, setIsAssigning] = useState(false);
   const { players } = usePlayers();
+  const { toast } = useToast();
 
   const openQuestions = editedQuestions.filter(q => q.type === 'open');
   const closedQuestions = editedQuestions.filter(q => q.type === 'closed');
@@ -54,9 +58,63 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
     setIsEditing(false);
   };
 
-  const handleAssignQuestionnaire = () => {
-    // TODO: Implement assignment logic
-    console.log(`Assigning questionnaire ${template.id} to player ${selectedPlayerId}`);
+  const handleAssignQuestionnaire = async () => {
+    if (!selectedPlayerId) {
+      toast({
+        title: "אנא בחר שחקן",
+        description: "עליך לבחור שחקן כדי לשייך אליו את השאלון",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsAssigning(true);
+      
+      // Get the current user's auth session
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      
+      if (!session || !session.user) {
+        toast({
+          title: "יש להתחבר תחילה",
+          description: "עליך להתחבר למערכת כדי לשייך שאלונים",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const coachId = session.user.id;
+      
+      // Create a new record in the assigned_questionnaires table
+      const { error } = await supabaseClient
+        .from('assigned_questionnaires')
+        .insert({
+          coach_id: coachId,
+          player_id: selectedPlayerId,
+          questionnaire_id: template.id,
+          template_id: template.is_system_template ? template.id : template.parent_template_id || template.id,
+        });
+
+      if (error) {
+        console.error('Error assigning questionnaire:', error);
+        throw error;
+      }
+
+      toast({
+        title: "השאלון שויך בהצלחה",
+        description: `השאלון נשלח בהצלחה לשחקן`,
+      });
+      setSelectedPlayerId("");
+    } catch (error: any) {
+      console.error('Failed to assign questionnaire:', error);
+      toast({
+        title: "שגיאה בשיוך השאלון",
+        description: error.message || "אירעה שגיאה בעת שיוך השאלון לשחקן",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   return (
@@ -180,10 +238,14 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                     </div>
                     <Button 
                       onClick={handleAssignQuestionnaire}
-                      disabled={!selectedPlayerId}
+                      disabled={!selectedPlayerId || isAssigning}
                       className="sm:mr-3 sm:flex-shrink-0"
                     >
-                      <Check className="h-4 w-4 ml-2" />
+                      {isAssigning ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent ml-2" />
+                      ) : (
+                        <Check className="h-4 w-4 ml-2" />
+                      )}
                       שייך את השאלון לשחקן
                     </Button>
                   </div>

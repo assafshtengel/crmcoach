@@ -1,20 +1,82 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import QuestionnaireAccordion from '@/components/questionnaires/QuestionnaireAccordion';
 import { systemTemplates } from '@/data/systemTemplates';
 import { PlayersProvider } from '@/contexts/PlayersContext';
+import { supabaseClient } from '@/lib/supabaseClient';
+import { useToast } from "@/components/ui/use-toast";
 
 const QuestionnairesPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('templates');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { toast } = useToast();
+  
   // This would normally come from an API call
   const hasCustomTemplates = false; 
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        setIsLoading(true);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (!session) {
+          toast({
+            title: "יש להתחבר תחילה",
+            description: "על מנת לנהל שאלונים, יש להתחבר למערכת תחילה",
+            variant: "destructive",
+          });
+          navigate('/auth');
+          return;
+        }
+        
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Error checking auth session:', error);
+        toast({
+          title: "שגיאה באימות",
+          description: "אירעה שגיאה בעת בדיקת המשתמש המחובר",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkSession();
+  }, [navigate, toast]);
+
+  // Setup auth listener
+  useEffect(() => {
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setIsAuthenticated(false);
+          navigate('/auth');
+        } else if (event === 'SIGNED_IN' && session) {
+          setIsAuthenticated(true);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <PlayersProvider>

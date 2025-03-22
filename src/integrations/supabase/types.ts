@@ -30,6 +30,36 @@ export type Database = {
         }
         Relationships: []
       }
+      assigned_questionnaires: {
+        Row: {
+          assigned_at: string
+          coach_id: string
+          id: string
+          player_id: string
+          questionnaire_id: string
+          status: string
+          template_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          coach_id: string
+          id?: string
+          player_id: string
+          questionnaire_id: string
+          status?: string
+          template_id: string
+        }
+        Update: {
+          assigned_at?: string
+          coach_id?: string
+          id?: string
+          player_id?: string
+          questionnaire_id?: string
+          status?: string
+          template_id?: string
+        }
+        Relationships: []
+      }
       auto_video_assignments: {
         Row: {
           assigned_at: string
