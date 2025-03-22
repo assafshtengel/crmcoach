@@ -19,6 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Json } from "@/integrations/supabase/types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PlayerData {
   id: string;
@@ -59,6 +60,7 @@ interface PlayerGoals {
 const PlayerProfileView = () => {
   const navigate = useNavigate();
   const { isMobile } = useScreenSize();
+  const isMobileScreen = useIsMobile(); // Using the more reliable mobile hook for consistent detection
   const [player, setPlayer] = useState<PlayerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
@@ -400,56 +402,48 @@ const PlayerProfileView = () => {
   };
 
   const renderTabs = () => (
-    <TabsList className={`tabs-list w-full rounded-xl grid ${isMobile ? 'grid-cols-5 gap-1 p-1' : 'grid-cols-8 gap-0'} text-xs font-medium`}>
+    <TabsList className={`tabs-list w-full rounded-xl grid ${isMobileScreen ? 'grid-cols-4 gap-1 p-1' : 'grid-cols-8 gap-0'} text-xs font-medium`}>
       <TabsTrigger value="profile" className="tab-trigger">
-        <User className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
-        {!isMobile && <span className="hidden sm:inline">פרופיל</span>}
+        <User className={`${isMobileScreen ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
+        {!isMobileScreen && <span className="hidden sm:inline">פרופיל</span>}
       </TabsTrigger>
       <TabsTrigger value="videos" className="tab-trigger relative">
-        <Video className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
-        {!isMobile && <span className="hidden sm:inline">סרטונים</span>}
+        <Video className={`${isMobileScreen ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
+        {!isMobileScreen && <span className="hidden sm:inline">סרטונים</span>}
         {unreadCount > 0 && (
-          <Badge variant="default" className={`absolute ${isMobile ? '-top-1 -right-1' : 'ml-1 md:ml-2'} bg-red-500 h-4 min-w-4 md:h-5 md:min-w-5 flex items-center justify-center text-[10px] md:text-xs`}>
+          <Badge variant="default" className={`absolute ${isMobileScreen ? '-top-1 -right-1' : 'ml-1 md:ml-2'} bg-red-500 h-4 min-w-4 md:h-5 md:min-w-5 flex items-center justify-center text-[10px] md:text-xs`}>
             {unreadCount}
           </Badge>
         )}
       </TabsTrigger>
       <TabsTrigger value="sessions" className="tab-trigger">
-        <Calendar className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
-        {!isMobile && <span className="hidden sm:inline">מפגשים</span>}
+        <Calendar className={`${isMobileScreen ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
+        {!isMobileScreen && <span className="hidden sm:inline">מפגשים</span>}
       </TabsTrigger>
       <TabsTrigger value="summaries" className="tab-trigger">
-        <FileText className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
-        {!isMobile && <span className="hidden sm:inline">סיכומים</span>}
+        <FileText className={`${isMobileScreen ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
+        {!isMobileScreen && <span className="hidden sm:inline">סיכומים</span>}
       </TabsTrigger>
-      <TabsTrigger value="questionnaires" className="tab-trigger">
-        <ClipboardList className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2'}`} />
-        {!isMobile && <span className="hidden sm:inline">שאלונים</span>}
-      </TabsTrigger>
-      {!isMobile && (
-        <>
-          <TabsTrigger value="evaluation" className="tab-trigger">
-            <ClipboardCheck className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-            <span className="hidden sm:inline">איבחון</span>
-          </TabsTrigger>
-          <TabsTrigger value="belief-breaking" className="tab-trigger">
-            <ExternalLink className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-            <span className="hidden sm:inline">שחרור אמונות</span>
-          </TabsTrigger>
-          <TabsTrigger value="goals" className="tab-trigger">
-            <Target className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-            <span className="hidden sm:inline">מטרות</span>
-          </TabsTrigger>
-        </>
-      )}
     </TabsList>
   );
 
   const renderMobileMoreMenu = () => {
-    if (!isMobile) return null;
+    if (!isMobileScreen) return null;
     
     return (
       <div className="grid grid-cols-4 gap-3 mt-4">
+        <Card 
+          className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white/90 hover:bg-white"
+          onClick={() => setActiveTab('questionnaires')}
+        >
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+              <ClipboardList className="h-5 w-5 text-primary" />
+            </div>
+            <p className="text-xs font-medium text-gray-800">שאלונים</p>
+          </CardContent>
+        </Card>
+        
         <Card 
           className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white/90 hover:bg-white"
           onClick={() => setActiveTab('belief-breaking')}
@@ -483,18 +477,6 @@ const PlayerProfileView = () => {
               <ClipboardCheck className="h-5 w-5 text-primary" />
             </div>
             <p className="text-xs font-medium text-gray-800">איבחון</p>
-          </CardContent>
-        </Card>
-        
-        <Card 
-          className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white/90 hover:bg-white"
-          onClick={() => setActiveTab('questionnaires')}
-        >
-          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
-              <ClipboardList className="h-5 w-5 text-primary" />
-            </div>
-            <p className="text-xs font-medium text-gray-800">שאלונים</p>
           </CardContent>
         </Card>
       </div>
@@ -626,7 +608,7 @@ const PlayerProfileView = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 player-tabs modern-tabs">
           {renderTabs()}
-          {isMobile && renderMobileMoreMenu()}
+          {isMobileScreen && renderMobileMoreMenu()}
           
           <AnimatePresence mode="wait">
             <motion.div
@@ -756,142 +738,4 @@ const PlayerProfileView = () => {
                             {...cardAnimationProps}
                           >
                             <div className="flex flex-col md:flex-row justify-between gap-4 mb-3">
-                              <div className="flex gap-4 items-start">
-                                <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
-                                  <FileText className="h-5 w-5" />
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-lg">
-                                    {summary.session && formatDate(summary.session.session_date)}
-                                  </p>
-                                </div>
-                              </div>
-                              <Badge 
-                                variant="outline" 
-                                className={`rounded-full px-3 py-1 ${summary.progress_rating >= 4 ? 'bg-green-100 text-green-700' : summary.progress_rating >= 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'} self-start md:self-center shadow-sm`}
-                              >
-                                דירוג התקדמות: {summary.progress_rating}/5
-                              </Badge>
-                            </div>
-                            
-                            <div className="bg-gray-50 p-3 rounded-lg text-gray-700 text-sm">
-                              {summary.summary_text}
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="bg-gray-50 rounded-lg p-8 text-center">
-                        <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                        <p className="text-gray-500">אין סיכומי מפגשים זמינים</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="questionnaires">
-                <Card className="shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-[#F2FCE2]/50 to-[#E5DEFF]/50 pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <ClipboardList className="h-5 w-5 text-primary" />
-                      השאלונים שלי
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    {loadingQuestionnaires ? (
-                      <div className="flex justify-center p-8">
-                        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                      </div>
-                    ) : questionnaires.length > 0 ? (
-                      <div className="space-y-4">
-                        {questionnaires.map((questionnaire) => (
-                          <motion.div 
-                            key={questionnaire.id} 
-                            className="p-4 border border-gray-100 rounded-lg hover:shadow-md transition-all bg-white"
-                            {...cardAnimationProps}
-                          >
-                            <div className="flex flex-col md:flex-row justify-between gap-4">
-                              <div className="flex gap-4 items-start">
-                                <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
-                                  <ClipboardList className="h-5 w-5" />
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-lg">{questionnaire.questionnaire_title}</p>
-                                  {questionnaire.coach && (
-                                    <p className="text-gray-500">מאמן: {questionnaire.coach.full_name}</p>
-                                  )}
-                                  <p className="text-gray-500 text-sm mt-1">תאריך: {formatDate(questionnaire.assigned_at)}</p>
-                                </div>
-                              </div>
-                              <div className="self-end md:self-center">
-                                <Button 
-                                  variant="default"
-                                  className="bg-primary hover:bg-primary/90 gap-2"
-                                  onClick={() => handleAnswerQuestionnaire(questionnaire.id)}
-                                >
-                                  ענה עכשיו
-                                  <ArrowRight className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="bg-gray-50 rounded-lg p-8 text-center">
-                        <ClipboardList className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                        <p className="text-gray-500">לא הוקצו לך שאלונים כרגע</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="evaluation">
-                <Card className="shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-[#F2FCE2]/50 to-[#E5DEFF]/50 pb-3">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <ClipboardCheck className="h-5 w-5 text-primary" />
-                      איבחון שחקן במהלך משחק
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-5">
-                    <div className="space-y-4">
-                      <p className="text-gray-700">
-                        כאן תוכל לאבחן את הביצועים שלך במהלך משחקים ולעקוב אחר ההתקדמות המנטלית שלך.
-                      </p>
-                      
-                      <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 mb-4">
-                        <p className="text-amber-800 text-sm">
-                          האיבחון כולל 12 פרמטרים מנטליים חשובים שיעזרו לך להבין את הצדדים החזקים והחלשים 
-                          של הביצועים שלך במהלך משחק.
-                        </p>
-                      </div>
-                      
-                      <Button 
-                        className="w-full bg-primary hover:bg-primary/90"
-                        onClick={() => navigate(`/player/game-evaluation/${player?.id}`)}
-                      >
-                        לאיבחון חדש
-                        <ArrowRight className="mr-2 h-4 w-4" />
-                      </Button>
-                      
-                      <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
-                        <p className="text-yellow-800 text-sm">
-                          המאמן שלך יוכל לראות את תוצאות האיבחון ולהשתמש בהן כדי לעזור לך להשתפר.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </motion.div>
-          </AnimatePresence>
-        </Tabs>
-      </div>
-    </div>
-  );
-};
-
-export default PlayerProfileView;
+                              <div className="flex gap-4 items

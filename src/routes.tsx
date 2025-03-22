@@ -28,6 +28,8 @@ const QuestionnairesPage = lazy(() => import('@/pages/QuestionnairesPage').then(
 const PlayerQuestionnaires = lazy(() => import('@/pages/player/PlayerQuestionnaires').then(module => ({ default: module.default })));
 const PlayerQuestionnaireForm = lazy(() => import('@/pages/player/PlayerQuestionnaireForm').then(module => ({ default: module.default })));
 const NewSessionForm = lazy(() => import('@/pages/NewSessionForm').then(module => ({ default: module.default })));
+const PlayerProfileView = lazy(() => import('@/pages/player/PlayerProfileView').then(module => ({ default: module.default })));
+const PlayerGameEvaluation = lazy(() => import('@/pages/player/PlayerGameEvaluation').then(module => ({ default: module.default })));
 
 export function AppRoutes() {
   return (
@@ -55,6 +57,8 @@ export function AppRoutes() {
         <Route path="/player/questionnaires" element={<PlayerQuestionnaires />} />
         <Route path="/player/questionnaire/:id" element={<PlayerQuestionnaireForm />} />
         <Route path="/new-session" element={<NewSessionForm />} />
+        <Route path="/player/profile" element={<PlayerProfileView />} />
+        <Route path="/player/game-evaluation/:id" element={<PlayerGameEvaluation />} />
       </Route>
       
       {/* Public registration form */}
