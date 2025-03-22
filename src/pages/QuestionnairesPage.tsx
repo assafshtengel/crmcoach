@@ -37,6 +37,7 @@ interface Question {
   question_text: string;
   answer: string;
   type: 'open' | 'closed';
+  rating?: number; // For closed questions
 }
 
 const QuestionnairesPage = () => {
@@ -49,103 +50,24 @@ const QuestionnairesPage = () => {
   const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
-    fetchQuestionnaires();
-  }, []);
-
-  const fetchQuestionnaires = async () => {
-    try {
-      setIsLoading(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        navigate('/auth');
-        return;
-      }
-
-      // This is a placeholder for the actual data structure
-      // You would need to adjust this based on your database schema
-      const { data, error } = await supabase
-        .from('questionnaires')
-        .select(`
-          id,
-          title,
-          created_at,
-          type,
-          player:players(full_name),
-          questions:questionnaire_questions(count)
-        `)
-        .eq('coach_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Format the data for rendering
-      const formattedData = data?.map(item => ({
-        id: item.id,
-        title: item.title,
-        created_at: item.created_at,
-        player_name: item.player?.full_name || 'לא ידוע',
-        type: item.type,
-        questions_count: item.questions?.[0]?.count || 0
-      })) || [];
-
-      setQuestionnaires(formattedData);
-    } catch (error) {
-      console.error('Error fetching questionnaires:', error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בטעינת השאלונים",
-        description: "אנא נסה שוב מאוחר יותר"
-      });
-    } finally {
+    // Simulate loading data
+    setTimeout(() => {
+      setQuestionnaires(sampleQuestionnaires);
       setIsLoading(false);
-    }
-  };
+    }, 800);
+  }, []);
 
   const handleViewQuestionnaire = async (id: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Find the questionnaire in our sample data
+      const questionnaire = sampleQuestionnairesDetails.find(q => q.id === id);
       
-      if (!user) {
-        navigate('/auth');
-        return;
+      if (questionnaire) {
+        setSelectedQuestionnaire(questionnaire);
+        setIsDialogOpen(true);
+      } else {
+        throw new Error("Questionnaire not found");
       }
-
-      // This is a placeholder for the actual data structure
-      // You would need to adjust this based on your database schema
-      const { data, error } = await supabase
-        .from('questionnaires')
-        .select(`
-          id,
-          title,
-          created_at,
-          type,
-          player:players(full_name),
-          questions:questionnaire_questions(
-            id,
-            question_text,
-            answer,
-            type
-          )
-        `)
-        .eq('id', id)
-        .eq('coach_id', user.id)
-        .single();
-
-      if (error) throw error;
-
-      const questionnaireDetails: QuestionnaireDetails = {
-        id: data.id,
-        title: data.title,
-        created_at: data.created_at,
-        player_name: data.player?.full_name || 'לא ידוע',
-        type: data.type,
-        questions: data.questions || []
-      };
-
-      setSelectedQuestionnaire(questionnaireDetails);
-      setIsDialogOpen(true);
     } catch (error) {
       console.error('Error fetching questionnaire details:', error);
       toast({
@@ -158,12 +80,22 @@ const QuestionnairesPage = () => {
 
   const getQuestionnaireTypeBadge = (type: string) => {
     switch (type) {
+      case 'day_opening':
+        return <Badge className="bg-blue-500">פתיחת יום</Badge>;
+      case 'day_summary':
+        return <Badge className="bg-green-500">סיכום יום</Badge>;
+      case 'post_game':
+        return <Badge className="bg-purple-500">אחרי משחק</Badge>;
       case 'mental_prep':
-        return <Badge className="bg-blue-500">הכנה מנטלית</Badge>;
-      case 'game_evaluation':
-        return <Badge className="bg-purple-500">הערכת משחק</Badge>;
-      case 'general':
-        return <Badge className="bg-green-500">כללי</Badge>;
+        return <Badge className="bg-yellow-500">מוכנות מנטלית</Badge>;
+      case 'personal_goals':
+        return <Badge className="bg-red-500">מטרות אישיות</Badge>;
+      case 'motivation':
+        return <Badge className="bg-indigo-500">מוטיבציה ולחץ</Badge>;
+      case 'season_end':
+        return <Badge className="bg-pink-500">סיום עונה</Badge>;
+      case 'team_communication':
+        return <Badge className="bg-orange-500">תקשורת קבוצתית</Badge>;
       default:
         return <Badge className="bg-gray-500">{type}</Badge>;
     }
@@ -207,6 +139,462 @@ const QuestionnairesPage = () => {
     );
   };
 
+  // Sample data for questionnaires
+  const sampleQuestionnaires: Questionnaire[] = [
+    {
+      id: "1",
+      title: "שאלון 1: פתיחת יום",
+      created_at: "2023-10-15T09:00:00Z",
+      player_name: "דני אבדיה",
+      type: "day_opening",
+      questions_count: 6
+    },
+    {
+      id: "2",
+      title: "שאלון 2: סיכום יום",
+      created_at: "2023-10-15T18:30:00Z",
+      player_name: "דני אבדיה",
+      type: "day_summary",
+      questions_count: 6
+    },
+    {
+      id: "3",
+      title: "שאלון 3: אחרי משחק",
+      created_at: "2023-10-16T22:00:00Z",
+      player_name: "יוסי בניון",
+      type: "post_game",
+      questions_count: 6
+    },
+    {
+      id: "4",
+      title: "שאלון 4: מוכנות מנטלית לפני משחק",
+      created_at: "2023-10-17T15:00:00Z",
+      player_name: "טל בן חיים",
+      type: "mental_prep",
+      questions_count: 6
+    },
+    {
+      id: "5",
+      title: "שאלון 5: ניטור מטרות אישיות (שבועי)",
+      created_at: "2023-10-18T10:00:00Z",
+      player_name: "אלון מזרחי",
+      type: "personal_goals",
+      questions_count: 6
+    },
+    {
+      id: "6",
+      title: "שאלון 6: מוטיבציה ולחץ",
+      created_at: "2023-10-19T14:00:00Z",
+      player_name: "ליאור רפאלוב",
+      type: "motivation",
+      questions_count: 6
+    },
+    {
+      id: "7",
+      title: "שאלון 7: סיום עונה",
+      created_at: "2023-10-20T16:00:00Z",
+      player_name: "מאור בוזגלו",
+      type: "season_end",
+      questions_count: 6
+    },
+    {
+      id: "8",
+      title: "שאלון 8: תקשורת קבוצתית",
+      created_at: "2023-10-21T11:00:00Z",
+      player_name: "ערן זהבי",
+      type: "team_communication",
+      questions_count: 6
+    }
+  ];
+
+  // Sample detailed questionnaire data
+  const sampleQuestionnairesDetails: QuestionnaireDetails[] = [
+    {
+      id: "1",
+      title: "שאלון 1: פתיחת יום",
+      created_at: "2023-10-15T09:00:00Z",
+      player_name: "דני אבדיה",
+      type: "day_opening",
+      questions: [
+        {
+          id: "1-1",
+          question_text: "איך אתה מרגיש הבוקר?",
+          answer: "אני מרגיש נמרץ ומוכן לאימון היום. ישנתי טוב אתמול.",
+          type: "open"
+        },
+        {
+          id: "1-2",
+          question_text: "מה המטרות שלך להיום?",
+          answer: "להתמקד בשיפור הקליעה מהחצי ולעבוד על התזמון בהגנה.",
+          type: "open"
+        },
+        {
+          id: "1-3",
+          question_text: "איזה אתגר אתה צופה היום?",
+          answer: "האימון המשולב עם הקבוצה הבכירה עלול להיות מאתגר מבחינה פיזית.",
+          type: "open"
+        },
+        {
+          id: "1-4",
+          question_text: "דרג את רמת האנרגיה שלך (1-10)",
+          answer: "8",
+          type: "closed",
+          rating: 8
+        },
+        {
+          id: "1-5",
+          question_text: "דרג את איכות השינה שלך אמש (1-10)",
+          answer: "7",
+          type: "closed",
+          rating: 7
+        },
+        {
+          id: "1-6",
+          question_text: "דרג את המוטיבציה שלך להיום (1-10)",
+          answer: "9",
+          type: "closed",
+          rating: 9
+        }
+      ]
+    },
+    {
+      id: "2",
+      title: "שאלון 2: סיכום יום",
+      created_at: "2023-10-15T18:30:00Z",
+      player_name: "דני אבדיה",
+      type: "day_summary",
+      questions: [
+        {
+          id: "2-1",
+          question_text: "כיצד היה האימון היום?",
+          answer: "האימון היה אינטנסיבי ומאתגר. הצלחתי להתקדם בקליעות החופשיות.",
+          type: "open"
+        },
+        {
+          id: "2-2",
+          question_text: "האם השגת את המטרות שהצבת לעצמך בבוקר?",
+          answer: "כן, ברובן. עבדתי על הקליעה כמתוכנן אבל יש עוד מקום לשיפור בהגנה.",
+          type: "open"
+        },
+        {
+          id: "2-3",
+          question_text: "מה למדת היום?",
+          answer: "למדתי טכניקה חדשה לשיפור הקפיצה בזריקה מרחוק.",
+          type: "open"
+        },
+        {
+          id: "2-4",
+          question_text: "דרג את רמת המאמץ שלך באימון (1-10)",
+          answer: "9",
+          type: "closed",
+          rating: 9
+        },
+        {
+          id: "2-5",
+          question_text: "דרג את שביעות הרצון שלך מהביצועים (1-10)",
+          answer: "8",
+          type: "closed",
+          rating: 8
+        },
+        {
+          id: "2-6",
+          question_text: "דרג את רמת העייפות שלך כעת (1-10)",
+          answer: "7",
+          type: "closed",
+          rating: 7
+        }
+      ]
+    },
+    {
+      id: "3",
+      title: "שאלון 3: אחרי משחק",
+      created_at: "2023-10-16T22:00:00Z",
+      player_name: "יוסי בניון",
+      type: "post_game",
+      questions: [
+        {
+          id: "3-1",
+          question_text: "כיצד אתה מעריך את הביצוע שלך במשחק?",
+          answer: "שיחקתי טוב יחסית, במיוחד במחצית השנייה. הייתי מעורב בשלושה מהלכים משמעותיים.",
+          type: "open"
+        },
+        {
+          id: "3-2",
+          question_text: "מה היה הרגע הטוב ביותר עבורך?",
+          answer: "המסירה המדויקת שהובילה לשער בדקה ה-78.",
+          type: "open"
+        },
+        {
+          id: "3-3",
+          question_text: "מה היית משפר בביצוע שלך?",
+          answer: "הייתי צריך להיות יותר אגרסיבי בהגנה במחצית הראשונה.",
+          type: "open"
+        },
+        {
+          id: "3-4",
+          question_text: "דרג את הביצוע הכללי שלך (1-10)",
+          answer: "7",
+          type: "closed",
+          rating: 7
+        },
+        {
+          id: "3-5",
+          question_text: "דרג את רמת המאמץ שלך במשחק (1-10)",
+          answer: "9",
+          type: "closed",
+          rating: 9
+        },
+        {
+          id: "3-6",
+          question_text: "דרג את שביעות הרצון שלך מהתוצאה (1-10)",
+          answer: "8",
+          type: "closed",
+          rating: 8
+        }
+      ]
+    },
+    {
+      id: "4",
+      title: "שאלון 4: מוכנות מנטלית לפני משחק",
+      created_at: "2023-10-17T15:00:00Z",
+      player_name: "טל בן חיים",
+      type: "mental_prep",
+      questions: [
+        {
+          id: "4-1",
+          question_text: "כיצד אתה מתכונן מנטלית למשחק היום?",
+          answer: "מדיטציה של 15 דקות ודמיון מודרך של סיטואציות במשחק.",
+          type: "open"
+        },
+        {
+          id: "4-2",
+          question_text: "מהן המטרות האישיות שלך למשחק?",
+          answer: "לשמור על ריכוז לאורך כל המשחק ולהוביל את הקבוצה בהתקפות.",
+          type: "open"
+        },
+        {
+          id: "4-3",
+          question_text: "מהם החששות העיקריים שלך לקראת המשחק?",
+          answer: "חשש מהכריזמה של השחקן המוביל בקבוצה היריבה והיכולת שלו לשבור את ההגנה שלנו.",
+          type: "open"
+        },
+        {
+          id: "4-4",
+          question_text: "דרג את רמת הביטחון שלך (1-10)",
+          answer: "8",
+          type: "closed",
+          rating: 8
+        },
+        {
+          id: "4-5",
+          question_text: "דרג את רמת החרדה שלך (1-10)",
+          answer: "4",
+          type: "closed",
+          rating: 4
+        },
+        {
+          id: "4-6",
+          question_text: "דרג את המוכנות המנטלית הכללית שלך (1-10)",
+          answer: "9",
+          type: "closed",
+          rating: 9
+        }
+      ]
+    },
+    {
+      id: "5",
+      title: "שאלון 5: ניטור מטרות אישיות (שבועי)",
+      created_at: "2023-10-18T10:00:00Z",
+      player_name: "אלון מזרחי",
+      type: "personal_goals",
+      questions: [
+        {
+          id: "5-1",
+          question_text: "אילו מטרות הצבת לעצמך השבוע?",
+          answer: "לשפר את דיוק הקליעות ל-45% לפחות ולהגביר את יכולת הקפיצה.",
+          type: "open"
+        },
+        {
+          id: "5-2",
+          question_text: "האם הצלחת להשיג את המטרות? הסבר.",
+          answer: "את מטרת הקליעה השגתי (47%), אך עדיין עובד על שיפור הקפיצה.",
+          type: "open"
+        },
+        {
+          id: "5-3",
+          question_text: "איזה מטרות אתה מציב לשבוע הבא?",
+          answer: "להמשיך בשיפור הקליעה ולהתמקד בשיפור הזריקות מהעונשין.",
+          type: "open"
+        },
+        {
+          id: "5-4",
+          question_text: "דרג את שביעות רצונך מההתקדמות (1-10)",
+          answer: "8",
+          type: "closed",
+          rating: 8
+        },
+        {
+          id: "5-5",
+          question_text: "דרג את הקושי בהשגת המטרות (1-10)",
+          answer: "7",
+          type: "closed",
+          rating: 7
+        },
+        {
+          id: "5-6",
+          question_text: "דרג את המוטיבציה שלך להמשיך (1-10)",
+          answer: "9",
+          type: "closed",
+          rating: 9
+        }
+      ]
+    },
+    {
+      id: "6",
+      title: "שאלון 6: מוטיבציה ולחץ",
+      created_at: "2023-10-19T14:00:00Z",
+      player_name: "ליאור רפאלוב",
+      type: "motivation",
+      questions: [
+        {
+          id: "6-1",
+          question_text: "מה מניע אותך בתקופה זו?",
+          answer: "הרצון להוכיח את עצמי כשחקן מוביל בקבוצה ולהגיע לנבחרת בעונה הבאה.",
+          type: "open"
+        },
+        {
+          id: "6-2",
+          question_text: "אילו גורמי לחץ אתה חווה כעת?",
+          answer: "לחץ מהתקשורת וציפיות גבוהות מהמאמן ומההנהלה.",
+          type: "open"
+        },
+        {
+          id: "6-3",
+          question_text: "כיצד אתה מתמודד עם הלחץ?",
+          answer: "משתמש בטכניקות נשימה ומיינדפולנס, ומתייעץ באופן קבוע עם הפסיכולוג הספורטיבי.",
+          type: "open"
+        },
+        {
+          id: "6-4",
+          question_text: "דרג את רמת המוטיבציה שלך כעת (1-10)",
+          answer: "9",
+          type: "closed",
+          rating: 9
+        },
+        {
+          id: "6-5",
+          question_text: "דרג את רמת הלחץ שאתה חש (1-10)",
+          answer: "7",
+          type: "closed",
+          rating: 7
+        },
+        {
+          id: "6-6",
+          question_text: "דרג את היכולת שלך להתמודד עם הלחץ (1-10)",
+          answer: "8",
+          type: "closed",
+          rating: 8
+        }
+      ]
+    },
+    {
+      id: "7",
+      title: "שאלון 7: סיום עונה",
+      created_at: "2023-10-20T16:00:00Z",
+      player_name: "מאור בוזגלו",
+      type: "season_end",
+      questions: [
+        {
+          id: "7-1",
+          question_text: "כיצד אתה מסכם את העונה שלך?",
+          answer: "עונה מוצלחת יחסית עם שיפור משמעותי בסטטיסטיקה האישית, למרות הפציעה באמצע העונה.",
+          type: "open"
+        },
+        {
+          id: "7-2",
+          question_text: "מה היו ההישגים העיקריים שלך העונה?",
+          answer: "הבקעתי 15 שערים, הייתי מעורב ב-10 בישולים, ונבחרתי לשחקן המצטיין פעמיים.",
+          type: "open"
+        },
+        {
+          id: "7-3",
+          question_text: "מה היית רוצה לשפר לקראת העונה הבאה?",
+          answer: "את היציבות הפיזית ואת היכולת שלי במשחקי חוץ.",
+          type: "open"
+        },
+        {
+          id: "7-4",
+          question_text: "דרג את שביעות רצונך מהעונה (1-10)",
+          answer: "8",
+          type: "closed",
+          rating: 8
+        },
+        {
+          id: "7-5",
+          question_text: "דרג את הביצועים שלך ביחס לציפיות (1-10)",
+          answer: "7",
+          type: "closed",
+          rating: 7
+        },
+        {
+          id: "7-6",
+          question_text: "דרג את המוטיבציה שלך לעונה הבאה (1-10)",
+          answer: "10",
+          type: "closed",
+          rating: 10
+        }
+      ]
+    },
+    {
+      id: "8",
+      title: "שאלון 8: תקשורת קבוצתית",
+      created_at: "2023-10-21T11:00:00Z",
+      player_name: "ערן זהבי",
+      type: "team_communication",
+      questions: [
+        {
+          id: "8-1",
+          question_text: "איך אתה מעריך את התקשורת בקבוצה?",
+          answer: "התקשורת טובה יחסית, אך יש מקום לשיפור בתקשורת בין ההגנה להתקפה במעברים מהירים.",
+          type: "open"
+        },
+        {
+          id: "8-2",
+          question_text: "אילו אתגרי תקשורת קיימים בקבוצה לדעתך?",
+          answer: "פערי שפה עם השחקנים הזרים ולעיתים חוסר בהירות בהוראות הטקטיות.",
+          type: "open"
+        },
+        {
+          id: "8-3",
+          question_text: "כיצד ניתן לשפר את התקשורת?",
+          answer: "פגישות קבוצתיות קצרות יותר אך תכופות יותר, ושימוש בויזואליזציה להבהרת הוראות טקטיות.",
+          type: "open"
+        },
+        {
+          id: "8-4",
+          question_text: "דרג את איכות התקשורת במגרש (1-10)",
+          answer: "7",
+          type: "closed",
+          rating: 7
+        },
+        {
+          id: "8-5",
+          question_text: "דרג את התקשורת מחוץ למגרש (1-10)",
+          answer: "8",
+          type: "closed",
+          rating: 8
+        },
+        {
+          id: "8-6",
+          question_text: "דרג את השפעת התקשורת על ביצועי הקבוצה (1-10)",
+          answer: "9",
+          type: "closed",
+          rating: 9
+        }
+      ]
+    }
+  ];
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -236,8 +624,10 @@ const QuestionnairesPage = () => {
         <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="all">כל השאלונים ({questionnaires.length})</TabsTrigger>
-            <TabsTrigger value="mental_prep">הכנה מנטלית ({questionnaires.filter(q => q.type === 'mental_prep').length})</TabsTrigger>
-            <TabsTrigger value="game_evaluation">הערכת משחק ({questionnaires.filter(q => q.type === 'game_evaluation').length})</TabsTrigger>
+            <TabsTrigger value="day_opening">פתיחת יום ({questionnaires.filter(q => q.type === 'day_opening').length})</TabsTrigger>
+            <TabsTrigger value="day_summary">סיכום יום ({questionnaires.filter(q => q.type === 'day_summary').length})</TabsTrigger>
+            <TabsTrigger value="post_game">אחרי משחק ({questionnaires.filter(q => q.type === 'post_game').length})</TabsTrigger>
+            <TabsTrigger value="mental_prep">מוכנות מנטלית ({questionnaires.filter(q => q.type === 'mental_prep').length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="mt-0">
@@ -254,37 +644,24 @@ const QuestionnairesPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="mental_prep" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {questionnaires.filter(q => q.type === 'mental_prep').length > 0 ? (
-                questionnaires
-                  .filter(q => q.type === 'mental_prep')
-                  .map(questionnaire => renderQuestionnaireCard(questionnaire))
-              ) : (
-                <div className="col-span-3 text-center p-10 bg-white rounded-lg shadow">
-                  <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                  <h3 className="text-xl font-medium text-gray-800">אין שאלוני הכנה מנטלית</h3>
-                  <p className="text-gray-500 mt-2">לא נמצאו שאלוני הכנה מנטלית במערכת</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="game_evaluation" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {questionnaires.filter(q => q.type === 'game_evaluation').length > 0 ? (
-                questionnaires
-                  .filter(q => q.type === 'game_evaluation')
-                  .map(questionnaire => renderQuestionnaireCard(questionnaire))
-              ) : (
-                <div className="col-span-3 text-center p-10 bg-white rounded-lg shadow">
-                  <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                  <h3 className="text-xl font-medium text-gray-800">אין שאלוני הערכת משחק</h3>
-                  <p className="text-gray-500 mt-2">לא נמצאו שאלוני הערכת משחק במערכת</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
+          {/* Render tab content for each type */}
+          {['day_opening', 'day_summary', 'post_game', 'mental_prep', 'personal_goals', 'motivation', 'season_end', 'team_communication'].map(type => (
+            <TabsContent key={type} value={type} className="mt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {questionnaires.filter(q => q.type === type).length > 0 ? (
+                  questionnaires
+                    .filter(q => q.type === type)
+                    .map(questionnaire => renderQuestionnaireCard(questionnaire))
+                ) : (
+                  <div className="col-span-3 text-center p-10 bg-white rounded-lg shadow">
+                    <FileText className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                    <h3 className="text-xl font-medium text-gray-800">אין שאלונים זמינים</h3>
+                    <p className="text-gray-500 mt-2">לא נמצאו שאלונים מסוג זה במערכת</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          ))}
         </Tabs>
       </div>
 
@@ -316,21 +693,57 @@ const QuestionnairesPage = () => {
 
               <ScrollArea className="h-[50vh] pr-4">
                 <div className="space-y-6">
-                  {selectedQuestionnaire.questions.map((question, index) => (
-                    <div key={question.id} className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium text-gray-900">
-                          שאלה {index + 1}: {question.question_text}
-                        </h3>
-                        <Badge className={`${question.type === 'open' ? 'bg-blue-500' : 'bg-green-500'}`}>
-                          {question.type === 'open' ? 'שאלה פתוחה' : 'שאלה סגורה'}
-                        </Badge>
-                      </div>
-                      <div className="bg-white p-3 rounded border">
-                        <p className="text-gray-700">{question.answer}</p>
-                      </div>
-                    </div>
-                  ))}
+                  {/* Open questions first */}
+                  <div className="mb-4">
+                    <h3 className="font-semibold text-lg mb-3">שאלות פתוחות</h3>
+                    {selectedQuestionnaire.questions
+                      .filter(q => q.type === 'open')
+                      .map((question, index) => (
+                        <div key={question.id} className="bg-gray-50 p-4 rounded-lg mb-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-medium text-gray-900">
+                              שאלה {index + 1}: {question.question_text}
+                            </h3>
+                          </div>
+                          <div className="bg-white p-3 rounded border">
+                            <p className="text-gray-700">{question.answer}</p>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">
+                            תאריך מילוי: {format(new Date(selectedQuestionnaire.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+
+                  {/* Closed questions second */}
+                  <div>
+                    <h3 className="font-semibold text-lg mb-3">שאלות סגורות (דירוג 1-10)</h3>
+                    {selectedQuestionnaire.questions
+                      .filter(q => q.type === 'closed')
+                      .map((question, index) => (
+                        <div key={question.id} className="bg-gray-50 p-4 rounded-lg mb-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-medium text-gray-900">
+                              שאלה {index + 1}: {question.question_text}
+                            </h3>
+                          </div>
+                          <div className="bg-white p-3 rounded border">
+                            <div className="flex items-center">
+                              <div className="w-full bg-gray-200 rounded-full h-4">
+                                <div 
+                                  className="bg-blue-600 h-4 rounded-full" 
+                                  style={{ width: `${(question.rating || 0) * 10}%` }}
+                                ></div>
+                              </div>
+                              <span className="ml-2 font-bold">{question.rating}/10</span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-2">
+                            תאריך מילוי: {format(new Date(selectedQuestionnaire.created_at), 'dd/MM/yyyy HH:mm', { locale: he })}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
                 </div>
               </ScrollArea>
             </div>
