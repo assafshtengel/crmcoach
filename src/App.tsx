@@ -51,6 +51,7 @@ import PlayerProfileView from '@/pages/player/PlayerProfileView';
 import NotFound from '@/pages/NotFound';
 import MentalLibrary from '@/pages/MentalLibrary';
 import PlayerGameEvaluationForm from '@/pages/player/PlayerGameEvaluationForm';
+import PlayerQuestionnaires from '@/pages/player/PlayerQuestionnaires';
 
 import "./App.css";
 
