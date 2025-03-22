@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -738,4 +739,271 @@ const PlayerProfileView = () => {
                             {...cardAnimationProps}
                           >
                             <div className="flex flex-col md:flex-row justify-between gap-4 mb-3">
-                              <div className="flex gap-4 items
+                              <div className="flex gap-4 items-start">
+                                <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
+                                  <FileText className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-lg">
+                                    {summary.session && summary.session.session_date ? 
+                                      formatDate(summary.session.session_date) : 
+                                      "תאריך לא ידוע"}
+                                  </p>
+                                  <p className="text-gray-500">
+                                    {summary.session && summary.session.session_time ?
+                                      summary.session.session_time : ""}
+                                  </p>
+                                  {summary.title && (
+                                    <p className="text-gray-700 mt-1">{summary.title}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            {summary.content && (
+                              <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
+                                <p className="text-sm text-gray-600 line-clamp-3">{summary.content}</p>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-primary hover:text-primary/80 hover:bg-primary/5 mt-2 gap-1"
+                                >
+                                  <span>קרא עוד</span>
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 rounded-lg p-8 text-center">
+                        <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500">אין סיכומי מפגשים זמינים כרגע</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="questionnaires">
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gradient-to-r from-[#F2FCE2]/50 to-[#E5DEFF]/50 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <ClipboardList className="h-5 w-5 text-primary" />
+                      שאלונים לביצוע
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {loadingQuestionnaires ? (
+                      <div className="flex justify-center p-8">
+                        <div className="animate-spin h-8 w-8 border-4 border-primary/20 border-t-primary rounded-full"></div>
+                      </div>
+                    ) : questionnaires.length > 0 ? (
+                      <div className="space-y-4">
+                        {questionnaires.map((questionnaire) => (
+                          <motion.div 
+                            key={questionnaire.id} 
+                            className="p-4 border border-gray-100 rounded-lg hover:shadow-md transition-all bg-white"
+                            {...cardAnimationProps}
+                          >
+                            <div className="flex flex-col md:flex-row justify-between gap-4">
+                              <div className="flex gap-4 items-start">
+                                <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
+                                  <ClipboardList className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-lg">{questionnaire.questionnaire_title}</p>
+                                  <p className="text-gray-500">נשלח ע"י: {questionnaire.coach?.full_name || "המאמן שלך"}</p>
+                                  <p className="text-gray-500 text-sm mt-1">
+                                    תאריך: {formatDate(questionnaire.created_at)}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                className="self-start md:self-center bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 hover:text-primary"
+                                onClick={() => handleAnswerQuestionnaire(questionnaire.id)}
+                              >
+                                מלא שאלון
+                                <ArrowRight className="h-4 w-4 ml-2" />
+                              </Button>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 rounded-lg p-8 text-center">
+                        <ClipboardList className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500">אין שאלונים לביצוע כרגע</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="goals">
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gradient-to-r from-[#F2FCE2]/50 to-[#E5DEFF]/50 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Target className="h-5 w-5 text-primary" />
+                      המטרות שלי
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
+                          <Badge className="bg-blue-500">
+                            <Clock className="h-3 w-3 mr-1" />
+                            מטרות לטווח קצר
+                          </Badge>
+                        </h3>
+                        <div className="space-y-3">
+                          {shortTermGoals.map((goal) => (
+                            <div 
+                              key={goal.id} 
+                              className={`p-4 rounded-lg border ${goal.status === 'completed' ? 'bg-green-50 border-green-100' : 'bg-white border-gray-200'}`}
+                            >
+                              {editingGoal === goal.id ? (
+                                <div className="flex flex-col gap-2">
+                                  <Textarea 
+                                    value={editedGoalText}
+                                    onChange={(e) => setEditedGoalText(e.target.value)}
+                                    className="min-h-[80px]"
+                                  />
+                                  <div className="flex justify-end gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => setEditingGoal(null)}
+                                    >
+                                      ביטול
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => handleSaveGoal(goal.id, 'short')}
+                                      disabled={savingGoals}
+                                    >
+                                      {savingGoals ? 'שומר...' : 'שמור'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-start gap-3">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className={`rounded-full h-6 w-6 ${
+                                        goal.status === 'completed' 
+                                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                      }`}
+                                      onClick={() => handleToggleGoalStatus(goal.id, 'short')}
+                                    >
+                                      <CheckSquare className="h-4 w-4" />
+                                    </Button>
+                                    <p className={`flex-1 text-gray-800 ${goal.status === 'completed' ? 'line-through text-gray-500' : ''}`}>
+                                      {goal.title}
+                                    </p>
+                                  </div>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 h-7 w-7"
+                                    onClick={() => handleEditGoal(goal.id, goal.title)}
+                                  >
+                                    <PencilLine className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div>
+                        <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
+                          <Badge className="bg-purple-500">
+                            <Target className="h-3 w-3 mr-1" />
+                            מטרות לטווח ארוך
+                          </Badge>
+                        </h3>
+                        <div className="space-y-3">
+                          {longTermGoals.map((goal) => (
+                            <div 
+                              key={goal.id} 
+                              className={`p-4 rounded-lg border ${goal.status === 'completed' ? 'bg-green-50 border-green-100' : 'bg-white border-gray-200'}`}
+                            >
+                              {editingGoal === goal.id ? (
+                                <div className="flex flex-col gap-2">
+                                  <Textarea 
+                                    value={editedGoalText}
+                                    onChange={(e) => setEditedGoalText(e.target.value)}
+                                    className="min-h-[80px]"
+                                  />
+                                  <div className="flex justify-end gap-2">
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => setEditingGoal(null)}
+                                    >
+                                      ביטול
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => handleSaveGoal(goal.id, 'long')}
+                                      disabled={savingGoals}
+                                    >
+                                      {savingGoals ? 'שומר...' : 'שמור'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-start gap-3">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className={`rounded-full h-6 w-6 ${
+                                        goal.status === 'completed' 
+                                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                      }`}
+                                      onClick={() => handleToggleGoalStatus(goal.id, 'long')}
+                                    >
+                                      <CheckSquare className="h-4 w-4" />
+                                    </Button>
+                                    <p className={`flex-1 text-gray-800 ${goal.status === 'completed' ? 'line-through text-gray-500' : ''}`}>
+                                      {goal.title}
+                                    </p>
+                                  </div>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 h-7 w-7"
+                                    onClick={() => handleEditGoal(goal.id, goal.title)}
+                                  >
+                                    <PencilLine className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </motion.div>
+          </AnimatePresence>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default PlayerProfileView;
