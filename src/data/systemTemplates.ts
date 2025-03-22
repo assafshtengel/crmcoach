@@ -169,5 +169,169 @@ export const systemTemplates: QuestionnaireTemplate[] = [
         question_text: "רמת הלחץ"
       }
     ]
+  },
+  {
+    id: uuidv4(),
+    coach_id: null,
+    title: "שאלון 5: ניטור מטרות אישיות (שבועי)",
+    type: "weekly",
+    is_system_template: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    questions: [
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "אילו מטרות אישיות השגת השבוע?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "אילו אתגרים חווית?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "אילו מטרות תרצה להציב לשבוע הבא?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "שביעות רצון מההתקדמות"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "רמת מוטיבציה"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "נאמנות לתוכנית האישית"
+      }
+    ]
+  },
+  {
+    id: uuidv4(),
+    coach_id: null,
+    title: "שאלון 6: מוטיבציה ולחץ",
+    type: "assessment",
+    is_system_template: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    questions: [
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "מה נותן לך הכי הרבה מוטיבציה?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "כיצד אתה מתמודד עם לחץ ותסכול?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "מה יכול לשפר את ההתמודדות שלך עם לחץ?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "רמת מוטיבציה נוכחית"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "התמודדות עם לחץ"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "תדירות שבה לחץ פוגע בביצועים"
+      }
+    ]
+  },
+  {
+    id: uuidv4(),
+    coach_id: null,
+    title: "שאלון 7: סיום עונה",
+    type: "seasonal",
+    is_system_template: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    questions: [
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "מהם רגעי השיא שלך בעונה?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "אילו מטרות לא הושגו ולמה?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "מה תעשה אחרת בעונה הבאה?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "שביעות רצון מהאימונים"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "שביעות רצון מההתפתחות האישית"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "מוטיבציה לקראת העונה הבאה"
+      }
+    ]
+  },
+  {
+    id: uuidv4(),
+    coach_id: null,
+    title: "שאלון 8: תקשורת קבוצתית ואינטראקציה",
+    type: "team",
+    is_system_template: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    questions: [
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "כיצד היית מתאר את התקשורת עם חברי הקבוצה?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "מה עובד טוב ומה פחות עם צוות האימון?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'open',
+        question_text: "איך אפשר לשפר את התקשורת הכללית?"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "תקשורת פתוחה עם חברי הקבוצה"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "הבנה של הדרישות מהצוות"
+      },
+      {
+        id: createQuestionId(),
+        type: 'closed',
+        question_text: "נוחות לפנות לצוות או לשחקנים"
+      }
+    ]
   }
 ];
