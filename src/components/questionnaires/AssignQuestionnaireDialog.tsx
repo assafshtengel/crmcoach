@@ -41,18 +41,32 @@ const AssignQuestionnaireDialog: React.FC<AssignQuestionnaireDialogProps> = ({
   useEffect(() => {
     if (open) {
       loadPlayers();
+      setSelectedPlayer(''); // Reset selected player when dialog opens
     }
   }, [open]);
 
   const loadPlayers = async () => {
     try {
       setIsLoading(true);
+      
+      // Get the current user's session to get the coach's ID
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+      
+      const coachId = session.user.id;
+      console.log('Loading players for coach:', coachId);
+      
       const { data, error } = await supabase
         .from('players')
         .select('id, full_name')
+        .eq('coach_id', coachId)
         .order('full_name');
 
       if (error) throw error;
+      
+      console.log('Loaded players:', data?.length || 0);
       setPlayers(data || []);
     } catch (error) {
       console.error('Error loading players:', error);
