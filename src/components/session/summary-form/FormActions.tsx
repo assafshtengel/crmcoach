@@ -2,24 +2,35 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Save, FileDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface FormActionsProps {
   onSubmit: () => void;
   onExportPDF?: () => void;
   isSaving?: boolean;
+  navigateAfterSave?: boolean;
 }
 
 export function FormActions({ 
   onSubmit, 
   onExportPDF,
-  isSaving = false
+  isSaving = false,
+  navigateAfterSave = true
 }: FormActionsProps) {
+  const navigate = useNavigate();
+
+  const handleSave = () => {
+    onSubmit();
+    // The navigation will happen after the submission is complete
+    // via the FeedbackDialog's onClose handler in SessionSummaryForm
+  };
+
   return (
     <div className="space-y-2 mt-6">
       <div className="grid grid-cols-2 gap-2">
         <Button 
           type="button" 
-          onClick={onSubmit}
+          onClick={handleSave}
           variant="green"
           disabled={isSaving}
         >

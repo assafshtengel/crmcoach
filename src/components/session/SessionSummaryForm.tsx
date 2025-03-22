@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
 
 import { SessionHeader } from "./summary-form/SessionHeader";
 import { SummaryTab } from "./summary-form/SummaryTab";
@@ -34,6 +35,7 @@ export function SessionSummaryForm({
   onCancel,
   forceEnable = false
 }: SessionSummaryFormProps) {
+  const navigate = useNavigate();
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -95,6 +97,16 @@ export function SessionSummaryForm({
       toast.error("שגיאה בשמירת סיכום המפגש");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Function to handle dialog close and navigation
+  const handleFeedbackClose = () => {
+    setShowFeedback(false);
+    
+    // Only navigate if it was a successful save
+    if (!feedbackData.isError) {
+      navigate('/dashboard-coach');
     }
   };
 
@@ -234,13 +246,14 @@ export function SessionSummaryForm({
         isSaving={isSaving}
       />
       
-      {/* Feedback Dialog */}
+      {/* Feedback Dialog with onClose handler for navigation */}
       <FeedbackDialog
         open={showFeedback}
         setOpen={setShowFeedback}
         title={feedbackData.title}
         message={feedbackData.message}
         isError={feedbackData.isError}
+        onClose={handleFeedbackClose}
       />
     </Form>
   );
