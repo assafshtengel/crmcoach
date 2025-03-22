@@ -1679,6 +1679,47 @@ export type Database = {
         }
         Relationships: []
       }
+      questionnaire_answers: {
+        Row: {
+          answers: Json
+          assigned_questionnaire_id: string
+          coach_id: string
+          id: string
+          player_id: string
+          questionnaire_id: string
+          status: string
+          submitted_at: string | null
+        }
+        Insert: {
+          answers: Json
+          assigned_questionnaire_id: string
+          coach_id: string
+          id?: string
+          player_id: string
+          questionnaire_id: string
+          status?: string
+          submitted_at?: string | null
+        }
+        Update: {
+          answers?: Json
+          assigned_questionnaire_id?: string
+          coach_id?: string
+          id?: string
+          player_id?: string
+          questionnaire_id?: string
+          status?: string
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questionnaire_answers_assigned_questionnaire_id_fkey"
+            columns: ["assigned_questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "assigned_questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       registration_links: {
         Row: {
           coach_id: string
