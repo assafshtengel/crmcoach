@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -68,7 +68,7 @@ const PlayerQuestionnaires = () => {
   const fetchQuestionnaires = async (playerId: string) => {
     try {
       // טעינת כל השאלונים המשויכים לשחקן שעדיין במצב "ממתין"
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabase
         .from('assigned_questionnaires')
         .select(`
           *,
@@ -106,15 +106,8 @@ const PlayerQuestionnaires = () => {
   };
 
   const handleAnswerNow = (questionnaireId: string) => {
-    // בהמשך ננווט לעמוד מילוי השאלון
-    // כרגע רק נדפיס הודעה ולא ננווט
-    console.log(`המשתמש ביקש לענות על שאלון: ${questionnaireId}`);
-    toast({
-      title: "מעבר למילוי השאלון",
-      description: "כרגע פונקציונליות זו עדיין בפיתוח",
-    });
-    // בהמשך כאשר יהיה עמוד מילוי שאלון:
-    // navigate(`/player/questionnaire/${questionnaireId}`);
+    // Navigate to the questionnaire form page
+    navigate(`/player/questionnaire/${questionnaireId}`);
   };
 
   if (isLoading) {

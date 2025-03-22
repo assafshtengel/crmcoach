@@ -52,6 +52,7 @@ import NotFound from '@/pages/NotFound';
 import MentalLibrary from '@/pages/MentalLibrary';
 import PlayerGameEvaluationForm from '@/pages/player/PlayerGameEvaluationForm';
 import PlayerQuestionnaires from '@/pages/player/PlayerQuestionnaires';
+import PlayerQuestionnaireForm from '@/pages/player/PlayerQuestionnaireForm';
 
 import "./App.css";
 
@@ -111,6 +112,7 @@ function App() {
             <Route path="/game-evaluation/:playerId" element={<AuthGuard><PlayerGameEvaluationForm /></AuthGuard>} />
             <Route path="/questionnaires" element={<AuthGuard><QuestionnairesPage /></AuthGuard>} />
             <Route path="/player/questionnaires" element={<AuthGuard playerOnly={true}><PlayerQuestionnaires /></AuthGuard>} />
+            <Route path="/player/questionnaire/:id" element={<AuthGuard playerOnly={true}><PlayerQuestionnaireForm /></AuthGuard>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ThemeProvider>
