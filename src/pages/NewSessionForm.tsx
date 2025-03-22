@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -143,7 +144,11 @@ const NewSessionForm = () => {
       if (error) throw error;
       setPlayers(data || []);
     } catch (error: any) {
-      toast.error('שגיאה בטעינת רשימת השחקנים');
+      toast({
+        title: "שגיאה",
+        description: "שגיאה בטעינת רשימת השחקנים",
+        variant: "destructive",
+      });
       console.error('Error fetching players:', error);
     }
   };
@@ -269,6 +274,12 @@ const NewSessionForm = () => {
         timeInput.focus();
       }
     }, 100);
+  };
+
+  // Added this function to handle dialog close and navigation
+  const handleSuccessDialogClose = () => {
+    setShowSuccessDialog(false);
+    navigate('/dashboard-coach');
   };
 
   const renderFieldError = (field: keyof typeof formErrors) => {
