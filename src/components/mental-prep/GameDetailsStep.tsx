@@ -1,5 +1,4 @@
-
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FormData } from '@/types/mentalPrep';
@@ -21,6 +20,8 @@ interface GameDetailsStepProps {
 
 export const GameDetailsStep = ({ formData, updateFormData }: GameDetailsStepProps) => {
   const opposingTeamRef = useRef<HTMLInputElement>(null);
+  const [showCustomOptions, setShowCustomOptions] = useState(false);
+  const [customGameType, setCustomGameType] = useState('');
   
   const gameTypes = [
     { value: 'league', label: 'ליגה' },
@@ -29,19 +30,49 @@ export const GameDetailsStep = ({ formData, updateFormData }: GameDetailsStepPro
     { value: 'other', label: 'אחר' }
   ];
 
+  const customOptions = [
+    { value: 'tournament', label: 'טורניר' },
+    { value: 'training_match', label: 'משחק אימון' },
+    { value: 'regional', label: 'אזורי' },
+    { value: 'custom', label: 'אחר...' }
+  ];
+
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-      // Format date to YYYY-MM-DD for input value
       const formattedDate = format(date, 'yyyy-MM-dd');
       updateFormData('matchDate', formattedDate);
       
-      // Focus the opposing team input after selecting a date
       setTimeout(() => {
         if (opposingTeamRef.current) {
           opposingTeamRef.current.focus();
         }
       }, 100);
     }
+  };
+
+  const handleGameTypeSelect = (type: string) => {
+    updateFormData('gameType', type);
+    
+    if (type === 'other') {
+      setShowCustomOptions(true);
+    } else {
+      setShowCustomOptions(false);
+      setCustomGameType('');
+    }
+  };
+
+  const handleCustomTypeSelect = (type: string) => {
+    if (type === 'custom') {
+      setCustomGameType('');
+    } else {
+      updateFormData('gameType', type);
+      setCustomGameType(type);
+    }
+  };
+
+  const handleCustomTypeInput = (value: string) => {
+    setCustomGameType(value);
+    updateFormData('gameType', value);
   };
 
   return (
@@ -93,19 +124,58 @@ export const GameDetailsStep = ({ formData, updateFormData }: GameDetailsStepPro
           {gameTypes.map((type) => (
             <div
               key={type.value}
-              onClick={() => updateFormData('gameType', type.value)}
+              onClick={() => handleGameTypeSelect(type.value)}
               className={cn(
                 'cursor-pointer rounded-lg p-4 text-center transition-all duration-200',
                 'hover:shadow-md border-2',
                 formData.gameType === type.value
                   ? 'border-primary bg-primary/10 shadow-sm'
-                  : 'border-gray-200 bg-white hover:border-primary/50'
+                  : (showCustomOptions && type.value === 'other')
+                    ? 'border-primary/50 bg-white'
+                    : 'border-gray-200 bg-white hover:border-primary/50'
               )}
             >
               <span className="text-lg font-medium">{type.label}</span>
             </div>
           ))}
         </div>
+        
+        {showCustomOptions && (
+          <div className="mt-4 space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <Label className="text-right block text-sm text-gray-600">בחר סוג משחק מותאם אישית</Label>
+            <div className="grid grid-cols-2 gap-3">
+              {customOptions.map((option) => (
+                <div
+                  key={option.value}
+                  onClick={() => handleCustomTypeSelect(option.value)}
+                  className={cn(
+                    'cursor-pointer rounded-lg p-3 text-center transition-all duration-200',
+                    'hover:shadow-sm border',
+                    customGameType === option.value
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-200 bg-white hover:border-primary/30'
+                  )}
+                >
+                  <span className="text-md font-medium">{option.label}</span>
+                </div>
+              ))}
+            </div>
+            
+            {customGameType === '' && (
+              <div className="mt-3">
+                <Label htmlFor="customGameType" className="text-right block text-sm">הקלד סוג משחק אחר</Label>
+                <Input
+                  id="customGameType"
+                  value={customGameType}
+                  onChange={(e) => handleCustomTypeInput(e.target.value)}
+                  placeholder="הקלד סוג משחק..."
+                  className="mt-1"
+                  autoFocus
+                />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
