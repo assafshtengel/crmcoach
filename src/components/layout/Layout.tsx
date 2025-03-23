@@ -6,7 +6,7 @@ export function Layout() {
         <div className="container mx-auto flex justify-between items-center">
           <Link to="/" className="focus:outline-none transition-transform hover:scale-105">
             <div className="flex flex-col items-center">
-              <img src="/lovable-uploads/e56d4611-f512-47f8-901e-904530a294b1.png" alt="CASSABOOM - Coach Smarter, Grow Faster" className="h-100 md:h-200 w-auto object-cover" />
+              <img src="/lovable-uploads/e56d4611-f512-47f8-901e-904530a294b1.png" alt="CASSABOOM - Coach Smarter, Grow Faster" className="h-50md:h-80 w-auto object-contain" />
             </div>
           </Link>
           
