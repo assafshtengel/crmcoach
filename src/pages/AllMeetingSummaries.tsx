@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -13,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface SessionSummary {
   id: string;
@@ -23,6 +23,7 @@ interface SessionSummary {
   progress_rating: number;
   next_session_focus: string;
   additional_notes?: string;
+  player_id: string;
   session: {
     id: string;
     session_date: string;
@@ -37,6 +38,7 @@ const AllMeetingSummaries = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [summaries, setSummaries] = useState<SessionSummary[]>([]);
+  const [filteredSummaries, setFilteredSummaries] = useState<SessionSummary[]>([]);
   const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<string>(searchParams.get('playerId') || 'all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -44,73 +46,98 @@ const AllMeetingSummaries = () => {
   const isMobile = useIsMobile();
 
   const fetchSummaries = async () => {
-    setIsLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const query = supabase
-      .from('session_summaries')
-      .select(`
-        *,
-        session:sessions (
-          id,
-          session_date,
-          player:players (
-            id,
-            full_name
-          )
-        )
-      `)
-      .eq('coach_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (selectedPlayer !== 'all') {
-      // Filter by player_id directly in the session_summaries table
-      query.eq('player_id', selectedPlayer);
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      console.error('Error fetching summaries:', error);
-      return;
-    }
-    
-    const uniqueSessions = new Map<string, SessionSummary>();
-    data?.forEach((summary: SessionSummary) => {
-      // Add null check for session and player
-      if (summary.session && summary.session.id) {
-        uniqueSessions.set(summary.session.id, summary);
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('יש להתחבר למערכת');
+        navigate('/auth');
+        return;
       }
-    });
+
+      const query = supabase
+        .from('session_summaries')
+        .select(`
+          *,
+          session:sessions (
+            id,
+            session_date,
+            player:players (
+              id,
+              full_name
+            )
+          )
+        `)
+        .eq('coach_id', user.id)
+        .order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('Error fetching summaries:', error);
+        toast.error('שגיאה בטעינת סיכומי המפגשים');
+        return;
+      }
+      
+      const uniqueSessions = new Map<string, SessionSummary>();
+      data?.forEach((summary: SessionSummary) => {
+        if (summary.session && summary.session.id) {
+          uniqueSessions.set(summary.session.id, summary);
+        }
+      });
+      
+      const uniqueData = Array.from(uniqueSessions.values());
+      setSummaries(uniqueData);
+      
+      applyFilters(uniqueData);
+    } catch (error) {
+      console.error('Error fetching summaries:', error);
+      toast.error('שגיאה בטעינת סיכומי המפגשים');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const applyFilters = (data: SessionSummary[] = summaries) => {
+    let filtered = [...data];
     
-    let uniqueData = Array.from(uniqueSessions.values());
+    if (selectedPlayer !== 'all') {
+      filtered = filtered.filter(summary => 
+        summary.player_id === selectedPlayer || 
+        summary.session?.player?.id === selectedPlayer
+      );
+    }
     
     if (searchQuery) {
       const lowerSearchQuery = searchQuery.toLowerCase();
-      uniqueData = uniqueData.filter((summary: SessionSummary) => 
+      filtered = filtered.filter(summary => 
         (summary.session?.player?.full_name?.toLowerCase().includes(lowerSearchQuery)) ||
         summary.summary_text.toLowerCase().includes(lowerSearchQuery)
       );
     }
     
-    setSummaries(uniqueData);
-    setIsLoading(false);
+    setFilteredSummaries(filtered);
   };
 
   const fetchPlayers = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data, error } = await supabase
-      .from('players')
-      .select('id, full_name')
-      .eq('coach_id', user.id);
+      const { data, error } = await supabase
+        .from('players')
+        .select('id, full_name')
+        .eq('coach_id', user.id);
 
-    if (error) {
+      if (error) {
+        console.error('Error fetching players:', error);
+        toast.error('שגיאה בטעינת רשימת השחקנים');
+        return;
+      }
+      setPlayers(data);
+    } catch (error) {
       console.error('Error fetching players:', error);
-      return;
+      toast.error('שגיאה בטעינת רשימת השחקנים');
     }
-    setPlayers(data);
   };
 
   useEffect(() => {
@@ -119,6 +146,10 @@ const AllMeetingSummaries = () => {
 
   useEffect(() => {
     fetchSummaries();
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
     
     if (selectedPlayer !== 'all') {
       setSearchParams({ playerId: selectedPlayer });
@@ -224,11 +255,15 @@ const AllMeetingSummaries = () => {
           </div>
         </div>
 
+        <div className="mb-4 text-sm text-gray-600">
+          מציג {filteredSummaries.length} מתוך {summaries.length} סיכומים
+        </div>
+
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
           </div>
-        ) : summaries.length > 0 ? (
+        ) : filteredSummaries.length > 0 ? (
           <AnimatePresence>
             <motion.div 
               className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2 lg:grid-cols-3'} gap-6`}
@@ -236,7 +271,7 @@ const AllMeetingSummaries = () => {
               animate={{ opacity: 1 }}
               transition={{ staggerChildren: 0.05 }}
             >
-              {summaries.map((summary, index) => (
+              {filteredSummaries.map((summary, index) => (
                 <motion.div
                   key={summary.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -265,7 +300,7 @@ const AllMeetingSummaries = () => {
                             <DialogContent className="max-w-3xl max-h-screen">
                               <DialogHeader>
                                 <DialogTitle className="flex items-center justify-between mb-4 text-right">
-                                  <span className="text-[#6E59A5]">סיכום מפגש - {summary.session?.player?.full_name || "שחקן לא ידוע"}</span>
+                                  <span className="text-[#6E59A5]">סיכום מפגש - {summary.session?.player?.full_name || "שחק�� לא ידוע"}</span>
                                   <span className="text-sm font-normal text-gray-500">
                                     {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
                                   </span>
@@ -320,7 +355,9 @@ const AllMeetingSummaries = () => {
             <p className="text-gray-500">
               {selectedPlayer !== 'all' 
                 ? 'אין סיכומי מפגשים לשחקן זה' 
-                : 'לא נמצאו סיכומי מפגשים במערכת'}
+                : searchQuery 
+                  ? 'לא נמצאו תוצאות התואמות את החיפוש' 
+                  : 'לא נמצאו סיכומי מפגשים במערכת'}
             </p>
           </motion.div>
         )}
