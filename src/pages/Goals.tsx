@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,8 @@ const Goals = () => {
   const [activeTab, setActiveTab] = useState('long-term');
   const [userId, setUserId] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(undefined);
+  const [open, setOpen] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const getUser = async () => {
@@ -64,6 +66,12 @@ const Goals = () => {
         ...prev,
         due_date: date.toISOString()
       }));
+      setOpen(false);
+      setTimeout(() => {
+        if (titleInputRef.current) {
+          titleInputRef.current.focus();
+        }
+      }, 100);
     }
   }, [date]);
 
@@ -297,6 +305,7 @@ const Goals = () => {
                       <Input
                         id="title"
                         name="title"
+                        ref={titleInputRef}
                         value={newGoal.title}
                         onChange={handleInputChange}
                         placeholder="הכנס כותרת למטרה"
@@ -305,7 +314,7 @@ const Goals = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="due_date">תאריך יעד</Label>
-                      <Popover>
+                      <Popover open={open} onOpenChange={setOpen}>
                         <PopoverTrigger asChild>
                           <Button
                             id="due_date"
