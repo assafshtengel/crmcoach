@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, FilePdf, Printer } from 'lucide-react';
+import { ChevronRight, FileDown, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -368,7 +368,7 @@ const EditPlayerForm = () => {
               disabled={isPdfExporting}
               className="flex items-center gap-1 transition-all hover:bg-primary hover:text-white"
             >
-              <FilePdf className="h-4 w-4" />
+              <FileDown className="h-4 w-4" />
               <span className="hidden sm:inline">PDF</span>
             </Button>
             <Button

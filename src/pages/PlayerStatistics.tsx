@@ -12,7 +12,7 @@ import {
   TrendingUp, 
   TrendingDown,
   Download, 
-  FilePdf,
+  FileDown,
   Printer
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -341,7 +341,7 @@ const PlayerStatistics = () => {
               disabled={isPdfExporting}
               className="flex items-center gap-1 transition-all hover:bg-primary hover:text-white"
             >
-              <FilePdf className="h-4 w-4" />
+              <FileDown className="h-4 w-4" />
               <span className="hidden sm:inline">PDF</span>
             </Button>
             <Button
@@ -489,3 +489,4 @@ const PlayerStatistics = () => {
 };
 
 export default PlayerStatistics;
+
