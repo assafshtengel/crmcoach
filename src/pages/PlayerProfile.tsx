@@ -73,7 +73,12 @@ const PlayerProfile = () => {
   }, [playerId]);
 
   const handleEditPlayer = () => {
-    navigate(`/edit-player/${playerId}`);
+    navigate(`/edit-player/${playerId}`, {
+      state: {
+        playerId: playerId,
+        playerData: player
+      }
+    });
   };
 
   const copyPlayerLink = () => {

@@ -1,12 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { formSchema, PlayerFormValues, sportFields } from '@/components/new-player/PlayerFormSchema';
 import { PlayerPersonalInfo } from '@/components/new-player/PlayerPersonalInfo';
 import { PlayerClubInfo } from '@/components/new-player/PlayerClubInfo';
@@ -17,6 +18,7 @@ import { ImageUpload } from '@/components/new-player/ImageUpload';
 const EditPlayerForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const params = useParams();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profileImage, setProfileImage] = useState<File | null>(null);
@@ -27,7 +29,8 @@ const EditPlayerForm = () => {
   const [playerData, setPlayerData] = useState<any>(null);
 
   const locationState = location.state || {};
-  const playerId = locationState.playerId;
+  // נקח את מזהה השחקן מה-URL או מה-state
+  const playerId = params.playerId || locationState.playerId;
   const initialPlayerData = locationState.playerData;
 
   useEffect(() => {
