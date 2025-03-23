@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MentalPrepForm } from '@/components/MentalPrepForm';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronRight, Home, Eye } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DataTable } from '@/components/admin/DataTable';
@@ -32,15 +32,22 @@ type CompletedForm = {
 
 const GamePreparation = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [completedForms, setCompletedForms] = useState<CompletedForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedForm, setSelectedForm] = useState<CompletedForm | null>(null);
   const [showFormDetails, setShowFormDetails] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("new-form");
 
   useEffect(() => {
+    // Check for activeTab in location state (for navigation from other components)
+    if (location.state && location.state.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+    
     fetchCompletedForms();
-  }, []);
+  }, [location.state]);
 
   const fetchCompletedForms = async () => {
     setLoading(true);
@@ -190,7 +197,7 @@ const GamePreparation = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="new-form" className="w-full">
+        <Tabs value={activeTab} defaultValue="new-form" className="w-full" onValueChange={setActiveTab}>
           <TabsList className="mb-8 w-full">
             <TabsTrigger value="new-form" className="flex-1">טופס הכנה למשחק</TabsTrigger>
             <TabsTrigger value="completed-forms" className="flex-1">צפייה בטפסים שמולאו</TabsTrigger>

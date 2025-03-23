@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,7 +59,69 @@ export const MentalPrepForm = () => {
   };
 
   const handleSubmit = async () => {
-    setShowPreviewDialog(true);
+    // Validate the form data
+    if (!formData.fullName || !formData.email || !formData.matchDate || !formData.opposingTeam) {
+      toast({
+        title: "שגיאה",
+        description: "אנא מלא את כל השדות הנדרשים",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // First save the data to Supabase
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      
+      if (!session?.session) {
+        toast({
+          title: "שגיאה",
+          description: "יש להתחבר למערכת כדי לשמור את הדוח.",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('mental_prep_forms')
+        .insert({
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          match_date: formData.matchDate,
+          opposing_team: formData.opposingTeam,
+          game_type: formData.gameType,
+          selected_states: formData.selectedStates,
+          selected_goals: formData.selectedGoals,
+          answers: formData.answers,
+          current_pressure: formData.currentPressure,
+          optimal_pressure: formData.optimalPressure,
+          player_name: formData.playerName,
+          coach_id: session.session.user.id
+        });
+
+      if (error) {
+        console.error('Error saving form:', error);
+        throw error;
+      }
+
+      toast({
+        title: "הדוח נשמר בהצלחה!",
+        description: "ניתן לראות את הדוח בטאב 'צפייה בטפסים שמולאו'",
+      });
+      
+      // Then show the preview dialog
+      setShowPreviewDialog(true);
+      
+    } catch (error) {
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה בשמירת הדוח. אנא נסה שוב.",
+        variant: "destructive",
+      });
+      console.error('Error in handleSubmit:', error);
+    }
   };
 
   const handleDownload = async () => {
@@ -94,55 +155,7 @@ export const MentalPrepForm = () => {
   };
 
   const handleConfirmSave = async () => {
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      
-      if (!session?.session) {
-        toast({
-          title: "שגיאה",
-          description: "יש להתחבר למערכת כדי לשמור את הדוח.",
-          variant: "destructive",
-        });
-        navigate('/auth');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('mental_prep_forms')
-        .insert({
-          full_name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          match_date: formData.matchDate,
-          opposing_team: formData.opposingTeam,
-          game_type: formData.gameType,
-          selected_states: formData.selectedStates,
-          selected_goals: formData.selectedGoals,
-          answers: formData.answers,
-          current_pressure: formData.currentPressure,
-          optimal_pressure: formData.optimalPressure,
-          player_name: formData.playerName, // Add playerName to the DB insert
-          coach_id: session.session.user.id
-        });
-
-      if (error) {
-        console.error('Error saving form:', error);
-        throw error;
-      }
-
-      toast({
-        title: "הדוח נשלח ונשמר בהצלחה!",
-        description: "הדוח נשמר במערכת.",
-      });
-
-      navigate('/reports', { state: { activeTab: 'game-prep' } });
-    } catch (error) {
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בשליחת הדוח. אנא נסה שוב.",
-        variant: "destructive",
-      });
-    }
+    navigate('/game-prep', { state: { activeTab: 'completed-forms' } });
   };
 
   const renderStep = () => {
