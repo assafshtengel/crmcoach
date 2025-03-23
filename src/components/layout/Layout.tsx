@@ -10,13 +10,10 @@ export function Layout() {
           <Link to="/" className="focus:outline-none transition-transform hover:scale-105">
             <div className="flex flex-col items-center">
               <img 
-                src="/lovable-uploads/7164d991-59d2-4e9c-bedc-46d604c49fce.png" 
+                src="/lovable-uploads/e56d4611-f512-47f8-901e-904530a294b1.png" 
                 alt="CASSABOOM - Coach Smarter, Grow Faster" 
-                className="h-16 md:h-20 w-auto"
+                className="h-20 md:h-24 w-auto"
               />
-              <div className="text-xs md:text-sm text-primary font-medium mt-1">
-                אימון חכם יותר, צמיחה מהירה יותר
-              </div>
             </div>
           </Link>
           
