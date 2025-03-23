@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen, Trophy } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
@@ -513,7 +513,7 @@ const DashboardCoach = () => {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">{session.location || 'לא צוין מיקום'}</span>
+            <span className="text-sm text-gray-500">{session.location || '��א צוין מיקום'}</span>
             <div className="flex gap-2">
               {!session.reminder_sent && !isPastSession ? <Button variant="ghost" size="sm" onClick={() => handleSendReminder(session.id)} className="text-[#27AE60] hover:text-[#219A52]">
                   <Send className="h-4 w-4 mr-1" />
@@ -723,7 +723,7 @@ const DashboardCoach = () => {
       מפגשים: stats.lastMonthSessions,
       fill: '#F59E0B'
     }, {
-      name: 'החודש (בוצעו)',
+      name: 'החודש (בו��עו)',
       מפגשים: stats.currentMonthPastSessions,
       fill: '#10B981'
     }, {
@@ -1095,6 +1095,20 @@ const DashboardCoach = () => {
               <Button variant="default" className="w-full bg-[#FF5722] hover:bg-[#E64A19]">
                 <ClipboardList className="h-4 w-4 mr-2" />
                 צפה בשאלונים
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#2C3E50] cursor-pointer" onClick={() => navigate('/goals')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">מטרות המאמן</CardTitle>
+              <Trophy className="h-5 w-5 text-[#2C3E50]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">הגדר ועקוב אחר מטרות האימון שלך</p>
+              <Button variant="default" className="w-full bg-[#2C3E50] hover:bg-[#1B2631]">
+                <Target className="h-4 w-4 mr-2" />
+                צפה במטרות
               </Button>
             </CardContent>
           </Card>
