@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Target, Clock, ListChecks } from "lucide-react";
+import { Target, Clock, ListChecks, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Goal {
@@ -37,14 +37,12 @@ const Goals = () => {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get the current user and fetch goals
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
         fetchGoals(user.id);
       } else {
-        // For demo purposes, use a fixed ID if not authenticated
         const demoId = '00000000-0000-0000-0000-000000000000';
         setUserId(demoId);
         fetchGoals(demoId);
@@ -82,8 +80,10 @@ const Goals = () => {
     setNewGoal(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleTypeChange = (type: 'long-term' | 'short-term' | 'immediate') => {
-    setNewGoal(prev => ({ ...prev, type }));
+  const handleTypeChange = (type: 'long-term' | 'short-term' | 'immediate' | 'all') => {
+    if (type !== 'all') {
+      setNewGoal(prev => ({ ...prev, type: type as 'long-term' | 'short-term' | 'immediate' }));
+    }
     setActiveTab(type);
   };
 
@@ -171,6 +171,12 @@ const Goals = () => {
   };
 
   const getCompletionPercentage = (type: string) => {
+    if (type === 'all') {
+      if (goals.length === 0) return 0;
+      const completedGoals = goals.filter(goal => goal.completed).length;
+      return Math.round((completedGoals / goals.length) * 100);
+    }
+    
     const filteredGoals = goals.filter(goal => goal.type === type);
     if (filteredGoals.length === 0) return 0;
     
@@ -179,6 +185,9 @@ const Goals = () => {
   };
 
   const getGoalsByType = (type: string) => {
+    if (type === 'all') {
+      return goals;
+    }
     return goals.filter(goal => goal.type === type);
   };
 
@@ -190,6 +199,8 @@ const Goals = () => {
         return 'מטרות קצרות טווח';
       case 'immediate':
         return 'פעילויות מיידיות';
+      case 'all':
+        return 'כל המטרות';
       default:
         return '';
     }
@@ -203,6 +214,8 @@ const Goals = () => {
         return <Clock className="h-4 w-4 ml-2" />;
       case 'immediate':
         return <ListChecks className="h-4 w-4 ml-2" />;
+      case 'all':
+        return <CheckCircle2 className="h-4 w-4 ml-2" />;
       default:
         return null;
     }
@@ -217,7 +230,7 @@ const Goals = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="long-term" value={activeTab} onValueChange={(value) => setActiveTab(value as 'long-term' | 'short-term' | 'immediate')}>
+      <Tabs defaultValue="long-term" value={activeTab} onValueChange={(value) => setActiveTab(value as 'long-term' | 'short-term' | 'immediate' | 'all')}>
         <TabsList className="w-full mb-8 flex justify-center">
           <TabsTrigger value="long-term" onClick={() => handleTypeChange('long-term')} className="flex items-center">
             {getTabIcon('long-term')}
@@ -230,6 +243,10 @@ const Goals = () => {
           <TabsTrigger value="immediate" onClick={() => handleTypeChange('immediate')} className="flex items-center">
             {getTabIcon('immediate')}
             {getTabLabel('immediate')}
+          </TabsTrigger>
+          <TabsTrigger value="all" onClick={() => handleTypeChange('all')} className="flex items-center">
+            {getTabIcon('all')}
+            {getTabLabel('all')}
           </TabsTrigger>
         </TabsList>
 
@@ -354,6 +371,81 @@ const Goals = () => {
             </Card>
           </TabsContent>
         ))}
+
+        <TabsContent value="all" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                <span>{getTabLabel('all')}</span>
+                <span className="text-sm font-normal">
+                  {getGoalsByType('all').filter(g => g.completed).length} / {getGoalsByType('all').length} הושלמו
+                </span>
+              </CardTitle>
+              <CardDescription>
+                צפייה בכל המטרות במקום אחד וסימון השלמה
+              </CardDescription>
+              <Progress value={getCompletionPercentage('all')} className="h-2" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {loading ? (
+                  <p className="text-center py-4">טוען מטרות...</p>
+                ) : getGoalsByType('all').length === 0 ? (
+                  <p className="text-center py-4 text-gray-500">לא הוגדרו מטרות. הוסף את המטרה הראשונה שלך!</p>
+                ) : (
+                  getGoalsByType('all').map((goal) => (
+                    <Card key={goal.id} className={`border-2 ${goal.completed ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id={`completed-all-${goal.id}`}
+                              checked={goal.completed}
+                              onCheckedChange={() => toggleGoalCompletion(goal.id, goal.completed)}
+                            />
+                            <CardTitle className={`text-lg ${goal.completed ? 'line-through text-gray-500' : ''}`}>
+                              {goal.title}
+                            </CardTitle>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="text-sm font-medium px-2 py-1 rounded-full mr-2 bg-gray-100">
+                              {goal.type === 'long-term' && 'ארוכת טווח'}
+                              {goal.type === 'short-term' && 'קצרת טווח'}
+                              {goal.type === 'immediate' && 'מיידית'}
+                            </span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500 h-8 px-2"
+                              onClick={() => deleteGoal(goal.id)}
+                            >
+                              מחיקה
+                            </Button>
+                          </div>
+                        </div>
+                        {goal.due_date && (
+                          <CardDescription>
+                            תאריך יעד: {new Date(goal.due_date).toLocaleDateString('he-IL')}
+                          </CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        {goal.description && (
+                          <p className="text-sm mb-2">{goal.description}</p>
+                        )}
+                        {goal.success_criteria && (
+                          <div className="text-sm text-gray-600">
+                            <span className="font-semibold">מדד הצלחה:</span> {goal.success_criteria}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
