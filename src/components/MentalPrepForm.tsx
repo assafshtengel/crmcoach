@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-export const MentalPrepForm = () => {
+interface MentalPrepFormProps {
+  onFormSubmitted?: () => void;
+}
+
+export const MentalPrepForm = ({ onFormSubmitted }: MentalPrepFormProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -83,7 +88,9 @@ export const MentalPrepForm = () => {
         return;
       }
 
-      const { error } = await supabase
+      console.log('Saving form with coach_id:', session.session.user.id);
+
+      const { data, error } = await supabase
         .from('mental_prep_forms')
         .insert({
           full_name: formData.fullName,
@@ -99,17 +106,25 @@ export const MentalPrepForm = () => {
           optimal_pressure: formData.optimalPressure,
           player_name: formData.playerName,
           coach_id: session.session.user.id
-        });
+        })
+        .select();
 
       if (error) {
         console.error('Error saving form:', error);
         throw error;
       }
 
+      console.log('Form saved successfully, data:', data);
+
       toast({
         title: "הדוח נשמר בהצלחה!",
         description: "ניתן לראות את הדוח בטאב 'צפייה בטפסים שמולאו'",
       });
+      
+      // Call the callback to refresh the completed forms list
+      if (onFormSubmitted) {
+        onFormSubmitted();
+      }
       
       // Then show the preview dialog
       setShowPreviewDialog(true);
@@ -155,7 +170,13 @@ export const MentalPrepForm = () => {
   };
 
   const handleConfirmSave = async () => {
+    // After confirming save, navigate to the completed-forms tab 
     navigate('/game-prep', { state: { activeTab: 'completed-forms' } });
+    
+    // Call the callback to refresh the completed forms list again if needed
+    if (onFormSubmitted) {
+      onFormSubmitted();
+    }
   };
 
   const renderStep = () => {

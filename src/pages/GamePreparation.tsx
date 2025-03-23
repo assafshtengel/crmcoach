@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { MentalPrepForm } from '@/components/MentalPrepForm';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronRight, Home, Eye } from 'lucide-react';
+import { ChevronRight, Home, Eye, RefreshCw } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DataTable } from '@/components/admin/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
@@ -55,9 +55,13 @@ const GamePreparation = () => {
       const { data: session } = await supabase.auth.getSession();
       
       if (!session?.session) {
+        console.log('No session found, redirecting to auth');
         navigate('/auth');
         return;
       }
+
+      // Log the user ID we're using for the query
+      console.log('Fetching forms for coach ID:', session.session.user.id);
 
       const { data, error } = await supabase
         .from('mental_prep_forms')
@@ -66,9 +70,11 @@ const GamePreparation = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('Error fetching completed forms:', error);
         throw error;
       }
 
+      console.log('Fetched forms:', data);
       setCompletedForms(data || []);
     } catch (error) {
       console.error('Error fetching completed forms:', error);
@@ -204,14 +210,20 @@ const GamePreparation = () => {
           </TabsList>
           
           <TabsContent value="new-form">
-            <MentalPrepForm />
+            <MentalPrepForm onFormSubmitted={handleRefresh} />
           </TabsContent>
           
           <TabsContent value="completed-forms">
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">טפסי הכנה למשחק שמולאו</h2>
-                <Button onClick={handleRefresh} variant="outline">רענן</Button>
+                <Button 
+                  onClick={handleRefresh} 
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" /> רענן
+                </Button>
               </div>
               
               {loading ? (
