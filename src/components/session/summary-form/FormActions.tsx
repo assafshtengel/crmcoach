@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Save, FileDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface FormActionsProps {
   onSubmit: () => void;
@@ -21,8 +22,48 @@ export function FormActions({
 
   const handleSave = () => {
     onSubmit();
-    // The navigation will happen after the submission is complete
-    // via the FeedbackDialog's onClose handler in SessionSummaryForm
+    
+    // Display a successful toast notification
+    toast.success("סיכום המפגש נשמר בהצלחה", {
+      position: "top-center",
+      duration: 1500,
+      onAutoClose: () => {
+        if (navigateAfterSave) {
+          navigate('/dashboard-coach');
+        }
+      },
+      style: {
+        fontSize: '1.1rem',
+        padding: '16px',
+        backgroundColor: '#ecfdf5',
+        border: '1px solid #10b981',
+        color: '#065f46'
+      }
+    });
+  };
+
+  const handleExportPDF = () => {
+    if (onExportPDF) {
+      onExportPDF();
+      
+      // Display a successful toast for PDF export
+      toast.success("הסיכום יוצא ל-PDF בהצלחה", {
+        position: "top-center",
+        duration: 1500,
+        onAutoClose: () => {
+          if (navigateAfterSave) {
+            navigate('/dashboard-coach');
+          }
+        },
+        style: {
+          fontSize: '1.1rem',
+          padding: '16px',
+          backgroundColor: '#ecfdf5',
+          border: '1px solid #10b981',
+          color: '#065f46'
+        }
+      });
+    }
   };
 
   return (
@@ -40,7 +81,7 @@ export function FormActions({
 
         <Button 
           type="button"
-          onClick={onExportPDF}
+          onClick={handleExportPDF}
           variant="gray"
           disabled={isSaving}
         >

@@ -14,7 +14,6 @@ import { SessionHeader } from "./summary-form/SessionHeader";
 import { SummaryTab } from "./summary-form/SummaryTab";
 import { FormActions } from "./summary-form/FormActions";
 import { formSchema, FormValues } from "./summary-form/schemaValidation";
-import { FeedbackDialog } from "@/components/public-registration/FeedbackDialog";
 
 interface SessionSummaryFormProps {
   sessionId: string;
@@ -38,12 +37,6 @@ export function SessionSummaryForm({
   const navigate = useNavigate();
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackData, setFeedbackData] = useState({
-    title: "",
-    message: "",
-    isError: false
-  });
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -74,39 +67,11 @@ export function SessionSummaryForm({
         updateSessionSummaryStatus(sessionId, playerId);
       }
       
-      // Show success feedback dialog
-      setFeedbackData({
-        title: "הצלחה",
-        message: "סיכום המפגש נשמר בהצלחה",
-        isError: false
-      });
-      setShowFeedback(true);
-      
-      toast.success("סיכום המפגש נשמר בהצלחה");
     } catch (error) {
       console.error("Error saving session summary:", error);
-      
-      // Show error feedback dialog
-      setFeedbackData({
-        title: "שגיאה",
-        message: "שגיאה בשמירת סיכום המפגש",
-        isError: true
-      });
-      setShowFeedback(true);
-      
       toast.error("שגיאה בשמירת סיכום המפגש");
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  // Function to handle dialog close and navigation
-  const handleFeedbackClose = () => {
-    setShowFeedback(false);
-    
-    // Only navigate if it was a successful save
-    if (!feedbackData.isError) {
-      navigate('/dashboard-coach');
     }
   };
 
@@ -156,14 +121,6 @@ export function SessionSummaryForm({
       setTimeout(async () => {
         const summaryElement = document.getElementById('session-summary-content');
         if (!summaryElement) {
-          // Show error feedback dialog
-          setFeedbackData({
-            title: "שגיאה",
-            message: "לא ניתן למצוא את תוכן הסיכום",
-            isError: true
-          });
-          setShowFeedback(true);
-          
           toast.error("לא ניתן למצוא את תוכן הסיכום");
           return;
         }
@@ -200,27 +157,9 @@ export function SessionSummaryForm({
         // Save PDF
         pdf.save(`סיכום_מפגש_${playerName}_${sessionDate.replace(/\//g, '-')}.pdf`);
         
-        // Show success feedback dialog
-        setFeedbackData({
-          title: "הצלחה",
-          message: "PDF נוצר בהצלחה",
-          isError: false
-        });
-        setShowFeedback(true);
-        
-        toast.success("PDF נוצר בהצלחה");
       }, 500);
     } catch (error) {
       console.error("Error creating PDF:", error);
-      
-      // Show error feedback dialog
-      setFeedbackData({
-        title: "שגיאה",
-        message: "שגיאה ביצירת ה-PDF",
-        isError: true
-      });
-      setShowFeedback(true);
-      
       toast.error("שגיאה ביצירת ה-PDF");
     }
   };
@@ -244,16 +183,6 @@ export function SessionSummaryForm({
         onSubmit={form.handleSubmit(handleSubmit)}
         onExportPDF={handleExportPDF}
         isSaving={isSaving}
-      />
-      
-      {/* Feedback Dialog with onClose handler for navigation */}
-      <FeedbackDialog
-        open={showFeedback}
-        setOpen={setShowFeedback}
-        title={feedbackData.title}
-        message={feedbackData.message}
-        isError={feedbackData.isError}
-        onClose={handleFeedbackClose}
       />
     </Form>
   );
