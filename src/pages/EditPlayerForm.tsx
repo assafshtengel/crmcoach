@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, FilePdf, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +13,8 @@ import { PlayerClubInfo } from '@/components/new-player/PlayerClubInfo';
 import { PlayerParentInfo } from '@/components/new-player/PlayerParentInfo';
 import { PlayerAdditionalInfo } from '@/components/new-player/PlayerAdditionalInfo';
 import { ImageUpload } from '@/components/new-player/ImageUpload';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const EditPlayerForm = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const EditPlayerForm = () => {
   const params = useParams();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPdfExporting, setIsPdfExporting] = useState(false);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [initialSportField, setInitialSportField] = useState('');
@@ -29,7 +31,6 @@ const EditPlayerForm = () => {
   const [playerData, setPlayerData] = useState<any>(null);
 
   const locationState = location.state || {};
-  // נקח את מזהה השחקן מה-URL או מה-state
   const playerId = params.playerId || locationState.playerId;
   const initialPlayerData = locationState.playerData;
 
@@ -229,6 +230,69 @@ const EditPlayerForm = () => {
     if (error) throw error;
   };
 
+  const handleExportToPdf = async () => {
+    try {
+      setIsPdfExporting(true);
+      const element = document.getElementById('player-form-content');
+      if (!element) {
+        throw new Error("Element not found");
+      }
+
+      const currentDate = new Date();
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const playerName = `${playerData?.full_name || 'player'}`.replace(/\s+/g, '_');
+      
+      toast({
+        title: "מכין PDF",
+        description: "מייצר קובץ PDF, אנא המתן...",
+      });
+
+      const originalStyle = element.style.cssText;
+      element.style.backgroundColor = 'white';
+      element.style.padding = '20px';
+
+      const canvas = await html2canvas(element, {
+        scale: 1.5,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      element.style.cssText = originalStyle;
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`פרטי_שחקן_${playerName}_${dateStr}.pdf`);
+
+      toast({
+        title: "הייצוא הושלם בהצלחה",
+        description: "קובץ ה-PDF נוצר ונשמר",
+      });
+    } catch (error) {
+      console.error("Error exporting to PDF:", error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בייצוא",
+        description: "לא ניתן היה לייצא את הנתונים ל-PDF",
+      });
+    } finally {
+      setIsPdfExporting(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   async function onSubmit(values: PlayerFormValues) {
     if (isSubmitting) return;
 
@@ -285,7 +349,7 @@ const EditPlayerForm = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="max-w-2xl mx-auto p-6 animate-in slide-in-from-bottom-4 duration-500">
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center justify-between mb-6">
           <Button
             variant="outline"
             size="icon"
@@ -295,6 +359,28 @@ const EditPlayerForm = () => {
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
+          
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportToPdf}
+              disabled={isPdfExporting}
+              className="flex items-center gap-1 transition-all hover:bg-primary hover:text-white"
+            >
+              <FilePdf className="h-4 w-4" />
+              <span className="hidden sm:inline">PDF</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="flex items-center gap-1 transition-all hover:bg-primary hover:text-white"
+            >
+              <Printer className="h-4 w-4" />
+              <span className="hidden sm:inline">הדפסה</span>
+            </Button>
+          </div>
         </div>
 
         <div className="mb-6 animate-in fade-in-50 duration-500">
@@ -302,43 +388,45 @@ const EditPlayerForm = () => {
           <p className="text-gray-600">עדכן את פרטי השחקן כאן</p>
         </div>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <h2 className="text-lg font-semibold mb-4">תמונת פרופיל</h2>
-              <ImageUpload
-                onImageUpload={handleImageUpload}
-                onImageRemove={handleImageRemove}
-                previewUrl={previewUrl}
-              />
-            </div>
+        <div id="player-form-content">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
+                <h2 className="text-lg font-semibold mb-4">תמונת פרופיל</h2>
+                <ImageUpload
+                  onImageUpload={handleImageUpload}
+                  onImageRemove={handleImageRemove}
+                  previewUrl={previewUrl}
+                />
+              </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <h2 className="text-lg font-semibold mb-4">פרטים אישיים</h2>
-              <PlayerPersonalInfo form={form} />
-            </div>
+              <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
+                <h2 className="text-lg font-semibold mb-4">פרטים אישיים</h2>
+                <PlayerPersonalInfo form={form} />
+              </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <PlayerClubInfo form={form} />
-            </div>
+              <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
+                <PlayerClubInfo form={form} />
+              </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <PlayerAdditionalInfo form={form} />
-            </div>
+              <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
+                <PlayerAdditionalInfo form={form} />
+              </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
-              <PlayerParentInfo form={form} />
-            </div>
+              <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
+                <PlayerParentInfo form={form} />
+              </div>
 
-            <Button 
-              type="submit" 
-              className="w-full font-medium text-base py-3"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'שומר שינויים...' : 'שמור שינויים'}
-            </Button>
-          </form>
-        </Form>
+              <Button 
+                type="submit" 
+                className="w-full font-medium text-base py-3"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'שומר שינויים...' : 'שמור שינויים'}
+              </Button>
+            </form>
+          </Form>
+        </div>
       </div>
     </div>
   );
