@@ -7,7 +7,7 @@ export interface FormData {
   opposingTeam: string;
   gameType: string;
   selectedStates: string[];
-  selectedGoals: Array<{ goal: string; metric: string }>;
+  selectedGoals: Array<{ goal: string; metric: string; isCustom?: boolean }>;
   answers: Record<string, string>;
   currentPressure?: string;
   optimalPressure?: string;
