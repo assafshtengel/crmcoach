@@ -10,7 +10,7 @@ export function Layout() {
           {/* Logo and site name in the top left */}
           <div className="flex items-center mr-auto gap-3">
             <img 
-              src="/lovable-uploads/40b936c5-746e-4c0e-8ba6-673d576cf884.png" 
+              src="/lovable-uploads/106fd577-55b4-4dda-9b95-f7e8e483976e.png" 
               alt="CASSABOOM Logo" 
               className="h-12 w-auto"
             />
