@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { MentalPrepForm } from '@/components/MentalPrepForm';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Home } from 'lucide-react';
+import { ChevronRight, Home, Eye } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DataTable } from '@/components/admin/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
@@ -11,6 +11,8 @@ import { supabase } from '@/lib/supabase';
 import { FormData } from '@/types/mentalPrep';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PreviewContent } from '@/components/mental-prep/PreviewDialog';
 
 // Define the column type for the completed forms table
 type CompletedForm = {
@@ -20,6 +22,12 @@ type CompletedForm = {
   match_date: string;
   opposing_team: string;
   created_at: string;
+  selected_states: string[];
+  selected_goals: any[];
+  answers: Record<string, string>;
+  current_pressure?: string;
+  optimal_pressure?: string;
+  player_name?: string;
 };
 
 const GamePreparation = () => {
@@ -27,6 +35,8 @@ const GamePreparation = () => {
   const { toast } = useToast();
   const [completedForms, setCompletedForms] = useState<CompletedForm[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedForm, setSelectedForm] = useState<CompletedForm | null>(null);
+  const [showFormDetails, setShowFormDetails] = useState(false);
 
   useEffect(() => {
     fetchCompletedForms();
@@ -44,7 +54,7 @@ const GamePreparation = () => {
 
       const { data, error } = await supabase
         .from('mental_prep_forms')
-        .select('id, full_name, email, match_date, opposing_team, created_at')
+        .select('*')
         .eq('coach_id', session.session.user.id)
         .order('created_at', { ascending: false });
 
@@ -101,26 +111,43 @@ const GamePreparation = () => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => handleViewDetails(row.original.id)}
+            onClick={() => handleViewDetails(row.original)}
+            className="flex items-center gap-1"
           >
-            צפה בפרטים
+            <Eye className="h-4 w-4" /> צפה בפרטים
           </Button>
         );
       },
     },
   ];
 
-  const handleViewDetails = (formId: string) => {
-    // In the future, this could navigate to a detailed view of the form
-    console.log('View details for form:', formId);
-    toast({
-      title: 'תצוגה מפורטת',
-      description: 'תכונה זו תהיה זמינה בקרוב',
-    });
+  const handleViewDetails = (form: CompletedForm) => {
+    setSelectedForm(form);
+    setShowFormDetails(true);
   };
 
   const handleRefresh = () => {
     fetchCompletedForms();
+  };
+
+  // Convert the selected form to the FormData type needed by PreviewContent
+  const convertToFormData = (form: CompletedForm | null): FormData | null => {
+    if (!form) return null;
+    
+    return {
+      fullName: form.full_name,
+      email: form.email,
+      phone: '',
+      matchDate: form.match_date,
+      opposingTeam: form.opposing_team,
+      gameType: form.opposing_team,
+      selectedStates: form.selected_states || [],
+      selectedGoals: form.selected_goals || [],
+      answers: form.answers || {},
+      currentPressure: form.current_pressure,
+      optimalPressure: form.optimal_pressure,
+      playerName: form.player_name,
+    };
   };
 
   return (
@@ -195,6 +222,24 @@ const GamePreparation = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={showFormDetails} onOpenChange={setShowFormDetails}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>פרטי טופס הכנה למשחק</DialogTitle>
+          </DialogHeader>
+          {selectedForm && (
+            <div className="mt-4">
+              <div ref={el => {}} className="space-y-6">
+                <PreviewContent formData={convertToFormData(selectedForm)!} previewRef={React.createRef()} />
+              </div>
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setShowFormDetails(false)}>סגור</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
