@@ -30,11 +30,22 @@ const GamePreparation = () => {
           </Button>
         </div>
         
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">הכנה למשחק</h1>
-          <p className="text-gray-600 mt-2">
-            מלא את הטופס הבא כדי להתכונן למשחק בצורה הטובה ביותר
-          </p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">הכנה למשחק</h1>
+            <p className="text-gray-600 mt-2">
+              מלא את הטופס הבא כדי להתכונן למשחק בצורה הטובה ביותר
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/')}
+            className="h-10 w-10 rounded-full"
+            title="חזור לדשבורד"
+          >
+            <Home className="h-6 w-6 text-primary" />
+          </Button>
         </div>
         <MentalPrepForm />
       </div>
