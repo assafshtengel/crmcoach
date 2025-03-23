@@ -21,11 +21,12 @@ interface Goal {
   completed: boolean;
   type: 'long-term' | 'short-term' | 'immediate';
   user_id: string;
+  coach_id: string | null;
 }
 
 const Goals = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [newGoal, setNewGoal] = useState<Omit<Goal, 'id' | 'user_id' | 'created_at'>>({
+  const [newGoal, setNewGoal] = useState<Omit<Goal, 'id' | 'user_id' | 'coach_id' | 'created_at'>>({
     title: '',
     description: '',
     due_date: '',
@@ -59,7 +60,7 @@ const Goals = () => {
       const { data, error } = await supabase
         .from('goals')
         .select('*')
-        .eq('user_id', uid)
+        .or(`user_id.eq.${uid},coach_id.eq.${uid}`)
         .order('due_date', { ascending: true });
 
       if (error) {
@@ -102,6 +103,7 @@ const Goals = () => {
         .insert([{
           ...newGoal,
           user_id: userId,
+          coach_id: userId,
           due_date: newGoal.due_date || new Date().toISOString()
         }])
         .select();
