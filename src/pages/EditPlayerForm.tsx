@@ -24,17 +24,68 @@ const EditPlayerForm = () => {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [initialSportField, setInitialSportField] = useState('');
   const [initialOtherSportField, setInitialOtherSportField] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [playerData, setPlayerData] = useState<any>(null);
 
-  const playerData = location.state?.playerData;
+  // נקבל את מזהה השחקן מה-state או ישירות את נתוני השחקן
+  const locationState = location.state || {};
+  const playerId = locationState.playerId;
+  const initialPlayerData = locationState.playerData;
+
+  useEffect(() => {
+    const fetchPlayerData = async () => {
+      // אם כבר יש לנו נתוני שחקן, נשתמש בהם
+      if (initialPlayerData) {
+        setPlayerData(initialPlayerData);
+        setLoading(false);
+        return;
+      }
+
+      // אם יש מזהה שחקן, נשלוף את הנתונים
+      if (playerId) {
+        try {
+          const { data, error } = await supabase
+            .from('players')
+            .select('*')
+            .eq('id', playerId)
+            .single();
+
+          if (error) {
+            throw error;
+          }
+
+          if (data) {
+            setPlayerData(data);
+          } else {
+            throw new Error('לא נמצאו נתוני שחקן');
+          }
+        } catch (error: any) {
+          console.error('Error fetching player data:', error);
+          toast({
+            variant: "destructive",
+            title: "שגיאה",
+            description: "לא הצלחנו לשלוף את נתוני השחקן",
+          });
+          navigate('/players-list');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // אם אין מזהה שחקן או נתוני שחקן, נחזור לרשימת השחקנים
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "לא נמצאו פרטי שחקן לעריכה",
+        });
+        navigate('/players-list');
+      }
+    };
+
+    fetchPlayerData();
+  }, [initialPlayerData, playerId, navigate, toast]);
 
   useEffect(() => {
     if (!playerData) {
-      toast({
-        variant: "destructive",
-        title: "שגיאה",
-        description: "לא נמצאו פרטי שחקן לעריכה",
-      });
-      navigate('/players-list');
       return;
     }
     
@@ -61,28 +112,53 @@ const EditPlayerForm = () => {
       setInitialSportField('');
     }
     
-  }, [playerData, navigate, toast]);
+  }, [playerData]);
 
   const form = useForm<PlayerFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: playerData?.full_name?.split(' ')[0] || '',
-      lastName: playerData?.full_name?.split(' ')[1] || '',
-      playerEmail: playerData?.email || '',
-      playerPhone: playerData?.phone || '',
-      birthDate: playerData?.birthdate || '',
-      city: playerData?.city || '',
-      club: playerData?.club || '',
-      yearGroup: playerData?.year_group || '',
-      injuries: playerData?.injuries || '',
-      parentName: playerData?.parent_name || '',
-      parentPhone: playerData?.parent_phone || '',
-      parentEmail: playerData?.parent_email || '',
-      notes: playerData?.notes || '',
-      sportField: initialSportField,
-      otherSportField: initialOtherSportField
+      firstName: '',
+      lastName: '',
+      playerEmail: '',
+      playerPhone: '',
+      birthDate: '',
+      city: '',
+      club: '',
+      yearGroup: '',
+      injuries: '',
+      parentName: '',
+      parentPhone: '',
+      parentEmail: '',
+      notes: '',
+      sportField: '',
+      otherSportField: ''
     },
   });
+  
+  // עדכון ערכי הטופס כאשר נתוני השחקן נטענים
+  useEffect(() => {
+    if (playerData) {
+      const fullNameParts = playerData.full_name ? playerData.full_name.split(' ') : ['', ''];
+      
+      form.reset({
+        firstName: fullNameParts[0] || '',
+        lastName: fullNameParts.slice(1).join(' ') || '',
+        playerEmail: playerData.email || '',
+        playerPhone: playerData.phone || '',
+        birthDate: playerData.birthdate || '',
+        city: playerData.city || '',
+        club: playerData.club || '',
+        yearGroup: playerData.year_group || '',
+        injuries: playerData.injuries || '',
+        parentName: playerData.parent_name || '',
+        parentPhone: playerData.parent_phone || '',
+        parentEmail: playerData.parent_email || '',
+        notes: playerData.notes || '',
+        sportField: initialSportField,
+        otherSportField: initialOtherSportField
+      });
+    }
+  }, [playerData, initialSportField, initialOtherSportField, form]);
   
   // Update form values when initialSportField changes
   useEffect(() => {
@@ -204,6 +280,14 @@ const EditPlayerForm = () => {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
   }
 
   if (!playerData) {
