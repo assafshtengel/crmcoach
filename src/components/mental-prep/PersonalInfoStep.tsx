@@ -23,16 +23,6 @@ export const PersonalInfoStep = ({ formData, updateFormData }: PersonalInfoStepP
         />
       </div>
       <div>
-        <Label htmlFor="playerName">שם השחקן</Label>
-        <Input
-          id="playerName"
-          value={formData.playerName || ''}
-          onChange={(e) => updateFormData('playerName', e.target.value)}
-          className="input-field"
-          placeholder="אם הטופס עבור שחקן ספציפי, הזן את שמו"
-        />
-      </div>
-      <div>
         <Label htmlFor="email">אימייל</Label>
         <Input
           id="email"
