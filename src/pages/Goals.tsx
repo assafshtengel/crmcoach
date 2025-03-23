@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -244,7 +245,11 @@ const Goals = () => {
             {getTabIcon('immediate')}
             {getTabLabel('immediate')}
           </TabsTrigger>
-          <TabsTrigger value="all" onClick={() => handleTypeChange('all')} className="flex items-center">
+          <TabsTrigger 
+            value="all" 
+            onClick={() => handleTypeChange('all')} 
+            className="flex items-center bg-blue-400 text-white shadow-md hover:bg-blue-500 transition-all font-bold transform hover:scale-105"
+          >
             {getTabIcon('all')}
             {getTabLabel('all')}
           </TabsTrigger>
