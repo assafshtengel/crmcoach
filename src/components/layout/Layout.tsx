@@ -1,18 +1,31 @@
 
-import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 
 export function Layout() {
-  return <div className="flex min-h-screen flex-col">
+  const [actionCount, setActionCount] = useState(0);
+  const [showSplash, setShowSplash] = useState(false);
+  const location = useLocation();
+
+  // Track navigation changes
+  useEffect(() => {
+    setActionCount(prev => {
+      const newCount = prev + 1;
+      // Show splash every 5-6 actions
+      if (newCount >= 5) {
+        setShowSplash(true);
+        setTimeout(() => setShowSplash(false), 900); // Hide after 0.9 seconds
+        return 0; // Reset counter
+      }
+      return newCount;
+    });
+  }, [location.pathname]); // Trigger on route changes
+
+  return (
+    <div className="flex min-h-screen flex-col">
       <header className="bg-white shadow-sm sticky top-0 z-50 py-3 px-4 md:px-6">
         <div className="container mx-auto flex justify-between items-center">
-          <Link to="/" className="focus:outline-none transition-transform hover:scale-105">
-            <img 
-              src="/lovable-uploads/e56d4611-f512-47f8-901e-904530a294b1.png" 
-              alt="CASSABOOM - Coach Smarter, Grow Faster" 
-              className="h-auto w-[120px] md:w-[140px] object-contain" 
-            />
-          </Link>
+          <div></div> {/* Empty div to maintain layout balance */}
           
           <div className="flex items-center gap-4">
             {/* כאן ניתן להוסיף בעתיד פקדי ניווט, כפתורי פעולה או תפריט */}
@@ -23,5 +36,19 @@ export function Layout() {
       <main className="flex-1 container mx-auto px-4 py-6">
         <Outlet />
       </main>
-    </div>;
+
+      {/* Logo Splash Overlay */}
+      {showSplash && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50 animate-fade-in">
+          <div className="flex items-center justify-center p-8 animate-scale-in">
+            <img 
+              src="/lovable-uploads/e56d4611-f512-47f8-901e-904530a294b1.png" 
+              alt="CASSABOOM - Coach Smarter, Grow Faster" 
+              className="h-auto w-[200px] object-contain"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
