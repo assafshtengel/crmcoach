@@ -16,6 +16,7 @@ interface GameGoalsStepProps {
 
 export const GameGoalsStep = ({ formData, updateFormData }: GameGoalsStepProps) => {
   const [customGoal, setCustomGoal] = useState('');
+  const [customMetric, setCustomMetric] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
 
   const handleAddCustomGoal = () => {
@@ -23,11 +24,12 @@ export const GameGoalsStep = ({ formData, updateFormData }: GameGoalsStepProps) 
       // Add the custom goal to the selected goals
       updateFormData('selectedGoals', [
         ...formData.selectedGoals,
-        { goal: customGoal, metric: '', isCustom: true },
+        { goal: customGoal, metric: customMetric, isCustom: true },
       ]);
       
       // Reset the custom goal input
       setCustomGoal('');
+      setCustomMetric('');
       setShowCustomInput(false);
     }
   };
@@ -160,6 +162,15 @@ export const GameGoalsStep = ({ formData, updateFormData }: GameGoalsStepProps) 
                       onClick={(e) => e.stopPropagation()}
                       className="bg-white focus:ring-2 focus:ring-primary/30 text-right"
                     />
+                    
+                    <Input
+                      placeholder="מדידה כמותית (כמה פעמים?)"
+                      value={customMetric}
+                      onChange={(e) => setCustomMetric(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-white focus:ring-2 focus:ring-primary/30 text-right"
+                    />
+                    
                     <div className="flex justify-between">
                       <Button 
                         type="button" 
@@ -181,6 +192,7 @@ export const GameGoalsStep = ({ formData, updateFormData }: GameGoalsStepProps) 
                           e.stopPropagation();
                           setShowCustomInput(false);
                           setCustomGoal('');
+                          setCustomMetric('');
                         }}
                         className="mt-1"
                       >
@@ -223,7 +235,14 @@ export const GameGoalsStep = ({ formData, updateFormData }: GameGoalsStepProps) 
                   >
                     הסר
                   </Button>
-                  <p className="text-sm font-medium text-right">{goal.goal}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-right">{goal.goal}</p>
+                    {goal.metric && (
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                        {goal.metric} פעמים
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
           </div>
