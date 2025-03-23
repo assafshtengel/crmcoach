@@ -7,11 +7,11 @@ export function Layout() {
       <header className="bg-white shadow-sm sticky top-0 z-50 py-3 px-4 md:px-6">
         <div className="container mx-auto flex justify-between items-center">
           <Link to="/" className="focus:outline-none transition-transform hover:scale-105">
-            <div className="flex flex-col items-center">
+            <div className="flex items-center">
               <img 
                 src="/lovable-uploads/e56d4611-f512-47f8-901e-904530a294b1.png" 
                 alt="CASSABOOM - Coach Smarter, Grow Faster" 
-                className="h-12 md:h-16 w-auto object-contain" 
+                className="h-auto w-[120px] md:w-[140px] object-contain mr-2 my-1" 
               />
             </div>
           </Link>
