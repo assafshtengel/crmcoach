@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Target, Clock, ListChecks } from "lucide-react";
+import { Target, Clock, ListChecks, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 
 interface Goal {
   id: string;
@@ -82,8 +84,10 @@ const Goals = () => {
     setNewGoal(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleTypeChange = (type: 'long-term' | 'short-term' | 'immediate') => {
-    setNewGoal(prev => ({ ...prev, type }));
+  const handleTypeChange = (type: 'long-term' | 'short-term' | 'immediate' | 'all-goals') => {
+    if (type !== 'all-goals') {
+      setNewGoal(prev => ({ ...prev, type }));
+    }
     setActiveTab(type);
   };
 
@@ -179,6 +183,9 @@ const Goals = () => {
   };
 
   const getGoalsByType = (type: string) => {
+    if (type === 'all-goals') {
+      return goals;
+    }
     return goals.filter(goal => goal.type === type);
   };
 
@@ -190,6 +197,8 @@ const Goals = () => {
         return 'מטרות קצרות טווח';
       case 'immediate':
         return 'פעילויות מיידיות';
+      case 'all-goals':
+        return 'כל המטרות';
       default:
         return '';
     }
@@ -203,9 +212,17 @@ const Goals = () => {
         return <Clock className="h-4 w-4 ml-2" />;
       case 'immediate':
         return <ListChecks className="h-4 w-4 ml-2" />;
+      case 'all-goals':
+        return <CheckCircle2 className="h-4 w-4 ml-2" />;
       default:
         return null;
     }
+  };
+
+  const getAllGoalsCompletionPercentage = () => {
+    if (goals.length === 0) return 0;
+    const completedGoals = goals.filter(goal => goal.completed).length;
+    return Math.round((completedGoals / goals.length) * 100);
   };
 
   return (
@@ -217,7 +234,7 @@ const Goals = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="long-term" value={activeTab} onValueChange={(value) => setActiveTab(value as 'long-term' | 'short-term' | 'immediate')}>
+      <Tabs defaultValue="long-term" value={activeTab} onValueChange={(value) => setActiveTab(value as 'long-term' | 'short-term' | 'immediate' | 'all-goals')}>
         <TabsList className="w-full mb-8 flex justify-center">
           <TabsTrigger value="long-term" onClick={() => handleTypeChange('long-term')} className="flex items-center">
             {getTabIcon('long-term')}
@@ -230,6 +247,10 @@ const Goals = () => {
           <TabsTrigger value="immediate" onClick={() => handleTypeChange('immediate')} className="flex items-center">
             {getTabIcon('immediate')}
             {getTabLabel('immediate')}
+          </TabsTrigger>
+          <TabsTrigger value="all-goals" onClick={() => handleTypeChange('all-goals')} className="flex items-center">
+            {getTabIcon('all-goals')}
+            {getTabLabel('all-goals')}
           </TabsTrigger>
         </TabsList>
 
@@ -354,6 +375,89 @@ const Goals = () => {
             </Card>
           </TabsContent>
         ))}
+        
+        <TabsContent value="all-goals" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                <span>כל המטרות</span>
+                <span className="text-sm font-normal">
+                  {goals.filter(g => g.completed).length} / {goals.length} הושלמו
+                </span>
+              </CardTitle>
+              <CardDescription>
+                כל המטרות שלך במקום אחד
+              </CardDescription>
+              <Progress value={getAllGoalsCompletionPercentage()} className="h-2" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {loading ? (
+                  <p className="text-center py-4">טוען מטרות...</p>
+                ) : goals.length === 0 ? (
+                  <p className="text-center py-4 text-gray-500">לא הוגדרו מטרות. הוסף מטרות בלשוניות הייעודיות!</p>
+                ) : (
+                  goals.map((goal) => (
+                    <Card key={goal.id} className={`border-2 ${goal.completed ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id={`all-completed-${goal.id}`}
+                              checked={goal.completed}
+                              onCheckedChange={() => toggleGoalCompletion(goal.id, goal.completed)}
+                            />
+                            <div>
+                              <CardTitle className={`text-lg ${goal.completed ? 'line-through text-gray-500' : ''}`}>
+                                {goal.title}
+                              </CardTitle>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant={goal.type === 'long-term' ? 'default' : goal.type === 'short-term' ? 'secondary' : 'outline'} className="text-xs">
+                                  {goal.type === 'long-term' && 'טווח ארוך'}
+                                  {goal.type === 'short-term' && 'טווח קצר'}
+                                  {goal.type === 'immediate' && 'מיידי'}
+                                </Badge>
+                                {goal.completed && (
+                                  <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 text-xs">
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                                    הושלם
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-500 h-8 px-2"
+                            onClick={() => deleteGoal(goal.id)}
+                          >
+                            מחיקה
+                          </Button>
+                        </div>
+                        {goal.due_date && (
+                          <CardDescription className="mt-1">
+                            תאריך יעד: {new Date(goal.due_date).toLocaleDateString('he-IL')}
+                          </CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        {goal.description && (
+                          <p className="text-sm mb-2">{goal.description}</p>
+                        )}
+                        {goal.success_criteria && (
+                          <div className="text-sm text-gray-600">
+                            <span className="font-semibold">מדד הצלחה:</span> {goal.success_criteria}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
