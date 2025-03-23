@@ -110,6 +110,43 @@ const Goals = () => {
     setActiveTab(type);
   };
 
+  // Add the goal to calendar events
+  const addGoalToCalendar = async (goalData: Goal) => {
+    try {
+      // Create a calendar event from the goal
+      const eventData = {
+        title: goalData.title,
+        start: goalData.due_date,
+        extendedProps: {
+          playerName: goalData.title,
+          notes: goalData.description || '',
+          eventType: 'reminder',
+          player_id: userId,
+          location: 'Goal due date'
+        }
+      };
+
+      // Insert the event into player_meetings table
+      const { error } = await supabase
+        .from('player_meetings')
+        .insert({
+          player_id: userId,
+          coach_id: goalData.coach_id,
+          meeting_date: new Date(goalData.due_date).toISOString().split('T')[0],
+          meeting_time: new Date(goalData.due_date).toTimeString().split(' ')[0],
+          meeting_type: 'reminder',
+          location: 'Goal: ' + goalData.type,
+          notes: goalData.description || 'Goal due date: ' + goalData.title
+        });
+
+      if (error) {
+        console.error('Error adding goal to calendar:', error);
+      }
+    } catch (error) {
+      console.error('Error adding goal to calendar:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -134,6 +171,9 @@ const Goals = () => {
       }
 
       if (data) {
+        // Add the new goal to the calendar
+        await addGoalToCalendar(data[0] as Goal);
+        
         setGoals(prev => [...prev, data[0] as Goal]);
         setNewGoal({
           title: '',
