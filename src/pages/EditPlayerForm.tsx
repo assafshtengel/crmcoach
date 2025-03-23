@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -27,21 +26,18 @@ const EditPlayerForm = () => {
   const [loading, setLoading] = useState(true);
   const [playerData, setPlayerData] = useState<any>(null);
 
-  // נקבל את מזהה השחקן מה-state או ישירות את נתוני השחקן
   const locationState = location.state || {};
   const playerId = locationState.playerId;
   const initialPlayerData = locationState.playerData;
 
   useEffect(() => {
     const fetchPlayerData = async () => {
-      // אם כבר יש לנו נתוני שחקן, נשתמש בהם
       if (initialPlayerData) {
         setPlayerData(initialPlayerData);
         setLoading(false);
         return;
       }
 
-      // אם יש מזהה שחקן, נשלוף את הנתונים
       if (playerId) {
         try {
           const { data, error } = await supabase
@@ -71,7 +67,6 @@ const EditPlayerForm = () => {
           setLoading(false);
         }
       } else {
-        // אם אין מזהה שחקן או נתוני שחקן, נחזור לרשימת השחקנים
         toast({
           variant: "destructive",
           title: "שגיאה",
@@ -93,25 +88,20 @@ const EditPlayerForm = () => {
       setPreviewUrl(playerData.profile_image);
     }
     
-    // Handle sport field initialization
     const sportFieldValue = playerData?.sport_field || '';
     const isKnownSport = sportFields.some(sport => sport.value === sportFieldValue || sport.label === sportFieldValue);
     
     if (isKnownSport) {
-      // If it's a known sport, set it directly
       const matchingSport = sportFields.find(sport => 
         sport.value === sportFieldValue || sport.label === sportFieldValue
       );
       setInitialSportField(matchingSport?.value || 'football');
     } else if (sportFieldValue) {
-      // If it's not a known sport but has a value, set it as "other"
       setInitialSportField('other');
       setInitialOtherSportField(sportFieldValue);
     } else {
-      // Default to empty
       setInitialSportField('');
     }
-    
   }, [playerData]);
 
   const form = useForm<PlayerFormValues>({
@@ -135,7 +125,6 @@ const EditPlayerForm = () => {
     },
   });
   
-  // עדכון ערכי הטופס כאשר נתוני השחקן נטענים
   useEffect(() => {
     if (playerData) {
       const fullNameParts = playerData.full_name ? playerData.full_name.split(' ') : ['', ''];
@@ -160,7 +149,6 @@ const EditPlayerForm = () => {
     }
   }, [playerData, initialSportField, initialOtherSportField, form]);
   
-  // Update form values when initialSportField changes
   useEffect(() => {
     if (initialSportField) {
       form.setValue('sportField', initialSportField);
@@ -207,7 +195,6 @@ const EditPlayerForm = () => {
   const updatePlayer = async (values: PlayerFormValues, imageUrl?: string) => {
     if (!playerData?.id) return;
 
-    // Determine the final sport field value
     const finalSportField = values.sportField === 'other' && values.otherSportField
       ? values.otherSportField
       : values.sportField === 'other'
@@ -228,9 +215,7 @@ const EditPlayerForm = () => {
       parent_email: values.parentEmail,
       notes: values.notes,
       sport_field: finalSportField,
-      position: null, // Set position to null to clear it
       ...(imageUrl && { profile_image: imageUrl })
-      // Remove registration_timestamp since it doesn't exist in the DB schema
     };
 
     const { error } = await supabase
