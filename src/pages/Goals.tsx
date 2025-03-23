@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Target, Clock, ListChecks, CheckCircle2 } from "lucide-react";
+import { Target, Clock, ListChecks, CheckCircle2, CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Goal {
   id: string;
@@ -37,6 +40,7 @@ const Goals = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('long-term');
   const [userId, setUserId] = useState<string | null>(null);
+  const [date, setDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     const getUser = async () => {
@@ -53,6 +57,15 @@ const Goals = () => {
     
     getUser();
   }, []);
+
+  useEffect(() => {
+    if (date) {
+      setNewGoal(prev => ({
+        ...prev,
+        due_date: date.toISOString()
+      }));
+    }
+  }, [date]);
 
   const fetchGoals = async (uid: string) => {
     try {
@@ -122,6 +135,7 @@ const Goals = () => {
           completed: false,
           type: newGoal.type
         });
+        setDate(undefined);
         toast.success('המטרה נוספה בהצלחה');
       }
     } catch (error) {
@@ -291,14 +305,30 @@ const Goals = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="due_date">תאריך יעד</Label>
-                      <Input
-                        id="due_date"
-                        name="due_date"
-                        type="date"
-                        value={newGoal.due_date ? new Date(newGoal.due_date).toISOString().split('T')[0] : ''}
-                        onChange={handleInputChange}
-                        required={type !== 'immediate'}
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            id="due_date"
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-right font-normal",
+                              !date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="ml-2 h-4 w-4" />
+                            {date ? format(date, "dd/MM/yyyy") : <span>בחר תאריך</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                   <div className="space-y-2">
