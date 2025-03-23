@@ -34,6 +34,7 @@ export const MentalPrepForm = () => {
     selectedStates: [],
     selectedGoals: [],
     answers: {},
+    playerName: '', // Add playerName field
   });
 
   const [selectedQuestions] = useState(() => {
@@ -120,6 +121,8 @@ export const MentalPrepForm = () => {
           answers: formData.answers,
           current_pressure: formData.currentPressure,
           optimal_pressure: formData.optimalPressure,
+          player_name: formData.playerName, // Add playerName to the DB insert
+          coach_id: session.session.user.id
         });
 
       if (error) {
@@ -132,7 +135,7 @@ export const MentalPrepForm = () => {
         description: "הדוח נשמר במערכת.",
       });
 
-      navigate('/dashboard');
+      navigate('/reports', { state: { activeTab: 'game-prep' } });
     } catch (error) {
       toast({
         title: "שגיאה",

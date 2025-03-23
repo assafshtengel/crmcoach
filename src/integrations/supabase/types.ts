@@ -882,6 +882,7 @@ export type Database = {
           optimal_pressure: string | null
           phone: string
           player_id: string | null
+          player_name: string | null
           selected_goals: Json
           selected_states: Json
         }
@@ -899,6 +900,7 @@ export type Database = {
           optimal_pressure?: string | null
           phone: string
           player_id?: string | null
+          player_name?: string | null
           selected_goals: Json
           selected_states: Json
         }
@@ -916,6 +918,7 @@ export type Database = {
           optimal_pressure?: string | null
           phone?: string
           player_id?: string | null
+          player_name?: string | null
           selected_goals?: Json
           selected_states?: Json
         }

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, FileText, MapPin, User, BarChart2 } from "lucide-react";
+import { ArrowRight, Calendar, FileText, MapPin, User, BarChart2, Search, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -22,6 +22,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface Report {
   id: string;
@@ -35,6 +38,7 @@ interface Report {
   answers: Record<string, string>;
   current_pressure?: string;
   optimal_pressure?: string;
+  player_name?: string;
 }
 
 const Reports = () => {
@@ -44,6 +48,10 @@ const Reports = () => {
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [playerFilter, setPlayerFilter] = useState<string>("all");
+  const [players, setPlayers] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState("all-reports");
 
   useEffect(() => {
     fetchReports();
@@ -81,10 +89,18 @@ const Reports = () => {
         selected_goals: item.selected_goals as Array<{ goal: string; metric: string }>,
         answers: item.answers as Record<string, string>,
         current_pressure: item.current_pressure || undefined,
-        optimal_pressure: item.optimal_pressure || undefined
+        optimal_pressure: item.optimal_pressure || undefined,
+        player_name: item.player_name || undefined
       }));
 
       setReports(formattedData);
+
+      // Extract unique player names for the filter
+      const uniquePlayers = Array.from(
+        new Set(formattedData.map(report => report.player_name).filter(Boolean))
+      ) as string[];
+      
+      setPlayers(uniquePlayers);
     } catch (error) {
       toast({
         title: "שגיאה",
@@ -100,6 +116,18 @@ const Reports = () => {
     setSelectedReport(report);
     setShowDialog(true);
   };
+
+  const filteredReports = reports.filter(report => {
+    const matchesSearch = 
+      (report.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      report.opposing_team?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      report.player_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      false);
+    
+    const matchesPlayer = playerFilter === "all" || report.player_name === playerFilter;
+    
+    return matchesSearch && matchesPlayer;
+  });
 
   if (loading) {
     return (
@@ -125,82 +153,134 @@ const Reports = () => {
         >
           <ArrowRight className="h-4 w-4" />
         </Button>
-        <h1 className="text-3xl font-bold">דוחות טרום משחק</h1>
+        <h1 className="text-3xl font-bold">דוחות</h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <Card 
-          className="hover:shadow-lg transition-shadow cursor-pointer bg-white/90"
-          onClick={() => navigate('/player-statistics')}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl flex items-center gap-2">
-              <BarChart2 className="h-5 w-5 text-primary" />
-              סטטיסטיקות שחקנים ומפגשים
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">צפה בנתונים סטטיסטיים מפורטים על שחקנים חדשים ומפגשים</p>
-            <Button variant="outline" className="w-full">לצפייה</Button>
-          </CardContent>
-        </Card>
-        
-        <Card 
-          className="hover:shadow-lg transition-shadow cursor-pointer bg-white/90"
-          onClick={() => navigate('/analytics')}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              דוחות כלליים
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">צפה בדוחות כלליים ונתונים נוספים</p>
-            <Button variant="outline" className="w-full">לצפייה</Button>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="all-reports" value={activeTab} onValueChange={setActiveTab} className="mb-8">
+        <TabsList className="mb-4">
+          <TabsTrigger value="all-reports">דוחות כלליים</TabsTrigger>
+          <TabsTrigger value="game-prep">הכנה למשחק</TabsTrigger>
+        </TabsList>
 
-      <div className="grid gap-6">
-        {reports.map((report) => (
-          <Card
-            key={report.id}
-            className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => handleReportClick(report)}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xl">{report.opposing_team}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-primary" />
-                  <span>{format(new Date(report.match_date), 'dd/MM/yyyy')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-primary" />
-                  <span>{report.full_name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <span>{report.game_type}</span>
-                </div>
+        <TabsContent value="all-reports">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <Card 
+              className="hover:shadow-lg transition-shadow cursor-pointer bg-white/90"
+              onClick={() => navigate('/player-statistics')}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <BarChart2 className="h-5 w-5 text-primary" />
+                  סטטיסטיקות שחקנים ומפגשים
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">צפה בנתונים סטטיסטיים מפורטים על שחקנים חדשים ומפגשים</p>
+                <Button variant="outline" className="w-full">לצפייה</Button>
+              </CardContent>
+            </Card>
+            
+            <Card 
+              className="hover:shadow-lg transition-shadow cursor-pointer bg-white/90"
+              onClick={() => navigate('/analytics')}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  דוחות כלליים
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">צפה בדוחות כלליים ונתונים נוספים</p>
+                <Button variant="outline" className="w-full">לצפייה</Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="game-prep">
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="חיפוש לפי שם שחקן או קבוצה" 
+                  className="pl-10 text-right pr-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              
+              <div className="w-full md:w-auto">
+                <Select value={playerFilter} onValueChange={setPlayerFilter}>
+                  <SelectTrigger className="w-full md:w-[200px]">
+                    <SelectValue placeholder="סנן לפי שחקן" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">כל השחקנים</SelectItem>
+                    {players.map((player) => (
+                      <SelectItem key={player} value={player}>{player}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                className="w-full md:w-auto flex items-center gap-2"
+                onClick={() => navigate('/game-prep')}
+              >
+                <FileText className="h-4 w-4" />
+                צור דוח הכנה חדש
+              </Button>
+            </div>
 
-        {reports.length === 0 && (
-          <Card className="text-center p-8">
-            <CardContent className="space-y-4">
-              <FileText className="h-12 w-12 mx-auto text-gray-400" />
-              <p className="text-gray-600">לא נמצאו דוחות טרום משחק</p>
-              <Button onClick={() => navigate('/')}>צור דוח חדש</Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            {filteredReports.length > 0 ? (
+              <div className="grid gap-4">
+                {filteredReports.map((report) => (
+                  <Card
+                    key={report.id}
+                    className="hover:shadow-lg transition-shadow cursor-pointer"
+                    onClick={() => handleReportClick(report)}
+                  >
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-xl">{report.opposing_team}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-primary" />
+                          <span>{format(new Date(report.match_date), 'dd/MM/yyyy')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-primary" />
+                          <span>{report.player_name || report.full_name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-primary" />
+                          <span>{report.game_type}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary" />
+                          <span>{new Date(report.created_at).toLocaleDateString('he-IL')}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="text-center p-8">
+                <CardContent className="space-y-4">
+                  <FileText className="h-12 w-12 mx-auto text-gray-400" />
+                  <p className="text-gray-600">לא נמצאו דוחות טרום משחק</p>
+                  <Button onClick={() => navigate('/game-prep')}>צור דוח חדש</Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -218,7 +298,7 @@ const Reports = () => {
                   <TableBody>
                     <TableRow>
                       <TableCell className="font-medium">שם מלא</TableCell>
-                      <TableCell>{selectedReport.full_name}</TableCell>
+                      <TableCell>{selectedReport.player_name || selectedReport.full_name}</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">תאריך משחק</TableCell>

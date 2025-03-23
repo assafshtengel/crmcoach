@@ -11,4 +11,5 @@ export interface FormData {
   answers: Record<string, string>;
   currentPressure?: string;
   optimalPressure?: string;
+  playerName?: string;
 }
