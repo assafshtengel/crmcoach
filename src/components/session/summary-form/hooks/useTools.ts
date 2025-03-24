@@ -1,47 +1,43 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Tool } from '@/types/tool';
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Tool } from "@/types/tool";
 
 export function useTools() {
   const [tools, setTools] = useState<Tool[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedTools, setSelectedTools] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function fetchTools() {
-      try {
-        setLoading(true);
-        
-        // Get the current user (coach)
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          setError('לא נמצא משתמש מחובר');
-          return;
-        }
-        
-        // Fetch tools from coach_tools table
-        const { data, error } = await supabase
-          .from('coach_tools')
-          .select('*')
-          .eq('coach_id', user.id);
-          
-        if (error) {
-          throw error;
-        }
-        
-        setTools(data || []);
-      } catch (err: any) {
-        console.error('Error fetching tools:', err);
-        setError(err.message || 'שגיאה בטעינת רשימת הכלים');
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchTools();
   }, []);
 
-  return { tools, loading, error };
+  async function fetchTools() {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('coach_tools')
+        .select('*')
+        .order('name', { ascending: true }) as { data: Tool[] | null; error: any };
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setTools(data);
+      }
+    } catch (error) {
+      console.error('Error fetching tools:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return {
+    tools,
+    selectedTools,
+    setSelectedTools,
+    loading
+  };
 }

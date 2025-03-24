@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
@@ -9,15 +9,11 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { SessionHeader } from "./summary-form/SessionHeader";
 import { SummaryTab } from "./summary-form/SummaryTab";
-import { ToolsTab } from "./summary-form/ToolsTab";
 import { FormActions } from "./summary-form/FormActions";
 import { formSchema, FormValues } from "./summary-form/schemaValidation";
-import { useTools } from "./summary-form/hooks/useTools";
-import { Tool } from "@/types/tool";
 
 interface SessionSummaryFormProps {
   sessionId: string;
@@ -41,8 +37,6 @@ export function SessionSummaryForm({
   const navigate = useNavigate();
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("summary");
-  const { tools, loading } = useTools();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -175,36 +169,16 @@ export function SessionSummaryForm({
   return (
     <Form {...form}>
       <SessionHeader playerName={playerName} sessionDate={sessionDate} />
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-4">
-        <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="summary">סיכום מפגש</TabsTrigger>
-          <TabsTrigger value="tools">כלים שהשתמשנו</TabsTrigger>
-        </TabsList>
-      </Tabs>
-      
-      <ScrollArea className="h-[calc(100vh-340px)] px-1">
+      <ScrollArea className="h-[calc(100vh-280px)] px-1">
         <form 
           ref={formRef}
           onSubmit={form.handleSubmit(handleSubmit)} 
           className="space-y-4"
           id="session-summary-content"
         >
-          <TabsContent value="summary" className="mt-0 space-y-4">
-            <SummaryTab form={form} />
-          </TabsContent>
-          
-          <TabsContent value="tools" className="mt-0">
-            <ToolsTab 
-              tools={tools} 
-              selectedTools={selectedTools} 
-              setSelectedTools={setSelectedTools}
-              loading={loading}
-            />
-          </TabsContent>
+          <SummaryTab form={form} />
         </form>
       </ScrollArea>
-      
       <FormActions
         onSubmit={form.handleSubmit(handleSubmit)}
         onExportPDF={handleExportPDF}
