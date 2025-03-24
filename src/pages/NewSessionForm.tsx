@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -16,6 +15,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { CalendarIcon } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from '@/lib/utils';
 
 interface Player {
   id: string;
@@ -35,6 +43,9 @@ const NewSessionForm = () => {
   const navigate = useNavigate();
   const [players, setPlayers] = useState<Player[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [open, setOpen] = useState(false);
+  const timeInputRef = React.useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<SessionFormData>({
     session_date: '',
@@ -77,7 +88,6 @@ const NewSessionForm = () => {
     try {
       setIsLoading(true);
       
-      // Get the current user (coach)
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error('לא נמצא משתמש מחובר');
@@ -125,6 +135,21 @@ const NewSessionForm = () => {
     setFormData(prev => ({ ...prev, player_id: value }));
   };
 
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      setFormData(prev => ({ ...prev, session_date: formattedDate }));
+      setOpen(false);
+
+      setTimeout(() => {
+        if (timeInputRef.current) {
+          timeInputRef.current.focus();
+        }
+      }, 100);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12">
       <div className="max-w-md mx-auto px-4">
@@ -136,15 +161,34 @@ const NewSessionForm = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="session_date">תאריך</Label>
-                <Input
-                  id="session_date"
-                  name="session_date"
-                  type="date"
-                  value={formData.session_date}
-                  onChange={handleInputChange}
-                  required
-                  dir="ltr"
-                />
+                <Popover open={open} onOpenChange={setOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-right font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                      id="session_date"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? (
+                        format(selectedDate, 'dd/MM/yyyy')
+                      ) : (
+                        <span>בחר תאריך...</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={handleDateSelect}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
@@ -157,6 +201,7 @@ const NewSessionForm = () => {
                   onChange={handleInputChange}
                   required
                   dir="ltr"
+                  ref={timeInputRef}
                 />
               </div>
 
