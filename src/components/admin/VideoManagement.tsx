@@ -587,7 +587,7 @@ export default function VideoManagement() {
               <Button onClick={() => {
               resetForm();
               setOpenAddDialog(true);
-            }}>
+            }} className="my-[17px] text-left py-[21px] mx-[164px] px-[141px] font-normal text-white">
                 <Plus className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
                 הוסף סרטון
               </Button>
