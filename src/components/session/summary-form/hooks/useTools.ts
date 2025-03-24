@@ -34,10 +34,32 @@ export function useTools() {
     }
   }
 
+  async function getToolsByIds(toolIds: string[]) {
+    if (!toolIds || toolIds.length === 0) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('coach_tools')
+        .select('*')
+        .in('id', toolIds);
+
+      if (error) {
+        console.error('Error fetching tools by IDs:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching tools by IDs:', error);
+      return [];
+    }
+  }
+
   return {
     tools,
     selectedTools,
     setSelectedTools,
+    getToolsByIds,
     loading
   };
 }

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Eye, Search, Calendar, Check, X, Wrench } from 'lucide-react';
+import { ArrowRight, FileText, Eye, Search, Calendar, Check, X, Wrench, Tag } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from '@/components/ui/input';
@@ -198,6 +198,26 @@ const AllMeetingSummaries = () => {
     return (
       <ScrollArea className="h-[calc(100vh-200px)] px-4">
         <div className="space-y-6 text-right">
+          {summary.tools_used && summary.tools_used.length > 0 && (
+            <div className="mb-2 animate-fade-in">
+              <h3 className="text-lg font-semibold mb-3 text-[#8B5CF6] flex items-center">
+                <Tag className="ml-2 h-5 w-5" />
+                הכלים המנטליים שנבחרו למפגש
+              </h3>
+              <div className="flex flex-wrap gap-2 bg-purple-50 p-4 rounded-lg border border-purple-100">
+                {summary.tools_used.map((toolId, index) => (
+                  <Badge 
+                    key={index}
+                    variant="outline"
+                    className="py-1.5 px-3 bg-purple-100 hover:bg-purple-200 text-purple-800 border border-purple-200"
+                  >
+                    {tools[toolId]?.name || 'כלי לא זמין'}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#6E59A5]">סיכום המפגש</h3>
             <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{summary.summary_text}</p>
@@ -226,25 +246,6 @@ const AllMeetingSummaries = () => {
               ))}
             </div>
           </div>
-
-          {summary.tools_used && summary.tools_used.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-2 text-[#8B5CF6]">כלים מנטליים שהשתמשנו במפגש</h3>
-              <div className="space-y-2">
-                {summary.tools_used.map((toolId, index) => (
-                  <div key={index} className="flex items-start gap-2 bg-purple-50 p-3 rounded-lg border border-purple-100">
-                    <Wrench className="h-5 w-5 text-purple-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-gray-700 font-medium">{tools[toolId]?.name || 'כלי לא זמין'}</p>
-                      {tools[toolId]?.description && (
-                        <p className="text-gray-500 text-sm mt-1">{tools[toolId].description}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
             <h3 className="text-lg font-semibold mb-2 text-[#D6BCFA]">פוקוס למפגש הבא</h3>
@@ -373,10 +374,30 @@ const AllMeetingSummaries = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4 text-right">
+                        {summary.tools_used && summary.tools_used.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {summary.tools_used.slice(0, 3).map((toolId, idx) => (
+                              <Badge 
+                                key={idx}
+                                variant="outline"
+                                className="text-xs bg-purple-50 text-purple-700 border-purple-200"
+                              >
+                                {tools[toolId]?.name || 'כלי'}
+                              </Badge>
+                            ))}
+                            {summary.tools_used.length > 3 && (
+                              <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                                +{summary.tools_used.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+
                         <div>
                           <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">סיכום המפגש</h3>
                           <p className="text-sm text-gray-600 line-clamp-3 bg-gray-50 p-2 rounded-lg">{summary.summary_text}</p>
                         </div>
+                        
                         {summary.tools_used && summary.tools_used.length > 0 && (
                           <div className="flex items-center gap-1">
                             <Wrench className="h-3 w-3 text-purple-500" />
@@ -385,6 +406,7 @@ const AllMeetingSummaries = () => {
                             </span>
                           </div>
                         )}
+                        
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-gray-500 text-xs">
                             {format(new Date(summary.created_at), 'HH:mm dd/MM/yyyy', { locale: he })}

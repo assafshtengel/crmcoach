@@ -18,6 +18,7 @@ import { formSchema, FormValues } from "./summary-form/schemaValidation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tool } from "@/types/tool";
+import { Tag, Wrench } from "lucide-react";
 
 interface SessionSummaryFormProps {
   sessionId: string;
@@ -193,11 +194,14 @@ export function SessionSummaryForm({
           id="session-summary-content"
         >
           {/* Summary form fields */}
-          <SummaryTab form={form} />
+          <SummaryTab form={form} selectedTools={selectedTools} />
           
           {/* Mental tools section */}
           <div className="pt-4 border-t border-gray-200">
-            <h3 className="text-lg font-semibold text-center mb-4">הכלים המנטליים שנבחרו למפגש</h3>
+            <h3 className="text-lg font-semibold text-center mb-4 flex items-center justify-center">
+              <Wrench className="mr-2 h-5 w-5 text-purple-500" />
+              הכלים המנטליים שנבחרו למפגש
+            </h3>
             
             <Card>
               <CardContent className="pt-6">
@@ -220,7 +224,7 @@ export function SessionSummaryForm({
                         key={tool.id} 
                         className={`p-3 border rounded-md cursor-pointer transition-colors ${
                           selectedTools.includes(tool.id) 
-                            ? 'bg-primary/10 border-primary' 
+                            ? 'bg-purple-50 border-purple-200' 
                             : 'hover:bg-muted/50'
                         }`}
                         onClick={(e) => toggleTool(tool.id, e)}

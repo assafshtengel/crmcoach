@@ -1,77 +1,169 @@
 
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import { UseFormReturn } from "react-hook-form";
-import { FormValues } from "./schemaValidation";
+import {
+  FormDescription,
+  FormSection,
+  FormSubheading,
+} from "@/components/ui/form";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { RatingControl } from "@/components/ui/rating";
+import { SelectedTools } from "./SelectedTools";
 
-interface SummaryTabProps {
-  form: UseFormReturn<FormValues>;
-}
-
-export function SummaryTab({
-  form
-}: SummaryTabProps) {
-  return <div className="space-y-4 pt-4">
-      <FormField control={form.control} name="summary_text" render={({
-      field
-    }) => <FormItem>
-            <FormLabel className="text-center w-full block font-semibold">סיכום המפגש</FormLabel>
+export function SummaryTab({ form, selectedTools = [] }) {
+  return (
+    <div className="space-y-6">
+      {selectedTools && selectedTools.length > 0 && (
+        <SelectedTools toolIds={selectedTools} />
+      )}
+      
+      <FormField
+        control={form.control}
+        name="summary_text"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-lg font-semibold">סיכום המפגש</FormLabel>
             <FormControl>
-              <Textarea placeholder="תאר את המפגש..." {...field} className="h-24 resize-none" dir="rtl" />
+              <Textarea
+                placeholder="כתוב את סיכום המפגש כאן..."
+                className="min-h-32 text-base leading-relaxed"
+                {...field}
+              />
             </FormControl>
             <FormMessage />
-          </FormItem>} />
+          </FormItem>
+        )}
+      />
 
-      <FormField control={form.control} name="achieved_goals" render={({
-      field
-    }) => <FormItem>
-            <FormLabel className="text-center w-full block font-semibold">מטרות שהושגו</FormLabel>
+      <Tabs defaultValue="achieved" className="w-full">
+        <TabsList className="justify-start mb-3 bg-muted/30">
+          <TabsTrigger value="achieved">מטרות שהושגו</TabsTrigger>
+          <TabsTrigger value="future">מטרות להמשך</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="achieved" className="space-y-4">
+          <FormField
+            control={form.control}
+            name="achieved_goals"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-lg font-semibold">
+                  מטרות שהושגו במפגש
+                </FormLabel>
+                <FormDescription>
+                  רשום את המטרות שהושגו במהלך המפגש
+                </FormDescription>
+                <FormControl>
+                  <Textarea
+                    placeholder="פרט את המטרות שהושגו, שורה לכל מטרה"
+                    className="min-h-24 text-base leading-relaxed"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </TabsContent>
+
+        <TabsContent value="future" className="space-y-4">
+          <FormField
+            control={form.control}
+            name="future_goals"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-lg font-semibold">
+                  מטרות להמשך
+                </FormLabel>
+                <FormDescription>
+                  רשום את המטרות להמשך העבודה
+                </FormDescription>
+                <FormControl>
+                  <Textarea
+                    placeholder="פרט את המטרות להמשך, שורה לכל מטרה"
+                    className="min-h-24 text-base leading-relaxed"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </TabsContent>
+      </Tabs>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <FormField
+          control={form.control}
+          name="next_session_focus"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-lg font-semibold">
+                פוקוס למפגש הבא
+              </FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="הכנס את הפוקוס למפגש הבא"
+                  className="text-base"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="progress_rating"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-lg font-semibold">
+                דירוג התקדמות
+              </FormLabel>
+              <FormDescription>
+                דרג את ההתקדמות של השחקן בסולם מ-1 עד 5
+              </FormDescription>
+              <FormControl>
+                <RatingControl
+                  value={field.value}
+                  onValueChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <FormField
+        control={form.control}
+        name="additional_notes"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-lg font-semibold">
+              הערות נוספות (אופציונלי)
+            </FormLabel>
             <FormControl>
-              <Textarea placeholder="פרט את המטרות שהושגו במפגש..." {...field} className="h-20 resize-none" dir="rtl" />
+              <Textarea
+                placeholder="הוסף הערות נוספות..."
+                className="min-h-24 text-base leading-relaxed"
+                {...field}
+              />
             </FormControl>
             <FormMessage />
-          </FormItem>} />
-
-      <FormField control={form.control} name="future_goals" render={({
-      field
-    }) => <FormItem>
-            <FormLabel className="text-center w-full block font-semibold">מטרות להמשך</FormLabel>
-            <FormControl>
-              <Textarea placeholder="הגדר מטרות להמשך..." {...field} className="h-20 resize-none" dir="rtl" />
-            </FormControl>
-            <FormMessage />
-          </FormItem>} />
-
-      <FormField control={form.control} name="progress_rating" render={({
-      field
-    }) => <FormItem>
-            <FormLabel className="text-center w-full block font-semibold">דירוג התקדמות (1-5)</FormLabel>
-            <FormControl>
-              <Slider min={1} max={5} step={1} value={[field.value]} onValueChange={([value]) => field.onChange(value)} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>} />
-
-      <FormField control={form.control} name="next_session_focus" render={({
-      field
-    }) => <FormItem>
-            <FormLabel className="text-center w-full block font-semibold">מיקוד למפגש הבא</FormLabel>
-            <FormControl>
-              <Textarea placeholder="על מה נתמקד במפגש הבא..." {...field} className="h-20 resize-none" dir="rtl" />
-            </FormControl>
-            <FormMessage />
-          </FormItem>} />
-
-      <FormField control={form.control} name="additional_notes" render={({
-      field
-    }) => <FormItem>
-            <FormLabel className="text-center w-full block font-semibold">הערות נוספות</FormLabel>
-            <FormControl>
-              <Textarea placeholder="הערות נוספות..." {...field} className="h-20 resize-none" dir="rtl" />
-            </FormControl>
-            <FormMessage />
-          </FormItem>} />
-    </div>;
+          </FormItem>
+        )}
+      />
+    </div>
+  );
 }
