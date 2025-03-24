@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -66,7 +65,6 @@ const AllMeetingSummaries = () => {
         return;
       }
 
-      // Convert to record for easier lookup
       const toolsRecord: Record<string, Tool> = {};
       data?.forEach((tool: Tool) => {
         toolsRecord[tool.id] = tool;
@@ -175,7 +173,7 @@ const AllMeetingSummaries = () => {
 
   useEffect(() => {
     fetchPlayers();
-    fetchTools(); // Fetch tools when component mounts
+    fetchTools();
   }, []);
 
   useEffect(() => {
@@ -229,7 +227,6 @@ const AllMeetingSummaries = () => {
             </div>
           </div>
 
-          {/* Add Tools Used Section */}
           {summary.tools_used && summary.tools_used.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold mb-2 text-[#8B5CF6]">כלים מנטליים שהשתמשנו במפגש</h3>
@@ -380,7 +377,6 @@ const AllMeetingSummaries = () => {
                           <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">סיכום המפגש</h3>
                           <p className="text-sm text-gray-600 line-clamp-3 bg-gray-50 p-2 rounded-lg">{summary.summary_text}</p>
                         </div>
-                        {/* Show tools count in the card summary if they exist */}
                         {summary.tools_used && summary.tools_used.length > 0 && (
                           <div className="flex items-center gap-1">
                             <Wrench className="h-3 w-3 text-purple-500" />
