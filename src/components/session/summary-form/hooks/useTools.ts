@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Tool } from "@/types/tool";
 
 export function useTools() {
@@ -18,7 +18,7 @@ export function useTools() {
       const { data, error } = await supabase
         .from('coach_tools')
         .select('*')
-        .order('name', { ascending: true }) as { data: Tool[] | null; error: any };
+        .order('name', { ascending: true });
 
       if (error) {
         throw error;

@@ -13,10 +13,11 @@ import { useNavigate } from "react-router-dom";
 import { SessionHeader } from "./summary-form/SessionHeader";
 import { SummaryTab } from "./summary-form/SummaryTab";
 import { FormActions } from "./summary-form/FormActions";
-import { ToolsTab } from "./summary-form/ToolsTab";
 import { useTools } from "./summary-form/hooks/useTools";
 import { formSchema, FormValues } from "./summary-form/schemaValidation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tool } from "@/types/tool";
 
 interface SessionSummaryFormProps {
   sessionId: string;
@@ -38,7 +39,6 @@ export function SessionSummaryForm({
   forceEnable = false
 }: SessionSummaryFormProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("summary");
   const [isSaving, setIsSaving] = useState(false);
   const { tools, selectedTools, setSelectedTools, loading } = useTools();
   
@@ -168,6 +168,18 @@ export function SessionSummaryForm({
     }
   };
 
+  const toggleTool = (toolId: string, event: React.MouseEvent) => {
+    // Prevent any default behavior or event propagation
+    event.preventDefault();
+    event.stopPropagation();
+    
+    setSelectedTools(prev => 
+      prev.includes(toolId)
+        ? prev.filter(id => id !== toolId)
+        : [...prev, toolId]
+    );
+  };
+
   const formRef = React.useRef<HTMLFormElement>(null);
 
   return (
@@ -177,28 +189,76 @@ export function SessionSummaryForm({
         <form 
           ref={formRef}
           onSubmit={form.handleSubmit(handleSubmit)} 
-          className="space-y-4"
+          className="space-y-6"
           id="session-summary-content"
         >
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="mb-2 grid grid-cols-2 w-full">
-              <TabsTrigger value="summary" className="text-base">סיכום מפגש</TabsTrigger>
-              <TabsTrigger value="tools" className="text-base">כלים מנטליים</TabsTrigger>
-            </TabsList>
+          {/* Summary form fields */}
+          <SummaryTab form={form} />
+          
+          {/* Mental tools section */}
+          <div className="pt-4 border-t border-gray-200">
+            <h3 className="text-lg font-semibold text-center mb-4">הכלים המנטליים שנבחרו למפגש</h3>
             
-            <TabsContent value="summary">
-              <SummaryTab form={form} />
-            </TabsContent>
-            
-            <TabsContent value="tools">
-              <ToolsTab 
-                tools={tools} 
-                selectedTools={selectedTools} 
-                setSelectedTools={setSelectedTools}
-                loading={loading}
-              />
-            </TabsContent>
-          </Tabs>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="mb-4">
+                  <p className="text-muted-foreground text-sm">
+                    בחר את הכלים בהם השתמשת במהלך המפגש
+                  </p>
+                </div>
+                
+                {loading ? (
+                  <div className="text-center py-10">טוען...</div>
+                ) : tools.length === 0 ? (
+                  <div className="text-center py-10 border rounded-md">
+                    <p className="text-muted-foreground mb-2">טרם הוגדרו כלים במערכת</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {tools.map((tool) => (
+                      <div 
+                        key={tool.id} 
+                        className={`p-3 border rounded-md cursor-pointer transition-colors ${
+                          selectedTools.includes(tool.id) 
+                            ? 'bg-primary/10 border-primary' 
+                            : 'hover:bg-muted/50'
+                        }`}
+                        onClick={(e) => toggleTool(tool.id, e)}
+                      >
+                        <div className="flex items-start">
+                          <Checkbox
+                            checked={selectedTools.includes(tool.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedTools(prev => [...prev, tool.id]);
+                              } else {
+                                setSelectedTools(prev => prev.filter(id => id !== tool.id));
+                              }
+                            }}
+                            className="mr-2 mt-1"
+                            id={`tool-${tool.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <div className="flex-1">
+                            <label 
+                              htmlFor={`tool-${tool.id}`} 
+                              className="font-medium cursor-pointer flex-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {tool.name}
+                            </label>
+                            <p className="text-muted-foreground text-sm mt-1">
+                              {tool.description}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </form>
       </ScrollArea>
       <FormActions
