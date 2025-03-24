@@ -29,7 +29,8 @@ export function FormActions({
       duration: 1500,
       onAutoClose: () => {
         if (navigateAfterSave) {
-          navigate('/dashboard-coach');
+          // Dispatch custom event to navigate to coach dashboard
+          window.dispatchEvent(new CustomEvent('sessionSummarySaved'));
         }
       },
       style: {
@@ -52,7 +53,8 @@ export function FormActions({
         duration: 1500,
         onAutoClose: () => {
           if (navigateAfterSave) {
-            navigate('/dashboard-coach');
+            // Dispatch custom event to navigate to coach dashboard
+            window.dispatchEvent(new CustomEvent('sessionSummarySaved'));
           }
         },
         style: {

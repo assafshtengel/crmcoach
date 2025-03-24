@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 
 export function Layout() {
   const [actionCount, setActionCount] = useState(0);
   const [showSplash, setShowSplash] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Track navigation changes
   useEffect(() => {
@@ -20,6 +21,20 @@ export function Layout() {
       return newCount;
     });
   }, [location.pathname]); // Trigger on route changes
+
+  // Listen for the custom event
+  useEffect(() => {
+    const handleSessionSummarySaved = () => {
+      // Navigate to coach dashboard
+      navigate('/dashboard-coach');
+    };
+
+    window.addEventListener('sessionSummarySaved', handleSessionSummarySaved);
+    
+    return () => {
+      window.removeEventListener('sessionSummarySaved', handleSessionSummarySaved);
+    };
+  }, [navigate]);
 
   return (
     <div className="flex min-h-screen flex-col">

@@ -181,9 +181,9 @@ export function SessionSummaryForm({
           id="session-summary-content"
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="mb-2">
-              <TabsTrigger value="summary">סיכום מפגש</TabsTrigger>
-              <TabsTrigger value="tools">כלים מנטליים</TabsTrigger>
+            <TabsList className="mb-2 grid grid-cols-2 w-full">
+              <TabsTrigger value="summary" className="text-base">סיכום מפגש</TabsTrigger>
+              <TabsTrigger value="tools" className="text-base">כלים מנטליים</TabsTrigger>
             </TabsList>
             
             <TabsContent value="summary">
@@ -205,6 +205,7 @@ export function SessionSummaryForm({
         onSubmit={form.handleSubmit(handleSubmit)}
         onExportPDF={handleExportPDF}
         isSaving={isSaving}
+        navigateAfterSave={true}
       />
     </Form>
   );
