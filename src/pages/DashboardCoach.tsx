@@ -1148,7 +1148,7 @@ const DashboardCoach = () => {
                   {upcomingSessions.length > 0 ? upcomingSessions.map(session => renderSessionCard(session)) : <div className="text-center p-6 bg-gray-50 rounded-lg">
                       <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-2" />
                       <h3 className="text-lg font-medium text-gray-800">אין מפגשים קרובים</h3>
-                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים מתוכננים בשבוע הקרוב</p>
+                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים ��תוכננים בשבוע הקרוב</p>
                     </div>}
                 </div>
               </TabsContent>
