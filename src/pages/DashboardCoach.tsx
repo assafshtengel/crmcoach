@@ -906,8 +906,8 @@ const DashboardCoach = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <Card className="bg-white/90 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold text-[#2C3E50]">שליחת הודעה למפתחי האתר</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-semibold text-[#2C3E50]">שליחת הודעה למנהלים</CardTitle>
           </CardHeader>
           <CardContent>
             <AdminMessageForm />
