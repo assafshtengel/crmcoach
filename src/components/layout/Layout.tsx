@@ -14,7 +14,7 @@ export function Layout() {
       // Show splash every 5-6 actions
       if (newCount >= 5) {
         setShowSplash(true);
-        setTimeout(() => setShowSplash(false), 900); // Hide after 0.9 seconds
+        setTimeout(() => setShowSplash(false), 2000); // Hide after 2 seconds (changed from 0.9s)
         return 0; // Reset counter
       }
       return newCount;
