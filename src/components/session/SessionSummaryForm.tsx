@@ -13,7 +13,10 @@ import { useNavigate } from "react-router-dom";
 import { SessionHeader } from "./summary-form/SessionHeader";
 import { SummaryTab } from "./summary-form/SummaryTab";
 import { FormActions } from "./summary-form/FormActions";
+import { ToolsTab } from "./summary-form/ToolsTab";
+import { useTools } from "./summary-form/hooks/useTools";
 import { formSchema, FormValues } from "./summary-form/schemaValidation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface SessionSummaryFormProps {
   sessionId: string;
@@ -35,8 +38,9 @@ export function SessionSummaryForm({
   forceEnable = false
 }: SessionSummaryFormProps) {
   const navigate = useNavigate();
-  const [selectedTools, setSelectedTools] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState("summary");
   const [isSaving, setIsSaving] = useState(false);
+  const { tools, selectedTools, setSelectedTools, loading } = useTools();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -176,7 +180,25 @@ export function SessionSummaryForm({
           className="space-y-4"
           id="session-summary-content"
         >
-          <SummaryTab form={form} />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <TabsList className="mb-2">
+              <TabsTrigger value="summary">סיכום מפגש</TabsTrigger>
+              <TabsTrigger value="tools">כלים מנטליים</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="summary">
+              <SummaryTab form={form} />
+            </TabsContent>
+            
+            <TabsContent value="tools">
+              <ToolsTab 
+                tools={tools} 
+                selectedTools={selectedTools} 
+                setSelectedTools={setSelectedTools}
+                loading={loading}
+              />
+            </TabsContent>
+          </Tabs>
         </form>
       </ScrollArea>
       <FormActions
