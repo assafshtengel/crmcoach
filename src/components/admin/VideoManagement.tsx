@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -718,15 +717,6 @@ export default function VideoManagement() {
         <CardContent>
           <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
             <div className="flex gap-2">
-              <Button 
-                variant="outline"
-                size="sm"
-                onClick={triggerProcessAutoAssignments}
-                title="הפעל שליחה אוטומטית של סרטוני מתוזמנים"
-              >
-                <Clock className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
-                שלח סרטונים מתוזמנים
-              </Button>
               <Button onClick={() => { resetForm(); setOpenAddDialog(true); }}>
                 <Plus className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
                 הוסף סרטון
@@ -951,104 +941,4 @@ export default function VideoManagement() {
                         </Label>
                       </div>
                       {playersWithAssignments[player.id] && (
-                        <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
-                          <CheckCircle className="h-3 w-3 mr-1 rtl:ml-1 rtl:mr-0" />
-                          כבר הוקצה
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול</Button>
-            <Button 
-              onClick={handleAssignVideo} 
-              disabled={selectedPlayers.length === 0 || players.length === 0}
-            >
-              הקצה לשחקנים ({selectedPlayers.length})
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>תזמון אוטומטי של סרטון</DialogTitle>
-            <DialogDescription>
-              הגדר תזמון אוטומטי לסרטון "{selectedVideo?.title}"
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="auto-schedule">תזמון אוטומטי</Label>
-                <p className="text-xs text-muted-foreground">שלח את הסרטון אוטומטית לשחקנים חדשים</p>
-              </div>
-              <Switch
-                id="auto-schedule"
-                checked={autoScheduleData.is_auto_scheduled}
-                onCheckedChange={(checked) => handleAutoScheduleChange("is_auto_scheduled", checked)}
-              />
-            </div>
-            
-            {autoScheduleData.is_auto_scheduled && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="days-after">ימים לאחר ההרשמה</Label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {[1, 3, 7, 14, 30].map((days) => (
-                      <Button
-                        key={days}
-                        type="button"
-                        variant={autoScheduleData.days_after_registration === days ? "default" : "outline"}
-                        className="h-9"
-                        onClick={() => handleAutoScheduleChange("days_after_registration", days)}
-                      >
-                        {days}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="sequence-order">סדר בתהליך</Label>
-                    <span className="text-xs text-muted-foreground">
-                      {autoScheduleData.auto_sequence_order}
-                    </span>
-                  </div>
-                  <Input
-                    id="sequence-order"
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={autoScheduleData.auto_sequence_order}
-                    onChange={(e) => handleAutoScheduleChange("auto_sequence_order", parseInt(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
-                
-                <div className="flex items-center p-3 bg-blue-50 rounded-md">
-                  <Info className="h-5 w-5 text-blue-500 mr-2 rtl:ml-2 rtl:mr-0 flex-shrink-0" />
-                  <p className="text-xs text-blue-700">
-                    הסרטון יישלח אוטומטית לכל שחקן חדש {autoScheduleData.days_after_registration} ימים לאחר הרשמתו למערכת.
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
-            <Button onClick={handleAutoScheduleSave}>
-              שמור הגדרות
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+                        <Badge variant="
