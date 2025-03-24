@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -6,13 +7,14 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Eye, Search, Calendar, Check, X } from 'lucide-react';
+import { ArrowRight, FileText, Eye, Search, Calendar, Check, X, Wrench } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 
 interface SessionSummary {
   id: string;
@@ -23,6 +25,7 @@ interface SessionSummary {
   progress_rating: number;
   next_session_focus: string;
   additional_notes?: string;
+  tools_used?: string[]; // Add tools_used field
   player_id: string;
   session: {
     id: string;
@@ -34,6 +37,12 @@ interface SessionSummary {
   };
 }
 
+interface Tool {
+  id: string;
+  name: string;
+  description: string;
+}
+
 const AllMeetingSummaries = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -43,7 +52,31 @@ const AllMeetingSummaries = () => {
   const [selectedPlayer, setSelectedPlayer] = useState<string>(searchParams.get('playerId') || 'all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [tools, setTools] = useState<Record<string, Tool>>({});
   const isMobile = useIsMobile();
+
+  const fetchTools = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('coach_tools')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching tools:', error);
+        return;
+      }
+
+      // Convert to record for easier lookup
+      const toolsRecord: Record<string, Tool> = {};
+      data?.forEach((tool: Tool) => {
+        toolsRecord[tool.id] = tool;
+      });
+      
+      setTools(toolsRecord);
+    } catch (error) {
+      console.error('Error fetching tools:', error);
+    }
+  };
 
   const fetchSummaries = async () => {
     try {
@@ -142,6 +175,7 @@ const AllMeetingSummaries = () => {
 
   useEffect(() => {
     fetchPlayers();
+    fetchTools(); // Fetch tools when component mounts
   }, []);
 
   useEffect(() => {
@@ -194,6 +228,26 @@ const AllMeetingSummaries = () => {
               ))}
             </div>
           </div>
+
+          {/* Add Tools Used Section */}
+          {summary.tools_used && summary.tools_used.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-2 text-[#8B5CF6]">כלים מנטליים שהשתמשנו במפגש</h3>
+              <div className="space-y-2">
+                {summary.tools_used.map((toolId, index) => (
+                  <div key={index} className="flex items-start gap-2 bg-purple-50 p-3 rounded-lg border border-purple-100">
+                    <Wrench className="h-5 w-5 text-purple-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-gray-700 font-medium">{tools[toolId]?.name || 'כלי לא זמין'}</p>
+                      {tools[toolId]?.description && (
+                        <p className="text-gray-500 text-sm mt-1">{tools[toolId].description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
             <h3 className="text-lg font-semibold mb-2 text-[#D6BCFA]">פוקוס למפגש הבא</h3>
@@ -300,7 +354,7 @@ const AllMeetingSummaries = () => {
                             <DialogContent className="max-w-3xl max-h-screen">
                               <DialogHeader>
                                 <DialogTitle className="flex items-center justify-between mb-4 text-right">
-                                  <span className="text-[#6E59A5]">סיכום מפגש - {summary.session?.player?.full_name || "שחק�� לא ידוע"}</span>
+                                  <span className="text-[#6E59A5]">סיכום מפגש - {summary.session?.player?.full_name || "שחקן לא ידוע"}</span>
                                   <span className="text-sm font-normal text-gray-500">
                                     {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
                                   </span>
@@ -326,6 +380,15 @@ const AllMeetingSummaries = () => {
                           <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">סיכום המפגש</h3>
                           <p className="text-sm text-gray-600 line-clamp-3 bg-gray-50 p-2 rounded-lg">{summary.summary_text}</p>
                         </div>
+                        {/* Show tools count in the card summary if they exist */}
+                        {summary.tools_used && summary.tools_used.length > 0 && (
+                          <div className="flex items-center gap-1">
+                            <Wrench className="h-3 w-3 text-purple-500" />
+                            <span className="text-xs text-purple-600">
+                              {summary.tools_used.length} כלים מנטליים
+                            </span>
+                          </div>
+                        )}
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-gray-500 text-xs">
                             {format(new Date(summary.created_at), 'HH:mm dd/MM/yyyy', { locale: he })}
