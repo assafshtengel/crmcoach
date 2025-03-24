@@ -1,24 +1,28 @@
 
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { trackAction, registerActionThresholdCallback, resetActionCount } from '@/lib/actionTracker';
 
 export function Layout() {
-  const [actionCount, setActionCount] = useState(0);
   const [showSplash, setShowSplash] = useState(false);
   const location = useLocation();
 
+  // Register the callback that will show the splash screen
+  useEffect(() => {
+    registerActionThresholdCallback(() => {
+      setShowSplash(true);
+      setTimeout(() => setShowSplash(false), 2000); // Hide after 2 seconds
+    });
+    
+    return () => {
+      // Reset when component unmounts
+      resetActionCount();
+    };
+  }, []);
+
   // Track navigation changes
   useEffect(() => {
-    setActionCount(prev => {
-      const newCount = prev + 1;
-      // Show splash every 5-6 actions
-      if (newCount >= 5) {
-        setShowSplash(true);
-        setTimeout(() => setShowSplash(false), 2000); // Hide after 2 seconds (changed from 0.9s)
-        return 0; // Reset counter
-      }
-      return newCount;
-    });
+    trackAction();
   }, [location.pathname]); // Trigger on route changes
 
   return (
