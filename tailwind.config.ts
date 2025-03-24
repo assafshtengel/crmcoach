@@ -78,6 +78,26 @@ export default {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
         },
+        fadeInUp: {
+          "0%": { 
+            opacity: "0",
+            transform: "translateY(20px)" 
+          },
+          "100%": { 
+            opacity: "1",
+            transform: "translateY(0)" 
+          },
+        },
+        scaleIn: {
+          "0%": { 
+            transform: "scale(0.95)",
+            opacity: "0" 
+          },
+          "100%": { 
+            transform: "scale(1)",
+            opacity: "1" 
+          },
+        },
         tabActivate: {
           "0%": { borderColor: "transparent" },
           "100%": { borderColor: "#1E3A8A" },
@@ -88,6 +108,8 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         slideIn: "slideIn 0.3s ease-out",
         fadeIn: "fadeIn 0.3s ease-out",
+        fadeInUp: "fadeInUp 0.5s ease-out",
+        scaleIn: "scaleIn 0.4s ease-out",
         tabActivate: "tabActivate 0.3s ease-in-out forwards",
       },
     },
