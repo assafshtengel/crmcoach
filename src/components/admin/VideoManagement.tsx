@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -941,4 +942,99 @@ export default function VideoManagement() {
                         </Label>
                       </div>
                       {playersWithAssignments[player.id] && (
-                        <Badge variant="
+                        <Badge variant="outline" className="text-green-600 border-green-200 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          <span>נשלח</span>
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול</Button>
+            <Button 
+              type="submit" 
+              onClick={handleAssignVideo}
+              disabled={selectedPlayers.length === 0}
+            >
+              הקצה סרטון
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>הגדר תזמון אוטומטי</DialogTitle>
+            <DialogDescription>
+              ניתן להגדיר שליחה אוטומטית של הסרטון כמה ימים לאחר הרשמת שחקן חדש
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="flex items-center justify-between space-x-2 rtl:space-x-reverse">
+              <Label htmlFor="auto-schedule" className="flex-1">
+                שליחה אוטומטית לשחקנים חדשים
+              </Label>
+              <Switch
+                id="auto-schedule"
+                checked={autoScheduleData.is_auto_scheduled}
+                onCheckedChange={(checked) => handleAutoScheduleChange("is_auto_scheduled", checked)}
+              />
+            </div>
+
+            {autoScheduleData.is_auto_scheduled && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="days-after">מספר ימים אחרי הרשמה</Label>
+                  <Select
+                    value={autoScheduleData.days_after_registration.toString()}
+                    onValueChange={(value) => handleAutoScheduleChange("days_after_registration", parseInt(value))}
+                  >
+                    <SelectTrigger id="days-after">
+                      <SelectValue placeholder="בחר מספר ימים" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 5, 7, 10, 14, 21, 30].map((days) => (
+                        <SelectItem key={days} value={days.toString()}>
+                          {days} ימים
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sequence-order">סדר רצף (נמוך = ראשון)</Label>
+                  <Select
+                    value={autoScheduleData.auto_sequence_order.toString()}
+                    onValueChange={(value) => handleAutoScheduleChange("auto_sequence_order", parseInt(value))}
+                  >
+                    <SelectTrigger id="sequence-order">
+                      <SelectValue placeholder="בחר סדר" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((order) => (
+                        <SelectItem key={order} value={order.toString()}>
+                          {order}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
+            <Button type="submit" onClick={handleAutoScheduleSave}>
+              שמור הגדרות
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
