@@ -421,61 +421,8 @@ const DashboardCoach = () => {
     }
   };
 
-  const handleViewSummary = async (playerId: string, playerName: string) => {
-    try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "לא נמצא משתמש מחובר"
-        });
-        return;
-      }
-      const {
-        data: summaries,
-        error
-      } = await supabase.from('session_summaries').select(`
-          id,
-          session:sessions (
-            player:players!inner (
-              id,
-              full_name
-            )
-          )
-        `).eq('coach_id', user.id).eq('sessions.player_id', playerId).order('created_at', {
-        ascending: false
-      }).limit(1);
-      if (error) {
-        console.error('Error fetching summary:', error);
-        toast({
-          variant: "destructive",
-          title: "שגיאה בטעינת הסיכום",
-          description: "לא ניתן לטעון את הסיכום כרגע, אנא נסה שוב מאוחר יותר"
-        });
-        return;
-      }
-      if (summaries && summaries.length > 0) {
-        navigate(`/session-summaries?id=${summaries[0].id}`);
-      } else {
-        toast({
-          title: "אין סיכומים זמינים",
-          description: `אין סיכומים זמינים עבור ${playerName}`,
-          duration: 3000
-        });
-      }
-    } catch (error) {
-      console.error('Error in handleViewSummary:', error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה",
-        description: "אירעה שגיאה בניסיון לצפות בסיכום"
-      });
-    }
+  const handleViewSummary = async (sessionId: string) => {
+    navigate(`/session-summaries?id=${sessionId}`);
   };
 
   const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
@@ -513,7 +460,7 @@ const DashboardCoach = () => {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">{session.location || '��א צוין מיקום'}</span>
+            <span className="text-sm text-gray-500">{session.location || 'לא צוין מיקום'}</span>
             <div className="flex gap-2">
               {!session.reminder_sent && !isPastSession ? <Button variant="ghost" size="sm" onClick={() => handleSendReminder(session.id)} className="text-[#27AE60] hover:text-[#219A52]">
                   <Send className="h-4 w-4 mr-1" />
@@ -546,7 +493,7 @@ const DashboardCoach = () => {
                     </div>
                   </DialogContent>
                 </Dialog>}
-              {session.has_summary && <Button variant="ghost" size="sm" className="flex items-center" onClick={() => session.player.id ? handleViewSummary(session.player.id, session.player.full_name) : navigate('/session-summaries')}>
+              {session.has_summary && <Button variant="ghost" size="sm" className="flex items-center" onClick={() => handleViewSummary(session.id)}>
                   <FileText className="h-4 w-4 mr-1" />
                   צפה בסיכום
                 </Button>}
@@ -932,7 +879,7 @@ const DashboardCoach = () => {
 
           <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-medium">מפגשים קרובים</CardTitle>
+              <CardTitle className="text-lg font-medium">מפגשים קרו��ים</CardTitle>
               <div className="flex items-center space-x-2">
                 <Button variant="outline" size="sm" className="flex items-center gap-1 text-[#3498DB] border-[#3498DB] hover:bg-[#3498DB]/10" onClick={() => navigate('/new-session')}>
                   <Plus className="h-4 w-4" />
@@ -1148,7 +1095,7 @@ const DashboardCoach = () => {
                   {upcomingSessions.length > 0 ? upcomingSessions.map(session => renderSessionCard(session)) : <div className="text-center p-6 bg-gray-50 rounded-lg">
                       <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-2" />
                       <h3 className="text-lg font-medium text-gray-800">אין מפגשים קרובים</h3>
-                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים ��תוכננים בשבוע הקרוב</p>
+                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים ���תוכננים בשבוע הקרוב</p>
                     </div>}
                 </div>
               </TabsContent>
