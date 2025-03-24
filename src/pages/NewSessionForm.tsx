@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -115,7 +116,7 @@ const NewSessionForm = () => {
       const meetingTypeText = formData.meeting_type === 'in_person' ? 'פרונטלי' : 'בזום';
       
       toast.success(`מפגש ${meetingTypeText} חדש עם ${playerName} נקבע בהצלחה!`);
-      navigate('/sessions-list');
+      navigate('/'); // Changed from '/sessions-list' to '/' to redirect to homepage
     } catch (error: any) {
       console.error('Error creating session:', error);
       toast.error('שגיאה בקביעת המפגש');
