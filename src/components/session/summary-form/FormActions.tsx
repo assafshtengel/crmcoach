@@ -68,7 +68,7 @@ export function FormActions({
       <div className="grid grid-cols-2 gap-2">
         
 
-        <Button type="button" onClick={handleExportPDF} variant="gray" disabled={isSaving}>
+        <Button type="button" onClick={handleExportPDF} variant="gray" disabled={isSaving} className="bg-emerald-950 hover:bg-emerald-800 font-medium px-[35px] my-0 mx-0 py-[29px] text-right">
           <FileDown className="mr-2 h-4 w-4" />
           שמור וייצא PDF
         </Button>
