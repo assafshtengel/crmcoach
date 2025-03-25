@@ -139,9 +139,15 @@ export const usePublicRegistration = () => {
     setIsSubmitting(true);
 
     try {
-      if (!linkData || !linkData.coach || !linkData.coach.id) {
+      if (!linkData || !linkData.coach) {
         console.error("Missing coach data:", linkData);
         throw new Error('מידע המאמן חסר');
+      }
+
+      const coachId = linkData.coach.id;
+      if (!coachId) {
+        console.error("Missing coach ID:", linkData.coach);
+        throw new Error('מזהה המאמן חסר');
       }
 
       // Validate sport field
@@ -162,7 +168,7 @@ export const usePublicRegistration = () => {
 
       // Prepare player data
       const playerData = {
-        coach_id: linkData.coach.id,
+        coach_id: coachId,
         full_name: `${values.firstName} ${values.lastName}`,
         email: values.email,
         phone: values.phone,
@@ -181,7 +187,7 @@ export const usePublicRegistration = () => {
         password: password // Store the generated password
       };
 
-      console.log("Inserting player data for coach ID:", linkData.coach.id);
+      console.log("Inserting player data for coach ID:", coachId);
       console.log("Player data to insert:", playerData);
       
       // Use insert instead of upsert to avoid conflicts
@@ -217,7 +223,7 @@ export const usePublicRegistration = () => {
         .from('notifications')
         .insert([
           {
-            coach_id: linkData.coach.id,
+            coach_id: coachId,
             message: notificationMessage,
             type: 'new_player'
           }
