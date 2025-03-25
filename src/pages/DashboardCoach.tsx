@@ -26,360 +26,1090 @@ import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
 import { ClipboardList } from 'lucide-react';
-
-interface LastSessionSummary {
-  id: string;
-  created_at: string;
-  summary_text: string;
-  achieved_goals: string[];
-  future_goals: string[];
-  progress_rating: number;
-  next_session_focus: string;
-  additional_notes?: string;
-  session: {
-    id: string;
-    session_date: string;
-    player: {
-      id: string;
-      full_name: string;
-    } | null;
-  };
+interface DashboardStats {
+  totalPlayers: number;
+  upcomingSessions: number;
+  currentMonthPastSessions: number;
+  currentMonthFutureSessions: number;
+  lastMonthSessions: number;
+  twoMonthsAgoSessions: number;
+  totalReminders: number;
 }
-
-interface Player {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  birthdate: string;
-  city: string;
-  club: string;
-  year_group: string;
-  sport_field: string;
-  injuries: string;
-  parent_name: string;
-  parent_phone: string;
-  parent_email: string;
-  notes: string;
-  registration_link_id: string | null;
-  registration_timestamp: string | null;
-  coach_id: string;
-}
-
 interface UpcomingSession {
   id: string;
-  created_at: string;
   session_date: string;
-  start_time: string;
-  end_time: string;
+  session_time: string;
+  notes: string;
+  reminder_sent: boolean;
   location: string;
-  player_id: string;
-  coach_id: string;
-  notes: string | null;
-  is_confirmed: boolean;
-  player: Player | null;
+  player: {
+    full_name: string;
+    id?: string;
+  };
+  has_summary?: boolean;
 }
-
-const DashboardCoach: React.FC = () => {
-  const [coach, setCoach] = useState<any>(null);
-  const [playersCount, setPlayersCount] = useState<number>(0);
+interface SessionResponse {
+  id: string;
+  session_date: string;
+  session_time: string;
+  location: string | null;
+  notes: string | null;
+  reminder_sent: boolean | null;
+  player: {
+    full_name: string;
+  };
+}
+interface Notification {
+  id: string;
+  message: string;
+  created_at: string;
+  is_read: boolean;
+  type: string;
+}
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end?: string;
+  location?: string;
+  extendedProps: {
+    playerName: string;
+    location?: string;
+    reminderSent: boolean;
+    notes?: string;
+  };
+}
+interface EventFormData {
+  title: string;
+  date: string;
+  time: string;
+  notes?: string;
+}
+const DashboardCoach = () => {
+  const navigate = useNavigate();
+  const {
+    toast
+  } = useToast();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [coachName, setCoachName] = useState('');
+  const [user, setUser] = useState<any>(null);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalPlayers: 0,
+    upcomingSessions: 0,
+    currentMonthPastSessions: 0,
+    currentMonthFutureSessions: 0,
+    lastMonthSessions: 0,
+    twoMonthsAgoSessions: 0,
+    totalReminders: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [upcomingSessions, setUpcomingSessions] = useState<UpcomingSession[]>([]);
-  const [lastSessionSummary, setLastSessionSummary] = useState<LastSessionSummary | null>(null);
-  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
-  const [isLandingPageDialogOpen, setIsLandingPageDialogOpen] = useState(false);
-  const [isSessionFormDialogOpen, setIsSessionFormDialogOpen] = useState(false);
-  const [selectedSessionDate, setSelectedSessionDate] = useState<Date | undefined>(undefined);
-  const [activeTab, setActiveTab] = useState('home');
-  const [isCollapsibleOpen, setIsCollapsibleOpen] = useState(false);
-  const [isCollapsibleOpen2, setIsCollapsibleOpen2] = useState(false);
-  const [isCollapsibleOpen3, setIsCollapsibleOpen3] = useState(false);
-  const [isCollapsibleOpen4, setIsCollapsibleOpen4] = useState(false);
-  const [isCollapsibleOpen5, setIsCollapsibleOpen5] = useState(false);
-  const [isCollapsibleOpen6, setIsCollapsibleOpen6] = useState(false);
-  const [isCollapsibleOpen7, setIsCollapsibleOpen7] = useState(false);
-  const [isCollapsibleOpen8, setIsCollapsibleOpen8] = useState(false);
-  const [isCollapsibleOpen9, setIsCollapsibleOpen9] = useState(false);
-  const [isCollapsibleOpen10, setIsCollapsibleOpen10] = useState(false);
-  const [isCollapsibleOpen11, setIsCollapsibleOpen11] = useState(false);
-  const [isCollapsibleOpen12, setIsCollapsibleOpen12] = useState(false);
-  const [isCollapsibleOpen13, setIsCollapsibleOpen13] = useState(false);
-  const [isCollapsibleOpen14, setIsCollapsibleOpen14] = useState(false);
-  const [isCollapsibleOpen15, setIsCollapsibleOpen15] = useState(false);
-  const [isCollapsibleOpen16, setIsCollapsibleOpen16] = useState(false);
-  const [isCollapsibleOpen17, setIsCollapsibleOpen17] = useState(false);
-  const [isCollapsibleOpen18, setIsCollapsibleOpen18] = useState(false);
-  const [isCollapsibleOpen19, setIsCollapsibleOpen19] = useState(false);
-  const [isCollapsibleOpen20, setIsCollapsibleOpen20] = useState(false);
-  const [isCollapsibleOpen21, setIsCollapsibleOpen21] = useState(false);
-  const [isCollapsibleOpen22, setIsCollapsibleOpen22] = useState(false);
-  const [isCollapsibleOpen23, setIsCollapsibleOpen23] = useState(false);
-  const [isCollapsibleOpen24, setIsCollapsibleOpen24] = useState(false);
-  const [isCollapsibleOpen25, setIsCollapsibleOpen25] = useState(false);
-  const [isCollapsibleOpen26, setIsCollapsibleOpen26] = useState(false);
-  const [isCollapsibleOpen27, setIsCollapsibleOpen27] = useState(false);
-  const [isCollapsibleOpen28, setIsCollapsibleOpen28] = useState(false);
-  const [isCollapsibleOpen29, setIsCollapsibleOpen29] = useState(false);
-  const [isCollapsibleOpen30, setIsCollapsibleOpen30] = useState(false);
-  const [isCollapsibleOpen31, setIsCollapsibleOpen31] = useState(false);
-  const [isCollapsibleOpen32, setIsCollapsibleOpen32] = useState(false);
-  const [isCollapsibleOpen33, setIsCollapsibleOpen33] = useState(false);
-  const [isCollapsibleOpen34, setIsCollapsibleOpen34] = useState(false);
-  const [isCollapsibleOpen35, setIsCollapsibleOpen35] = useState(false);
-  const [isCollapsibleOpen36, setIsCollapsibleOpen36] = useState(false);
-  const [isCollapsibleOpen37, setIsCollapsibleOpen37] = useState(false);
-  const [isCollapsibleOpen38, setIsCollapsibleOpen38] = useState(false);
-  const [isCollapsibleOpen39, setIsCollapsibleOpen39] = useState(false);
-  const [isCollapsibleOpen40, setIsCollapsibleOpen40] = useState(false);
-  const [isCollapsibleOpen41, setIsCollapsibleOpen41] = useState(false);
-  const [isCollapsibleOpen42, setIsCollapsibleOpen42] = useState(false);
-  const [isCollapsibleOpen43, setIsCollapsibleOpen43] = useState(false);
-  const [isCollapsibleOpen44, setIsCollapsibleOpen44] = useState(false);
-  const [isCollapsibleOpen45, setIsCollapsibleOpen45] = useState(false);
-  const [isCollapsibleOpen46, setIsCollapsibleOpen46] = useState(false);
-  const [isCollapsibleOpen47, setIsCollapsibleOpen47] = useState(false);
-  const [isCollapsibleOpen48, setIsCollapsibleOpen48] = useState(false);
-  const [isCollapsibleOpen49, setIsCollapsibleOpen49] = useState(false);
-  const [isCollapsibleOpen50, setIsCollapsibleOpen50] = useState(false);
-  const [isCollapsibleOpen51, setIsCollapsibleOpen51] = useState(false);
-  const [isCollapsibleOpen52, setIsCollapsibleOpen52] = useState(false);
-  const [isCollapsibleOpen53, setIsCollapsibleOpen53] = useState(false);
-  const [isCollapsibleOpen54, setIsCollapsibleOpen54] = useState(false);
-  const [isCollapsibleOpen55, setIsCollapsibleOpen55] = useState(false);
-  const [isCollapsibleOpen56, setIsCollapsibleOpen56] = useState(false);
-  const [isCollapsibleOpen57, setIsCollapsibleOpen57] = useState(false);
-  const [isCollapsibleOpen58, setIsCollapsibleOpen58] = useState(false);
-  const [isCollapsibleOpen59, setIsCollapsibleOpen59] = useState(false);
-  const [isCollapsibleOpen60, setIsCollapsibleOpen60] = useState(false);
-  const [isCollapsibleOpen61, setIsCollapsibleOpen61] = useState(false);
-  const [isCollapsibleOpen62, setIsCollapsibleOpen62] = useState(false);
-  const [isCollapsibleOpen63, setIsCollapsibleOpen63] = useState(false);
-  const [isCollapsibleOpen64, setIsCollapsibleOpen64] = useState(false);
-  const [isCollapsibleOpen65, setIsCollapsibleOpen65] = useState(false);
-  const [isCollapsibleOpen66, setIsCollapsibleOpen66] = useState(false);
-  const [isCollapsibleOpen67, setIsCollapsibleOpen67] = useState(false);
-  const [isCollapsibleOpen68, setIsCollapsibleOpen68] = useState(false);
-  const [isCollapsibleOpen69, setIsCollapsibleOpen69] = useState(false);
-  const [isCollapsibleOpen70, setIsCollapsibleOpen70] = useState(false);
-  const [isCollapsibleOpen71, setIsCollapsibleOpen71] = useState(false);
-  const [isCollapsibleOpen72, setIsCollapsibleOpen72] = useState(false);
-  const [isCollapsibleOpen73, setIsCollapsibleOpen73] = useState(false);
-  const [isCollapsibleOpen74, setIsCollapsibleOpen74] = useState(false);
-  const [isCollapsibleOpen75, setIsCollapsibleOpen75] = useState(false);
-  const [isCollapsibleOpen76, setIsCollapsibleOpen76] = useState(false);
-  const [isCollapsibleOpen77, setIsCollapsibleOpen77] = useState(false);
-  const [isCollapsibleOpen78, setIsCollapsibleOpen78] = useState(false);
-  const [isCollapsibleOpen79, setIsCollapsibleOpen79] = useState(false);
-  const [isCollapsibleOpen80, setIsCollapsibleOpen80] = useState(false);
-  const [isCollapsibleOpen81, setIsCollapsibleOpen81] = useState(false);
-  const [isCollapsibleOpen82, setIsCollapsibleOpen82] = useState(false);
-  const [isCollapsibleOpen83, setIsCollapsibleOpen83] = useState(false);
-  const [isCollapsibleOpen84, setIsCollapsibleOpen84] = useState(false);
-  const [isCollapsibleOpen85, setIsCollapsibleOpen85] = useState(false);
-  const [isCollapsibleOpen86, setIsCollapsibleOpen86] = useState(false);
-  const [isCollapsibleOpen87, setIsCollapsibleOpen87] = useState(false);
-  const [isCollapsibleOpen88, setIsCollapsibleOpen88] = useState(false);
-  const [isCollapsibleOpen89, setIsCollapsibleOpen89] = useState(false);
-  const [isCollapsibleOpen90, setIsCollapsibleOpen90] = useState(false);
-  const [isCollapsibleOpen91, setIsCollapsibleOpen91] = useState(false);
-  const [isCollapsibleOpen92, setIsCollapsibleOpen92] = useState(false);
-  const [isCollapsibleOpen93, setIsCollapsibleOpen93] = useState(false);
-  const [isCollapsibleOpen94, setIsCollapsibleOpen94] = useState(false);
-  const [isCollapsibleOpen95, setIsCollapsibleOpen95] = useState(false);
-  const [isCollapsibleOpen96, setIsCollapsibleOpen96] = useState(false);
-  const [isCollapsibleOpen97, setIsCollapsibleOpen97] = useState(false);
-  const [isCollapsibleOpen98, setIsCollapsibleOpen98] = useState(false);
-  const [isCollapsibleOpen99, setIsCollapsibleOpen99] = useState(false);
-  const [isCollapsibleOpen100, setIsCollapsibleOpen100] = useState(false);
-  const [isCollapsibleOpen101, setIsCollapsibleOpen101] = useState(false);
-  const [isCollapsibleOpen102, setIsCollapsibleOpen102] = useState(false);
-  const [isCollapsibleOpen103, setIsCollapsibleOpen103] = useState(false);
-  const [isCollapsibleOpen104, setIsCollapsibleOpen104] = useState(false);
-  const [isCollapsibleOpen105, setIsCollapsibleOpen105] = useState(false);
-  const [isCollapsibleOpen106, setIsCollapsibleOpen106] = useState(false);
-  const [isCollapsibleOpen107, setIsCollapsibleOpen107] = useState(false);
-  const [isCollapsibleOpen108, setIsCollapsibleOpen108] = useState(false);
-  const [isCollapsibleOpen109, setIsCollapsibleOpen109] = useState(false);
-  const [isCollapsibleOpen110, setIsCollapsibleOpen110] = useState(false);
-  const [isCollapsibleOpen111, setIsCollapsibleOpen111] = useState(false);
-  const [isCollapsibleOpen112, setIsCollapsibleOpen112] = useState(false);
-  const [isCollapsibleOpen113, setIsCollapsibleOpen113] = useState(false);
-  const [isCollapsibleOpen114, setIsCollapsibleOpen114] = useState(false);
-  const [isCollapsibleOpen115, setIsCollapsibleOpen115] = useState(false);
-  const [isCollapsibleOpen116, setIsCollapsibleOpen116] = useState(false);
-  const [isCollapsibleOpen117, setIsCollapsibleOpen117] = useState(false);
-  const [isCollapsibleOpen118, setIsCollapsibleOpen118] = useState(false);
-  const [isCollapsibleOpen119, setIsCollapsibleOpen119] = useState(false);
-  const [isCollapsibleOpen120, setIsCollapsibleOpen120] = useState(false);
-  const [isCollapsibleOpen121, setIsCollapsibleOpen121] = useState(false);
-  const [isCollapsibleOpen122, setIsCollapsibleOpen122] = useState(false);
-  const [isCollapsibleOpen123, setIsCollapsibleOpen123] = useState(false);
-  const [isCollapsibleOpen124, setIsCollapsibleOpen124] = useState(false);
-  const [isCollapsibleOpen125, setIsCollapsibleOpen125] = useState(false);
-  const [isCollapsibleOpen126, setIsCollapsibleOpen126] = useState(false);
-  const [isCollapsibleOpen127, setIsCollapsibleOpen127] = useState(false);
-  const [isCollapsibleOpen128, setIsCollapsibleOpen128] = useState(false);
-  const [isCollapsibleOpen129, setIsCollapsibleOpen129] = useState(false);
-  const [isCollapsibleOpen130, setIsCollapsibleOpen130] = useState(false);
-  const [isCollapsibleOpen131, setIsCollapsibleOpen131] = useState(false);
-  const [isCollapsibleOpen132, setIsCollapsibleOpen132] = useState(false);
-  const [isCollapsibleOpen133, setIsCollapsibleOpen133] = useState(false);
-  const [isCollapsibleOpen134, setIsCollapsibleOpen134] = useState(false);
-  const [isCollapsibleOpen135, setIsCollapsibleOpen135] = useState(false);
-  const [isCollapsibleOpen136, setIsCollapsibleOpen136] = useState(false);
-  const [isCollapsibleOpen137, setIsCollapsibleOpen137] = useState(false);
-  const [isCollapsibleOpen138, setIsCollapsibleOpen138] = useState(false);
-  const [isCollapsibleOpen139, setIsCollapsibleOpen139] = useState(false);
-  const [isCollapsibleOpen140, setIsCollapsibleOpen140] = useState(false);
-  const [isCollapsibleOpen141, setIsCollapsibleOpen141] = useState(false);
-  const [isCollapsibleOpen142, setIsCollapsibleOpen142] = useState(false);
-  const [isCollapsibleOpen143, setIsCollapsibleOpen143] = useState(false);
-  const [isCollapsibleOpen144, setIsCollapsibleOpen144] = useState(false);
-  const [isCollapsibleOpen145, setIsCollapsibleOpen145] = useState(false);
-  const [isCollapsibleOpen146, setIsCollapsibleOpen146] = useState(false);
-  const [isCollapsibleOpen147, setIsCollapsibleOpen147] = useState(false);
-  const [isCollapsibleOpen148, setIsCollapsibleOpen148] = useState(false);
-  const [isCollapsibleOpen149, setIsCollapsibleOpen149] = useState(false);
-  const [isCollapsibleOpen150, setIsCollapsibleOpen150] = useState(false);
-  const [isCollapsibleOpen151, setIsCollapsibleOpen151] = useState(false);
-  const [isCollapsibleOpen152, setIsCollapsibleOpen152] = useState(false);
-  const [isCollapsibleOpen153, setIsCollapsibleOpen153] = useState(false);
-  const [isCollapsibleOpen154, setIsCollapsibleOpen154] = useState(false);
-  const [isCollapsibleOpen155, setIsCollapsibleOpen155] = useState(false);
-  const [isCollapsibleOpen156, setIsCollapsibleOpen156] = useState(false);
-  const [isCollapsibleOpen157, setIsCollapsibleOpen157] = useState(false);
-  const [isCollapsibleOpen158, setIsCollapsibleOpen158] = useState(false);
-  const [isCollapsibleOpen159, setIsCollapsibleOpen159] = useState(false);
-  const [isCollapsibleOpen160, setIsCollapsibleOpen160] = useState(false);
-  const [isCollapsibleOpen161, setIsCollapsibleOpen161] = useState(false);
-  const [isCollapsibleOpen162, setIsCollapsibleOpen162] = useState(false);
-  const [isCollapsibleOpen163, setIsCollapsibleOpen163] = useState(false);
-  const [isCollapsibleOpen164, setIsCollapsibleOpen164] = useState(false);
-  const [isCollapsibleOpen165, setIsCollapsibleOpen165] = useState(false);
-  const [isCollapsibleOpen166, setIsCollapsibleOpen166] = useState(false);
-  const [isCollapsibleOpen167, setIsCollapsibleOpen167] = useState(false);
-  const [isCollapsibleOpen168, setIsCollapsibleOpen168] = useState(false);
-  const [isCollapsibleOpen169, setIsCollapsibleOpen169] = useState(false);
-  const [isCollapsibleOpen170, setIsCollapsibleOpen170] = useState(false);
-  const [isCollapsibleOpen171, setIsCollapsibleOpen171] = useState(false);
-  const [isCollapsibleOpen172, setIsCollapsibleOpen172] = useState(false);
-  const [isCollapsibleOpen173, setIsCollapsibleOpen173] = useState(false);
-  const [isCollapsibleOpen174, setIsCollapsibleOpen174] = useState(false);
-  const [isCollapsibleOpen175, setIsCollapsibleOpen175] = useState(false);
-  const [isCollapsibleOpen176, setIsCollapsibleOpen176] = useState(false);
-  const [isCollapsibleOpen177, setIsCollapsibleOpen177] = useState(false);
-  const [isCollapsibleOpen178, setIsCollapsibleOpen178] = useState(false);
-  const [isCollapsibleOpen179, setIsCollapsibleOpen179] = useState(false);
-  const [isCollapsibleOpen180, setIsCollapsibleOpen180] = useState(false);
-  const [isCollapsibleOpen181, setIsCollapsibleOpen181] = useState(false);
-  const [isCollapsibleOpen182, setIsCollapsibleOpen182] = useState(false);
-  const [isCollapsibleOpen183, setIsCollapsibleOpen183] = useState(false);
-  const [isCollapsibleOpen184, setIsCollapsibleOpen184] = useState(false);
-  const [isCollapsibleOpen185, setIsCollapsibleOpen185] = useState(false);
-  const [isCollapsibleOpen186, setIsCollapsibleOpen186] = useState(false);
-  const [isCollapsibleOpen187, setIsCollapsibleOpen187] = useState(false);
-  const [isCollapsibleOpen188, setIsCollapsibleOpen188] = useState(false);
-  const [isCollapsibleOpen189, setIsCollapsibleOpen189] = useState(false);
-  const [isCollapsibleOpen190, setIsCollapsibleOpen190] = useState(false);
-  const [isCollapsibleOpen191, setIsCollapsibleOpen191] = useState(false);
-  const [isCollapsibleOpen192, setIsCollapsibleOpen192] = useState(false);
-  const [isCollapsibleOpen193, setIsCollapsibleOpen193] = useState(false);
-  const [isCollapsibleOpen194, setIsCollapsibleOpen194] = useState(false);
-  const [isCollapsibleOpen195, setIsCollapsibleOpen195] = useState(false);
-  const [isCollapsibleOpen196, setIsCollapsibleOpen196] = useState(false);
-  const [isCollapsibleOpen197, setIsCollapsibleOpen197] = useState(false);
-  const [isCollapsibleOpen198, setIsCollapsibleOpen198] = useState(false);
-  const [isCollapsibleOpen199, setIsCollapsibleOpen199] = useState(false);
-  const [isCollapsibleOpen200, setIsCollapsibleOpen200] = useState(false);
-  const [isCollapsibleOpen201, setIsCollapsibleOpen201] = useState(false);
-  const [isCollapsibleOpen202, setIsCollapsibleOpen202] = useState(false);
-  const [isCollapsibleOpen203, setIsCollapsibleOpen203] = useState(false);
-  const [isCollapsibleOpen204, setIsCollapsibleOpen204] = useState(false);
-  const [isCollapsibleOpen205, setIsCollapsibleOpen205] = useState(false);
-  const [isCollapsibleOpen206, setIsCollapsibleOpen206] = useState(false);
-  const [isCollapsibleOpen207, setIsCollapsibleOpen207] = useState(false);
-  const [isCollapsibleOpen208, setIsCollapsibleOpen208] = useState(false);
-  const [isCollapsibleOpen209, setIsCollapsibleOpen209] = useState(false);
-  const [isCollapsibleOpen210, setIsCollapsibleOpen210] = useState(false);
-  const [isCollapsibleOpen211, setIsCollapsibleOpen211] = useState(false);
-  const [isCollapsibleOpen212, setIsCollapsibleOpen212] = useState(false);
-  const [isCollapsibleOpen213, setIsCollapsibleOpen213] = useState(false);
-  const [isCollapsibleOpen214, setIsCollapsibleOpen214] = useState(false);
-  const [isCollapsibleOpen215, setIsCollapsibleOpen215] = useState(false);
-  const [isCollapsibleOpen216, setIsCollapsibleOpen216] = useState(false);
-  const [isCollapsibleOpen217, setIsCollapsibleOpen217] = useState(false);
-  const [isCollapsibleOpen218, setIsCollapsibleOpen218] = useState(false);
-  const [isCollapsibleOpen219, setIsCollapsibleOpen219] = useState(false);
-  const [isCollapsibleOpen220, setIsCollapsibleOpen220] = useState(false);
-  const [isCollapsibleOpen221, setIsCollapsibleOpen221] = useState(false);
-  const [isCollapsibleOpen222, setIsCollapsibleOpen222] = useState(false);
-  const [isCollapsibleOpen223, setIsCollapsibleOpen223] = useState(false);
-  const [isCollapsibleOpen224, setIsCollapsibleOpen224] = useState(false);
-  const [isCollapsibleOpen225, setIsCollapsibleOpen225] = useState(false);
-  const [isCollapsibleOpen226, setIsCollapsibleOpen226] = useState(false);
-  const [isCollapsibleOpen227, setIsCollapsibleOpen227] = useState(false);
-  const [isCollapsibleOpen228, setIsCollapsibleOpen228] = useState(false);
-  const [isCollapsibleOpen229, setIsCollapsibleOpen229] = useState(false);
-  const [isCollapsibleOpen230, setIsCollapsibleOpen230] = useState(false);
-  const [isCollapsibleOpen231, setIsCollapsibleOpen231] = useState(false);
-  const [isCollapsibleOpen232, setIsCollapsibleOpen232] = useState(false);
-  const [isCollapsibleOpen233, setIsCollapsibleOpen233] = useState(false);
-  const [isCollapsibleOpen234, setIsCollapsibleOpen234] = useState(false);
-  const [isCollapsibleOpen235, setIsCollapsibleOpen235] = useState(false);
-  const [isCollapsibleOpen236, setIsCollapsibleOpen236] = useState(false);
-  const [isCollapsibleOpen237, setIsCollapsibleOpen237] = useState(false);
-  const [isCollapsibleOpen238, setIsCollapsibleOpen238] = useState(false);
-  const [isCollapsibleOpen239, setIsCollapsibleOpen239] = useState(false);
-  const [isCollapsibleOpen240, setIsCollapsibleOpen240] = useState(false);
-  const [isCollapsibleOpen241, setIsCollapsibleOpen241] = useState(false);
-  const [isCollapsibleOpen242, setIsCollapsibleOpen242] = useState(false);
-  const [isCollapsibleOpen243, setIsCollapsibleOpen243] = useState(false);
-  const [isCollapsibleOpen244, setIsCollapsibleOpen244] = useState(false);
-  const [isCollapsibleOpen245, setIsCollapsibleOpen245] = useState(false);
-  const [isCollapsibleOpen246, setIsCollapsibleOpen246] = useState(false);
-  const [isCollapsibleOpen247, setIsCollapsibleOpen247] = useState(false);
-  const [isCollapsibleOpen248, setIsCollapsibleOpen248] = useState(false);
-  const [isCollapsibleOpen249, setIsCollapsibleOpen249] = useState(false);
-  const [isCollapsibleOpen250, setIsCollapsibleOpen250] = useState(false);
-  const [isCollapsibleOpen251, setIsCollapsibleOpen251] = useState(false);
-  const [isCollapsibleOpen252, setIsCollapsibleOpen252] = useState(false);
-  const [isCollapsibleOpen253, setIsCollapsibleOpen253] = useState(false);
-  const [isCollapsibleOpen254, setIsCollapsibleOpen254] = useState(false);
-  const [isCollapsibleOpen255, setIsCollapsibleOpen255] = useState(false);
-  const [isCollapsibleOpen256, setIsCollapsibleOpen256] = useState(false);
-  const [isCollapsibleOpen257, setIsCollapsibleOpen257] = useState(false);
-  const [isCollapsibleOpen258, setIsCollapsibleOpen258] = useState(false);
-  const [isCollapsibleOpen259, setIsCollapsibleOpen259] = useState(false);
-  const [isCollapsibleOpen260, setIsCollapsibleOpen260] = useState(false);
-  const [isCollapsibleOpen261, setIsCollapsibleOpen261] = useState(false);
-  const [isCollapsibleOpen262, setIsCollapsibleOpen262] = useState(false);
-  const [isCollapsibleOpen263, setIsCollapsibleOpen263] = useState(false);
-  const [isCollapsibleOpen264, setIsCollapsibleOpen264] = useState(false);
-  const [isCollapsibleOpen265, setIsCollapsibleOpen265] = useState(false);
-  const [isCollapsibleOpen266, setIsCollapsibleOpen266] = useState(false);
-  const [isCollapsibleOpen267, setIsCollapsibleOpen267] = useState(false);
-  const [isCollapsibleOpen268, setIsCollapsibleOpen268] = useState(false);
-  const [isCollapsibleOpen269, setIsCollapsibleOpen269] = useState(false);
-  const [isCollapsibleOpen270, setIsCollapsibleOpen270] = useState(false);
-  const [isCollapsibleOpen271, setIsCollapsibleOpen271] = useState(false);
-  const [isCollapsibleOpen272, setIsCollapsibleOpen272] = useState(false);
-  const [isCollapsibleOpen273, setIsCollapsibleOpen273] = useState(false);
-  const [isCollapsibleOpen274, setIsCollapsibleOpen274] = useState(false);
-  const [isCollapsibleOpen275, setIsCollapsibleOpen275] = useState(false);
-  const [isCollapsibleOpen276, setIsCollapsibleOpen276] = useState(false);
-  const [isCollapsibleOpen277, setIsCollapsibleOpen277] = useState(false);
-  const [isCollapsibleOpen278, setIsCollapsibleOpen278] = useState(false);
-  const [isCollapsibleOpen279, setIsCollapsibleOpen279] = useState(false);
-  const [isCollapsibleOpen280, setIsCollapsibleOpen280] = useState(false);
-  const [isCollapsibleOpen281, setIsCollapsibleOpen281] = useState(false);
-  const [isCollapsibleOpen282, setIsCollapsibleOpen282] = useState(false);
-  const [isCollapsibleOpen283, setIsCollapsibleOpen283] = useState(false);
-  const [isCollapsibleOpen284, setIsCollapsibleOpen284] = useState(false);
-  const [isCollapsibleOpen285, setIsCollapsibleOpen285] = useState(false);
-  const [isCollapsibleOpen286, setIsCollapsibleOpen286] = useState(false);
-  const [isCollapsibleOpen287, setIsCollapsibleOpen287] = useState(false);
-  const [isCollapsibleOpen288, setIsCollapsibleOpen288] = useState(false);
-  const [isCollapsibleOpen289, setIsCollapsibleOpen289] = useState(false);
-  const [isCollapsibleOpen290, setIsCollapsibleOpen290] = useState(false);
-  const [isCollapsibleOpen291, setIsCollapsibleOpen291] = useState(false);
-  const [isCollapsibleOpen292, setIsCollapsibleOpen292] = useState(false);
-  const [isCollapsibleOpen
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [isSessionsExpanded, setIsSessionsExpanded] = useState(false);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [pastSessionsToSummarize, setPastSessionsToSummarize] = useState<UpcomingSession[]>([]);
+  const [summarizedSessions, setSummarizedSessions] = useState<UpcomingSession[]>([]);
+  const [activeTab, setActiveTab] = useState("upcoming");
+  const [players, setPlayers] = useState<{
+    id: string;
+    full_name: string;
+  }[]>([]);
+  const [isSessionFormOpen, setIsSessionFormOpen] = useState(false);
+  const [showLandingPageDialog, setShowLandingPageDialog] = useState(false);
+  useEffect(() => {
+    const initUser = async () => {
+      const {
+        data: {
+          user: authUser
+        }
+      } = await supabase.auth.getUser();
+      setUser(authUser);
+    };
+    initUser();
+  }, []);
+  const fetchData = async (userId: string) => {
+    try {
+      const today = new Date();
+      const nextWeek = new Date(today);
+      nextWeek.setDate(today.getDate() + 7);
+      const firstDayOfMonth = startOfMonth(today);
+      const lastDayOfMonth = endOfMonth(today);
+      const lastMonth = subMonths(today, 1);
+      const twoMonthsAgo = subMonths(today, 2);
+      const {
+        data: sessionsData,
+        error: sessionsError
+      } = await supabase.from('sessions').select('session_date').eq('coach_id', userId);
+      if (sessionsError) throw sessionsError;
+      const currentMonthPastSessions = sessionsData?.filter(session => isBefore(new Date(session.session_date), today) && isAfter(new Date(session.session_date), firstDayOfMonth))?.length || 0;
+      const currentMonthFutureSessions = sessionsData?.filter(session => {
+        const sessionDate = new Date(session.session_date);
+        return (isAfter(sessionDate, today) || isSameDay(sessionDate, today)) && isBefore(sessionDate, lastDayOfMonth);
+      })?.length || 0;
+      const lastMonthSessions = sessionsData?.filter(session => isBefore(new Date(session.session_date), firstDayOfMonth) && isAfter(new Date(session.session_date), startOfMonth(lastMonth)))?.length || 0;
+      const twoMonthsAgoSessions = sessionsData?.filter(session => isBefore(new Date(session.session_date), startOfMonth(lastMonth)) && isAfter(new Date(session.session_date), startOfMonth(twoMonthsAgo)))?.length || 0;
+      const {
+        data: upcomingSessions,
+        error: upcomingError
+      } = await supabase.from('sessions').select(`
+          id,
+          session_date,
+          session_time,
+          notes,
+          location,
+          reminder_sent,
+          player:players (
+            id,
+            full_name
+          ),
+          session_summaries (
+            id
+          )
+        `).eq('coach_id', userId).gte('session_date', today.toISOString().split('T')[0]).lte('session_date', nextWeek.toISOString().split('T')[0]).order('session_date', {
+        ascending: true
+      }).order('session_time', {
+        ascending: true
+      });
+      if (upcomingError) throw upcomingError;
+      const upcomingSessionsCount = upcomingSessions?.length || 0;
+      const [playersCountResult, remindersResult] = await Promise.all([supabase.from('players').select('id').eq('coach_id', userId), supabase.from('notifications_log').select('id').eq('coach_id', userId).eq('status', 'Sent')]);
+      if (upcomingSessions) {
+        const formattedSessions: UpcomingSession[] = upcomingSessions.map((session: any) => ({
+          id: session.id,
+          session_date: session.session_date,
+          session_time: session.session_time,
+          notes: session.notes || '',
+          location: session.location || '',
+          reminder_sent: session.reminder_sent || false,
+          player: {
+            id: session.player?.id,
+            full_name: session.player?.full_name || 'לא נמצא שחקן'
+          },
+          has_summary: Array.isArray(session.session_summaries) && session.session_summaries.length > 0
+        }));
+        setUpcomingSessions(formattedSessions);
+      }
+      setStats({
+        totalPlayers: playersCountResult.data?.length || 0,
+        upcomingSessions: upcomingSessionsCount,
+        currentMonthPastSessions,
+        currentMonthFutureSessions,
+        lastMonthSessions,
+        twoMonthsAgoSessions,
+        totalReminders: remindersResult.data?.length || 0
+      });
+      const {
+        data: pastSessions,
+        error: pastSessionsError
+      } = await supabase.from('sessions').select(`
+          id,
+          session_date,
+          session_time,
+          notes,
+          location,
+          reminder_sent,
+          player:players (
+            id,
+            full_name
+          ),
+          session_summaries (
+            id
+          )
+        `).eq('coach_id', userId).lt('session_date', today.toISOString().split('T')[0]).order('session_date', {
+        ascending: false
+      }).limit(10);
+      if (pastSessionsError) throw pastSessionsError;
+      if (pastSessions) {
+        const sessionsToSummarize: UpcomingSession[] = [];
+        const summarizedSessions: UpcomingSession[] = [];
+        pastSessions.forEach((session: any) => {
+          const hasSummary = Array.isArray(session.session_summaries) && session.session_summaries.length > 0;
+          const formattedSession: UpcomingSession = {
+            id: session.id,
+            session_date: session.session_date,
+            session_time: session.session_time,
+            notes: session.notes || '',
+            location: session.location || '',
+            reminder_sent: session.reminder_sent || false,
+            player: {
+              id: session.player?.id,
+              full_name: session.player?.full_name || 'לא נמצא שחקן'
+            },
+            has_summary: hasSummary
+          };
+          if (hasSummary) {
+            summarizedSessions.push(formattedSession);
+          } else {
+            sessionsToSummarize.push(formattedSession);
+          }
+        });
+        setPastSessionsToSummarize(sessionsToSummarize);
+        setSummarizedSessions(summarizedSessions);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת הנתונים",
+        description: "אנא נסה שוב מאוחר יותר"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const fetchNotifications = async (userId: string) => {
+    try {
+      const {
+        data: notificationsData,
+        error
+      } = await supabase.from('notifications').select('*').eq('coach_id', userId).order('created_at', {
+        ascending: false
+      }).limit(10);
+      if (error) throw error;
+      setNotifications(notificationsData || []);
+      setUnreadCount(notificationsData?.filter(n => !n.is_read).length || 0);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+  const markAsRead = async (notificationId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    try {
+      const {
+        error
+      } = await supabase.from('notifications').update({
+        is_read: true
+      }).eq('id', notificationId);
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => n.id === notificationId ? {
+        ...n,
+        is_read: true
+      } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+  const handleSendReminder = async (sessionId: string) => {
+    try {
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('לא נמצא משתמש מחובר');
+      const session = upcomingSessions.find(s => s.id === sessionId);
+      if (!session) throw new Error('לא נמצא מפגש');
+      await supabase.from('notifications').insert({
+        coach_id: user.id,
+        type: 'reminder_scheduled',
+        message: `תזכורת תשלח לשחקן ${session.player.full_name} בעוד 15 דקות`
+      });
+      const {
+        error
+      } = await supabase.from('notifications_log').insert([{
+        session_id: sessionId,
+        status: 'Sent',
+        message_content: 'תזכורת למפגש',
+        coach_id: user.id
+      }]);
+      if (error) {
+        await supabase.from('notifications').insert({
+          coach_id: user.id,
+          type: 'reminder_error',
+          message: `⚠️ שגיאה: לא הצלחנו לשלוח תזכורת ל-${session.player.full_name}`
+        });
+        throw error;
+      }
+      await supabase.from('sessions').update({
+        reminder_sent: true
+      }).eq('id', sessionId);
+      toast({
+        title: "התזכורת נשלחה בהצלחה",
+        description: "השחקן יקבל הודעה על המפגש"
+      });
+      fetchData(user.id);
+    } catch (error) {
+      console.error('Error sending reminder:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בשליחת התזכורת",
+        description: "אנא נסה שוב מאוחר יותר"
+      });
+    }
+  };
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/auth');
+      toast({
+        title: "התנתקת בהצלחה",
+        description: "להתראות!"
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהתנתקות",
+        description: "אנא נסה שוב"
+      });
+    }
+  };
+  const handleSaveSessionSummary = async (sessionId: string, data: any) => {
+    try {
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('לא נמצא משתמש מחובר');
+      const {
+        error
+      } = await supabase.from('session_summaries').insert({
+        session_id: sessionId,
+        coach_id: user.id,
+        summary_text: data.summary_text,
+        achieved_goals: data.achieved_goals.split('\n').filter(Boolean),
+        future_goals: data.future_goals.split('\n').filter(Boolean),
+        additional_notes: data.additional_notes,
+        progress_rating: data.progress_rating,
+        next_session_focus: data.next_session_focus
+      });
+      if (error) throw error;
+      setPastSessionsToSummarize(prev => prev.filter(session => session.id !== sessionId));
+      const summarizedSession = pastSessionsToSummarize.find(s => s.id === sessionId);
+      if (summarizedSession) {
+        const updatedSession = {
+          ...summarizedSession,
+          has_summary: true
+        };
+        setSummarizedSessions(prev => [updatedSession, ...prev]);
+      }
+      toast({
+        title: "הסיכום נשמר בהצלחה",
+        description: "סיכום המפגש נשמר במערכת",
+        duration: 1000
+      });
+      setTimeout(() => {
+        document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click();
+      }, 1000);
+    } catch (error) {
+      console.error('Error saving session summary:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בשמירת הסיכום",
+        description: "אנא נסה שוב מאוחר יותר"
+      });
+    }
+  };
+  const handleViewSummary = async (sessionId: string) => {
+    navigate(`/session-summaries?id=${sessionId}`);
+  };
+  const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
+    const sessionDate = new Date(session.session_date);
+    const isToday = isSameDay(sessionDate, new Date());
+    const isPastSession = isPast(sessionDate);
+    const hasNoSummary = isPastSession && !session.has_summary;
+    if (isPastSession && session.has_summary && !showSummaryButton) {
+      return null;
+    }
+    return <Card key={session.id} className={`bg-gray-50 hover:bg-white transition-all duration-300 ${isToday ? 'border-l-4 border-l-blue-500 shadow-blue-200' : hasNoSummary ? 'border-l-4 border-l-red-500 shadow-red-200' : session.has_summary ? 'border-l-4 border-l-green-500 shadow-green-200' : 'border'}`}>
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-semibold text-[#2C3E50]">{session.player.full_name}</h3>
+              <p className="text-sm text-gray-500">
+                {session.session_date} | {session.session_time}
+              </p>
+            </div>
+            <div>
+              {isToday && <div className="flex items-center text-blue-600 text-sm font-medium">
+                  <Clock className="h-4 w-4 mr-1" />
+                  היום
+                </div>}
+              {hasNoSummary && <div className="flex items-center text-red-600 text-sm font-medium">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  חסר סיכום
+                </div>}
+              {session.has_summary && <div className="flex items-center text-green-600 text-sm font-medium">
+                  <Check className="h-4 w-4 mr-1" />
+                  סוכם
+                </div>}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-500">{session.location || 'לא צוין מיקום'}</span>
+            <div className="flex gap-2">
+              {!session.reminder_sent && !isPastSession ? <Button variant="ghost" size="sm" onClick={() => handleSendReminder(session.id)} className="text-[#27AE60] hover:text-[#219A52]">
+                  <Send className="h-4 w-4 mr-1" />
+                  שלח תזכורת
+                </Button> : !isPastSession ? <span className="text-sm text-[#27AE60] flex items-center">
+                  <Check className="h-4 w-4 mr-1" />
+                  נשלחה תזכורת
+                </span> : null}
+              {showSummaryButton && !session.has_summary && <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="flex items-center">
+                      <FileEdit className="h-4 w-4 mr-1" />
+                      סכם מפגש
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>סיכום מפגש</DialogTitle>
+                    </DialogHeader>
+                    <div className="mt-4">
+                      <SessionSummaryForm sessionId={session.id} playerName={session.player.full_name} sessionDate={session.session_date} playerId={session.player.id || ''} onSubmit={data => handleSaveSessionSummary(session.id, data)} onCancel={() => document.querySelector<HTMLButtonElement>('[aria-label="Close"]')?.click()} forceEnable={!isPastSession} />
+                    </div>
+                  </DialogContent>
+                </Dialog>}
+              {session.has_summary && <Button variant="ghost" size="sm" className="flex items-center" onClick={() => handleViewSummary(session.id)}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  צפה בסיכום
+                </Button>}
+            </div>
+          </div>
+        </CardContent>
+      </Card>;
+  };
+  const fetchCalendarEvents = async (userId: string) => {
+    try {
+      const {
+        data: rawSessions,
+        error
+      } = await supabase.from('sessions').select(`
+          id,
+          session_date,
+          session_time,
+          location,
+          notes,
+          reminder_sent,
+          player:players!inner(
+            full_name
+          )
+        `).eq('coach_id', userId);
+      if (error) throw error;
+      const sessions = (rawSessions as any[])?.map(session => ({
+        id: session.id as string,
+        session_date: session.session_date as string,
+        session_time: session.session_time as string,
+        location: session.location as string | null,
+        notes: session.notes as string | null,
+        reminder_sent: session.reminder_sent as boolean | null,
+        player: {
+          full_name: session.player?.full_name as string
+        }
+      })) as SessionResponse[];
+      const events: CalendarEvent[] = sessions.map(session => ({
+        id: session.id,
+        title: session.player.full_name,
+        start: `${session.session_date}T${session.session_time}`,
+        location: session.location || undefined,
+        extendedProps: {
+          playerName: session.player.full_name,
+          location: session.location || undefined,
+          reminderSent: session.reminder_sent || false,
+          notes: session.notes || undefined
+        }
+      }));
+      setCalendarEvents(events);
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת ה��פגשים",
+        description: "אנא נסה שוב מאוחר יותר"
+      });
+    }
+  };
+  const handleAddEvent = async (eventData: any) => {
+    try {
+      if (!user?.id) {
+        throw new Error('משתמש לא מחובר');
+      }
+      const sessionData = {
+        player_id: eventData.extendedProps?.player_id || '',
+        coach_id: user.id,
+        session_date: eventData.start.split('T')[0],
+        session_time: eventData.start.split('T')[1],
+        location: eventData.extendedProps?.location || '',
+        notes: eventData.extendedProps?.notes || ''
+      };
+      console.log('Adding new session:', sessionData);
+      const {
+        error
+      } = await supabase.from('sessions').insert(sessionData).select().single();
+      if (error) throw error;
+      await fetchCalendarEvents(user.id);
+      toast({
+        title: "המפגש נוסף בהצלחה",
+        description: "המפגש נוסף ללוח השנה"
+      });
+    } catch (error) {
+      console.error('Error adding event:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהוספת המפגש",
+        description: "אנא נסה שוב מאוחר יותר"
+      });
+      throw error;
+    }
+  };
+  const handleSessionFormSubmit = async (sessionData: {
+    player_id: string;
+    session_date: string;
+    session_time: string;
+    location?: string;
+    notes?: string;
+    meeting_type: 'in_person' | 'zoom';
+  }): Promise<void> => {
+    try {
+      console.log('Session data:', sessionData);
+
+      // Placeholder for future implementation
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Error adding session:', error);
+      return Promise.reject(error);
+    }
+  };
+  useEffect(() => {
+    const initializeDashboard = async () => {
+      const {
+        data: {
+          user: authUser
+        }
+      } = await supabase.auth.getUser();
+      if (authUser) {
+        const {
+          data: coachData
+        } = await supabase.from('coaches').select('full_name, profile_picture').eq('id', authUser.id).single();
+        if (coachData) {
+          setCoachName(coachData.full_name);
+          setProfilePicture(coachData.profile_picture);
+        }
+        await fetchData(authUser.id);
+        await fetchNotifications(authUser.id);
+        await fetchCalendarEvents(authUser.id);
+        const channel = supabase.channel('dashboard-changes').on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'notifications'
+        }, payload => {
+          if (payload.eventType === 'INSERT') {
+            toast({
+              title: "📢 התראה חדשה",
+              description: payload.new.message,
+              duration: 5000
+            });
+            fetchNotifications(authUser.id);
+          } else {
+            fetchNotifications(authUser.id);
+          }
+        }).subscribe();
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      }
+    };
+    initializeDashboard();
+  }, []);
+  const handleEventClick = (eventId: string) => {
+    const session = upcomingSessions.find(s => s.id === eventId);
+    if (session) {
+      navigate('/edit-session', {
+        state: {
+          sessionId: eventId
+        }
+      });
+    }
+  };
+  const getMonthlySessionsData = () => {
+    return [{
+      name: 'לפני חודשיים',
+      מפגשים: stats.twoMonthsAgoSessions,
+      fill: '#9CA3AF'
+    }, {
+      name: 'חודש קודם',
+      מפגשים: stats.lastMonthSessions,
+      fill: '#F59E0B'
+    }, {
+      name: 'החודש (בו��עו)',
+      מפגשים: stats.currentMonthPastSessions,
+      fill: '#10B981'
+    }, {
+      name: 'החודש (מתוכננים)',
+      מפגשים: stats.currentMonthFutureSessions,
+      fill: '#3B82F6'
+    }];
+  };
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const {
+        data,
+        error
+      } = await supabase.from('players').select('id, full_name').eq('coach_id', user.id);
+      if (error) {
+        console.error('Error fetching players:', error);
+        return;
+      }
+      setPlayers(data);
+    };
+    fetchPlayers();
+  }, []);
+  useEffect(() => {
+    const handleSessionSummarized = (event: any) => {
+      const {
+        sessionId
+      } = event.detail;
+      console.log("Session summarized event received for session:", sessionId);
+      setPastSessionsToSummarize(prev => prev.filter(session => session.id !== sessionId));
+      const summarizedSession = pastSessionsToSummarize.find(s => s.id === sessionId);
+      if (summarizedSession) {
+        const updatedSession = {
+          ...summarizedSession,
+          has_summary: true
+        };
+        setSummarizedSessions(prev => [updatedSession, ...prev]);
+      }
+    };
+    window.addEventListener('sessionSummarized', handleSessionSummarized);
+    return () => {
+      window.removeEventListener('sessionSummarized', handleSessionSummarized);
+    };
+  }, [pastSessionsToSummarize]);
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>;
+  }
+  console.log("Rendering DashboardCoach with landing page button");
+  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
+      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>יציאה</AlertDialogTitle>
+            <AlertDialogDescription>האם אתה בטוח שברצונך להתנתק?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>יציאה</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <SessionFormDialog open={isSessionFormOpen} onOpenChange={setIsSessionFormOpen} />
+
+      <header className="w-full bg-[#2C3E50] text-white py-4 mb-8 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center overflow-hidden">
+                {profilePicture ? <Avatar className="w-12 h-12">
+                    <AvatarImage src={profilePicture} alt={coachName} />
+                    <AvatarFallback>{coachName.charAt(0)}</AvatarFallback>
+                  </Avatar> : <Users className="h-6 w-6 text-white/90" />}
+              </div>
+              <div>
+                <h1 className="font-bold animate-fade-in text-sm">
+                  {coachName ? <span className="bg-gradient-to-r from-white to-white/80 bg-clip-text">
+                      ברוך הבא, {coachName}
+                    </span> : 'ברוך הבא'}
+                </h1>
+                <p className="text-white/70 text-xs">{format(new Date(), 'EEEE, dd MMMM yyyy', {
+                  locale: he
+                })}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+              <div className="hidden md:flex">
+                <Button onClick={() => setShowLandingPageDialog(true)} variant="green" size="sm" className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-sm font-normal rounded-lg">
+                  <FileEdit className="h-3.5 w-3.5" />
+                  <span>צור עמוד נחיתה</span>
+                </Button>
+              </div>
+              
+              <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} onEventAdd={handleAddEvent} />
+              
+              <div className="hidden sm:block">
+                <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => navigate('/registration-links')}>
+                  <Share2 className="h-5 w-5 mr-1" />
+                  <span className="text-xs">לינקי הרשמה</span>
+                </Button>
+              </div>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative text-white hover:bg-white/10 h-9 w-9 p-0">
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-[#E74C3C] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                        {unreadCount}
+                      </span>}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  <div className="p-2 border-b dark:border-gray-700">
+                    <h3 className="font-semibold text-lg px-2 py-1 dark:text-white">התראות</h3>
+                  </div>
+                  <ScrollArea className="h-[400px]">
+                    {notifications.length > 0 ? <div className="py-2">
+                        {notifications.map(notification => <div key={notification.id} className={`relative w-full text-right px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${!notification.is_read ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                            <div className="flex justify-between items-start">
+                              <p className="text-sm text-gray-900 dark:text-gray-100">{notification.message}</p>
+                              {!notification.is_read && <Button variant="ghost" size="sm" className="h-6 ml-2 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={e => markAsRead(notification.id, e)}>
+                                  <Check className="h-4 w-4" />
+                                </Button>}
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {format(new Date(notification.created_at), 'dd/MM/yyyy HH:mm', {
+                          locale: he
+                        })}
+                            </p>
+                          </div>)}
+                      </div> : <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+                        אין התראות חדשות
+                      </div>}
+                  </ScrollArea>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <Button variant="ghost" className="text-white hover:bg-white/10 h-9 w-9 p-0" onClick={() => navigate('/profile-coach')}>
+                <Settings className="h-5 w-5" />
+              </Button>
+              
+              <Button variant="destructive" size="sm" onClick={() => setIsLogoutDialogOpen(true)} className="h-8 w-8 p-0">
+                <LogOut className="h-4 w-4" />
+              </Button>
+              
+              <div className="block md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="text-white border-white/20 bg-white/10 hover:bg-white/20">
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setShowLandingPageDialog(true)} className="cursor-pointer">
+                      <FileEdit className="h-4 w-4 mr-2" />
+                      צור עמוד נחיתה
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/registration-links')} className="cursor-pointer">
+                      <Share2 className="h-4 w-4 mr-2" />
+                      לינקי הרשמה
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <Card className="bg-white/90 shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-semibold text-[#2C3E50]">שליחת הודעה למנהלים</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AdminMessageForm />
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#27AE60]">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">שחקנים פעילים</CardTitle>
+              <Users className="h-5 w-5 text-[#27AE60]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-[#2C3E50]">{stats.totalPlayers}</div>
+              <p className="text-sm text-gray-500 mb-3">רשומים במערכת</p>
+              <Button variant="outline" className="w-full border-[#27AE60] text-[#27AE60] hover:bg-[#27AE60]/10" onClick={() => navigate('/players-list')}>
+                <Users className="h-4 w-4 mr-2" />
+                צפה ברשימת השחקנים
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB]">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg py-0 my-0 mx-0 px-0 font-bold text-left text-emerald-900">מפגשים קרובים</CardTitle>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm" className="flex items-center gap-1 text-[#3498DB] border-[#3498DB] hover:bg-[#3498DB]/10" onClick={() => navigate('/new-session')}>
+                  <Plus className="h-4 w-4" />
+                  הוסף מפגש
+                </Button>
+                <Calendar className="h-5 w-5 text-[#3498DB]" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-[#2C3E50]">{stats.upcomingSessions}</div>
+              <p className="text-sm text-gray-500 mb-2">בשבוע הקרוב ({stats.upcomingSessions} מפגשים)</p>
+              
+              {upcomingSessions.length > 0 && <Collapsible className="mt-2">
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="w-full flex items-center justify-center text-[#3498DB]">
+                      הצג רשימת מפגשים
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="space-y-2 mt-2 max-h-[200px] overflow-y-auto pr-1">
+                      {upcomingSessions.map(session => <div key={session.id} className="p-2 rounded-md bg-gray-50 flex justify-between items-center text-sm hover:bg-gray-100 cursor-pointer" onClick={() => navigate('/edit-session', {
+                    state: {
+                      sessionId: session.id
+                    }
+                  })}>
+                          <div>
+                            <p className="font-medium">{session.player.full_name}</p>
+                            <p className="text-gray-500 text-xs">{session.session_date} | {session.session_time}</p>
+                          </div>
+                          <div className="flex items-center">
+                            {session.location && <span className="text-xs text-gray-500 ml-2">{session.location}</span>}
+                            <ChevronUp className="h-4 w-4 text-gray-400" />
+                          </div>
+                        </div>)}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F] cursor-pointer" onClick={() => navigate('/tool-management?tab=videos')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">סרטונים + כלים מנטאליים</CardTitle>
+              <Film className="h-5 w-5 text-[#F1C40F]" />
+            </CardHeader>
+            <CardContent>
+              
+              <p className="text-zinc-950 text-sm my-[36px]">שליחת סרטונים לשחקנים + רשימת כלים מנטאליים</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9b59b6] cursor-pointer" onClick={() => navigate('/new-player')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">הוספת שחקן חדש</CardTitle>
+              <UserPlus className="h-5 w-5 text-[#9b59b6]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">צור כרטיס שחקן חדש במערכת</p>
+              <Button variant="default" className="w-full bg-[#9b59b6] hover:bg-[#8e44ad]">
+                <UserPlus className="h-4 w-4 mr-2" />
+                הוסף שחקן חדש
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#e74c3c] cursor-pointer" onClick={() => navigate('/reports')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">דוחות וסטטיסטיקה</CardTitle>
+              <BarChart2 className="h-5 w-5 text-[#e74c3c]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">צפה בנתונים סטטיסטיים מפורטים</p>
+              <Button variant="default" className="w-full bg-[#e74c3c] hover:bg-[#c0392b]">
+                <BarChart2 className="h-4 w-4 mr-2" />
+                צפה בדוחות
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9b87f5] cursor-pointer" onClick={() => navigate('/all-meeting-summaries')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">סיכומי מפגשים</CardTitle>
+              <FileText className="h-5 w-5 text-[#9b87f5]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">צפה בסיכומי כל המפגשים, עם אפשרות סינון לפי שחקן</p>
+              <Button variant="default" className="w-full bg-[#9b87f5] hover:bg-[#8a68f9]">
+                <Eye className="h-4 w-4 mr-2" />
+                צפה בכל הסיכומים
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#27ae60] cursor-pointer" onClick={() => navigate('/game-prep')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">הכנה למשחק</CardTitle>
+              <Target className="h-5 w-5 text-[#27ae60]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">מלא טו��ס הכנה למשחק עבור השחקנים</p>
+              <Button variant="default" className="w-full bg-[#27ae60] hover:bg-[#219653]">
+                <Target className="h-4 w-4 mr-2" />
+                מלא טופס הכנה
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#f39c12] cursor-pointer" onClick={() => navigate('/player-evaluation')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">הערכת שחקן</CardTitle>
+              <ClipboardCheck className="h-5 w-5 text-[#f39c12]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">מלא טופס הערכת שחקן מקיף</p>
+              <Button variant="default" className="w-full bg-[#f39c12] hover:bg-[#e67e22]">
+                <ClipboardCheck className="h-4 w-4 mr-2" />
+                הערך שחקן
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB] cursor-pointer" onClick={() => navigate('/mental-library')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">מחקרים מנטאליים עדכניים </CardTitle>
+              <BookOpen className="h-5 w-5 text-[#3498DB]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">קבלו גישה למחקרים פורצי דרך שיעזרו לכם להבין את עולם המנטאליות לעומק.
+
+            </p>
+              <Button variant="default" className="w-full bg-[#3498DB] hover:bg-[#2980b9]">
+                <BookOpen className="h-4 w-4 mr-2" />
+                צפה בספ��ייה
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9C27B0] cursor-pointer" onClick={() => navigate('/players-list', {
+          state: {
+            showGameEvaluation: true
+          }
+        })}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">איבחון במשחק</CardTitle>
+              <ClipboardCheck className="h-5 w-5 text-[#9C27B0]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">איבחון התנהגות שחקן במהלך משחק</p>
+              <Button variant="default" className="w-full bg-[#9C27B0] hover:bg-[#7B1FA2]">
+                <ClipboardCheck className="h-4 w-4 mr-2" />
+                מלא איבחון משחק
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#FF5722] cursor-pointer" onClick={() => navigate('/questionnaires')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">שאלונים</CardTitle>
+              <ClipboardList className="h-5 w-5 text-[#FF5722]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">צפה בשאלונים שמולאו על ידי השחקנים</p>
+              <Button variant="default" className="w-full bg-[#FF5722] hover:bg-[#E64A19]">
+                <ClipboardList className="h-4 w-4 mr-2" />
+                צפה בשאלונים
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#2C3E50] cursor-pointer" onClick={() => navigate('/goals')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">מטרות המאמן</CardTitle>
+              <Trophy className="h-5 w-5 text-[#2C3E50]" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-500 mb-3">הגדר ועקוב אחר מטרות האימון שלך</p>
+              <Button variant="default" className="w-full bg-[#2C3E50] hover:bg-[#1B2631]">
+                <Target className="h-4 w-4 mr-2" />
+                צפה במטרות
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="bg-white/90 shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-semibold text-[#2C3E50]">מפגשים אחרונים</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="unsummarized" className="w-full" onValueChange={setActiveTab}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="unsummarized">ממתינים לסיכום ({pastSessionsToSummarize.length})</TabsTrigger>
+                <TabsTrigger value="summarized">מסוכמים ({summarizedSessions.length})</TabsTrigger>
+                <TabsTrigger value="upcoming">מפגשים קרובים ({upcomingSessions.length})</TabsTrigger>
+              </TabsList>
+              <TabsContent value="unsummarized" className="mt-0">
+                <div className="space-y-4">
+                  {pastSessionsToSummarize.length > 0 ? pastSessionsToSummarize.map(session => renderSessionCard(session)) : <div className="text-center p-6 bg-gray-50 rounded-lg">
+                      <Check className="h-10 w-10 text-green-500 mx-auto mb-2" />
+                      <h3 className="text-lg font-medium text-gray-800">הכל מסוכם!</h3>
+                      <p className="text-gray-500 mt-1">כל המפגשים שלך מסוכמים</p>
+                    </div>}
+                </div>
+              </TabsContent>
+              <TabsContent value="summarized" className="mt-0">
+                <div className="space-y-4">
+                  {summarizedSessions.length > 0 ? summarizedSessions.map(session => renderSessionCard(session, true)) : <div className="text-center p-6 bg-gray-50 rounded-lg">
+                      <FileText className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                      <h3 className="text-lg font-medium text-gray-800">אין סיכומים</h3>
+                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים מסוכמים</p>
+                    </div>}
+                </div>
+              </TabsContent>
+              <TabsContent value="upcoming" className="mt-0">
+                <div className="space-y-4">
+                  {upcomingSessions.length > 0 ? upcomingSessions.map(session => renderSessionCard(session)) : <div className="text-center p-6 bg-gray-50 rounded-lg">
+                      <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                      <h3 className="text-lg font-medium text-gray-800">אין מפגשים קרובים</h3>
+                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים ���תוכננים בשבוע הקרוב</p>
+                    </div>}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg lg:col-span-3">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-medium">סיכום מפגשים חודשי</CardTitle>
+              <BarChart2 className="h-5 w-5 text-[#9b87f5]" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={getMonthlySessionsData()} margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 5
+                }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="מפגשים" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="max-w-full mt-6">
+          <AdminMessageForm />
+        </div>
+      </div>
+
+      <LandingPageDialog open={showLandingPageDialog} onOpenChange={setShowLandingPageDialog} />
+    </div>;
+};
+export default DashboardCoach;
