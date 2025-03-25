@@ -1,6 +1,6 @@
 
 import { lazy } from 'react';
-import { Route, Routes, Outlet } from 'react-router-dom';
+import { Route, Routes, Outlet, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { LandingPagePreview } from '@/components/landing-page/LandingPagePreview';
 
@@ -64,6 +64,9 @@ export function AppRoutes() {
         <Route path="/sessions-list" element={<SessionSummaries />} />
         <Route path="/edit-session" element={<EditSessionForm />} />
       </Route>
+      
+      {/* Register redirect route */}
+      <Route path="/register" element={<Navigate to="/auth" replace />} />
       
       {/* Public registration form */}
       <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
