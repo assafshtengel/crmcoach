@@ -469,7 +469,7 @@ const DashboardCoach = () => {
                     </div>
                   </DialogContent>
                 </Dialog>}
-              {session.has_summary && <Button variant="ghost" size="sm" onClick={() => handleViewSummary(session.id)} className="flex items-center text-teal-950 text-center">
+              {session.has_summary && <Button variant="ghost" size="sm" onClick={() => handleViewSummary(session.id)} className="flex items-center text-center text-amber-950 bg-zinc-200 hover:bg-zinc-100">
                   <FileText className="h-4 w-4 mr-1" />
                   צפה בסיכום
                 </Button>}
