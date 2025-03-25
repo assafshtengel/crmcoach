@@ -32,6 +32,8 @@ const PlayerProfileView = lazy(() => import('@/pages/player/PlayerProfileView').
 const PlayerGameEvaluation = lazy(() => import('@/pages/player/PlayerGameEvaluation').then(module => ({ default: module.default })));
 const SessionSummaries = lazy(() => import('@/pages/SessionSummaries').then(module => ({ default: module.default })));
 const EditSessionForm = lazy(() => import('@/pages/EditSessionForm').then(module => ({ default: module.default })));
+const MentalResearch = lazy(() => import('@/pages/MentalResearch').then(module => ({ default: module.default })));
+const ToolManagement = lazy(() => import('@/pages/ToolManagement').then(module => ({ default: module.default })));
 
 export function AppRoutes() {
   return (
@@ -50,6 +52,7 @@ export function AppRoutes() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/player-evaluation" element={<PlayerEvaluation />} />
         <Route path="/mental-library" element={<MentalLibrary />} />
+        <Route path="/mental-research" element={<MentalResearch />} />
         <Route path="/landing-pages" element={<LandingPages />} />
         <Route path="/coach-landing-template" element={<CoachLandingTemplate />} />
         <Route path="/contract" element={<Contract />} />
@@ -63,6 +66,7 @@ export function AppRoutes() {
         <Route path="/player/game-evaluation/:id" element={<PlayerGameEvaluation />} />
         <Route path="/sessions-list" element={<SessionSummaries />} />
         <Route path="/edit-session" element={<EditSessionForm />} />
+        <Route path="/tool-management" element={<ToolManagement />} />
       </Route>
       
       {/* Public registration form */}
