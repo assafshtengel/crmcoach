@@ -47,7 +47,7 @@ const Huze = () => {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>חזור לדשבורד</p>
+                  <p>חזור לדף הבית</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

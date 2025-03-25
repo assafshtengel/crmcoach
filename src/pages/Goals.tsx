@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Target, Clock, ListChecks, CheckCircle2, CalendarIcon } from "lucide-react";
+import { Target, Clock, ListChecks, CheckCircle2, CalendarIcon, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 interface Goal {
   id: string;
@@ -28,6 +29,7 @@ interface Goal {
 }
 
 const Goals = () => {
+  const navigate = useNavigate();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [newGoal, setNewGoal] = useState<Omit<Goal, 'id' | 'user_id' | 'coach_id' | 'created_at'>>({
     title: '',
@@ -110,10 +112,8 @@ const Goals = () => {
     setActiveTab(type);
   };
 
-  // Add the goal to calendar events
   const addGoalToCalendar = async (goalData: Goal) => {
     try {
-      // Create a calendar event from the goal
       const eventData = {
         title: goalData.title,
         start: goalData.due_date,
@@ -126,7 +126,6 @@ const Goals = () => {
         }
       };
 
-      // Insert the event into player_meetings table
       const { error } = await supabase
         .from('player_meetings')
         .insert({
@@ -171,7 +170,6 @@ const Goals = () => {
       }
 
       if (data) {
-        // Add the new goal to the calendar
         await addGoalToCalendar(data[0] as Goal);
         
         setGoals(prev => [...prev, data[0] as Goal]);
@@ -289,7 +287,17 @@ const Goals = () => {
   return (
     <div className="container mx-auto py-6">
       <div className="flex flex-col items-center mb-8">
-        <h1 className="text-3xl font-bold mb-2 text-center">מטרות</h1>
+        <div className="flex justify-between items-center w-full mb-4">
+          <h1 className="text-3xl font-bold text-center">מטרות</h1>
+          <Button 
+            variant="outline" 
+            className="flex items-center" 
+            onClick={() => navigate('/')}
+          >
+            <Home className="h-4 w-4 mr-2" />
+            דף הבית
+          </Button>
+        </div>
         <p className="text-gray-500 text-center">
           הגדר מטרות וצעדים נדרשים להשגתן בטווחי זמן שונים
         </p>
@@ -538,3 +546,4 @@ const Goals = () => {
 };
 
 export default Goals;
+

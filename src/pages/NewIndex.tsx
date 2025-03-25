@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard } from "lucide-react";
+import { LogOut, ArrowRight, LayoutDashboard, Home } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +45,14 @@ const NewIndex = () => {
               className="transition-transform hover:scale-105"
             >
               <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate("/")}
+              className="transition-transform hover:scale-105"
+            >
+              <Home className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"

@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Home } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import QuestionnaireAccordion from '@/components/questionnaires/QuestionnaireAccordion';
 import { systemTemplates } from '@/data/systemTemplates';
@@ -107,14 +108,24 @@ const QuestionnairesPage = () => {
               <h1 className="text-2xl font-bold text-gray-900">שאלונים</h1>
               <p className="text-gray-600">ניהול שאלונים למאמנים ושחקנים</p>
             </div>
-            <Button 
-              variant="outline" 
-              className="flex items-center" 
-              onClick={() => navigate('/dashboard-coach')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              חזרה לדשבורד
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center" 
+                onClick={() => navigate('/')}
+              >
+                <Home className="h-4 w-4 mr-2" />
+                דף הבית
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex items-center" 
+                onClick={() => navigate('/dashboard-coach')}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                חזרה לדשבורד
+              </Button>
+            </div>
           </div>
 
           <Tabs defaultValue="templates" className="w-full" onValueChange={setActiveTab}>

@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Home } from 'lucide-react';
 
 export function Layout() {
   const [actionCount, setActionCount] = useState(0);
@@ -40,7 +42,16 @@ export function Layout() {
     <div className="flex min-h-screen flex-col">
       <header className="bg-white shadow-sm sticky top-0 z-50 py-3 px-4 md:px-6">
         <div className="container mx-auto flex justify-between items-center">
-          <div></div> {/* Empty div to maintain layout balance */}
+          <div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/')}
+              className="hover:bg-gray-100"
+            >
+              <Home className="h-5 w-5" />
+            </Button>
+          </div>
           
           <div className="flex items-center gap-4">
             {/* כאן ניתן להוסיף בעתיד פקדי ניווט, כפתורי פעולה או תפריט */}
