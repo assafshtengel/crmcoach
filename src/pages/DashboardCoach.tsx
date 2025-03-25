@@ -495,5 +495,42 @@ const DashboardCoach = () => {
       </Card>;
   };
 
+  const renderUpcomingSessions = () => {
+    return upcomingSessions.map(session => renderSessionCard(session));
+  };
 
+  const renderMentalResearchCard = () => {
+    return (
+      <Card className="bg-gray-50 hover:bg-white transition-all duration-300">
+        <CardHeader>
+          <CardTitle className="flex justify-between">
+            <div className="flex items-center">
+              <BookOpen className="h-5 w-5 mr-2 text-amber-600" />
+              ספריית המחקרים
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            גישה למחקרים עדכניים בתחום הפסיכולוגיה של הספורט
+          </div>
+          <Button variant="outline" size="sm" className="flex items-center" asChild>
+            <Link to="/mental-research">
+              <Eye className="h-4 w-4 mr-1" />
+              לצפייה בכל המחקרים
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  };
 
+  return (
+    <div>
+      {renderUpcomingSessions()}
+      {renderMentalResearchCard()}
+    </div>
+  );
+};
+
+export default DashboardCoach;
