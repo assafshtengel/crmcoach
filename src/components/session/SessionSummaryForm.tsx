@@ -142,8 +142,6 @@ export function SessionSummaryForm({
         });
         
         pdf.save(`סיכום_מפגש_${playerName}_${sessionDate.replace(/\//g, '-')}.pdf`);
-        
-        navigate('/all-meeting-summaries');
       }, 500);
     } catch (error) {
       console.error("Error creating PDF:", error);

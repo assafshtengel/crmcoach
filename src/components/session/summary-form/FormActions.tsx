@@ -31,6 +31,7 @@ export function FormActions({
         if (navigateAfterSave) {
           // Navigate to all meeting summaries page after saving
           navigate('/all-meeting-summaries');
+          console.log("Navigating to /all-meeting-summaries after save");
         }
       },
       style: {
@@ -55,6 +56,7 @@ export function FormActions({
           if (navigateAfterSave) {
             // Navigate to all meeting summaries page after exporting
             navigate('/all-meeting-summaries');
+            console.log("Navigating to /all-meeting-summaries after PDF export");
           }
         },
         style: {
