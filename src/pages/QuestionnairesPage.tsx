@@ -4,29 +4,32 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Plus } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import QuestionnaireAccordion from '@/components/questionnaires/QuestionnaireAccordion';
 import { systemTemplates } from '@/data/systemTemplates';
 import { PlayersProvider } from '@/contexts/PlayersContext';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
+import CreateQuestionnaireDialog from '@/components/questionnaires/CreateQuestionnaireDialog';
+import { QuestionnaireTemplate } from '@/types/questionnaire';
 
 const QuestionnairesPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('templates');
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [customTemplates, setCustomTemplates] = useState<QuestionnaireTemplate[]>([]);
   const { toast } = useToast();
   
-  // This would normally come from an API call
-  const hasCustomTemplates = false; 
+  const hasCustomTemplates = customTemplates.length > 0;
 
   useEffect(() => {
     const checkSession = async () => {
       try {
         setIsLoading(true);
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
           toast({
@@ -39,6 +42,24 @@ const QuestionnairesPage = () => {
         }
         
         setIsAuthenticated(true);
+        
+        // Fetch custom templates created by the coach
+        const { data: templates, error } = await supabase
+          .from('questionnaire_templates')
+          .select('*')
+          .eq('coach_id', session.user.id)
+          .eq('is_system_template', false)
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error('Error fetching templates:', error);
+          throw error;
+        }
+        
+        if (templates) {
+          setCustomTemplates(templates);
+        }
+        
       } catch (error) {
         console.error('Error checking auth session:', error);
         toast({
@@ -56,7 +77,7 @@ const QuestionnairesPage = () => {
 
   // Setup auth listener
   useEffect(() => {
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
@@ -105,22 +126,29 @@ const QuestionnairesPage = () => {
 
             <TabsContent value="templates" className="mt-0">
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">תבניות שאלונים מותאמות אישית</h2>
-                  {!hasCustomTemplates ? (
-                    <Card className="bg-gray-50 border-dashed">
-                      <CardContent className="text-center p-8">
-                        <p className="text-gray-500">
-                          אין לך עדיין תבניות שאלונים מותאמות אישית. צור גרסה מותאמת מאחת מתבניות המערכת למטה.
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {/* Custom templates would be mapped here */}
-                    </div>
-                  )}
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">תבניות שאלונים מותאמות אישית</h2>
+                  <Button onClick={() => setIsCreateDialogOpen(true)} className="flex items-center">
+                    <Plus className="h-4 w-4 ml-2" />
+                    צור שאלון מותאם
+                  </Button>
                 </div>
+
+                {!hasCustomTemplates ? (
+                  <Card className="bg-gray-50 border-dashed">
+                    <CardContent className="text-center p-8">
+                      <p className="text-gray-500">
+                        אין לך עדיין תבניות שאלונים מותאמות אישית. צור גרסה מותאמת מאחת מתבניות המערכת למטה או צור שאלון חדש מאפס.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    {customTemplates.map((template) => (
+                      <QuestionnaireAccordion key={template.id} template={template} />
+                    ))}
+                  </div>
+                )}
 
                 <Separator className="my-6" />
 
@@ -148,6 +176,11 @@ const QuestionnairesPage = () => {
               </div>
             </TabsContent>
           </Tabs>
+
+          <CreateQuestionnaireDialog 
+            open={isCreateDialogOpen} 
+            onOpenChange={setIsCreateDialogOpen} 
+          />
         </div>
       </div>
     </PlayersProvider>

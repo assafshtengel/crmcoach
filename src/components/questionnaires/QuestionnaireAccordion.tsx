@@ -39,8 +39,35 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
     );
   };
 
-  const handleSave = () => {
-    // TODO: Implement save logic
+  const handleSave = async () => {
+    // Only save if this is a custom (non-system) template
+    if (!template.is_system_template) {
+      try {
+        const { error } = await supabase
+          .from('questionnaire_templates')
+          .update({ 
+            questions: editedQuestions,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', template.id);
+          
+        if (error) {
+          throw error;
+        }
+        
+        toast({
+          title: "השינויים נשמרו",
+          description: "השינויים בשאלון נשמרו בהצלחה."
+        });
+      } catch (error) {
+        console.error('Error saving changes:', error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה בשמירה",
+          description: "אירעה שגיאה בעת שמירת השינויים. נסה שנית."
+        });
+      }
+    }
     setIsEditing(false);
   };
 
@@ -101,9 +128,18 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
         throw error;
       }
 
+      toast({
+        title: "השאלון שויך בהצלחה",
+        description: "השאלון שויך לשחקן בהצלחה."
+      });
+
     } catch (error: any) {
       console.error('Failed to assign questionnaire:', error);
-      throw error;
+      toast({
+        variant: "destructive",
+        title: "שגיאה בשיוך השאלון",
+        description: error.message || "אירעה שגיאה בעת שיוך השאלון. נסה שנית."
+      });
     }
   };
 
@@ -114,7 +150,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
           <AccordionTrigger className="px-6 py-4 hover:no-underline">
             <div className="flex-1 flex items-center justify-between pl-4">
               <span className="font-bold text-lg">{template.title}</span>
-              {!isEditing && (
+              {!isEditing && !template.is_system_template && (
                 <Button
                   variant="ghost"
                   size="sm"
