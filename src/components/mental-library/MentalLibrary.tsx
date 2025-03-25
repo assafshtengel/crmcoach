@@ -1,10 +1,11 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, FileText, Microscope, LineChart, Star } from "lucide-react";
+import { Brain, FileText, Microscope, LineChart, Star, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ResearchModal } from "./ResearchModal";
+import { EditResearchModal } from "./EditResearchModal";
+import { toast } from "sonner";
 
 interface Study {
   id: number;
@@ -308,6 +309,9 @@ const renderStudyIcon = (iconType: string) => {
 export const MentalLibrary: React.FC = () => {
   const [selectedStudy, setSelectedStudy] = useState<Study | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingStudy, setEditingStudy] = useState<Study | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [studies, setStudies] = useState<Study[]>(recentStudies);
 
   const handleOpenModal = (study: Study) => {
     setSelectedStudy(study);
@@ -318,15 +322,50 @@ export const MentalLibrary: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  return <div className="container py-8">
+  const handleEditClick = (study: Study, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening the read modal
+    setEditingStudy(study);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingStudy(null);
+  };
+
+  const handleSaveStudy = (updatedStudy: Study) => {
+    const updatedStudies = studies.map(study => 
+      study.id === updatedStudy.id ? updatedStudy : study
+    );
+    setStudies(updatedStudies);
+    toast.success("המחקר עודכן בהצלחה");
+  };
+
+  return (
+    <div className="container py-8">
       <div className="flex flex-col space-y-4 mb-8">
         <h1 className="text-3xl font-bold text-center">מחקרים אחרונים בארכיון המנטאלי</h1>
         <p className="text-gray-600 text-center max-w-2xl mx-auto">כאן תמצאו את כל המחקרים האחרונים בעולם המנטאלי שהתפרסמו</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recentStudies.map(study => (
-          <Card key={study.id} className="flex flex-col h-full shadow-md hover:shadow-lg transition-shadow overflow-hidden border border-gray-200">
+        {studies.map(study => (
+          <Card 
+            key={study.id} 
+            className="flex flex-col h-full shadow-md hover:shadow-lg transition-shadow overflow-hidden border border-gray-200 relative"
+            onClick={() => handleOpenModal(study)}
+          >
+            <div className="absolute top-4 right-4 z-10">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 rounded-full hover:bg-gray-100"
+                onClick={(e) => handleEditClick(study, e)}
+              >
+                <Pencil className="h-4 w-4 text-gray-500" />
+                <span className="sr-only">ערוך מחקר</span>
+              </Button>
+            </div>
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div>
@@ -360,7 +399,7 @@ export const MentalLibrary: React.FC = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end pt-2 border-t">
-              <Button className="w-full gap-2" onClick={() => handleOpenModal(study)}>
+              <Button className="w-full gap-2">
                 קראו עוד
               </Button>
             </CardFooter>
@@ -373,5 +412,13 @@ export const MentalLibrary: React.FC = () => {
         onClose={handleCloseModal}
         study={selectedStudy}
       />
-    </div>;
+
+      <EditResearchModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        study={editingStudy}
+        onSave={handleSaveStudy}
+      />
+    </div>
+  );
 };
