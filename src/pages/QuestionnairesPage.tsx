@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
 import CreateQuestionnaireDialog from '@/components/questionnaires/CreateQuestionnaireDialog';
 import { QuestionnaireTemplate } from '@/types/questionnaire';
+import CompletedQuestionnairesList from '@/components/questionnaires/CompletedQuestionnairesList';
 
 const QuestionnairesPage = () => {
   const navigate = useNavigate();
@@ -75,7 +75,6 @@ const QuestionnairesPage = () => {
     checkSession();
   }, [navigate, toast]);
 
-  // Setup auth listener
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -121,7 +120,7 @@ const QuestionnairesPage = () => {
           <Tabs defaultValue="templates" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="templates">תבניות שאלונים</TabsTrigger>
-              <TabsTrigger value="saved">שאלונים שמורים</TabsTrigger>
+              <TabsTrigger value="saved">שאלונים שמולאו</TabsTrigger>
             </TabsList>
 
             <TabsContent value="templates" className="mt-0">
@@ -165,14 +164,8 @@ const QuestionnairesPage = () => {
 
             <TabsContent value="saved" className="mt-0">
               <div>
-                <h2 className="text-xl font-semibold mb-4">שאלונים שמורים</h2>
-                <Card className="bg-gray-50 border-dashed">
-                  <CardContent className="text-center p-8">
-                    <p className="text-gray-500">
-                      אין לך עדיין שאלונים שמורים.
-                    </p>
-                  </CardContent>
-                </Card>
+                <h2 className="text-xl font-semibold mb-4">שאלונים שמולאו על ידי שחקנים</h2>
+                <CompletedQuestionnairesList />
               </div>
             </TabsContent>
           </Tabs>
