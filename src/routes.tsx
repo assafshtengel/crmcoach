@@ -20,6 +20,7 @@ const Dashboard = lazy(() => import('@/pages/Dashboard').then(module => ({ defau
 const PublicRegistrationForm = lazy(() => import('@/pages/PublicRegistrationForm').then(module => ({ default: module.default })));
 const PlayerEvaluation = lazy(() => import('@/pages/PlayerEvaluation').then(module => ({ default: module.default })));
 const MentalLibrary = lazy(() => import('@/pages/MentalLibrary').then(module => ({ default: module.default })));
+const MentalResearch = lazy(() => import('@/components/mental-library/MentalLibrary').then(module => ({ default: module.MentalLibrary })));
 const LandingPages = lazy(() => import('@/pages/LandingPages').then(module => ({ default: module.default })));
 const CoachLandingTemplate = lazy(() => import('@/pages/CoachLandingTemplate').then(module => ({ default: module.default })));
 const Contract = lazy(() => import('@/pages/Contract').then(module => ({ default: module.default })));
@@ -50,6 +51,7 @@ export function AppRoutes() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/player-evaluation" element={<PlayerEvaluation />} />
         <Route path="/mental-library" element={<MentalLibrary />} />
+        <Route path="/mental-research" element={<MentalResearch />} />
         <Route path="/landing-pages" element={<LandingPages />} />
         <Route path="/coach-landing-template" element={<CoachLandingTemplate />} />
         <Route path="/contract" element={<Contract />} />
