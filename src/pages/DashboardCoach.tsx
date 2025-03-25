@@ -973,11 +973,13 @@ const DashboardCoach = () => {
 
           <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB] cursor-pointer" onClick={() => navigate('/mental-library')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-medium">הספרייה המנטאלית</CardTitle>
+              <CardTitle className="text-lg font-medium">מחקרים מנטאליים עדכניים </CardTitle>
               <BookOpen className="h-5 w-5 text-[#3498DB]" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500 mb-3">רשימת ספרים מומלצים בתחום הפסיכולוגיה של הספורט</p>
+              <p className="text-sm text-gray-500 mb-3">קבלו גישה למחקרים פורצי דרך שיעזרו לכם להבין את עולם המנטאליות לעומק.
+
+            </p>
               <Button variant="default" className="w-full bg-[#3498DB] hover:bg-[#2980b9]">
                 <BookOpen className="h-4 w-4 mr-2" />
                 צפה בספ��ייה
