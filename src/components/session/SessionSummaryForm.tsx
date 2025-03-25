@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,8 +16,7 @@ import { useTools } from "./summary-form/hooks/useTools";
 import { formSchema, FormValues } from "./summary-form/schemaValidation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tool } from "@/types/tool";
-import { Tag, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 
 interface SessionSummaryFormProps {
   sessionId: string;
@@ -61,17 +59,12 @@ export function SessionSummaryForm({
       console.log("Submitting form data with player ID:", playerId);
       console.log("Complete form data:", { ...data, tools_used: selectedTools, playerId });
       
-      // Pass the player_id explicitly to onSubmit
       await onSubmit({ ...data, tools_used: selectedTools });
       console.log("Form submitted successfully");
       
-      // If the session is being force-enabled (summarizing an upcoming session),
-      // we don't need to update the session status since it's not started yet
       if (!forceEnable) {
-        // Update the session status in the frontend
         updateSessionSummaryStatus(sessionId, playerId);
       }
-      
     } catch (error) {
       console.error("Error saving session summary:", error);
       toast.error("שגיאה בשמירת סיכום המפגש");
@@ -80,15 +73,13 @@ export function SessionSummaryForm({
     }
   };
 
-  // Function to update the session status after summary is created
   const updateSessionSummaryStatus = async (sessionId: string, playerId: string) => {
     try {
-      // Check if the summary exists (for verification)
       const { data: summaries, error: checkError } = await supabase
         .from('session_summaries')
         .select('id')
         .eq('session_id', sessionId)
-        .eq('player_id', playerId); // Verify filtering by player_id
+        .eq('player_id', playerId);
       
       if (checkError) {
         console.error("Error checking session summary status:", checkError);
@@ -97,11 +88,8 @@ export function SessionSummaryForm({
       
       console.log("Session summaries status check:", summaries);
       
-      // If summary exists, the session was successfully summarized
       if (summaries && summaries.length > 0) {
-        // Force a refresh of the parent component by causing sessions state update
         if (window.dispatchEvent) {
-          // Create a custom event to notify that a session was summarized
           const event = new CustomEvent('sessionSummarized', { 
             detail: { sessionId, playerId }
           });
@@ -116,13 +104,11 @@ export function SessionSummaryForm({
 
   const handleExportPDF = async () => {
     try {
-      // First save the form data
       const currentFormValues = form.getValues();
       await handleSubmit(currentFormValues);
       
       toast.info("מכין PDF, אנא המתן...");
       
-      // Wait for any state updates to complete
       setTimeout(async () => {
         const summaryElement = document.getElementById('session-summary-content');
         if (!summaryElement) {
@@ -130,38 +116,34 @@ export function SessionSummaryForm({
           return;
         }
         
-        // Create canvas from the summary element
         const canvas = await html2canvas(summaryElement, {
-          scale: 2, // Higher quality
+          scale: 2,
           useCORS: true,
           logging: false,
           backgroundColor: "#ffffff"
         });
         
-        // Create PDF
         const pdf = new jsPDF({
           orientation: 'portrait',
           unit: 'mm',
           format: 'a4'
         });
         
-        // Add content to PDF
         const imgData = canvas.toDataURL('image/png');
-        const imgWidth = 210; // A4 width in mm
+        const imgWidth = 210;
         const imgHeight = canvas.height * imgWidth / canvas.width;
         
         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
         
-        // Add metadata
         pdf.setProperties({
           title: `סיכום מפגש - ${playerName} - ${sessionDate}`,
           subject: 'סיכום מפגש אימון',
           creator: 'מערכת ניהול המאמן',
         });
         
-        // Save PDF
         pdf.save(`סיכום_מפגש_${playerName}_${sessionDate.replace(/\//g, '-')}.pdf`);
         
+        navigate('/all-meeting-summaries');
       }, 500);
     } catch (error) {
       console.error("Error creating PDF:", error);
@@ -170,7 +152,6 @@ export function SessionSummaryForm({
   };
 
   const toggleTool = (toolId: string, event: React.MouseEvent) => {
-    // Prevent any default behavior or event propagation
     event.preventDefault();
     event.stopPropagation();
     
@@ -193,10 +174,8 @@ export function SessionSummaryForm({
           className="space-y-6"
           id="session-summary-content"
         >
-          {/* Summary form fields */}
           <SummaryTab form={form} selectedTools={selectedTools} />
           
-          {/* Mental tools section */}
           <div className="pt-4 border-t border-gray-200">
             <h3 className="text-lg font-semibold text-center mb-4 flex items-center justify-center">
               <Wrench className="mr-2 h-5 w-5 text-purple-500" />

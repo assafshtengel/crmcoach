@@ -29,8 +29,8 @@ export function FormActions({
       duration: 1500,
       onAutoClose: () => {
         if (navigateAfterSave) {
-          // Dispatch custom event to navigate to coach dashboard
-          window.dispatchEvent(new CustomEvent('sessionSummarySaved'));
+          // Navigate to all meeting summaries page after saving
+          navigate('/all-meeting-summaries');
         }
       },
       style: {
@@ -53,8 +53,8 @@ export function FormActions({
         duration: 1500,
         onAutoClose: () => {
           if (navigateAfterSave) {
-            // Dispatch custom event to navigate to coach dashboard
-            window.dispatchEvent(new CustomEvent('sessionSummarySaved'));
+            // Navigate to all meeting summaries page after exporting
+            navigate('/all-meeting-summaries');
           }
         },
         style: {

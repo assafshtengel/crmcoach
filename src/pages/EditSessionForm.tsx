@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -134,7 +133,7 @@ const EditSessionForm = () => {
         .insert({
           session_id: sessionId,
           coach_id: (await supabase.auth.getUser()).data.user?.id,
-          player_id: formData.player_id, // Ensuring we're using the player_id from the session
+          player_id: formData.player_id,
           summary_text: data.summary_text,
           achieved_goals: data.achieved_goals.split('\n').filter(Boolean),
           future_goals: data.future_goals.split('\n').filter(Boolean),
@@ -154,7 +153,7 @@ const EditSessionForm = () => {
         .update({ has_summary: true })
         .eq('id', sessionId);
         
-      navigate('/sessions-list');
+      navigate('/all-meeting-summaries');
       
     } catch (error: any) {
       console.error('Error submitting summary:', error);
