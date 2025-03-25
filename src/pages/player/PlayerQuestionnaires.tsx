@@ -19,7 +19,9 @@ interface AssignedQuestionnaire {
   coach?: {
     full_name: string;
   };
-  questionnaire_title?: string;
+  questionnaire?: {
+    title: string;
+  };
 }
 
 const PlayerQuestionnaires = () => {
@@ -72,7 +74,8 @@ const PlayerQuestionnaires = () => {
         .from('assigned_questionnaires')
         .select(`
           *,
-          coach:coach_id(full_name)
+          coach:coach_id(full_name),
+          questionnaire:questionnaire_id(title)
         `)
         .eq('player_id', playerId)
         .eq('status', 'pending');
@@ -81,19 +84,10 @@ const PlayerQuestionnaires = () => {
         throw error;
       }
 
+      console.log('Fetched questionnaires for player:', data);
+      
       if (data) {
-        // הוספת כותרות השאלונים מהתבניות
-        // כאן אנחנו משתמשים בנתונים שכבר קיימים בקוד כדי להציג את הכותרות
-        const questionnairesWithTitles = data.map(q => {
-          // בפועל, כותרת השאלון תילקח מהמערכת לפי ה-ID
-          // כרגע נוסיף כותרת כללית
-          return {
-            ...q,
-            questionnaire_title: `שאלון ${q.questionnaire_id}`
-          };
-        });
-        
-        setQuestionnaires(questionnairesWithTitles);
+        setQuestionnaires(data);
       }
     } catch (error) {
       console.error('Error fetching questionnaires:', error);
@@ -133,7 +127,7 @@ const PlayerQuestionnaires = () => {
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-primary" />
-                    {questionnaire.questionnaire_title}
+                    {questionnaire.questionnaire?.title || "שאלון"}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -150,7 +144,7 @@ const PlayerQuestionnaires = () => {
                     </div>
                     <div className="mt-4">
                       <Button 
-                        onClick={() => handleAnswerNow(questionnaire.id)}
+                        onClick={() => handleAnswerNow(questionnaire.questionnaire_id)}
                         className="w-full sm:w-auto"
                       >
                         ענה עכשיו 

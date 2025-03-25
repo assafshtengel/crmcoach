@@ -65,14 +65,35 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
 
       const coachId = session.user.id;
       
-      // Create a new record in the assigned_questionnaires table
+      // Create a questionnaire instance from the template
+      const { data: questionnaire, error: questionnaireError } = await supabase
+        .from('questionnaires')
+        .insert({
+          coach_id: coachId,
+          player_id: playerId,
+          template_id: templateId,
+          title: template.title,
+          type: template.type,
+          questions: template.questions,
+          is_completed: false
+        })
+        .select('id')
+        .single();
+
+      if (questionnaireError) {
+        console.error('Error creating questionnaire:', questionnaireError);
+        throw questionnaireError;
+      }
+
+      // Create a record in the assigned_questionnaires table
       const { error } = await supabase
         .from('assigned_questionnaires')
         .insert({
           coach_id: coachId,
           player_id: playerId,
-          questionnaire_id: templateId,
+          questionnaire_id: questionnaire.id,
           template_id: template.is_system_template ? templateId : template.parent_template_id || templateId,
+          status: 'pending'
         });
 
       if (error) {

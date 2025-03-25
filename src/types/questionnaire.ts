@@ -38,3 +38,21 @@ export interface Questionnaire {
   completed_at?: string;
   player_name?: string;
 }
+
+export interface AssignedQuestionnaire {
+  id: string;
+  coach_id: string;
+  player_id: string;
+  questionnaire_id: string;
+  template_id: string;
+  status: 'pending' | 'completed';
+  assigned_at: string;
+  coach?: {
+    full_name: string;
+  };
+  questionnaire?: {
+    title: string;
+    type: string;
+    questions: Question[];
+  };
+}
