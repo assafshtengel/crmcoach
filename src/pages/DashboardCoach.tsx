@@ -846,7 +846,7 @@ const DashboardCoach = () => {
 
           <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#3498DB]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-medium">מפגשים קרו��ים</CardTitle>
+              <CardTitle className="text-lg py-0 my-0 mx-0 px-0 font-bold text-left text-emerald-900">מפגשים קרובים</CardTitle>
               <div className="flex items-center space-x-2">
                 <Button variant="outline" size="sm" className="flex items-center gap-1 text-[#3498DB] border-[#3498DB] hover:bg-[#3498DB]/10" onClick={() => navigate('/new-session')}>
                   <Plus className="h-4 w-4" />
