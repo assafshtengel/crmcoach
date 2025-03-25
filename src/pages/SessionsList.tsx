@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -103,10 +102,8 @@ const SessionsList = () => {
 
       if (error) throw error;
 
-      // First, let's get the basic session data
       const rawSessions = sessionsData as unknown as RawSession[];
       
-      // Now, let's check which sessions have summaries
       const sessionsWithSummaryStatus = await Promise.all(
         rawSessions.map(async (session) => {
           const { count, error } = await supabase
@@ -185,7 +182,6 @@ const SessionsList = () => {
     );
   }
 
-  // Filter sessions into three categories
   const upcomingSessions = sessions.filter(session => !session.has_started);
   const pastSessionsWaitingSummary = sessions.filter(session => session.has_started && !session.has_summary);
   const summarizedSessions = sessions.filter(session => session.has_started && session.has_summary);
@@ -482,7 +478,7 @@ const SessionsList = () => {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => navigate(`/session-summaries?sessionId=${session.id}`)}
+                                  onClick={() => navigate('/all-meeting-summaries')}
                                   className="text-green-600 hover:text-green-700"
                                 >
                                   <CheckCircle className="h-4 w-4 mr-1" />
@@ -511,7 +507,7 @@ const SessionsList = () => {
                               variant="ghost"
                               size="sm"
                               className="text-green-600 hover:text-green-700"
-                              onClick={() => navigate(`/session-summaries?sessionId=${session.id}`)}
+                              onClick={() => navigate('/all-meeting-summaries')}
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
                               צפה בסיכום
