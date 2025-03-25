@@ -48,7 +48,7 @@ export default function ToolManagement() {
           <TabsList>
             <TabsTrigger value="mental-tools">כלים מנטליים</TabsTrigger>
             <TabsTrigger value="videos">
-              סרטוני וידאו
+              סרטונים + כלים מנטאליים
               <VideoIcon className="ml-1 h-4 w-4" />
             </TabsTrigger>
           </TabsList>
@@ -59,7 +59,7 @@ export default function ToolManagement() {
           
           <TabsContent value="videos" className="space-y-4">
             <div className="mb-4 flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">ניהול סרטונים</h2>
+              <h2 className="text-2xl font-semibold">שליחת סרטונים לשחקנים + רשימת כלים מנטאליים</h2>
             </div>
             <VideoManagement />
           </TabsContent>
