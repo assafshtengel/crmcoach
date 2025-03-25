@@ -26,6 +26,7 @@ import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
 import { ClipboardList } from 'lucide-react';
+
 interface DashboardStats {
   totalPlayers: number;
   upcomingSessions: number;
@@ -35,6 +36,7 @@ interface DashboardStats {
   twoMonthsAgoSessions: number;
   totalReminders: number;
 }
+
 interface UpcomingSession {
   id: string;
   session_date: string;
@@ -48,6 +50,7 @@ interface UpcomingSession {
   };
   has_summary?: boolean;
 }
+
 interface SessionResponse {
   id: string;
   session_date: string;
@@ -59,6 +62,7 @@ interface SessionResponse {
     full_name: string;
   };
 }
+
 interface Notification {
   id: string;
   message: string;
@@ -66,6 +70,7 @@ interface Notification {
   is_read: boolean;
   type: string;
 }
+
 interface CalendarEvent {
   id: string;
   title: string;
@@ -79,12 +84,14 @@ interface CalendarEvent {
     notes?: string;
   };
 }
+
 interface EventFormData {
   title: string;
   date: string;
   time: string;
   notes?: string;
 }
+
 const DashboardCoach = () => {
   const navigate = useNavigate();
   const {
@@ -118,6 +125,7 @@ const DashboardCoach = () => {
   }[]>([]);
   const [isSessionFormOpen, setIsSessionFormOpen] = useState(false);
   const [showLandingPageDialog, setShowLandingPageDialog] = useState(false);
+
   useEffect(() => {
     const initUser = async () => {
       const {
@@ -129,6 +137,7 @@ const DashboardCoach = () => {
     };
     initUser();
   }, []);
+
   const fetchData = async (userId: string) => {
     try {
       const today = new Date();
@@ -259,6 +268,7 @@ const DashboardCoach = () => {
       setIsLoading(false);
     }
   };
+
   const fetchNotifications = async (userId: string) => {
     try {
       const {
@@ -274,6 +284,7 @@ const DashboardCoach = () => {
       console.error('Error fetching notifications:', error);
     }
   };
+
   const markAsRead = async (notificationId: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
@@ -294,6 +305,7 @@ const DashboardCoach = () => {
       console.error('Error marking notification as read:', error);
     }
   };
+
   const handleSendReminder = async (sessionId: string) => {
     try {
       const {
@@ -342,6 +354,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -359,6 +372,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleSaveSessionSummary = async (sessionId: string, data: any) => {
     try {
       const {
@@ -406,9 +420,11 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleViewSummary = async (sessionId: string) => {
     navigate(`/session-summaries?id=${sessionId}`);
   };
+
   const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
     const sessionDate = new Date(session.session_date);
     const isToday = isSameDay(sessionDate, new Date());
@@ -478,6 +494,7 @@ const DashboardCoach = () => {
         </CardContent>
       </Card>;
   };
+
   const fetchCalendarEvents = async (userId: string) => {
     try {
       const {
@@ -528,6 +545,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleAddEvent = async (eventData: any) => {
     try {
       if (!user?.id) {
@@ -561,6 +579,7 @@ const DashboardCoach = () => {
       throw error;
     }
   };
+
   const handleSessionFormSubmit = async (sessionData: {
     player_id: string;
     session_date: string;
@@ -579,6 +598,7 @@ const DashboardCoach = () => {
       return Promise.reject(error);
     }
   };
+
   useEffect(() => {
     const initializeDashboard = async () => {
       const {
@@ -620,6 +640,7 @@ const DashboardCoach = () => {
     };
     initializeDashboard();
   }, []);
+
   const handleEventClick = (eventId: string) => {
     const session = upcomingSessions.find(s => s.id === eventId);
     if (session) {
@@ -630,6 +651,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const getMonthlySessionsData = () => {
     return [{
       name: 'לפני חודשיים',
@@ -649,6 +671,7 @@ const DashboardCoach = () => {
       fill: '#3B82F6'
     }];
   };
+
   useEffect(() => {
     const fetchPlayers = async () => {
       const {
@@ -669,6 +692,7 @@ const DashboardCoach = () => {
     };
     fetchPlayers();
   }, []);
+
   useEffect(() => {
     const handleSessionSummarized = (event: any) => {
       const {
@@ -690,12 +714,15 @@ const DashboardCoach = () => {
       window.removeEventListener('sessionSummarized', handleSessionSummarized);
     };
   }, [pastSessionsToSummarize]);
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>;
   }
+
   console.log("Rendering DashboardCoach with landing page button");
+
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
       <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
         <AlertDialogContent>
@@ -766,4 +793,44 @@ const DashboardCoach = () => {
                   </div>
                   <ScrollArea className="h-[400px]">
                     {notifications.length > 0 ? <div className="py-2">
-                        {notifications.map(notification => <div key={notification.id} className={`relative w-full text-right px-4 py-3 hover:bg-gray
+                        {notifications.map(notification => <div key={notification.id} className={`relative w-full text-right px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 ${!notification.is_read ? 'bg-gray-50 dark:bg-gray-800' : ''}`}>
+                            <div className="flex justify-between items-start">
+                              <Button variant="ghost" size="sm" className="ml-2 h-7 w-7 p-0" onClick={(e) => markAsRead(notification.id, e)}>
+                                <Check className="h-3 w-3 text-green-500" />
+                              </Button>
+                              <div>
+                                <span className={`text-sm ${!notification.is_read ? 'font-semibold' : ''}`}>{notification.message}</span>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{formatDistance(new Date(notification.created_at), new Date(), { addSuffix: true, locale: he })}</p>
+                              </div>
+                            </div>
+                          </div>)}
+                      </div> : <div className="flex flex-col items-center justify-center py-8 px-4">
+                        <Bell className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-2" />
+                        <h4 className="text-gray-500 dark:text-gray-400 text-center">אין התראות חדשות</h4>
+                      </div>}
+                  </ScrollArea>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-xl">סרטונים + כלים מנטאליים</CardTitle>
+                <BookOpen className="h-5 w-5 text-primary" />
+              </div>
+              <p className="text-sm text-muted-foreground">שליחת סרטונים לשחקנים + רשימת כלים מנטאליים</p>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full mt-2" onClick={() => navigate('/mental-research')}>
+                לצפייה בכל המחקרים
+              </Button>
+            </CardContent>
+          </Card>
+
+

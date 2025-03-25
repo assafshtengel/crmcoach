@@ -20,6 +20,7 @@ const Dashboard = lazy(() => import('@/pages/Dashboard').then(module => ({ defau
 const PublicRegistrationForm = lazy(() => import('@/pages/PublicRegistrationForm').then(module => ({ default: module.default })));
 const PlayerEvaluation = lazy(() => import('@/pages/PlayerEvaluation').then(module => ({ default: module.default })));
 const MentalLibrary = lazy(() => import('@/pages/MentalLibrary').then(module => ({ default: module.default })));
+const MentalResearch = lazy(() => import('@/pages/MentalResearch').then(module => ({ default: module.default })));
 const LandingPages = lazy(() => import('@/pages/LandingPages').then(module => ({ default: module.default })));
 const CoachLandingTemplate = lazy(() => import('@/pages/CoachLandingTemplate').then(module => ({ default: module.default })));
 const Contract = lazy(() => import('@/pages/Contract').then(module => ({ default: module.default })));
@@ -32,7 +33,6 @@ const PlayerProfileView = lazy(() => import('@/pages/player/PlayerProfileView').
 const PlayerGameEvaluation = lazy(() => import('@/pages/player/PlayerGameEvaluation').then(module => ({ default: module.default })));
 const SessionSummaries = lazy(() => import('@/pages/SessionSummaries').then(module => ({ default: module.default })));
 const EditSessionForm = lazy(() => import('@/pages/EditSessionForm').then(module => ({ default: module.default })));
-const MentalResearch = lazy(() => import('@/pages/MentalResearch').then(module => ({ default: module.default })));
 const ToolManagement = lazy(() => import('@/pages/ToolManagement').then(module => ({ default: module.default })));
 
 export function AppRoutes() {
