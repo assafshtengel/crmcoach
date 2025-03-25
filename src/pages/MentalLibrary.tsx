@@ -13,7 +13,7 @@ const MentalLibraryPage = () => {
       <header className="p-4 bg-white shadow-sm">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-            הספרייה המנטאלית
+            הארכיון המנטאלי - מחקרים
           </h1>
           <Button
             variant="outline"
