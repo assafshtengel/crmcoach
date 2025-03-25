@@ -32,6 +32,7 @@ const PlayerProfileView = lazy(() => import('@/pages/player/PlayerProfileView').
 const PlayerGameEvaluation = lazy(() => import('@/pages/player/PlayerGameEvaluation').then(module => ({ default: module.default })));
 const SessionSummaries = lazy(() => import('@/pages/SessionSummaries').then(module => ({ default: module.default })));
 const EditSessionForm = lazy(() => import('@/pages/EditSessionForm').then(module => ({ default: module.default })));
+const AllMeetingSummaries = lazy(() => import('@/pages/AllMeetingSummaries').then(module => ({ default: module.default })));
 
 export function AppRoutes() {
   return (
@@ -63,6 +64,7 @@ export function AppRoutes() {
         <Route path="/player/game-evaluation/:id" element={<PlayerGameEvaluation />} />
         <Route path="/sessions-list" element={<SessionSummaries />} />
         <Route path="/edit-session" element={<EditSessionForm />} />
+        <Route path="/all-meeting-summaries" element={<AllMeetingSummaries />} />
       </Route>
       
       {/* Register redirect route */}
