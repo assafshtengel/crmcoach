@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -73,9 +74,18 @@ export const EditResearchModal: React.FC<EditResearchModalProps> = ({
   const handleSave = () => {
     if (!editedStudy) return;
     
-    // Here you would typically convert the fullContentText back to ReactNode
-    // For simplicity, we're keeping the original fullContent
-    onSave(editedStudy);
+    // Convert fullContentText to ReactNode by creating JSX
+    // This is a simple implementation - for a real app, you might want a proper rich text editor
+    const fullContentJSX = (
+      <div dangerouslySetInnerHTML={{ __html: fullContentText.replace(/\n/g, '<br/>') }} />
+    );
+    
+    const updatedStudy = {
+      ...editedStudy,
+      fullContent: fullContentJSX
+    };
+    
+    onSave(updatedStudy);
     onClose();
   };
 
@@ -182,11 +192,16 @@ export const EditResearchModal: React.FC<EditResearchModalProps> = ({
                 </select>
               </div>
               
-              {/* Note: Editing fullContent is complex as it's a ReactNode
-                  In a real application, you might use a rich text editor
-                  For this example, we're keeping it simple */}
               <div className="space-y-2">
-                <Label htmlFor="fullContent">הערה: עריכת תוכן מלא זמינה רק בממשק המנהל המלא</Label>
+                <Label htmlFor="fullContentText">המאמר המלא:</Label>
+                <Textarea
+                  id="fullContentText"
+                  value={fullContentText}
+                  onChange={(e) => setFullContentText(e.target.value)}
+                  rows={8}
+                  className="min-h-[200px]"
+                  placeholder="הזן את תוכן המאמר המלא כאן. תומך בפסקאות וירידות שורה."
+                />
               </div>
             </div>
             
