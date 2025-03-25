@@ -923,12 +923,12 @@ const DashboardCoach = () => {
 
           <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#F1C40F] cursor-pointer" onClick={() => navigate('/tool-management?tab=videos')}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-medium">סרטוני וידאו</CardTitle>
+              <CardTitle className="text-lg font-medium">סרטונים + כלים מנטאליים</CardTitle>
               <Film className="h-5 w-5 text-[#F1C40F]" />
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-[#2C3E50]">{stats.totalReminders}</div>
-              <p className="text-sm text-gray-500">סרטונים זמינים</p>
+              <p className="text-sm text-gray-500">שליחת סרטונים לשחקנים + רשימת כלים מנטאליים</p>
             </CardContent>
           </Card>
         </div>
@@ -1013,7 +1013,7 @@ const DashboardCoach = () => {
               <p className="text-sm text-gray-500 mb-3">רשימת ספרים מומלצים בתחום הפסיכולוגיה של הספורט</p>
               <Button variant="default" className="w-full bg-[#3498DB] hover:bg-[#2980b9]">
                 <BookOpen className="h-4 w-4 mr-2" />
-                צפה בספרייה
+                צפה בספ��ייה
               </Button>
             </CardContent>
           </Card>
@@ -1141,3 +1141,4 @@ const DashboardCoach = () => {
 };
 
 export default DashboardCoach;
+
