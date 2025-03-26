@@ -237,7 +237,8 @@ const PlayerProfile = () => {
     );
   }
 
-  const profileImageUrl = player.profile_image || 'https://via.placeholder.com/150';
+  const defaultProfileImage = '/lovable-uploads/57c3b6c6-d0fe-4a40-825e-52d1b33225fa.png';
+  const profileImageUrl = player.profile_image || defaultProfileImage;
   const baseUrl = window.location.origin;
   const profileUrl = `${baseUrl}/dashboard/player-profile/${playerId}`;
   const playerLoginUrl = `${baseUrl}/player-auth`;
@@ -284,7 +285,7 @@ const PlayerProfile = () => {
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = 'https://via.placeholder.com/150?text=' + encodeURIComponent(player.full_name[0] || 'U');
+                      target.src = defaultProfileImage;
                     }}
                   />
                 </div>
@@ -696,7 +697,7 @@ const PlayerProfile = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <ClipboardList className="h-5 w-5 text-primary" />
-                    <h3 className="text-sm font-medium text-gray-900">הערות</h3>
+                    <h3 className="text-sm font-medium text-gray-700">הערות</h3>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg min-h-24 border border-gray-100">
                     <p className="whitespace-pre-wrap text-gray-700">
