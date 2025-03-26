@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen, Trophy } from 'lucide-react';
+import { Home, Settings, Bell, PieChart, UserPlus, CalendarPlus, Users, Calendar, BarChart2, Loader2, Send, Check, LogOut, ChevronDown, ChevronUp, Share2, FileEdit, Clock, AlertCircle, FileText, Eye, Plus, Target, ClipboardCheck, BookOpen, Trophy, Menu } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from '@/lib/supabase';
@@ -25,7 +25,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList} from 'lucide-react';
 
 interface DashboardStats {
   totalPlayers: number;
@@ -91,6 +91,44 @@ interface EventFormData {
   time: string;
   notes?: string;
 }
+
+const HeaderMenu = ({ 
+  navigate, 
+  setShowLandingPageDialog, 
+  setIsLogoutDialogOpen,
+  calendarEvents,
+  handleEventClick,
+  handleAddEvent,
+}: { 
+  navigate: (path: string) => void;
+  setShowLandingPageDialog: (show: boolean) => void;
+  setIsLogoutDialogOpen: (show: boolean) => void;
+  calendarEvents: CalendarEvent[];
+  handleEventClick: (eventId: string) => void;
+  handleAddEvent: (eventData: any) => Promise<void>;
+}) => {
+  return (
+    <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuItem onClick={() => setShowLandingPageDialog(true)}>
+        <FileEdit className="h-4 w-4 mr-2" />
+        צור עמוד נחיתה
+      </DropdownMenuItem>
+
+      <DropdownMenuItem onClick={() => navigate('/registration-links')}>
+        <Share2 className="h-4 w-4 mr-2" />
+        לינקי הרשמה
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => navigate('/profile-coach')}>
+        <Settings className="h-4 w-4 mr-2" />
+        הגדרות
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => setIsLogoutDialogOpen(true)} className="text-red-600">
+        <LogOut className="h-4 w-4 mr-2" />
+        התנתק
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  );
+};
 
 const DashboardCoach = () => {
   const navigate = useNavigate();
@@ -540,7 +578,7 @@ const DashboardCoach = () => {
       console.error('Error fetching calendar events:', error);
       toast({
         variant: "destructive",
-        title: "שגיאה בטעינת ה��פגשים",
+        title: "שגיאה בטעינת המפגשים",
         description: "אנא נסה שוב מאוחר יותר"
       });
     }
@@ -662,7 +700,7 @@ const DashboardCoach = () => {
       מפגשים: stats.lastMonthSessions,
       fill: '#F59E0B'
     }, {
-      name: 'החודש (בו��עו)',
+      name: 'החודש (בוועו)',
       מפגשים: stats.currentMonthPastSessions,
       fill: '#10B981'
     }, {
@@ -760,31 +798,20 @@ const DashboardCoach = () => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 rtl:space-x-reverse">
-              <div className="hidden md:flex">
-                <Button onClick={() => setShowLandingPageDialog(true)} variant="green" size="sm" className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-sm font-normal rounded-lg">
-                  <FileEdit className="h-3.5 w-3.5" />
-                  <span>צור עמוד נחיתה</span>
-                </Button>
-              </div>
-              
-              <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} onEventAdd={handleAddEvent} />
-              
-              <div className="hidden sm:block">
-                <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => navigate('/registration-links')}>
-                  <Share2 className="h-5 w-5 mr-1" />
-                  <span className="text-xs">לינקי הרשמה</span>
-                </Button>
-              </div>
-              
+            <div className="flex items-center gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative text-white hover:bg-white/10 h-9 w-9 p-0">
                     <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-[#E74C3C] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-[#E74C3C] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                         {unreadCount}
-                      </span>}
+                      </span>
+                    )}
                   </Button>
+
+                  
+                  
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80">
                   <div className="p-2 border-b dark:border-gray-700">
@@ -812,31 +839,65 @@ const DashboardCoach = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              <Button variant="ghost" className="text-white hover:bg-white/10 h-9 w-9 p-0" onClick={() => navigate('/profile-coach')}>
-                <Settings className="h-5 w-5" />
-              </Button>
-              
-              <Button variant="destructive" size="sm" onClick={() => setIsLogoutDialogOpen(true)} className="h-8 w-8 p-0">
-                <LogOut className="h-4 w-4" />
-              </Button>
-              
-              <div className="block md:hidden">
+              <div className="hidden md:flex items-center gap-2">
+                <Button 
+                  onClick={() => setShowLandingPageDialog(true)} 
+                  variant="green" 
+                  size="sm" 
+                  className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-sm font-normal rounded-lg"
+                >
+                  <FileEdit className="h-3.5 w-3.5" />
+                  <span>צור עמוד נחיתה</span>
+                </Button>
+                
+                <CalendarComponent 
+                  events={calendarEvents} 
+                  onEventClick={handleEventClick} 
+                  onEventAdd={handleAddEvent} 
+                />
+                
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:bg-white/10" 
+                  onClick={() => navigate('/registration-links')}
+                >
+                  <Share2 className="h-5 w-5 mr-1" />
+                  <span className="text-xs">לינקי הרשמה</span>
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  className="text-white hover:bg-white/10 h-9 w-9 p-0" 
+                  onClick={() => navigate('/profile-coach')}
+                >
+                  <Settings className="h-5 w-5" />
+                </Button>
+                
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => setIsLogoutDialogOpen(true)} 
+                  className="h-8 w-8 p-0"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="md:hidden">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="text-white border-white/20 bg-white/10 hover:bg-white/20">
-                      <ChevronDown className="h-4 w-4" />
+                    <Button variant="ghost" className="text-white hover:bg-white/10">
+                      <Menu className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setShowLandingPageDialog(true)} className="cursor-pointer">
-                      <FileEdit className="h-4 w-4 mr-2" />
-                      צור עמוד נחיתה
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate('/registration-links')} className="cursor-pointer">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      לינקי הרשמה
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                  <HeaderMenu 
+                    navigate={navigate}
+                    setShowLandingPageDialog={setShowLandingPageDialog}
+                    setIsLogoutDialogOpen={setIsLogoutDialogOpen}
+                    calendarEvents={calendarEvents}
+                    handleEventClick={handleEventClick}
+                    handleAddEvent={handleAddEvent}
+                  />
                 </DropdownMenu>
               </div>
             </div>
@@ -975,7 +1036,7 @@ const DashboardCoach = () => {
               <Target className="h-5 w-5 text-[#27ae60]" />
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-500 mb-3">מלא טו��ס הכנה למשחק עבור השחקנים</p>
+              <p className="text-sm text-gray-500 mb-3">מלא טופס הכנה למשחק עבור השחקנים</p>
               <Button variant="default" className="w-full bg-[#27ae60] hover:bg-[#219653]">
                 <Target className="h-4 w-4 mr-2" />
                 מלא טופס הכנה
@@ -1008,7 +1069,7 @@ const DashboardCoach = () => {
             </p>
               <Button variant="default" className="w-full bg-[#3498DB] hover:bg-[#2980b9]">
                 <BookOpen className="h-4 w-4 mr-2" />
-                צפה בספ��ייה
+                צפה בספרייה
               </Button>
             </CardContent>
           </Card>
@@ -1094,7 +1155,7 @@ const DashboardCoach = () => {
                   {upcomingSessions.length > 0 ? upcomingSessions.map(session => renderSessionCard(session)) : <div className="text-center p-6 bg-gray-50 rounded-lg">
                       <Calendar className="h-10 w-10 text-gray-400 mx-auto mb-2" />
                       <h3 className="text-lg font-medium text-gray-800">אין מפגשים קרובים</h3>
-                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים ���תוכננים בשבוע הקרוב</p>
+                      <p className="text-gray-500 mt-1">לא נמצאו מפגשים מתוכננים בשבוע הקרוב</p>
                     </div>}
                 </div>
               </TabsContent>

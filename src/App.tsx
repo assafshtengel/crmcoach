@@ -55,6 +55,7 @@ import PlayerQuestionnaires from '@/pages/player/PlayerQuestionnaires';
 import PlayerQuestionnaireForm from '@/pages/player/PlayerQuestionnaireForm';
 
 import "./App.css";
+import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 
 function App() {
   return (
@@ -67,6 +68,7 @@ function App() {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/player-auth" element={<PlayerAuth />} />
             <Route path="/signup-coach" element={<CoachSignUp />} />
+            <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
             <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
             
             {/* All other routes use the Layout component */}

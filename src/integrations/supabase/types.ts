@@ -1763,6 +1763,7 @@ export type Database = {
           achieved_goals: string[] | null
           additional_notes: string | null
           coach_id: string
+          player_id: string
           created_at: string
           future_goals: string[] | null
           id: string

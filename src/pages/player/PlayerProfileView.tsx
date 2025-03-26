@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +57,25 @@ interface PlayerGoals {
   updated_at?: string;
 }
 
+interface SessionSummary {
+  id: string;
+  achieved_goals: string[];
+  additional_notes?: string;
+  coach_id: string;
+  created_at: string;
+  future_goals: string[];
+  next_session_focus?: string;
+  player_id: string;
+  progress_rating: number;
+  summary_text?: string;
+  tools_used: string[];
+  session?: {
+    id: string;
+    session_date: string;
+    session_time: string;
+  };
+}
+
 const PlayerProfileView = () => {
   const navigate = useNavigate();
   const { isMobile } = useScreenSize();
@@ -68,7 +86,7 @@ const PlayerProfileView = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [upcomingSessions, setUpcomingSessions] = useState([]);
-  const [sessionSummaries, setSessionSummaries] = useState([]);
+  const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>([]);
   const [shortTermGoals, setShortTermGoals] = useState<Goal[]>([]);
   const [longTermGoals, setLongTermGoals] = useState<Goal[]>([]);
   const [playerGoalsId, setPlayerGoalsId] = useState<string | null>(null);
@@ -163,6 +181,9 @@ const PlayerProfileView = () => {
         }
 
         if (data.coach_id) {
+          console.log("coach_id", data.coach_id);
+          console.log("player_id", data.id);
+          
           const { data: sessionsData, error: sessionsError } = await supabase
             .from("sessions")
             .select("*")
@@ -186,10 +207,9 @@ const PlayerProfileView = () => {
                 session_time
               )
             `)
-            .eq("coach_id", data.coach_id)
-            .order("created_at", { ascending: false })
-            .limit(5);
-
+            .eq("player_id", data.id)
+            .order("created_at", { ascending: false });
+          console.log("summariesData", summariesData);
           if (!summariesError && summariesData) {
             const uniqueSummaries = new Map();
             
@@ -200,6 +220,9 @@ const PlayerProfileView = () => {
             });
             
             setSessionSummaries(Array.from(uniqueSummaries.values()));
+          } else if (summariesError) {
+            console.error("Error fetching session summaries:", summariesError);
+            toast.error("שגיאה בטעינת סיכומי המפגשים");
           }
         }
       } catch (error: any) {
@@ -395,7 +418,7 @@ const PlayerProfileView = () => {
     );
   }
 
-  const profileImageUrl = player.profile_image || 'https://via.placeholder.com/150';
+  const profileImageUrl = player.profile_image || 'https://api.dicebear.com/7.x/bottts/svg?seed=user123';
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -579,7 +602,7 @@ const PlayerProfileView = () => {
                   className="w-full h-full object-cover rounded-full"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = 'https://via.placeholder.com/150?text=' + encodeURIComponent(player.full_name[0] || 'U');
+                    target.src = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDE1MCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiNFNUFFRkYiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI0ZGNzY3NiIgZm9udC1zaXplPSI0MCIgZm9udC1mYW1pbHk9IkFyaWFsIj57cGxheWVyLmZ1bGxfbmFtZVswXX08L3RleHQ+PC9zdmc+`;
                   }}
                 />
               </div>
@@ -726,7 +749,7 @@ const PlayerProfileView = () => {
                   <CardHeader className="bg-gradient-to-r from-[#F2FCE2]/50 to-[#E5DEFF]/50 pb-3">
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <FileText className="h-5 w-5 text-primary" />
-                      סיכומי מפגשים אחרונים
+                      סיכומי מפגשים
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4">
@@ -739,39 +762,87 @@ const PlayerProfileView = () => {
                             {...cardAnimationProps}
                           >
                             <div className="flex flex-col md:flex-row justify-between gap-4 mb-3">
-                              <div className="flex gap-4 items-start">
+                              <div className="flex gap-4 items-start w-full">
                                 <div className="bg-primary/10 p-3 rounded-full text-primary flex-shrink-0">
                                   <FileText className="h-5 w-5" />
                                 </div>
-                                <div>
-                                  <p className="font-semibold text-lg">
-                                    {summary.session && summary.session.session_date ? 
-                                      formatDate(summary.session.session_date) : 
-                                      "תאריך לא ידוע"}
-                                  </p>
-                                  <p className="text-gray-500">
-                                    {summary.session && summary.session.session_time ?
-                                      summary.session.session_time : ""}
-                                  </p>
-                                  {summary.title && (
-                                    <p className="text-gray-700 mt-1">{summary.title}</p>
+                                <div className="w-full">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div>
+                                      <p className="font-semibold text-lg">
+                                        {summary.session?.session_date ? 
+                                          formatDate(summary.session.session_date) : 
+                                          formatDate(summary.created_at)}
+                                      </p>
+                                      {summary.session?.session_time && (
+                                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                                          {summary.session.session_time}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      {[...Array(5)].map((_, index) => (
+                                        <div
+                                          key={index}
+                                          className={`h-5 w-5 ${
+                                            index < summary.progress_rating
+                                              ? 'text-yellow-400'
+                                              : 'text-gray-200'
+                                          }`}
+                                        >
+                                          ★
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  {summary.summary_text && (
+                                    <div className="mt-4">
+                                      <p className="text-sm font-medium text-gray-600">סיכום המפגש:</p>
+                                      <p className="text-sm text-gray-800 whitespace-pre-wrap mt-1">{summary.summary_text}</p>
+                                    </div>
                                   )}
+
+                                  {summary.achieved_goals && summary.achieved_goals.length > 0 && (
+                                    <div className="mt-4">
+                                      <p className="text-sm font-medium text-gray-600">מטרות שהושגו:</p>
+                                      <p className="text-sm text-gray-800 whitespace-pre-wrap mt-1 text-center"> {summary?.achieved_goals[0]}</p>
+                                    </div>
+                                  )}
+
+                                  {summary.tools_used && summary.tools_used.length > 0 && (
+                                    <div className="mt-4">
+                                      <p className="text-sm font-medium text-gray-600">כלים שהיו בשימוש:</p>
+                                      <div className="flex flex-wrap gap-2 mt-1">
+                                        {summary.tools_used.map((tool, index) => (
+                                          <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                            {tool}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {summary.additional_notes && (
+                                    <div className="mt-4">
+                                      <p className="text-sm font-medium text-gray-600">הערות נוספות:</p>
+                                      <p className="text-sm text-gray-800 whitespace-pre-wrap mt-1">{summary.additional_notes}</p>
+                                    </div>
+                                  )}
+
+                                  {summary.next_session_focus && (
+                                    <div className="mt-4">
+                                      <p className="text-sm font-medium text-gray-600">מיקוד למפגש הבא:</p>
+                                      <p className="text-sm text-gray-800 whitespace-pre-wrap mt-1">{summary.next_session_focus}</p>
+                                    </div>
+                                  )}
+
+                                  <p className="text-xs text-gray-500 mt-4">
+                                    נוצר בתאריך: {formatDate(summary.created_at)}
+                                  </p>
                                 </div>
                               </div>
                             </div>
-                            {summary.content && (
-                              <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
-                                <p className="text-sm text-gray-600 line-clamp-3">{summary.content}</p>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="text-primary hover:text-primary/80 hover:bg-primary/5 mt-2 gap-1"
-                                >
-                                  <span>קרא עוד</span>
-                                  <ChevronRight className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            )}
                           </motion.div>
                         ))}
                       </div>

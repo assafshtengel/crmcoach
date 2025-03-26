@@ -13,7 +13,8 @@ export const formSchema = z.object({
   ]).transform(val => typeof val === 'string' ? val : val.join('\n')),
   additional_notes: z.string().optional(),
   progress_rating: z.number().min(1).max(5),
-  next_session_focus: z.string()
+  next_session_focus: z.string(),
+  player_id: z.string()
 });
 
 export type FormValues = z.infer<typeof formSchema>;

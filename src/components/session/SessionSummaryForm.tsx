@@ -40,7 +40,7 @@ export function SessionSummaryForm({
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
   const { tools, selectedTools, setSelectedTools, loading } = useTools();
-  
+  console.log("playerId", playerId);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -49,15 +49,17 @@ export function SessionSummaryForm({
       future_goals: "",
       additional_notes: "",
       progress_rating: 3,
-      next_session_focus: ""
+      next_session_focus: "",
+      player_id: playerId
     }
   });
 
   const handleSubmit = async (data: FormValues) => {
     setIsSaving(true);
+    console.log("data", data);
     try {
       console.log("Submitting form data with player ID:", playerId);
-      console.log("Complete form data:", { ...data, tools_used: selectedTools, playerId });
+      console.log("Complete form data:", { ...data, tools_used: selectedTools });
       
       await onSubmit({ ...data, tools_used: selectedTools });
       console.log("Form submitted successfully");
