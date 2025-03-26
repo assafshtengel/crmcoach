@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -239,6 +240,9 @@ const PlayerProfile = () => {
   }
 
   const profileImageUrl = player.profile_image || DEFAULT_PROFILE_IMAGE;
+  const baseUrl = window.location.origin;
+  const profileUrl = `${baseUrl}/dashboard/player-profile/${playerId}`;
+  const playerLoginUrl = `${baseUrl}/player-auth`;
 
   return (
     <div className="min-h-screen bg-page">
