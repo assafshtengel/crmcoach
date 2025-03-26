@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { DEFAULT_PROFILE_IMAGE } from '@/components/new-player/ImageUpload';
 
 interface Player {
   id: string;
@@ -237,11 +238,7 @@ const PlayerProfile = () => {
     );
   }
 
-  const defaultProfileImage = '/lovable-uploads/57c3b6c6-d0fe-4a40-825e-52d1b33225fa.png';
-  const profileImageUrl = player.profile_image || defaultProfileImage;
-  const baseUrl = window.location.origin;
-  const profileUrl = `${baseUrl}/dashboard/player-profile/${playerId}`;
-  const playerLoginUrl = `${baseUrl}/player-auth`;
+  const profileImageUrl = player.profile_image || DEFAULT_PROFILE_IMAGE;
 
   return (
     <div className="min-h-screen bg-page">
@@ -285,7 +282,7 @@ const PlayerProfile = () => {
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = defaultProfileImage;
+                      target.src = DEFAULT_PROFILE_IMAGE;
                     }}
                   />
                 </div>
