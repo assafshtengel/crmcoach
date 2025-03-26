@@ -521,9 +521,7 @@ const PlayerProfileView = () => {
           <div className="relative h-24 md:h-32 bg-gradient-to-r from-primary to-[#7E69AB] rounded-t-xl"></div>
           <div className="bg-white rounded-b-xl p-0">
             <div className="flex flex-col md:flex-row items-center gap-6 p-6 relative -mt-12">
-              <div className="w-24 h-24 relative rounded-full overflow-hidden flex-shrink-0 border-4 border-white bg-white shadow-lg">
-                
-              </div>
+              
               <div className="text-center md:text-right flex-1 mt-6 md:mt-12">
                 <h2 className="text-2xl font-bold text-gray-900">{player.full_name}</h2>
                 <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
