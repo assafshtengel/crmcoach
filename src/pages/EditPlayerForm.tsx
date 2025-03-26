@@ -15,7 +15,6 @@ import { PlayerAdditionalInfo } from '@/components/new-player/PlayerAdditionalIn
 import { ImageUpload } from '@/components/new-player/ImageUpload';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { DEFAULT_PROFILE_IMAGE } from '@/components/new-player/ImageUpload';
 
 const EditPlayerForm = () => {
   const navigate = useNavigate();
@@ -25,7 +24,7 @@ const EditPlayerForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPdfExporting, setIsPdfExporting] = useState(false);
   const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>(DEFAULT_PROFILE_IMAGE);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
   const [initialSportField, setInitialSportField] = useState('');
   const [initialOtherSportField, setInitialOtherSportField] = useState('');
   const [loading, setLoading] = useState(true);

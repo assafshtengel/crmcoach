@@ -5,8 +5,6 @@ import { Image, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-const DEFAULT_PROFILE_IMAGE = '/lovable-uploads/e1817c5d-6a43-4bc9-b689-cb52738451cc.png';
-
 interface ImageUploadProps {
   onImageUpload: (file: File) => void;
   onImageRemove: () => void;
@@ -78,5 +76,3 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     </div>
   );
 };
-
-export { DEFAULT_PROFILE_IMAGE };

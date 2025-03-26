@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,6 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { DEFAULT_PROFILE_IMAGE } from '@/components/new-player/ImageUpload';
 
 interface Player {
   id: string;
@@ -239,7 +237,7 @@ const PlayerProfile = () => {
     );
   }
 
-  const profileImageUrl = player.profile_image || DEFAULT_PROFILE_IMAGE;
+  const profileImageUrl = player.profile_image || 'https://via.placeholder.com/150';
   const baseUrl = window.location.origin;
   const profileUrl = `${baseUrl}/dashboard/player-profile/${playerId}`;
   const playerLoginUrl = `${baseUrl}/player-auth`;
@@ -286,7 +284,7 @@ const PlayerProfile = () => {
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = DEFAULT_PROFILE_IMAGE;
+                      target.src = 'https://via.placeholder.com/150?text=' + encodeURIComponent(player.full_name[0] || 'U');
                     }}
                   />
                 </div>
@@ -698,7 +696,7 @@ const PlayerProfile = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <ClipboardList className="h-5 w-5 text-primary" />
-                    <h3 className="text-sm font-medium text-gray-700">הערות</h3>
+                    <h3 className="text-sm font-medium text-gray-900">הערות</h3>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg min-h-24 border border-gray-100">
                     <p className="whitespace-pre-wrap text-gray-700">
