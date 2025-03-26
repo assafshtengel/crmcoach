@@ -424,6 +424,7 @@ const DashboardCoach = () => {
       } = await supabase.from('session_summaries').insert({
         session_id: sessionId,
         coach_id: user.id,
+        player_id: data.player_id,
         summary_text: data.summary_text,
         achieved_goals: data.achieved_goals.split('\n').filter(Boolean),
         future_goals: data.future_goals.split('\n').filter(Boolean),

@@ -191,7 +191,7 @@ const PlayerProfileView = () => {
             .eq("coach_id", data.coach_id)
             .gte("session_date", new Date().toISOString().split('T')[0])
             .order("session_date", { ascending: true })
-            .limit(5);
+            .limit(20);
 
           if (!sessionsError && sessionsData) {
             setUpcomingSessions(sessionsData);
