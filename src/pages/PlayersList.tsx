@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -244,6 +245,7 @@ const PlayersList = () => {
       
       if (error) throw error;
       
+      // Update both players and filteredPlayers arrays to ensure proper UI update
       setPlayers(prevPlayers => prevPlayers.filter(player => player.id !== playerToDelete.id));
       setFilteredPlayers(prevFiltered => prevFiltered.filter(player => player.id !== playerToDelete.id));
       
@@ -739,10 +741,10 @@ const PlayersList = () => {
             <TabsContent value="cards" className="w-full">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPlayers.map(player => {
-              const sessionStatus = getSessionStatus(player);
-              const baseUrl = window.location.origin;
-              const profileUrl = `${baseUrl}/player-profile/${player.id}`;
-              return <div key={player.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
+                  const sessionStatus = getSessionStatus(player);
+                  const baseUrl = window.location.origin;
+                  const profileUrl = `${baseUrl}/player-profile/${player.id}`;
+                  return <div key={player.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-4">
                       <div className="flex justify-between mb-3">
                         <div className="text-right flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -777,3 +779,79 @@ const PlayersList = () => {
                         </div>
                         <div>
                           <p className="text-gray-500">מפגש עתידי:</p>
+                          <div className={`flex items-center gap-1.5 mt-1 ${sessionStatus.color}`}>
+                            {sessionStatus.icon}
+                            {player.next_session_date ? <span className="text-sm">
+                                {formatDate(player.next_session_date)} {formatTime(player.next_session_time)}
+                              </span> : <span className="text-sm">
+                                {sessionStatus.type === 'no_activity' ? 'ללא פעילות' : 'לא נקבע'}
+                              </span>}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-2 mb-4 pt-2 border-t border-gray-100">
+                        <p className="text-gray-500 text-sm mb-1">פרטי גישה:</p>
+                        <div className="flex justify-between items-center">
+                          <div className="max-w-[70%] truncate">
+                            <p dir="ltr" className="text-xs text-gray-600 font-mono truncate">{profileUrl}</p>
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => copyPlayerLink(player.id)} className="h-7 gap-1">
+                            {copiedPlayerId === player.id ? <CheckCircle className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                            העתק קישור
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between">
+                        <Button variant="outline" size="sm" onClick={() => handleViewProfile(player.id)}>
+                          <UserCircle className="h-4 w-4 mr-1" />
+                          פרופיל
+                        </Button>
+                        
+                        <Button variant="outline" size="sm" onClick={() => handleEditPlayer(player.id)}>
+                          <Pencil className="h-4 w-4 mr-1" />
+                          עריכה
+                        </Button>
+                        
+                        <Button variant="outline" size="sm" onClick={() => handleScheduleSession(player.id, player.full_name)}>
+                          <Calendar className="h-4 w-4 mr-1" />
+                          קבע מפגש
+                        </Button>
+                        
+                        <Button variant="outline" size="sm" onClick={() => setPlayerToDelete({
+                    id: player.id,
+                    name: player.full_name
+                  })} className="text-red-600 hover:text-red-700">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>;
+                })}
+              </div>
+            </TabsContent>
+          </Tabs>}
+
+        <AlertDialog open={!!playerToDelete} onOpenChange={() => setPlayerToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+              <AlertDialogDescription>
+                האם אתה בטוח שברצונך למחוק את השחקן {playerToDelete?.name}?
+                <br />
+                פעולה זו לא ניתנת לביטול.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>ביטול</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+                מחק
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>;
+};
+
+export default PlayersList;
