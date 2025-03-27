@@ -1091,7 +1091,7 @@ const DashboardCoach = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#FF5722] cursor-pointer" onClick={() => navigate('/questionnaires')}>
+          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#FF5722]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-medium">שאלונים</CardTitle>
               <div className="flex items-center">
@@ -1104,7 +1104,11 @@ const DashboardCoach = () => {
                 צפה בשאלונים שמולאו על ידי השחקנים
                 <span className="block mt-1 text-amber-600 font-medium">* בבנייה כעת *</span>
               </p>
-              <Button variant="default" className="w-full bg-[#FF5722] hover:bg-[#E64A19]">
+              <Button 
+                variant="default" 
+                className="w-full bg-[#FF5722] hover:bg-[#E64A19] cursor-not-allowed opacity-50" 
+                disabled
+              >
                 <ClipboardList className="h-4 w-4 mr-2" />
                 צפה בשאלונים
               </Button>
