@@ -237,11 +237,16 @@ const PlayersList = () => {
   const handleDeleteConfirm = async () => {
     if (!playerToDelete) return;
     try {
-      const {
-        error
-      } = await supabase.from('players').delete().eq('id', playerToDelete.id);
+      const { error } = await supabase
+        .from('players')
+        .delete()
+        .eq('id', playerToDelete.id);
+      
       if (error) throw error;
-      setPlayers(players.filter(player => player.id !== playerToDelete.id));
+      
+      setPlayers(prevPlayers => prevPlayers.filter(player => player.id !== playerToDelete.id));
+      setFilteredPlayers(prevFiltered => prevFiltered.filter(player => player.id !== playerToDelete.id));
+      
       toast.success('השחקן נמחק בהצלחה');
       setPlayerToDelete(null);
     } catch (error: any) {

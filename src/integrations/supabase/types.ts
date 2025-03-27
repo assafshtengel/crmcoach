@@ -1723,6 +1723,42 @@ export type Database = {
           },
         ]
       }
+      questionnaire_templates: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_system_template: boolean | null
+          order: number | null
+          questions: Json
+          title: string
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_system_template?: boolean | null
+          order?: number | null
+          questions: Json
+          title: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_system_template?: boolean | null
+          order?: number | null
+          questions?: Json
+          title?: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       registration_links: {
         Row: {
           coach_id: string
@@ -1763,11 +1799,11 @@ export type Database = {
           achieved_goals: string[] | null
           additional_notes: string | null
           coach_id: string
-          player_id: string
           created_at: string
           future_goals: string[] | null
           id: string
           next_session_focus: string | null
+          player_id: string | null
           progress_rating: number | null
           session_id: string
           summary_text: string
@@ -1781,6 +1817,7 @@ export type Database = {
           future_goals?: string[] | null
           id?: string
           next_session_focus?: string | null
+          player_id?: string | null
           progress_rating?: number | null
           session_id: string
           summary_text: string
@@ -1794,6 +1831,7 @@ export type Database = {
           future_goals?: string[] | null
           id?: string
           next_session_focus?: string | null
+          player_id?: string | null
           progress_rating?: number | null
           session_id?: string
           summary_text?: string
