@@ -8,11 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Target, Clock, ListChecks, CheckCircle2, CalendarIcon, Home, PencilIcon } from "lucide-react";
+import { Target, Clock, ListChecks, CheckCircle2, CalendarIcon, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, parse, isValid } from "date-fns";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -44,8 +44,6 @@ const Goals = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [open, setOpen] = useState(false);
-  const [manualDateInput, setManualDateInput] = useState<string>('');
-  const [showManualInput, setShowManualInput] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -71,7 +69,6 @@ const Goals = () => {
         due_date: date.toISOString()
       }));
       setOpen(false);
-      setManualDateInput(format(date, "dd/MM/yyyy"));
       setTimeout(() => {
         if (titleInputRef.current) {
           titleInputRef.current.focus();
@@ -287,24 +284,6 @@ const Goals = () => {
     }
   };
 
-  const handleManualDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setManualDateInput(value);
-    
-    const parsedDate = parse(value, "dd/MM/yyyy", new Date());
-    
-    if (isValid(parsedDate)) {
-      setDate(parsedDate);
-    }
-  };
-
-  const toggleDateInputMode = () => {
-    setShowManualInput(!showManualInput);
-    if (!showManualInput && date) {
-      setManualDateInput(format(date, "dd/MM/yyyy"));
-    }
-  };
-
   return (
     <div className="container mx-auto py-6">
       <div className="flex flex-col items-center mb-8">
@@ -382,54 +361,31 @@ const Goals = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <Label htmlFor="due_date">תאריך יעד</Label>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={toggleDateInputMode} 
-                          className="h-6 px-2 py-1 text-xs"
-                        >
-                          {showManualInput ? <CalendarIcon className="h-3 w-3 mr-1" /> : <PencilIcon className="h-3 w-3 mr-1" />}
-                          {showManualInput ? "בחר מלוח שנה" : "הזן תאריך ידנית"}
-                        </Button>
-                      </div>
-
-                      {showManualInput ? (
-                        <Input
-                          id="manual_date"
-                          value={manualDateInput}
-                          onChange={handleManualDateChange}
-                          placeholder="DD/MM/YYYY"
-                          className="text-right"
-                        />
-                      ) : (
-                        <Popover open={open} onOpenChange={setOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              id="due_date"
-                              variant={"outline"}
-                              className={cn(
-                                "w-full justify-start text-right font-normal",
-                                !date && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarIcon className="ml-2 h-4 w-4" />
-                              {date ? format(date, "dd/MM/yyyy") : <span>בחר תאריך</span>}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0 bg-white" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={date}
-                              onSelect={setDate}
-                              initialFocus
-                              className={cn("p-3 pointer-events-auto bg-white")}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      )}
+                      <Label htmlFor="due_date">תאריך יעד</Label>
+                      <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            id="due_date"
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-right font-normal",
+                              !date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="ml-2 h-4 w-4" />
+                            {date ? format(date, "dd/MM/yyyy") : <span>בחר תאריך</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-white" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto bg-white")}
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -590,3 +546,4 @@ const Goals = () => {
 };
 
 export default Goals;
+

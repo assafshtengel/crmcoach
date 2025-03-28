@@ -43,7 +43,6 @@ const NotificationsDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState<Record<string, boolean>>({});
   const [isMarkingRead, setIsMarkingRead] = useState<Record<string, boolean>>({});
-  const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -104,45 +103,6 @@ const NotificationsDashboard = () => {
   useEffect(() => {
     fetchData();
   }, []);
-
-  // Add this new effect to mark all notifications as read when the notification popup opens
-  useEffect(() => {
-    if (showNotifications && notifications.length > 0) {
-      const unreadNotifications = notifications.filter(notification => !notification.read);
-      
-      if (unreadNotifications.length > 0) {
-        // Update the UI state immediately
-        setNotifications(prev => 
-          prev.map(notification => 
-            !notification.read ? { ...notification, read: true } : notification
-          )
-        );
-        
-        // Update the database in the background
-        const updateNotifications = async () => {
-          const unreadIds = unreadNotifications.map(notification => notification.id);
-          
-          try {
-            const { error } = await supabase
-              .from("notifications_log")
-              .update({ read: true })
-              .in('id', unreadIds);
-              
-            if (error) {
-              console.error('Error marking notifications as read:', error);
-              // Revert UI state if database update fails
-              fetchData();
-            }
-          } catch (error) {
-            console.error('Error marking notifications as read:', error);
-            fetchData();
-          }
-        };
-        
-        updateNotifications();
-      }
-    }
-  }, [showNotifications]);
 
   const handleSendReminder = async (session: Session) => {
     if (isSending[session.id]) return;
@@ -310,17 +270,6 @@ const NotificationsDashboard = () => {
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="p-4 border-b">
             <h2 className="text-lg font-semibold">היסטוריית תזכורות</h2>
-            <div className="mt-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-2"
-                onClick={() => setShowNotifications(!showNotifications)}
-              >
-                <Bell className="h-4 w-4" />
-                {showNotifications ? 'הסתר התראות' : 'הצג את כל ההתראות'}
-              </Button>
-            </div>
           </div>
           <Table>
             <TableHeader>
