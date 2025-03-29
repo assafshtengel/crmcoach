@@ -25,7 +25,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
-import { ClipboardList} from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 
 const DashboardCoach = () => {
   const navigate = useNavigate();
