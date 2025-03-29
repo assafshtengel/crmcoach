@@ -31,22 +31,22 @@ const DashboardCoach = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [coach, setCoach] = useState<any>(null);
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [tools, setTools] = useState<Tool[]>([]);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [is কূপModalOpen, setIsKupModalOpen] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<any>(null);
-  const [isSessionSummaryOpen, setIsSessionSummaryOpen] = useState(false);
-  const [isAllMeetingSummariesOpen, setIsAllMeetingSummariesOpen] = useState(false);
-  const [isSessionFormDialogOpen, setIsSessionFormDialogOpen] = useState(false);
-  const [isLandingPageDialogOpen, setIsLandingPageDialogOpen] = useState(false);
-  const [events, setEvents] = useState([]);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isCollapsibleOpen, setIsCollapsibleOpen] = useState(false);
-  const [isMessageFormOpen, setIsMessageFormOpen] = useState(false);
+  const [coach, setCoach] = useState<any>(null),
+    [sessions, setSessions] = useState<any[]>([]),
+    [tools, setTools] = useState<Tool[]>([]),
+    [isSettingsOpen, setIsSettingsOpen] = useState(false),
+    [is কূপModalOpen, setIsKupModalOpen] = useState(false),
+    [selectedSession, setSelectedSession] = useState<any>(null),
+    [isSessionSummaryOpen, setIsSessionSummaryOpen] = useState(false),
+    [isAllMeetingSummariesOpen, setIsAllMeetingSummariesOpen] = useState(false),
+    [isSessionFormDialogOpen, setIsSessionFormDialogOpen] = useState(false),
+    [isLandingPageDialogOpen, setIsLandingPageDialogOpen] = useState(false),
+    [events, setEvents] = useState([]),
+    [currentMonth, setCurrentMonth] = useState(new Date()),
+    [selectedEvent, setSelectedEvent] = useState(null),
+    [isDialogOpen, setIsDialogOpen] = useState(false),
+    [isCollapsibleOpen, setIsCollapsibleOpen] = useState(false),
+    [isMessageFormOpen, setIsMessageFormOpen] = useState(false);
 
   useEffect(() => {
     fetchCoachData();
