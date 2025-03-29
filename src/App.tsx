@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -47,6 +48,7 @@ import PublicRegistrationForm from '@/pages/PublicRegistrationForm';
 import AllMeetingSummaries from '@/pages/AllMeetingSummaries';
 import Goals from '@/pages/Goals';
 import PlayerProfileView from '@/pages/player/PlayerProfileView';
+import PlayerProfileAlternative from '@/pages/player/PlayerProfileAlternative';
 import NotFound from '@/pages/NotFound';
 import MentalLibrary from '@/pages/MentalLibrary';
 import PlayerGameEvaluationForm from '@/pages/player/PlayerGameEvaluationForm';
