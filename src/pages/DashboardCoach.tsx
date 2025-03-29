@@ -812,7 +812,7 @@ const DashboardCoach = () => {
               <div className="hidden md:flex items-center gap-2">
                 <Button onClick={() => setShowLandingPageDialog(true)} variant="green" size="sm" className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-sm font-normal rounded-lg">
                   <FileEdit className="h-3.5 w-3.5" />
-                  <span>צור עמוד נחיתה</span>
+                  <span className="text-pink-300">צור עמוד נחיתה -בבנייה </span>
                 </Button>
                 
                 <CalendarComponent events={calendarEvents} onEventClick={handleEventClick} onEventAdd={handleAddEvent} />
@@ -1023,16 +1023,19 @@ const DashboardCoach = () => {
               <ClipboardCheck className="h-5 w-5 text-[#9C27B0]" />
             </CardHeader>
             <CardContent>
-              <p className="mb-3 text-xs my-[22px] text-neutral-50">מילוי דוח איבחון שחקן לאחר משחק  
+              <p className="mb-3 text-xs my-[22px] text-neutral-50">מילוי דוח איבחון שחקן לאחר משחק   
 
 
-שליחת חשבוניות מס לאחר תשלום  
+שליחת חשבוניות מס לאחר תשלום   
 
 
-שאלות לשחקן 
+שאלות לשחקן   
 
 
- מטרות לשחקן </p>
+מטרות לשחקן 
+
+
+בניית עמוד נחיתה לשחקן </p>
               
             </CardContent>
           </Card>
