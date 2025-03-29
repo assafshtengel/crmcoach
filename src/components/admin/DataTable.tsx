@@ -25,11 +25,13 @@ import { Card, CardContent } from "@/components/ui/card";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  onRowAction?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onRowAction,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -52,6 +54,13 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     state: {
       sorting,
+    },
+    meta: {
+      onRowAction: (row: TData) => {
+        if (onRowAction) {
+          onRowAction(row);
+        }
+      },
     },
   });
 
