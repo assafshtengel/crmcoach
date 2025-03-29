@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,6 @@ import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { User, Calendar, FileText, Video, ArrowRight, LogOut } from 'lucide-react';
 
-// Using same interfaces as the original profile page for consistency
 interface PlayerData {
   id: string;
   full_name: string;
@@ -60,7 +58,7 @@ const PlayerProfileAlternative = () => {
   const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
   const [pastSessions, setPastSessions] = useState<Session[]>([]);
   const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>([]);
-  const [videos, setVideos] = useState<any[]>([]); // Using any for simplicity in this test page
+  const [videos, setVideos] = useState<any[]>([]);
 
   useEffect(() => {
     const loadPlayerData = async () => {
@@ -75,7 +73,6 @@ const PlayerProfileAlternative = () => {
 
         const sessionData = JSON.parse(playerSession);
         
-        // Fetch player data
         const { data, error } = await supabase
           .from("players")
           .select("*")
@@ -85,12 +82,9 @@ const PlayerProfileAlternative = () => {
         if (error) throw error;
         setPlayer(data);
         
-        // For this test page, we'll use sample data for some sections
         if (data.coach_id) {
-          // Fetch sessions
           const today = new Date().toISOString().split('T')[0];
           
-          // Upcoming sessions
           const { data: upcomingData, error: upcomingError } = await supabase
             .from("sessions")
             .select("*")
@@ -102,7 +96,6 @@ const PlayerProfileAlternative = () => {
             setUpcomingSessions(upcomingData);
           }
           
-          // Past sessions
           const { data: pastData, error: pastError } = await supabase
             .from("sessions")
             .select("*")
@@ -115,7 +108,6 @@ const PlayerProfileAlternative = () => {
             setPastSessions(pastData);
           }
 
-          // Fetch summaries
           const { data: summariesData, error: summariesError } = await supabase
             .from("session_summaries")
             .select(`
@@ -133,7 +125,6 @@ const PlayerProfileAlternative = () => {
             setSessionSummaries(summariesData);
           }
 
-          // Fetch videos
           const { data: videosData, error: videosError } = await supabase
             .from("videos")
             .select("*")
@@ -195,7 +186,6 @@ const PlayerProfileAlternative = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F2FCE2] to-[#E5DEFF]">
-      {/* Header bar */}
       <header className="w-full bg-primary text-white py-3 shadow-lg sticky top-0 z-10 backdrop-blur-sm bg-opacity-95">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <h1 className="text-lg md:text-2xl font-bold">פרופיל שחקן - תצוגה חלופית</h1>
@@ -212,7 +202,6 @@ const PlayerProfileAlternative = () => {
       </header>
 
       <div className="container mx-auto px-4 py-6">
-        {/* Player Header Section */}
         <motion.div 
           className="rounded-xl overflow-hidden shadow-lg mb-6"
           initial={{ opacity: 0, y: 20 }}
@@ -258,7 +247,6 @@ const PlayerProfileAlternative = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Personal Details Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -300,7 +288,6 @@ const PlayerProfileAlternative = () => {
             </Card>
           </motion.div>
 
-          {/* Videos Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -345,7 +332,6 @@ const PlayerProfileAlternative = () => {
           </motion.div>
         </div>
 
-        {/* Sessions Section */}
         <motion.div
           className="mt-6"
           initial={{ opacity: 0, y: 20 }}
@@ -451,7 +437,6 @@ const PlayerProfileAlternative = () => {
           </Card>
         </motion.div>
 
-        {/* Session Summaries Section */}
         <motion.div
           className="mt-6"
           initial={{ opacity: 0, y: 20 }}
