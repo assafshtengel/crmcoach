@@ -1,9 +1,10 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen, FileEdit, RefreshCw, Wrench } from "lucide-react";
+import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen, FileEdit, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -44,6 +45,7 @@ const Index = () => {
       if (user) {
         setUserId(user.id);
         
+        // Get the user's coach ID (from the players table)
         const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('coach_id')
@@ -55,6 +57,8 @@ const Index = () => {
         } else {
           console.error("Error fetching player's coach ID:", playerError);
         }
+        
+        // We no longer need to manually fetch videos here since that's handled in the VideosTab
       } else {
         console.log("No authenticated user found");
         setLoading(false);
@@ -250,6 +254,7 @@ const Index = () => {
                 variant="outline" 
                 onClick={() => {
                   if (userId && coachId) {
+                    // This just refreshes the component
                     setLoading(true);
                     setTimeout(() => setLoading(false), 100);
                   }
@@ -311,28 +316,6 @@ const Index = () => {
             </Card>
           </TabsContent>
         </Tabs>
-
-        <Card className="my-8 relative z-10 block hover:shadow-lg transition-all duration-300 border-cyan-500 border-t-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl flex items-center gap-2 text-cyan-700">
-              <Wrench className="h-5 w-5 text-cyan-600" />
-              מילוי דוח איבחון משחק
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">
-              מלא דוח אבחון מקצועי על שחקן לאחר משחק.
-            </p>
-            <Button 
-              onClick={() => window.location.href = "https://hebrew-performance-review.lovable.app/"} 
-              variant="outline" 
-              className="flex items-center gap-2 border-cyan-500 text-cyan-700 hover:bg-cyan-50"
-            >
-              מעבר לדוח איבחון
-              <ExternalLink className="h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
       </div>
 
       <LandingPageDialog
