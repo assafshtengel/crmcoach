@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,59 +44,56 @@ const PlayerProfileAlternative = () => {
         if (error) throw error;
         setPlayer(data);
         
+        const playerId = sessionData.id;
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: upcomingData, error: upcomingError } = await supabase
+          .from("sessions")
+          .select("*")
+          .eq("player_id", playerId)
+          .gte("session_date", today)
+          .order("session_date", { ascending: true });
+        
+        if (!upcomingError && upcomingData) {
+          setUpcomingSessions(upcomingData);
+        } else if (upcomingError) {
+          console.error("Error fetching upcoming sessions:", upcomingError);
+        }
+        
+        const { data: pastData, error: pastError } = await supabase
+          .from("sessions")
+          .select("*")
+          .eq("player_id", playerId)
+          .lt("session_date", today)
+          .order("session_date", { ascending: false })
+          .limit(10);
+        
+        if (!pastError && pastData) {
+          setPastSessions(pastData);
+        } else if (pastError) {
+          console.error("Error fetching past sessions:", pastError);
+        }
+
+        const { data: summariesData, error: summariesError } = await supabase
+          .from("session_summaries")
+          .select(`
+            *,
+            session:sessions (
+              id,
+              session_date,
+              session_time
+            )
+          `)
+          .eq("player_id", playerId)
+          .order("created_at", { ascending: false });
+        
+        if (!summariesError && summariesData) {
+          setSessionSummaries(summariesData);
+        } else if (summariesError) {
+          console.error("Error fetching session summaries:", summariesError);
+        }
+
         if (data.coach_id) {
-          const today = new Date().toISOString().split('T')[0];
-          
-          // Fetch upcoming sessions
-          const { data: upcomingData, error: upcomingError } = await supabase
-            .from("sessions")
-            .select("*")
-            .eq("player_id", data.id)
-            .gte("session_date", today)
-            .order("session_date", { ascending: true });
-          
-          if (!upcomingError && upcomingData) {
-            setUpcomingSessions(upcomingData);
-          } else if (upcomingError) {
-            console.error("Error fetching upcoming sessions:", upcomingError);
-          }
-          
-          // Fetch past sessions
-          const { data: pastData, error: pastError } = await supabase
-            .from("sessions")
-            .select("*")
-            .eq("player_id", data.id)
-            .lt("session_date", today)
-            .order("session_date", { ascending: false })
-            .limit(10);
-          
-          if (!pastError && pastData) {
-            setPastSessions(pastData);
-          } else if (pastError) {
-            console.error("Error fetching past sessions:", pastError);
-          }
-
-          // Fetch session summaries
-          const { data: summariesData, error: summariesError } = await supabase
-            .from("session_summaries")
-            .select(`
-              *,
-              session:sessions (
-                id,
-                session_date,
-                session_time
-              )
-            `)
-            .eq("player_id", data.id)
-            .order("created_at", { ascending: false });
-          
-          if (!summariesError && summariesData) {
-            setSessionSummaries(summariesData);
-          } else if (summariesError) {
-            console.error("Error fetching session summaries:", summariesError);
-          }
-
-          // Fetch videos
           const { data: videosData, error: videosError } = await supabase
             .from("videos")
             .select("*")
@@ -177,7 +173,6 @@ const PlayerProfileAlternative = () => {
       </header>
 
       <div className="container mx-auto px-4 py-6">
-        {/* Player Header Card */}
         <motion.div 
           className="rounded-xl overflow-hidden shadow-lg mb-6"
           initial={{ opacity: 0, y: 20 }}
@@ -222,9 +217,7 @@ const PlayerProfileAlternative = () => {
           </div>
         </motion.div>
 
-        {/* Player Details and Videos Grids */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Personal Information Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -266,7 +259,6 @@ const PlayerProfileAlternative = () => {
             </Card>
           </motion.div>
 
-          {/* Videos Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -311,7 +303,6 @@ const PlayerProfileAlternative = () => {
           </motion.div>
         </div>
 
-        {/* Sessions Card */}
         <motion.div
           className="mt-6"
           initial={{ opacity: 0, y: 20 }}
@@ -327,7 +318,6 @@ const PlayerProfileAlternative = () => {
             </CardHeader>
             <CardContent className="p-5">
               <div className="space-y-6">
-                {/* Upcoming Sessions */}
                 <div>
                   <h3 className="font-medium text-lg mb-4">מפגשים מתוכננים</h3>
                   {upcomingSessions.length > 0 ? (
@@ -372,7 +362,6 @@ const PlayerProfileAlternative = () => {
                 
                 <Separator />
                 
-                {/* Past Sessions */}
                 <div>
                   <h3 className="font-medium text-lg mb-4">מפגשים קודמים</h3>
                   {pastSessions.length > 0 ? (
@@ -419,7 +408,6 @@ const PlayerProfileAlternative = () => {
           </Card>
         </motion.div>
 
-        {/* Session Summaries Card */}
         <motion.div
           className="mt-6"
           initial={{ opacity: 0, y: 20 }}
