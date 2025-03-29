@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,6 +75,8 @@ const PlayerProfileAlternative = () => {
           console.error("Error fetching past sessions:", pastError);
         }
 
+        // Update the session summaries query to fetch directly from session_summaries table
+        // and filter by the current player's ID
         const { data: summariesData, error: summariesError } = await supabase
           .from("session_summaries")
           .select(`
@@ -88,6 +91,7 @@ const PlayerProfileAlternative = () => {
           .order("created_at", { ascending: false });
         
         if (!summariesError && summariesData) {
+          console.log("Fetched session summaries:", summariesData);
           setSessionSummaries(summariesData);
         } else if (summariesError) {
           console.error("Error fetching session summaries:", summariesError);
