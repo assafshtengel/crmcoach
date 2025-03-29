@@ -221,6 +221,9 @@ const PlayerProfileAlternative = () => {
         <div className="container mx-auto px-4 flex justify-between items-center">
           <h1 className="text-lg md:text-2xl font-bold">פרופיל שחקן - תצוגה חלופית</h1>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/player/profile')} className="text-white border-white hover:bg-white/20">
+              לתצוגה הרגילה
+            </Button>
             <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:bg-white/10 transition-colors">
               <LogOut className="h-4 w-4 mr-2" />
               {!isMobile && "התנתק"}
