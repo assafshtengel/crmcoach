@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideosTab } from "@/components/player/VideosTab";
 import { useScreenSize } from "@/hooks/use-screen-size";
-import { Bell, User, LogOut, Calendar, Target, FileText, Video, CheckSquare, PencilLine, Clock, ArrowRight, ExternalLink, ChevronRight, ClipboardCheck, ClipboardList } from 'lucide-react';
+import { Bell, User, LogOut, Calendar, Target, FileText, Video, CheckSquare, PencilLine, Clock, ArrowRight, ExternalLink, ChevronRight, ClipboardCheck, ClipboardList, LayoutDashboard } from 'lucide-react';
 import { 
   Popover, 
   PopoverContent, 
@@ -79,7 +79,7 @@ interface SessionSummary {
 const PlayerProfileView = () => {
   const navigate = useNavigate();
   const { isMobile } = useScreenSize();
-  const isMobileScreen = useIsMobile(); // Using the more reliable mobile hook for consistent detection
+  const isMobileScreen = useIsMobile();
   const [player, setPlayer] = useState<PlayerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
@@ -520,6 +520,15 @@ const PlayerProfileView = () => {
         <div className="container mx-auto px-4 flex justify-between items-center">
           <h1 className="text-lg md:text-2xl font-bold">פרופיל שחקן</h1>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/player/profile-alt')} 
+              className="text-white border-white hover:bg-white/20"
+            >
+              <LayoutDashboard className="h-4 w-4 mr-2" />
+              {!isMobile && "תצוגה חלופית"}
+            </Button>
             <Popover open={showNotifications} onOpenChange={setShowNotifications}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10 transition-colors">
