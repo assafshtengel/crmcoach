@@ -228,7 +228,7 @@ const Index = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* New game evaluation report card */}
+        {/* Game evaluation report card */}
         <Card className="overflow-hidden border-l-4 border-l-cyan-500 hover:shadow-lg transition-all duration-300">
           <div className="flex items-start p-6">
             <div className="flex-1">
