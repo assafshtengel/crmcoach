@@ -228,14 +228,14 @@ const Index = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Game evaluation report card */}
-        <Card className="overflow-hidden border-l-4 border-l-cyan-500 hover:shadow-lg transition-all duration-300">
+        {/* Game evaluation report card - explicitly adding margin and ensuring visibility */}
+        <Card className="overflow-hidden border-l-4 border-l-cyan-500 hover:shadow-lg transition-all duration-300 my-8 relative z-10 block">
           <div className="flex items-start p-6">
             <div className="flex-1">
               <h3 className="text-xl font-bold mb-2">מילוי דוח איבחון משחק</h3>
               <p className="text-gray-600 mb-4">מלא דוח אבחון מקצועי על שחקן לאחר משחק.</p>
               <Button 
-                onClick={() => window.location.href = "https://hebrew-performance-review.lovable.app/"}
+                onClick={() => window.open("https://hebrew-performance-review.lovable.app/", "_self")}
                 className="bg-cyan-500 hover:bg-cyan-600 text-white"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
