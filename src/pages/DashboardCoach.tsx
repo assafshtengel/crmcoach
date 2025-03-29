@@ -1013,17 +1013,17 @@ const DashboardCoach = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#9C27B0] cursor-pointer" onClick={() => navigate('/players-list', {
+          <Card onClick={() => navigate('/players-list', {
           state: {
             showGameEvaluation: true
           }
-        })}>
+        })} className="transition-all duration-300 shadow-lg border-l-4 border-l-[#9C27B0] cursor-pointer bg-red-950">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-medium">בבניה - ישוחרר בקרוב</CardTitle>
+              <CardTitle className="text-lg font-medium text-zinc-50">בבניה - ישוחרר בקרוב</CardTitle>
               <ClipboardCheck className="h-5 w-5 text-[#9C27B0]" />
             </CardHeader>
             <CardContent>
-              <p className="text-gray-500 mb-3 text-xs">מילוי דוח איבחון שחקן לאחר משחק  
+              <p className="mb-3 text-xs my-[22px] text-neutral-50">מילוי דוח איבחון שחקן לאחר משחק  
 
 
 שליחת חשבוניות מס לאחר תשלום  
