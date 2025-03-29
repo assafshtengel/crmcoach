@@ -25,6 +25,10 @@ export interface PlayerSession {
   location?: string;
   notes?: string;
   reminder_sent: boolean;
+  has_started?: boolean;
+  player_id?: string;
+  coach_id?: string;
+  meeting_type?: string;
 }
 
 export interface SessionSummary {

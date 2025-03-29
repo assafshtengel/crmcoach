@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,53 +11,15 @@ import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { User, Calendar, FileText, Video, ArrowRight, LogOut } from 'lucide-react';
-
-interface PlayerData {
-  id: string;
-  full_name: string;
-  email: string;
-  sport_field?: string;
-  club?: string;
-  year_group?: string;
-  profile_image?: string;
-  coach_id?: string;
-}
-
-interface Session {
-  id: string;
-  session_date: string;
-  session_time: string;
-  location?: string;
-  notes?: string;
-  reminder_sent: boolean;
-}
-
-interface SessionSummary {
-  id: string;
-  achieved_goals: string[];
-  additional_notes?: string;
-  coach_id: string;
-  created_at: string;
-  future_goals: string[];
-  next_session_focus?: string;
-  player_id: string;
-  progress_rating: number;
-  summary_text?: string;
-  tools_used: string[];
-  session?: {
-    id: string;
-    session_date: string;
-    session_time: string;
-  };
-}
+import { PlayerData, PlayerSession, SessionSummary } from "@/types/player";
 
 const PlayerProfileAlternative = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [player, setPlayer] = useState<PlayerData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
-  const [pastSessions, setPastSessions] = useState<Session[]>([]);
+  const [upcomingSessions, setUpcomingSessions] = useState<PlayerSession[]>([]);
+  const [pastSessions, setPastSessions] = useState<PlayerSession[]>([]);
   const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>([]);
   const [videos, setVideos] = useState<any[]>([]);
 
@@ -85,6 +48,7 @@ const PlayerProfileAlternative = () => {
         if (data.coach_id) {
           const today = new Date().toISOString().split('T')[0];
           
+          // Fetch upcoming sessions
           const { data: upcomingData, error: upcomingError } = await supabase
             .from("sessions")
             .select("*")
@@ -94,8 +58,11 @@ const PlayerProfileAlternative = () => {
           
           if (!upcomingError && upcomingData) {
             setUpcomingSessions(upcomingData);
+          } else if (upcomingError) {
+            console.error("Error fetching upcoming sessions:", upcomingError);
           }
           
+          // Fetch past sessions
           const { data: pastData, error: pastError } = await supabase
             .from("sessions")
             .select("*")
@@ -106,8 +73,11 @@ const PlayerProfileAlternative = () => {
           
           if (!pastError && pastData) {
             setPastSessions(pastData);
+          } else if (pastError) {
+            console.error("Error fetching past sessions:", pastError);
           }
 
+          // Fetch session summaries
           const { data: summariesData, error: summariesError } = await supabase
             .from("session_summaries")
             .select(`
@@ -123,8 +93,11 @@ const PlayerProfileAlternative = () => {
           
           if (!summariesError && summariesData) {
             setSessionSummaries(summariesData);
+          } else if (summariesError) {
+            console.error("Error fetching session summaries:", summariesError);
           }
 
+          // Fetch videos
           const { data: videosData, error: videosError } = await supabase
             .from("videos")
             .select("*")
@@ -133,6 +106,8 @@ const PlayerProfileAlternative = () => {
             
           if (!videosError && videosData) {
             setVideos(videosData);
+          } else if (videosError) {
+            console.error("Error fetching videos:", videosError);
           }
         }
       } catch (error: any) {
@@ -202,6 +177,7 @@ const PlayerProfileAlternative = () => {
       </header>
 
       <div className="container mx-auto px-4 py-6">
+        {/* Player Header Card */}
         <motion.div 
           className="rounded-xl overflow-hidden shadow-lg mb-6"
           initial={{ opacity: 0, y: 20 }}
@@ -246,7 +222,9 @@ const PlayerProfileAlternative = () => {
           </div>
         </motion.div>
 
+        {/* Player Details and Videos Grids */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Personal Information Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -288,6 +266,7 @@ const PlayerProfileAlternative = () => {
             </Card>
           </motion.div>
 
+          {/* Videos Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -332,6 +311,7 @@ const PlayerProfileAlternative = () => {
           </motion.div>
         </div>
 
+        {/* Sessions Card */}
         <motion.div
           className="mt-6"
           initial={{ opacity: 0, y: 20 }}
@@ -347,6 +327,7 @@ const PlayerProfileAlternative = () => {
             </CardHeader>
             <CardContent className="p-5">
               <div className="space-y-6">
+                {/* Upcoming Sessions */}
                 <div>
                   <h3 className="font-medium text-lg mb-4">מפגשים מתוכננים</h3>
                   {upcomingSessions.length > 0 ? (
@@ -391,6 +372,7 @@ const PlayerProfileAlternative = () => {
                 
                 <Separator />
                 
+                {/* Past Sessions */}
                 <div>
                   <h3 className="font-medium text-lg mb-4">מפגשים קודמים</h3>
                   {pastSessions.length > 0 ? (
@@ -437,6 +419,7 @@ const PlayerProfileAlternative = () => {
           </Card>
         </motion.div>
 
+        {/* Session Summaries Card */}
         <motion.div
           className="mt-6"
           initial={{ opacity: 0, y: 20 }}
