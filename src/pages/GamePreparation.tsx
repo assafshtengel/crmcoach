@@ -135,7 +135,6 @@ const GamePreparation = () => {
   ];
 
   const handleViewDetails = (form: CompletedForm) => {
-    console.log("Opening form details:", form);
     setSelectedForm(form);
     setShowFormDetails(true);
   };
@@ -236,11 +235,7 @@ const GamePreparation = () => {
                   <p className="text-gray-500">לא נמצאו טפסים שמולאו</p>
                 </div>
               ) : (
-                <DataTable 
-                  columns={columns} 
-                  data={completedForms} 
-                  onRowAction={handleViewDetails}
-                />
+                <DataTable columns={columns} data={completedForms} />
               )}
             </div>
           </TabsContent>
@@ -254,7 +249,7 @@ const GamePreparation = () => {
           </DialogHeader>
           {selectedForm && (
             <div className="mt-4">
-              <div className="space-y-6">
+              <div ref={el => {}} className="space-y-6">
                 <PreviewContent formData={convertToFormData(selectedForm)!} previewRef={React.createRef()} />
               </div>
               <div className="flex justify-end mt-6">
