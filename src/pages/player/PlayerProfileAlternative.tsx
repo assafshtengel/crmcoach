@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { User, Calendar, FileText, Video, ArrowRight, LogOut } from 'lucide-react';
+import { User, Calendar, FileText, Video, ArrowRight, LogOut, ExternalLink } from 'lucide-react';
 import { PlayerData, PlayerSession, SessionSummary } from "@/types/player";
 
 const PlayerProfileAlternative = () => {
@@ -94,16 +94,50 @@ const PlayerProfileAlternative = () => {
         }
 
         if (data.coach_id) {
-          const { data: videosData, error: videosError } = await supabase
-            .from("videos")
-            .select("*")
-            .eq("coach_id", data.coach_id)
-            .order("created_at", { ascending: false });
+          const { data: playerVideosData, error: playerVideosError } = await supabase
+            .from("player_videos")
+            .select(`
+              id,
+              watched,
+              watched_at,
+              video:video_id(
+                id, 
+                title, 
+                url, 
+                description, 
+                category, 
+                created_at
+              )
+            `)
+            .eq("player_id", playerId);
+          
+          if (!playerVideosError && playerVideosData && playerVideosData.length > 0) {
+            const formattedVideos = playerVideosData
+              .filter(pv => pv.video) // Filter out any null videos
+              .map(pv => ({
+                id: pv.video.id,
+                title: pv.video.title,
+                url: pv.video.url,
+                description: pv.video.description,
+                category: pv.video.category,
+                created_at: pv.video.created_at,
+                watched: pv.watched,
+                watched_at: pv.watched_at
+              }));
             
-          if (!videosError && videosData) {
-            setVideos(videosData);
-          } else if (videosError) {
-            console.error("Error fetching videos:", videosError);
+            setVideos(formattedVideos);
+          } else {
+            const { data: videosData, error: videosError } = await supabase
+              .from("videos")
+              .select("*")
+              .eq("coach_id", data.coach_id)
+              .order("created_at", { ascending: false });
+              
+            if (!videosError && videosData) {
+              setVideos(videosData);
+            } else if (videosError) {
+              console.error("Error fetching videos:", videosError);
+            }
           }
         }
       } catch (error: any) {
@@ -126,6 +160,27 @@ const PlayerProfileAlternative = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('he-IL');
+  };
+
+  const handleOpenVideo = (url: string | undefined) => {
+    if (!url) {
+      toast.error("קישור לסרטון חסר או לא תקין");
+      return;
+    }
+    
+    try {
+      let validUrl = url.trim();
+      if (!validUrl.startsWith('http://') && !validUrl.startsWith('https://')) {
+        validUrl = 'https://' + validUrl;
+      }
+      
+      new URL(validUrl);
+      
+      window.open(validUrl, '_blank');
+    } catch (error) {
+      console.error("Invalid video URL:", url, error);
+      toast.error("שגיאה בפתיחת הסרטון - כתובת לא תקינה");
+    }
   };
 
   if (loading) {
@@ -281,10 +336,27 @@ const PlayerProfileAlternative = () => {
                             <h3 className="font-medium text-gray-900">{video.title}</h3>
                             <p className="text-gray-500 text-sm mt-1">{new Date(video.created_at).toLocaleDateString()}</p>
                           </div>
-                          <Button size="sm" variant="outline" className="text-primary border-primary/20 bg-primary/5">
-                            צפה בסרטון
-                            <ArrowRight className="mr-2 h-4 w-4" />
-                          </Button>
+                          {video.url ? (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-primary border-primary/20 bg-primary/5"
+                              onClick={() => handleOpenVideo(video.url)}
+                            >
+                              צפה בסרטון
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed"
+                              disabled
+                            >
+                              אין קישור
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                         {video.description && (
                           <p className="mt-2 text-sm text-gray-600 line-clamp-2">{video.description}</p>
