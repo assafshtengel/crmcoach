@@ -1,33 +1,18 @@
+
 import {
   createBrowserRouter,
 } from "react-router-dom";
 import App from "./App";
 import PlayerAuth from "./pages/PlayerAuth";
-import CoachAuth from "./pages/CoachAuth";
+import PlayerEvaluation from "./pages/PlayerEvaluation";
 import NewPlayerForm from "./pages/NewPlayerForm";
 import EditPlayerForm from "./pages/EditPlayerForm";
-import PlayersDashboard from "./pages/PlayersDashboard";
-import SessionsDashboard from "./pages/SessionsDashboard";
-import NewSessionForm from "./pages/NewSessionForm";
-import EditSessionForm from "./pages/EditSessionForm";
-import CoachesDashboard from "./pages/CoachesDashboard";
-import NewCoachForm from "./pages/NewCoachForm";
-import EditCoachForm from "./pages/EditCoachForm";
-import SettingsDashboard from "./pages/SettingsDashboard";
 import NotificationsDashboard from "./pages/NotificationsDashboard";
-import SessionSummaryForm from "./pages/SessionSummaryForm";
-import SessionSummariesDashboard from "./pages/SessionSummariesDashboard";
-import VideosDashboard from "./pages/VideosDashboard";
-import NewVideoForm from "./pages/NewVideoForm";
-import EditVideoForm from "./pages/EditVideoForm";
+import PlayerForm from "./pages/PlayerForm";
+import PlayerStatistics from "./pages/PlayerStatistics";
 import PlayerProfileView from "./pages/player/PlayerProfileView";
 import PlayerQuestionnaireForm from "./pages/player/PlayerQuestionnaireForm";
 import PlayerGameEvaluation from "./pages/player/PlayerGameEvaluation";
-import QuestionnairesDashboard from "./pages/QuestionnairesDashboard";
-import NewQuestionnaireForm from "./pages/NewQuestionnaireForm";
-import EditQuestionnaireForm from "./pages/EditQuestionnaireForm";
-import AssignedQuestionnairesDashboard from "./pages/AssignedQuestionnairesDashboard";
-import AssignQuestionnaireForm from "./pages/AssignQuestionnaireForm";
 import PlayerProfileAlternative from "./pages/player/PlayerProfileAlternative";
 
 const routes = createBrowserRouter([
@@ -36,8 +21,8 @@ const routes = createBrowserRouter([
     element: <App />,
   },
   {
-    path: "/coach-auth",
-    element: <CoachAuth />,
+    path: "/player-auth",
+    element: <PlayerAuth />,
   },
   {
     path: "/new-player",
@@ -48,74 +33,30 @@ const routes = createBrowserRouter([
     element: <EditPlayerForm />,
   },
   {
-    path: "/players",
-    element: <PlayersDashboard />,
-  },
-  {
-    path: "/sessions",
-    element: <SessionsDashboard />,
-  },
-  {
-    path: "/new-session",
-    element: <NewSessionForm />,
-  },
-  {
-    path: "/edit-session/:id",
-    element: <EditSessionForm />,
-  },
-  {
-    path: "/coaches",
-    element: <CoachesDashboard />,
-  },
-  {
-    path: "/new-coach",
-    element: <NewCoachForm />,
-  },
-  {
-    path: "/edit-coach/:id",
-    element: <EditCoachForm />,
-  },
-  {
-    path: "/settings",
-    element: <SettingsDashboard />,
-  },
-  {
     path: "/notifications",
     element: <NotificationsDashboard />,
   },
   {
-    path: "/session-summary/:session_id",
-    element: <SessionSummaryForm />,
+    path: "/player-form",
+    element: <PlayerForm />,
   },
   {
-    path: "/session-summaries",
-    element: <SessionSummariesDashboard />,
+    path: "/player-statistics",
+    element: <PlayerStatistics />,
   },
   {
-    path: "/videos",
-    element: <VideosDashboard />,
-  },
-  {
-    path: "/new-video",
-    element: <NewVideoForm />,
-  },
-  {
-    path: "/edit-video/:id",
-    element: <EditVideoForm />,
+    path: "/player-evaluation",
+    element: <PlayerEvaluation />,
   },
   
   // Player routes
-  {
-    path: "/player-auth",
-    element: <PlayerAuth />,
-  },
   {
     path: "/player/profile",
     element: <PlayerProfileView />,
   },
   {
     path: "/player/profile-alt",
-    element: <PlayerProfileAlternative />,  // Add the new alternative profile route
+    element: <PlayerProfileAlternative />,
   },
   {
     path: "/player/questionnaire/:questionnaireId",
@@ -124,26 +65,6 @@ const routes = createBrowserRouter([
   {
     path: "/player/game-evaluation",
     element: <PlayerGameEvaluation />,
-  },
-  {
-    path: "/questionnaires",
-    element: <QuestionnairesDashboard />,
-  },
-  {
-    path: "/new-questionnaire",
-    element: <NewQuestionnaireForm />,
-  },
-  {
-    path: "/edit-questionnaire/:id",
-    element: <EditQuestionnaireForm />,
-  },
-  {
-    path: "/assigned-questionnaires",
-    element: <AssignedQuestionnairesDashboard />,
-  },
-  {
-    path: "/assign-questionnaire",
-    element: <AssignQuestionnaireForm />,
   },
 ]);
 
