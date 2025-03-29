@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen, FileEdit, RefreshCw } from "lucide-react";
+import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen, FileEdit, RefreshCw, ClipboardList } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -316,6 +316,22 @@ const Index = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Add the new Performance Evaluation Card */}
+        <Card className="bg-white/90 hover:bg-white transition-all duration-300 shadow-lg border-l-4 border-l-[#0EA5E9] cursor-pointer"
+              onClick={() => window.location.href = "https://hebrew-performance-review.lovable.app/"}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg font-medium">מילוי דוח איבחון משחק</CardTitle>
+            <ClipboardList className="h-5 w-5 text-[#0EA5E9]" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-500 mb-3">מלא דוח אבחון מקצועי על שחקן לאחר משחק.</p>
+            <Button variant="default" className="w-full bg-[#0EA5E9] hover:bg-[#0284c7]">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              מעבר לדוח איבחון
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <LandingPageDialog
