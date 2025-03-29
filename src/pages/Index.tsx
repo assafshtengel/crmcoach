@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen, FileEdit, RefreshCw } from "lucide-react";
+import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen, FileEdit, RefreshCw, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -227,6 +227,26 @@ const Index = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* New game evaluation report card */}
+        <Card className="overflow-hidden border-l-4 border-l-cyan-500 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-start p-6">
+            <div className="flex-1">
+              <h3 className="text-xl font-bold mb-2">מילוי דוח איבחון משחק</h3>
+              <p className="text-gray-600 mb-4">מלא דוח אבחון מקצועי על שחקן לאחר משחק.</p>
+              <Button 
+                onClick={() => window.location.href = "https://hebrew-performance-review.lovable.app/"}
+                className="bg-cyan-500 hover:bg-cyan-600 text-white"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                מעבר לדוח איבחון
+              </Button>
+            </div>
+            <div className="bg-cyan-100 p-3 rounded-full">
+              <FileText className="h-8 w-8 text-cyan-600" />
+            </div>
+          </div>
+        </Card>
 
         <Tabs defaultValue="videos" className="w-full">
           <TabsList className="grid grid-cols-5 mb-8">
