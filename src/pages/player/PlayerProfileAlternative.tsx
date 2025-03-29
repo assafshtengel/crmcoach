@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,8 +74,6 @@ const PlayerProfileAlternative = () => {
           console.error("Error fetching past sessions:", pastError);
         }
 
-        // Update the session summaries query to fetch directly from session_summaries table
-        // and filter by the current player's ID
         const { data: summariesData, error: summariesError } = await supabase
           .from("session_summaries")
           .select(`
@@ -115,6 +112,8 @@ const PlayerProfileAlternative = () => {
             `)
             .eq("player_id", playerId);
           
+          console.log("Player Videos Data:", playerVideosData); // Debug log added
+            
           if (!playerVideosError && playerVideosData && playerVideosData.length > 0) {
             const formattedVideos = playerVideosData
               .filter(pv => pv.video) // Filter out any null videos
@@ -137,6 +136,8 @@ const PlayerProfileAlternative = () => {
               .eq("coach_id", data.coach_id)
               .order("created_at", { ascending: false });
               
+            console.log("Coach Videos Data:", videosData); // Debug log added
+            
             if (!videosError && videosData) {
               setVideos(videosData);
             } else if (videosError) {
@@ -475,7 +476,7 @@ const PlayerProfileAlternative = () => {
                   ) : (
                     <div className="bg-gray-50 rounded-lg p-6 text-center">
                       <Calendar className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500">אין היסטוריית מפגשים</p>
+                      <p className="text-gray-500">אין היסט��ריית מפגשים</p>
                     </div>
                   )}
                 </div>
