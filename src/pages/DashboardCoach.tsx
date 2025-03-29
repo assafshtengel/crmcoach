@@ -1023,22 +1023,17 @@ const DashboardCoach = () => {
               <ClipboardCheck className="h-5 w-5 text-[#9C27B0]" />
             </CardHeader>
             <CardContent>
-              <p className="text-gray-500 mb-3 text-xs">
-
-מילוי דוח איבחון שחקן לאחר משחק 
+              <p className="text-gray-500 mb-3 text-xs">מילוי דוח איבחון שחקן לאחר משחק  
 
 
-שליחת חשבוניות מס לאחר תשלום 
+שליחת חשבוניות מס לאחר תשלום  
 
 
 שאלות לשחקן 
 
 
-מטרות לשחקן </p>
-              <Button variant="default" className="w-full bg-[#9C27B0] hover:bg-[#7B1FA2]">
-                <ClipboardCheck className="h-4 w-4 mr-2" />
-                מלא איבחון משחק
-              </Button>
+ מטרות לשחקן </p>
+              
             </CardContent>
           </Card>
 
