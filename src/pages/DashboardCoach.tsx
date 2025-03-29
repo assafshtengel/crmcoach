@@ -363,4 +363,17 @@ const DashboardCoach: React.FC = () => {
   const [isCollapsible297Open, setIsCollapsible297Open] = useState(false);
   const [isCollapsible298Open, setIsCollapsible298Open] = useState(false);
   const [isCollapsible299Open, setIsCollapsible299Open] = useState(false);
-  const [isCollapsible300Open, setIsCollapsible300Open]
+  const [isCollapsible300Open, setIsCollapsible300Open] = useState(false);
+
+  useEffect(() => {
+    // Data fetching logic
+  }, []);
+
+  return (
+    <div>
+      {/* Dashboard content */}
+    </div>
+  );
+};
+
+export default DashboardCoach;
