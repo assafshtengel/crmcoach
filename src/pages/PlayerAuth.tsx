@@ -89,8 +89,8 @@ const PlayerAuth = () => {
         password: playerData.password
       }));
 
-      // Navigate to the player profile view
-      navigate('/player/profile');
+      // Navigate to the alternative player profile view
+      navigate('/player/profile-alt');
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

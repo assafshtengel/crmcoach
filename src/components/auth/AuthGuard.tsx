@@ -42,6 +42,12 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
               navigate("/player-auth");
               return;
             }
+            
+            // Redirect from original profile page to alternative profile page
+            if (location.pathname === "/player/profile") {
+              navigate("/player/profile-alt");
+              return;
+            }
           } catch (err) {
             console.error("Error parsing player session:", err);
             localStorage.removeItem('playerSession');
