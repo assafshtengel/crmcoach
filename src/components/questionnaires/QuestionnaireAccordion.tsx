@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Accordion, 
@@ -13,10 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Question, QuestionnaireTemplate } from '@/types/questionnaire';
-import { Pencil, Save, X } from 'lucide-react';
+import { Pencil, Save, X, Edit } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
 import AssignQuestionnaireDialog from './AssignQuestionnaireDialog';
+import EditQuestionnaireDialog from './EditQuestionnaireDialog';
 
 interface QuestionnaireAccordionProps {
   template: QuestionnaireTemplate;
@@ -26,6 +26,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
   const [isEditing, setIsEditing] = useState(false);
   const [editedQuestions, setEditedQuestions] = useState<Question[]>(template.questions);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const openQuestions = editedQuestions.filter(q => q.type === 'open');
@@ -40,7 +41,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
   };
 
   const handleSave = async () => {
-    // Only save if this is a custom (non-system) template
     if (!template.is_system_template) {
       try {
         const { error } = await supabase
@@ -78,7 +78,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
 
   const handleAssignQuestionnaire = async (templateId: string, playerId: string) => {
     try {
-      // Get the current user's auth session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session || !session.user) {
@@ -92,7 +91,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
 
       const coachId = session.user.id;
       
-      // Create a questionnaire instance from the template
       const { data: questionnaire, error: questionnaireError } = await supabase
         .from('questionnaires')
         .insert({
@@ -112,7 +110,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
         throw questionnaireError;
       }
 
-      // Create a record in the assigned_questionnaires table
       const { error } = await supabase
         .from('assigned_questionnaires')
         .insert({
@@ -150,19 +147,21 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
           <AccordionTrigger className="px-6 py-4 hover:no-underline">
             <div className="flex-1 flex items-center justify-between pl-4">
               <span className="font-bold text-lg">{template.title}</span>
-              {!isEditing && !template.is_system_template && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditing(true);
-                  }}
-                  className="mr-4"
-                >
-                  <Pencil className="h-4 w-4 ml-2" />
-                  ערוך
-                </Button>
+              {!template.is_system_template && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditDialogOpen(true);
+                    }}
+                    className="mr-4"
+                  >
+                    <Edit className="h-4 w-4 ml-2" />
+                    ערוך
+                  </Button>
+                </div>
               )}
             </div>
           </AccordionTrigger>
@@ -257,6 +256,41 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      {!template.is_system_template && (
+        <EditQuestionnaireDialog 
+          open={isEditDialogOpen} 
+          onOpenChange={setIsEditDialogOpen}
+          template={template}
+          onSave={async (updatedTemplate) => {
+            try {
+              const { error } = await supabase
+                .from('questionnaire_templates')
+                .update({ 
+                  title: updatedTemplate.title,
+                  questions: updatedTemplate.questions,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', template.id);
+              
+              if (error) throw error;
+              
+              toast({
+                title: "השאלון עודכן בהצלחה",
+                description: "השינויים נשמרו בהצלחה"
+              });
+            } catch (error) {
+              console.error('Error updating template:', error);
+              toast({
+                title: "שגיאה בעדכון השאלון",
+                description: "אירעה שגיאה בעת שמירת השינויים",
+                variant: "destructive"
+              });
+            }
+          }}
+          isNewTemplate={false}
+        />
+      )}
     </Card>
   );
 };
