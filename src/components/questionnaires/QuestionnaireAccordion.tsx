@@ -150,16 +150,16 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
               {!template.is_system_template && (
                 <div className="flex items-center space-x-2">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsEditDialogOpen(true);
                     }}
-                    className="mr-4"
+                    className="mr-4 bg-blue-50 hover:bg-blue-100 border-blue-200"
                   >
-                    <Edit className="h-4 w-4 ml-2" />
-                    ערוך
+                    <Edit className="h-4 w-4 ml-2 text-blue-600" />
+                    <span className="text-blue-600">ערוך</span>
                   </Button>
                 </div>
               )}
@@ -181,7 +181,9 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                             dir="rtl"
                           />
                         ) : (
-                          <p className="text-right">{question.question_text}</p>
+                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                            <p className="text-right">{question.question_text}</p>
+                          </div>
                         )}
                       </div>
                     ))}
@@ -203,7 +205,9 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                             dir="rtl"
                           />
                         ) : (
-                          <Label className="text-right block">{question.question_text}</Label>
+                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
+                            <Label className="text-right block">{question.question_text}</Label>
+                          </div>
                         )}
                         <div className="pr-2 pl-2">
                           <Slider
@@ -239,10 +243,21 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
 
               {!isEditing && (
                 <div className="mt-6 pt-4 border-t border-gray-200">
-                  <h3 className="font-semibold text-md mb-3">הקצאת שאלון לשחקן</h3>
-                  <Button onClick={() => setIsAssignDialogOpen(true)}>
-                    שייך את השאלון לשחקן
-                  </Button>
+                  <div className="flex flex-wrap gap-3">
+                    {!template.is_system_template && (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsEditDialogOpen(true)}
+                        className="bg-blue-50 hover:bg-blue-100 border-blue-200"
+                      >
+                        <Edit className="h-4 w-4 ml-2 text-blue-600" />
+                        <span className="text-blue-600">ערוך שאלון</span>
+                      </Button>
+                    )}
+                    <Button onClick={() => setIsAssignDialogOpen(true)}>
+                      שייך את השאלון לשחקן
+                    </Button>
+                  </div>
                 </div>
               )}
 
