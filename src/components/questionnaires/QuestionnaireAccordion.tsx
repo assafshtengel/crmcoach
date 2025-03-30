@@ -16,6 +16,7 @@ import { Question, QuestionnaireTemplate } from '@/types/questionnaire';
 import { Pencil, Save, X, Edit } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import AssignQuestionnaireDialog from './AssignQuestionnaireDialog';
 import EditQuestionnaireDialog from './EditQuestionnaireDialog';
 
@@ -168,9 +169,46 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
           </AccordionTrigger>
           <AccordionContent className="px-6">
             <div className="space-y-6">
+              {!template.is_system_template && (
+                <div className="bg-blue-50 p-3 rounded-md border border-blue-200 flex items-center justify-between mb-4">
+                  <span className="text-blue-700 font-medium">הגדרות שאלון</span>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={() => setIsEditDialogOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Edit className="h-4 w-4 ml-2" />
+                    ערוך שאלון
+                  </Button>
+                </div>
+              )}
+
               {openQuestions.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-md">שאלות פתוחות</h3>
+                  <h3 className="font-semibold text-md flex items-center justify-between">
+                    <span>שאלות פתוחות</span>
+                    {!template.is_system_template && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setIsEditDialogOpen(true)}
+                              className="text-blue-600"
+                            >
+                              <Pencil className="h-4 w-4 ml-1" />
+                              ערוך
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>ערוך את שאלות השאלון</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </h3>
                   <div className="space-y-4">
                     {openQuestions.map((question) => (
                       <div key={question.id} className="space-y-2">
@@ -189,9 +227,9 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setIsEditDialogOpen(true)}
-                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute top-1 right-1 text-blue-600"
                               >
-                                <Pencil className="h-3.5 w-3.5 text-blue-600" />
+                                <Pencil className="h-3.5 w-3.5" />
                               </Button>
                             )}
                           </div>
@@ -204,7 +242,29 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
 
               {closedQuestions.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-md">שאלות סגורות</h3>
+                  <h3 className="font-semibold text-md flex items-center justify-between">
+                    <span>שאלות סגורות</span>
+                    {!template.is_system_template && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setIsEditDialogOpen(true)}
+                              className="text-blue-600"
+                            >
+                              <Pencil className="h-4 w-4 ml-1" />
+                              ערוך
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>ערוך את שאלות השאלון</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </h3>
                   <div className="space-y-6">
                     {closedQuestions.map((question) => (
                       <div key={question.id} className="space-y-3">
@@ -223,9 +283,9 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setIsEditDialogOpen(true)}
-                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="absolute top-1 right-1 text-blue-600"
                               >
-                                <Pencil className="h-3.5 w-3.5 text-blue-600" />
+                                <Pencil className="h-3.5 w-3.5" />
                               </Button>
                             )}
                           </div>
@@ -267,12 +327,12 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                   <div className="flex flex-wrap gap-3">
                     {!template.is_system_template && (
                       <Button 
-                        variant="outline" 
+                        variant="default" 
                         onClick={() => setIsEditDialogOpen(true)}
-                        className="bg-blue-50 hover:bg-blue-100 border-blue-200"
+                        className="bg-blue-600 hover:bg-blue-700"
                       >
-                        <Edit className="h-4 w-4 ml-2 text-blue-600" />
-                        <span className="text-blue-600">ערוך שאלון</span>
+                        <Edit className="h-4 w-4 ml-2" />
+                        <span>ערוך שאלון</span>
                       </Button>
                     )}
                     <Button onClick={() => setIsAssignDialogOpen(true)}>
