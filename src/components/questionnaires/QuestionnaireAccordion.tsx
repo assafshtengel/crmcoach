@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Accordion, 
@@ -181,8 +182,18 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                             dir="rtl"
                           />
                         ) : (
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <p className="text-right">{question.question_text}</p>
+                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200 relative group">
+                            <p className="text-right pr-8">{question.question_text}</p>
+                            {!template.is_system_template && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsEditDialogOpen(true)}
+                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Pencil className="h-3.5 w-3.5 text-blue-600" />
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -205,8 +216,18 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                             dir="rtl"
                           />
                         ) : (
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <Label className="text-right block">{question.question_text}</Label>
+                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200 relative group">
+                            <Label className="text-right block pr-8">{question.question_text}</Label>
+                            {!template.is_system_template && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsEditDialogOpen(true)}
+                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Pencil className="h-3.5 w-3.5 text-blue-600" />
+                              </Button>
+                            )}
                           </div>
                         )}
                         <div className="pr-2 pl-2">
