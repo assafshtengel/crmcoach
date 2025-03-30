@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Accordion, 
@@ -221,17 +220,19 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                           />
                         ) : (
                           <div className="bg-gray-50 p-3 rounded-md border border-gray-200 relative group">
-                            <p className="text-right pr-8">{question.question_text}</p>
-                            {!template.is_system_template && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setIsEditDialogOpen(true)}
-                                className="absolute top-1 right-1 text-blue-600"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
+                            <div className="flex items-center">
+                              <p className="text-right pr-8 flex-1">{question.question_text}</p>
+                              {!template.is_system_template && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setIsEditDialogOpen(true)}
+                                  className="text-gray-500 hover:text-blue-600"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -277,17 +278,19 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                           />
                         ) : (
                           <div className="bg-gray-50 p-3 rounded-md border border-gray-200 relative group">
-                            <Label className="text-right block pr-8">{question.question_text}</Label>
-                            {!template.is_system_template && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setIsEditDialogOpen(true)}
-                                className="absolute top-1 right-1 text-blue-600"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
+                            <div className="flex items-center">
+                              <Label className="text-right block pr-8 flex-1">{question.question_text}</Label>
+                              {!template.is_system_template && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setIsEditDialogOpen(true)}
+                                  className="text-gray-500 hover:text-blue-600"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         )}
                         <div className="pr-2 pl-2">
