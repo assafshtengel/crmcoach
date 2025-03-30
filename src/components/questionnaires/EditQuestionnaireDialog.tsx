@@ -10,6 +10,7 @@ import { Question, QuestionnaireTemplate } from '@/types/questionnaire';
 import { Separator } from '@/components/ui/separator';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 interface EditQuestionnaireDialogProps {
   open: boolean;
@@ -30,6 +31,19 @@ const EditQuestionnaireDialog: React.FC<EditQuestionnaireDialogProps> = ({
   const [title, setTitle] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // פונקציה לקבלת המזהה של המשתמש המחובר
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setCurrentUserId(session.user.id);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     if (template) {
@@ -80,11 +94,23 @@ const EditQuestionnaireDialog: React.FC<EditQuestionnaireDialogProps> = ({
       return;
     }
 
+    if (!currentUserId) {
+      toast({
+        variant: "destructive",
+        title: "שגיאה",
+        description: "לא נמצא מזהה משתמש. יש להתחבר מחדש."
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
+      
+      // וודא שה-coach_id נשמר בתבנית
       await onSave({
         title,
         questions,
+        coach_id: currentUserId, // שמירת מזהה המאמן הנוכחי
         ...(template && !isNewTemplate ? { id: template.id } : {}),
         ...(template ? { type: template.type } : {})
       });
