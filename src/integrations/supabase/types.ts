@@ -1725,6 +1725,7 @@ export type Database = {
       }
       questionnaire_templates: {
         Row: {
+          coach_id: string | null
           created_at: string | null
           description: string | null
           id: string
@@ -1736,6 +1737,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          coach_id?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -1747,6 +1749,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          coach_id?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
