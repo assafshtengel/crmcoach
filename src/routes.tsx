@@ -16,11 +16,16 @@ import PlayerQuestionnaireForm from "./pages/player/PlayerQuestionnaireForm";
 import PlayerGameEvaluation from "./pages/player/PlayerGameEvaluation";
 import PlayerProfileAlternative from "./pages/player/PlayerProfileAlternative";
 import Index from "./pages/Index";
+import DashboardCoach from "./pages/DashboardCoach";
 
 const routes = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/index" replace />,
+    element: <Navigate to="/dashboard-coach" replace />,
+  },
+  {
+    path: "/dashboard-coach",
+    element: <DashboardCoach />,
   },
   {
     path: "/index",
