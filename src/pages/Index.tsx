@@ -38,52 +38,27 @@ const Index = () => {
 
   useEffect(() => {
     const getUserInfo = async () => {
-      const playerSessionStr = localStorage.getItem('playerSession');
-      
-      if (playerSessionStr) {
-        try {
-          const playerSession = JSON.parse(playerSessionStr);
-          setUserEmail(playerSession.email || null);
-          if (playerSession.id) {
-            setUserId(playerSession.id);
-            
-            const { data: playerData, error: playerError } = await supabase
-              .from('players')
-              .select('coach_id')
-              .eq('id', playerSession.id)
-              .single();
-              
-            if (!playerError && playerData) {
-              setCoachId(playerData.coach_id);
-            } else {
-              console.error("Error fetching player's coach ID:", playerError);
-            }
-          }
-          setLoading(false);
-          return;
-        } catch (e) {
-          console.error("Error parsing player session:", e);
-        }
-      }
-
       const { data: { user } } = await supabase.auth.getUser();
       setUserEmail(user?.email || null);
       
       if (user) {
         setUserId(user.id);
         
+        // Check if the user is a coach (exists in the coaches table)
         const { data: coachData, error: coachError } = await supabase
           .from('coaches')
           .select('id')
           .eq('id', user.id)
           .single();
         
+        // If the user is a coach, redirect to the coach dashboard
         if (!coachError && coachData) {
           console.log("Coach user detected, redirecting to coach dashboard");
-          navigate('/dashboard-coach');
+          navigate('/');
           return;
         }
         
+        // Continue with player-related data fetching only if not a coach
         const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('coach_id')
@@ -97,8 +72,8 @@ const Index = () => {
         }
       } else {
         console.log("No authenticated user found");
+        setLoading(false);
       }
-      setLoading(false);
     };
     getUserInfo();
   }, [navigate]);
@@ -290,6 +265,7 @@ const Index = () => {
                 variant="outline" 
                 onClick={() => {
                   if (userId && coachId) {
+                    // This just refreshes the component
                     setLoading(true);
                     setTimeout(() => setLoading(false), 100);
                   }
