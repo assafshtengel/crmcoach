@@ -67,7 +67,7 @@ const EditQuestionnaireDialog: React.FC<EditQuestionnaireDialogProps> = ({
   useEffect(() => {
     if (template) {
       setTitle(template.title);
-      setQuestions(template.questions);
+      setQuestions([...template.questions]);
     } else {
       setTitle('');
       setQuestions([]);
@@ -124,6 +124,7 @@ const EditQuestionnaireDialog: React.FC<EditQuestionnaireDialogProps> = ({
 
     try {
       setIsSubmitting(true);
+      
       await onSave({
         title,
         questions,
@@ -218,12 +219,20 @@ const EditQuestionnaireDialog: React.FC<EditQuestionnaireDialogProps> = ({
                     </Button>
                   </div>
                   
-                  <Textarea
-                    value={question.question_text}
-                    onChange={(e) => handleQuestionTextChange(question.id, e.target.value)}
-                    className="mt-1"
-                    rows={2}
-                  />
+                  {question.type === 'open' ? (
+                    <Textarea
+                      value={question.question_text}
+                      onChange={(e) => handleQuestionTextChange(question.id, e.target.value)}
+                      className="mt-1"
+                      rows={2}
+                    />
+                  ) : (
+                    <Input
+                      value={question.question_text}
+                      onChange={(e) => handleQuestionTextChange(question.id, e.target.value)}
+                      className="mt-1"
+                    />
+                  )}
 
                   {question.type === 'closed' && (
                     <div className="mt-2 text-sm text-gray-500">

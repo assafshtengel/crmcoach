@@ -10,7 +10,7 @@ import QuestionnaireAccordion from '@/components/questionnaires/QuestionnaireAcc
 import { systemTemplates } from '@/data/systemTemplates';
 import { PlayersProvider } from '@/contexts/PlayersContext';
 import { supabase } from '@/lib/supabase';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import CreateQuestionnaireDialog from '@/components/questionnaires/CreateQuestionnaireDialog';
 import { QuestionnaireTemplate } from '@/types/questionnaire';
 import CompletedQuestionnairesList from '@/components/questionnaires/CompletedQuestionnairesList';
@@ -42,6 +42,33 @@ const QuestionnairesPage = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  const fetchCustomTemplates = async (userId: string) => {
+    try {
+      const { data: templates, error } = await supabase
+        .from('questionnaire_templates')
+        .select('*')
+        .eq('coach_id', userId)
+        .eq('is_system_template', false)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching templates:', error);
+        throw error;
+      }
+      
+      if (templates) {
+        setCustomTemplates(templates);
+      }
+    } catch (error) {
+      console.error('Error fetching custom templates:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת השאלונים",
+        description: "אירעה שגיאה בעת טעינת השאלונים המותאמים אישית"
+      });
+    }
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -61,21 +88,7 @@ const QuestionnairesPage = () => {
         setIsAuthenticated(true);
         
         // Fetch custom templates created by the coach
-        const { data: templates, error } = await supabase
-          .from('questionnaire_templates')
-          .select('*')
-          .eq('coach_id', session.user.id)
-          .eq('is_system_template', false)
-          .order('created_at', { ascending: false });
-          
-        if (error) {
-          console.error('Error fetching templates:', error);
-          throw error;
-        }
-        
-        if (templates) {
-          setCustomTemplates(templates);
-        }
+        await fetchCustomTemplates(session.user.id);
         
       } catch (error) {
         console.error('Error checking auth session:', error);
@@ -91,6 +104,10 @@ const QuestionnairesPage = () => {
 
     checkSession();
   }, [navigate, toast]);
+
+  const handleTemplateCreated = (newTemplate: QuestionnaireTemplate) => {
+    setCustomTemplates(prev => [newTemplate, ...prev]);
+  };
 
   if (isLoading) {
     return (
@@ -168,7 +185,11 @@ const QuestionnairesPage = () => {
                 ) : (
                   <div className="grid grid-cols-1 gap-4">
                     {customTemplates.map((template) => (
-                      <QuestionnaireAccordion key={template.id} template={template} />
+                      <QuestionnaireAccordion 
+                        key={template.id} 
+                        template={template} 
+                        onTemplateCreated={handleTemplateCreated}
+                      />
                     ))}
                   </div>
                 )}
@@ -179,7 +200,11 @@ const QuestionnairesPage = () => {
                   <h2 className="text-xl font-semibold mb-4">תבניות שאלונים מובנות</h2>
                   <div className="grid grid-cols-1 gap-4">
                     {systemTemplates.map((template) => (
-                      <QuestionnaireAccordion key={template.id} template={template} />
+                      <QuestionnaireAccordion 
+                        key={template.id} 
+                        template={template} 
+                        onTemplateCreated={handleTemplateCreated}
+                      />
                     ))}
                   </div>
                 </div>

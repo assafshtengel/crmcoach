@@ -18,17 +18,23 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
 import AssignQuestionnaireDialog from './AssignQuestionnaireDialog';
 import EditQuestionModal from './EditQuestionModal';
+import EditQuestionnaireDialog from './EditQuestionnaireDialog';
 
 interface QuestionnaireAccordionProps {
   template: QuestionnaireTemplate;
+  onTemplateCreated?: (template: QuestionnaireTemplate) => void;
 }
 
-const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ template }) => {
+const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ 
+  template,
+  onTemplateCreated 
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedQuestions, setEditedQuestions] = useState<Question[]>(template.questions);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [editQuestionDialogOpen, setEditQuestionDialogOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [isTemplateEditDialogOpen, setIsTemplateEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const openQuestions = editedQuestions.filter(q => q.type === 'open');
@@ -122,6 +128,89 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
     setIsEditing(false);
   };
 
+  const handleEditTemplateClick = () => {
+    setIsTemplateEditDialogOpen(true);
+  };
+
+  const handleSaveTemplate = async (updatedTemplate: Partial<QuestionnaireTemplate>) => {
+    try {
+      // Get the current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "יש להתחבר תחילה",
+          description: "עליך להתחבר למערכת כדי לערוך שאלונים",
+        });
+        return;
+      }
+
+      const now = new Date().toISOString();
+      
+      // If editing a system template, create a new custom template
+      if (template.is_system_template) {
+        const newTemplate = {
+          title: updatedTemplate.title || template.title,
+          questions: updatedTemplate.questions || template.questions,
+          type: updatedTemplate.type || template.type,
+          is_system_template: false,
+          coach_id: session.user.id,
+          created_at: now,
+          updated_at: now,
+          parent_template_id: template.id // Reference to original system template
+        };
+        
+        const { data, error } = await supabase
+          .from('questionnaire_templates')
+          .insert([newTemplate])
+          .select()
+          .single();
+          
+        if (error) {
+          throw error;
+        }
+        
+        // Notify parent component of the new template
+        if (onTemplateCreated && data) {
+          onTemplateCreated(data);
+        }
+        
+        toast({
+          title: "שאלון חדש נוצר",
+          description: "גרסה אישית של השאלון נוצרה בהצלחה"
+        });
+      } 
+      // If editing a custom template, update it
+      else {
+        const { error } = await supabase
+          .from('questionnaire_templates')
+          .update({ 
+            title: updatedTemplate.title,
+            questions: updatedTemplate.questions,
+            updated_at: now
+          })
+          .eq('id', template.id);
+          
+        if (error) {
+          throw error;
+        }
+        
+        toast({
+          title: "השאלון עודכן",
+          description: "השאלון עודכן בהצלחה"
+        });
+      }
+    } catch (error) {
+      console.error('Error saving template:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בשמירה",
+        description: "אירעה שגיאה בעת שמירת השאלון. נסה שנית."
+      });
+    }
+  };
+
   const handleAssignQuestionnaire = async (templateId: string, playerId: string) => {
     try {
       // Get the current user's auth session
@@ -189,8 +278,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
     }
   };
 
-  const canEdit = !template.is_system_template;
-
   return (
     <Card className="mb-4 overflow-hidden">
       <Accordion type="single" collapsible className="w-full">
@@ -198,13 +285,17 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
           <AccordionTrigger className="px-6 py-4 hover:no-underline">
             <div className="flex-1 flex items-center justify-between pl-4">
               <span className="font-bold text-lg">{template.title}</span>
-              {!isEditing && !template.is_system_template && (
+              {!isEditing && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsEditing(true);
+                    if (!template.is_system_template) {
+                      setIsEditing(true);
+                    } else {
+                      handleEditTemplateClick();
+                    }
                   }}
                   className="mr-4"
                 >
@@ -232,7 +323,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                         ) : (
                           <div className="group flex justify-between items-start">
                             <p className="text-right flex-1">{question.question_text}</p>
-                            {canEdit && (
+                            {!template.is_system_template && (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -266,7 +357,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                         ) : (
                           <div className="flex justify-between items-center">
                             <Label className="text-right block flex-1">{question.question_text}</Label>
-                            {canEdit && (
+                            {!template.is_system_template && (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -331,6 +422,14 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                 onOpenChange={setEditQuestionDialogOpen}
                 question={currentQuestion}
                 onSave={handleSaveQuestionEdit}
+              />
+              
+              <EditQuestionnaireDialog
+                open={isTemplateEditDialogOpen}
+                onOpenChange={setIsTemplateEditDialogOpen}
+                template={template}
+                onSave={handleSaveTemplate}
+                isNewTemplate={template.is_system_template}
               />
             </div>
           </AccordionContent>
