@@ -1,6 +1,7 @@
 
 import {
   createBrowserRouter,
+  Navigate,
 } from "react-router-dom";
 import App from "./App";
 import PlayerAuth from "./pages/PlayerAuth";
@@ -14,11 +15,16 @@ import PlayerProfileView from "./pages/player/PlayerProfileView";
 import PlayerQuestionnaireForm from "./pages/player/PlayerQuestionnaireForm";
 import PlayerGameEvaluation from "./pages/player/PlayerGameEvaluation";
 import PlayerProfileAlternative from "./pages/player/PlayerProfileAlternative";
+import Index from "./pages/Index";
 
 const routes = createBrowserRouter([
   {
     path: "/",
-    element: <App />,
+    element: <Navigate to="/index" replace />,
+  },
+  {
+    path: "/index",
+    element: <Index />,
   },
   {
     path: "/player-auth",
