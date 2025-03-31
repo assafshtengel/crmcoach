@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { MentalPrepForm } from "@/components/MentalPrepForm";
@@ -45,7 +44,21 @@ const Index = () => {
       if (user) {
         setUserId(user.id);
         
-        // Get the user's coach ID (from the players table)
+        // Check if the user is a coach (exists in the coaches table)
+        const { data: coachData, error: coachError } = await supabase
+          .from('coaches')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+        
+        // If the user is a coach, redirect to the coach dashboard
+        if (!coachError && coachData) {
+          console.log("Coach user detected, redirecting to coach dashboard");
+          navigate('/');
+          return;
+        }
+        
+        // Continue with player-related data fetching only if not a coach
         const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('coach_id')
@@ -57,15 +70,13 @@ const Index = () => {
         } else {
           console.error("Error fetching player's coach ID:", playerError);
         }
-        
-        // We no longer need to manually fetch videos here since that's handled in the VideosTab
       } else {
         console.log("No authenticated user found");
         setLoading(false);
       }
     };
     getUserInfo();
-  }, []);
+  }, [navigate]);
 
   const fetchVideos = async (userId: string) => {
     setLoading(true);
