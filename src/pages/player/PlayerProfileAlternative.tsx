@@ -9,8 +9,9 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { User, Calendar, FileText, Video, ArrowRight, LogOut, ExternalLink } from 'lucide-react';
+import { User, Calendar, FileText, Video, ArrowRight, LogOut, ExternalLink, ClipboardList } from 'lucide-react';
 import { PlayerData, PlayerSession, SessionSummary } from "@/types/player";
+import QuestionnairesSectionAlt from "@/components/player/QuestionnairesSectionAlt";
 
 const PlayerProfileAlternative = () => {
   const navigate = useNavigate();
@@ -379,6 +380,15 @@ const PlayerProfileAlternative = () => {
             </Card>
           </motion.div>
         </div>
+
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
+        >
+          {player?.id && <QuestionnairesSectionAlt playerId={player.id} />}
+        </motion.div>
 
         <motion.div
           className="mt-6"

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -119,7 +120,7 @@ const PlayerProfileView = () => {
             </TabsList>
             
             <TabsContent value="videos" className="space-y-6">
-              <VideosTab playerId={player?.id} />
+              <VideosTab playerId={player?.id} coachId={player?.coach_id} />
             </TabsContent>
             
             <TabsContent value="questionnaires" className="space-y-6">
