@@ -44,7 +44,7 @@ const QuestionnairesPage = () => {
         
         setIsAuthenticated(true);
         
-        // טעינת תבניות שאלונים מותאמות אישית של המאמן הנוכחי
+        // Fetch custom templates created by the coach
         const { data: templates, error } = await supabase
           .from('questionnaire_templates')
           .select('*')

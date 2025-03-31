@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Accordion, 
@@ -12,12 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Question, QuestionnaireTemplate } from '@/types/questionnaire';
-import { Pencil, Save, X, Edit } from 'lucide-react';
+import { Pencil, Save, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import AssignQuestionnaireDialog from './AssignQuestionnaireDialog';
-import EditQuestionnaireDialog from './EditQuestionnaireDialog';
 
 interface QuestionnaireAccordionProps {
   template: QuestionnaireTemplate;
@@ -27,7 +26,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
   const [isEditing, setIsEditing] = useState(false);
   const [editedQuestions, setEditedQuestions] = useState<Question[]>(template.questions);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const openQuestions = editedQuestions.filter(q => q.type === 'open');
@@ -42,6 +40,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
   };
 
   const handleSave = async () => {
+    // Only save if this is a custom (non-system) template
     if (!template.is_system_template) {
       try {
         const { error } = await supabase
@@ -79,6 +78,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
 
   const handleAssignQuestionnaire = async (templateId: string, playerId: string) => {
     try {
+      // Get the current user's auth session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session || !session.user) {
@@ -92,6 +92,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
 
       const coachId = session.user.id;
       
+      // Create a questionnaire instance from the template
       const { data: questionnaire, error: questionnaireError } = await supabase
         .from('questionnaires')
         .insert({
@@ -111,6 +112,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
         throw questionnaireError;
       }
 
+      // Create a record in the assigned_questionnaires table
       const { error } = await supabase
         .from('assigned_questionnaires')
         .insert({
@@ -148,66 +150,27 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
           <AccordionTrigger className="px-6 py-4 hover:no-underline">
             <div className="flex-1 flex items-center justify-between pl-4">
               <span className="font-bold text-lg">{template.title}</span>
-              {!template.is_system_template && (
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditDialogOpen(true);
-                    }}
-                    className="mr-4 bg-blue-50 hover:bg-blue-100 border-blue-200"
-                  >
-                    <Edit className="h-4 w-4 ml-2 text-blue-600" />
-                    <span className="text-blue-600">ערוך</span>
-                  </Button>
-                </div>
+              {!isEditing && !template.is_system_template && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditing(true);
+                  }}
+                  className="mr-4"
+                >
+                  <Pencil className="h-4 w-4 ml-2" />
+                  ערוך
+                </Button>
               )}
             </div>
           </AccordionTrigger>
           <AccordionContent className="px-6">
             <div className="space-y-6">
-              {!template.is_system_template && (
-                <div className="bg-blue-50 p-3 rounded-md border border-blue-200 flex items-center justify-between mb-4">
-                  <span className="text-blue-700 font-medium">הגדרות שאלון</span>
-                  <Button 
-                    variant="default" 
-                    size="sm" 
-                    onClick={() => setIsEditDialogOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Edit className="h-4 w-4 ml-2" />
-                    ערוך שאלון
-                  </Button>
-                </div>
-              )}
-
               {openQuestions.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-md flex items-center justify-between">
-                    <span>שאלות פתוחות</span>
-                    {!template.is_system_template && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => setIsEditDialogOpen(true)}
-                              className="text-blue-600"
-                            >
-                              <Pencil className="h-4 w-4 ml-1" />
-                              ערוך
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>ערוך את שאלות השאלון</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </h3>
+                  <h3 className="font-semibold text-md">שאלות פתוחות</h3>
                   <div className="space-y-4">
                     {openQuestions.map((question) => (
                       <div key={question.id} className="space-y-2">
@@ -219,21 +182,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                             dir="rtl"
                           />
                         ) : (
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200 relative group">
-                            <div className="flex items-center">
-                              <p className="text-right pr-8 flex-1">{question.question_text}</p>
-                              {!template.is_system_template && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setIsEditDialogOpen(true)}
-                                  className="text-gray-500 hover:text-blue-600"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
+                          <p className="text-right">{question.question_text}</p>
                         )}
                       </div>
                     ))}
@@ -243,29 +192,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
 
               {closedQuestions.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-md flex items-center justify-between">
-                    <span>שאלות סגורות</span>
-                    {!template.is_system_template && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => setIsEditDialogOpen(true)}
-                              className="text-blue-600"
-                            >
-                              <Pencil className="h-4 w-4 ml-1" />
-                              ערוך
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>ערוך את שאלות השאלון</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </h3>
+                  <h3 className="font-semibold text-md">שאלות סגורות</h3>
                   <div className="space-y-6">
                     {closedQuestions.map((question) => (
                       <div key={question.id} className="space-y-3">
@@ -277,21 +204,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                             dir="rtl"
                           />
                         ) : (
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200 relative group">
-                            <div className="flex items-center">
-                              <Label className="text-right block pr-8 flex-1">{question.question_text}</Label>
-                              {!template.is_system_template && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setIsEditDialogOpen(true)}
-                                  className="text-gray-500 hover:text-blue-600"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
+                          <Label className="text-right block">{question.question_text}</Label>
                         )}
                         <div className="pr-2 pl-2">
                           <Slider
@@ -327,21 +240,10 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
 
               {!isEditing && (
                 <div className="mt-6 pt-4 border-t border-gray-200">
-                  <div className="flex flex-wrap gap-3">
-                    {!template.is_system_template && (
-                      <Button 
-                        variant="default" 
-                        onClick={() => setIsEditDialogOpen(true)}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        <Edit className="h-4 w-4 ml-2" />
-                        <span>ערוך שאלון</span>
-                      </Button>
-                    )}
-                    <Button onClick={() => setIsAssignDialogOpen(true)}>
-                      שייך את השאלון לשחקן
-                    </Button>
-                  </div>
+                  <h3 className="font-semibold text-md mb-3">הקצאת שאלון לשחקן</h3>
+                  <Button onClick={() => setIsAssignDialogOpen(true)}>
+                    שייך את השאלון לשחקן
+                  </Button>
                 </div>
               )}
 
@@ -355,41 +257,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-
-      {!template.is_system_template && (
-        <EditQuestionnaireDialog 
-          open={isEditDialogOpen} 
-          onOpenChange={setIsEditDialogOpen}
-          template={template}
-          onSave={async (updatedTemplate) => {
-            try {
-              const { error } = await supabase
-                .from('questionnaire_templates')
-                .update({ 
-                  title: updatedTemplate.title,
-                  questions: updatedTemplate.questions,
-                  updated_at: new Date().toISOString()
-                })
-                .eq('id', template.id);
-              
-              if (error) throw error;
-              
-              toast({
-                title: "השאלון עודכן בהצלחה",
-                description: "השינויים נשמרו בהצלחה"
-              });
-            } catch (error) {
-              console.error('Error updating template:', error);
-              toast({
-                title: "שגיאה בעדכון השאלון",
-                description: "אירעה שגיאה בעת שמירת השינויים",
-                variant: "destructive"
-              });
-            }
-          }}
-          isNewTemplate={false}
-        />
-      )}
     </Card>
   );
 };
