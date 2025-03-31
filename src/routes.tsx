@@ -14,17 +14,11 @@ import PlayerProfileView from "./pages/player/PlayerProfileView";
 import PlayerQuestionnaireForm from "./pages/player/PlayerQuestionnaireForm";
 import PlayerGameEvaluation from "./pages/player/PlayerGameEvaluation";
 import PlayerProfileAlternative from "./pages/player/PlayerProfileAlternative";
-import DashboardCoach from "./pages/DashboardCoach";
-import Index from "./pages/Index";
 
 const routes = createBrowserRouter([
   {
     path: "/",
-    element: <DashboardCoach />,
-  },
-  {
-    path: "/index",
-    element: <Index />,
+    element: <App />,
   },
   {
     path: "/player-auth",
