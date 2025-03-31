@@ -20,10 +20,30 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
   const [questionnaires, setQuestionnaires] = useState<AssignedQuestionnaire[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [lastRefreshed, setLastRefreshed] = useState<number>(Date.now());
 
   useEffect(() => {
     fetchAssignedQuestionnaires();
-  }, [playerId]);
+
+    // Set up refresh interval (every 30 seconds)
+    const refreshInterval = setInterval(() => {
+      fetchAssignedQuestionnaires();
+    }, 30000);
+
+    // Add visibility change listener to refresh when tab becomes active
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchAssignedQuestionnaires();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(refreshInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [playerId, lastRefreshed]);
 
   const fetchAssignedQuestionnaires = async () => {
     try {
@@ -49,6 +69,7 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
       if (error) throw error;
       
       setQuestionnaires(data || []);
+      setLastRefreshed(Date.now());
     } catch (err) {
       console.error('Error fetching assigned questionnaires:', err);
       toast.error("לא ניתן היה לטעון את השאלונים");
