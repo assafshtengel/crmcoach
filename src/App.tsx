@@ -74,7 +74,7 @@ function App() {
             
             {/* All other routes use the Layout component */}
             <Route element={<Layout />}>
-              <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
+              <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
               <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
               <Route path="/new" element={<AuthGuard><NewIndex /></AuthGuard>} />
               <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
