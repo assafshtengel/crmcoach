@@ -66,13 +66,26 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
         .eq('status', 'pending')
         .order('assigned_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        // More detailed error logging and user-friendly toast
+        console.error('Detailed error fetching assigned questionnaires:', error);
+        toast.error('שגיאה בטעינת שאלונים', {
+          description: error.message || 'לא ניתן היה לטעון את השאלונים המשוייכים. אנא נסה שוב מאוחר יותר.',
+        });
+        // Set an empty array to prevent breaking the UI
+        setQuestionnaires([]);
+        return;
+      }
       
       setQuestionnaires(data || []);
       setLastRefreshed(Date.now());
     } catch (err) {
-      console.error('Error fetching assigned questionnaires:', err);
-      toast.error("לא ניתן היה לטעון את השאלונים");
+      // Catch any unexpected errors during the fetch process
+      console.error('Unexpected error in fetchAssignedQuestionnaires:', err);
+      toast.error('שגיאה בלתי צפויה', {
+        description: 'אירעה שגיאה בעת טעינת השאלונים. אנא נסה שוב.',
+      });
+      setQuestionnaires([]);
     } finally {
       setLoading(false);
     }
