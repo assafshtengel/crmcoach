@@ -23,6 +23,8 @@ const PlayerProfileView = () => {
           ? JSON.parse(localStorage.getItem('playerSession')!).id
           : null;
 
+        console.log("Player profile - playerSession ID:", playerId);
+
         if (!playerId) {
           navigate('/player-auth');
           return;
@@ -40,6 +42,7 @@ const PlayerProfileView = () => {
           return;
         }
 
+        console.log("Player profile data loaded:", data);
         setPlayer(data);
       } catch (error) {
         console.error("Unexpected error:", error);
@@ -93,19 +96,19 @@ const PlayerProfileView = () => {
           <CardContent className="p-6">
             <div className="flex items-center gap-6">
               <Avatar className="w-24 h-24">
-                <AvatarImage src={player.profile_image} />
-                <AvatarFallback>{player.full_name?.charAt(0)}</AvatarFallback>
+                <AvatarImage src={player?.profile_image} />
+                <AvatarFallback>{player?.full_name?.charAt(0)}</AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="text-2xl font-bold">{player.full_name}</h2>
-                <p className="text-gray-500">{player.email}</p>
+                <h2 className="text-2xl font-bold">{player?.full_name}</h2>
+                <p className="text-gray-500">{player?.email}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <Mail className="h-4 w-4 text-gray-500" />
-                  <span>{player.email}</span>
+                  <span>{player?.email}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <Phone className="h-4 w-4 text-gray-500" />
-                  <span>{player.phone}</span>
+                  <span>{player?.phone}</span>
                 </div>
               </div>
             </div>
@@ -124,6 +127,7 @@ const PlayerProfileView = () => {
             </TabsContent>
             
             <TabsContent value="questionnaires" className="space-y-6">
+              {console.log("Rendering questionnaires tab with player ID:", player?.id)}
               <AssignedQuestionnairesSection playerId={player?.id} />
             </TabsContent>
           </Tabs>

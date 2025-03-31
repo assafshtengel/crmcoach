@@ -47,6 +47,7 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
 
   const fetchAssignedQuestionnaires = async () => {
     try {
+      console.log("QuestionnairesSectionAlt: Fetching for player ID:", playerId);
       setLoading(true);
       
       // Fixed query to properly join assigned_questionnaires with the questionnaires table
@@ -74,7 +75,7 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
 
       if (error) {
         // More detailed error logging and user-friendly toast
-        console.error('Detailed error fetching assigned questionnaires:', error);
+        console.error('QuestionnairesSectionAlt: Error details:', error);
         toast.error('שגיאה בטעינת שאלונים', {
           description: error.message || 'לא ניתן היה לטעון את השאלונים המשוייכים. אנא נסה שוב מאוחר יותר.',
         });
@@ -84,13 +85,15 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
       }
       
       // Log data to help debug
-      console.log('Assigned questionnaires data:', data);
+      console.log('QuestionnairesSectionAlt: Fetched data:', data);
+      console.log('QuestionnairesSectionAlt: First questionnaire:', data?.[0]);
+      console.log('QuestionnairesSectionAlt: Questionnaires data structure:', data?.[0]?.questionnaires);
       
       setQuestionnaires(data || []);
       setLastRefreshed(Date.now());
     } catch (err) {
       // Catch any unexpected errors during the fetch process
-      console.error('Unexpected error in fetchAssignedQuestionnaires:', err);
+      console.error('QuestionnairesSectionAlt: Unexpected error:', err);
       toast.error('שגיאה בלתי צפויה', {
         description: 'אירעה שגיאה בעת טעינת השאלונים. אנא נסה שוב.',
       });

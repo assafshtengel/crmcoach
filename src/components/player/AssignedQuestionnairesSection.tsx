@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, ClipboardList, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -26,6 +25,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
 
   const fetchAssignedQuestionnaires = async () => {
     try {
+      console.log("Fetching questionnaires for player ID:", playerId);
       setLoading(true);
       
       const { data, error } = await supabase
@@ -45,9 +45,13 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
         .eq('status', 'pending')
         .order('assigned_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error);
+        throw error;
+      }
       
-      console.log('Fetched assigned questionnaires:', data);
+      console.log('Fetched assigned questionnaires data:', data);
+      console.log('Questionnaires data structure:', data?.[0]?.questionnaires);
       setQuestionnaires(data || []);
     } catch (err) {
       console.error('Error fetching assigned questionnaires:', err);
