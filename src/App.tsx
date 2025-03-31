@@ -5,7 +5,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Layout } from '@/components/layout/Layout';
-import { CoachRedirect } from '@/components/redirects/CoachRedirect';
 import ToolManagement from '@/pages/ToolManagement';
 import AutoVideoManagement from '@/pages/AutoVideoManagement';
 import QuestionnairesPage from '@/pages/QuestionnairesPage';
@@ -75,8 +74,7 @@ function App() {
             
             {/* All other routes use the Layout component */}
             <Route element={<Layout />}>
-              {/* Wrap the root route in CoachRedirect to handle coach-specific redirection */}
-              <Route path="/" element={<CoachRedirect><AuthGuard><DashboardCoach /></AuthGuard></CoachRedirect>} />
+              <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
               <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
               <Route path="/new" element={<AuthGuard><NewIndex /></AuthGuard>} />
               <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
