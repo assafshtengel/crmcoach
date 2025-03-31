@@ -52,8 +52,8 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
       if (data.user) {
         console.log("User authenticated:", data.user);
         
-        // המשתמש התחבר בהצלחה, מעבר ישיר לדף הבית
-        navigate('/');
+        // Navigate to /index after successful login
+        navigate('/index');
         
         toast({
           title: "התחברות בוצעה בהצלחה",
