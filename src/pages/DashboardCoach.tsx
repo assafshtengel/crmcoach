@@ -26,6 +26,8 @@ import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
 import { ClipboardList } from 'lucide-react';
+import { HomeRedirectPopup } from '@/components/coach/HomeRedirectPopup';
+
 interface DashboardStats {
   totalPlayers: number;
   upcomingSessions: number;
@@ -35,6 +37,7 @@ interface DashboardStats {
   twoMonthsAgoSessions: number;
   totalReminders: number;
 }
+
 interface UpcomingSession {
   id: string;
   session_date: string;
@@ -48,6 +51,7 @@ interface UpcomingSession {
   };
   has_summary?: boolean;
 }
+
 interface SessionResponse {
   id: string;
   session_date: string;
@@ -59,6 +63,7 @@ interface SessionResponse {
     full_name: string;
   };
 }
+
 interface Notification {
   id: string;
   message: string;
@@ -66,6 +71,7 @@ interface Notification {
   is_read: boolean;
   type: string;
 }
+
 interface CalendarEvent {
   id: string;
   title: string;
@@ -79,12 +85,14 @@ interface CalendarEvent {
     notes?: string;
   };
 }
+
 interface EventFormData {
   title: string;
   date: string;
   time: string;
   notes?: string;
 }
+
 const HeaderMenu = ({
   navigate,
   setShowLandingPageDialog,
@@ -120,11 +128,10 @@ const HeaderMenu = ({
       </DropdownMenuItem>
     </DropdownMenuContent>;
 };
+
 const DashboardCoach = () => {
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [coachName, setCoachName] = useState('');
@@ -153,6 +160,8 @@ const DashboardCoach = () => {
   }[]>([]);
   const [isSessionFormOpen, setIsSessionFormOpen] = useState(false);
   const [showLandingPageDialog, setShowLandingPageDialog] = useState(false);
+  const [showHomeRedirectPopup, setShowHomeRedirectPopup] = useState(false);
+
   useEffect(() => {
     const initUser = async () => {
       const {
@@ -164,6 +173,7 @@ const DashboardCoach = () => {
     };
     initUser();
   }, []);
+
   const fetchData = async (userId: string) => {
     try {
       const today = new Date();
@@ -294,6 +304,7 @@ const DashboardCoach = () => {
       setIsLoading(false);
     }
   };
+
   const fetchNotifications = async (userId: string) => {
     try {
       const {
@@ -309,6 +320,7 @@ const DashboardCoach = () => {
       console.error('Error fetching notifications:', error);
     }
   };
+
   const markAsRead = async (notificationId: string, e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
@@ -329,6 +341,7 @@ const DashboardCoach = () => {
       console.error('Error marking notification as read:', error);
     }
   };
+
   const handleSendReminder = async (sessionId: string) => {
     try {
       const {
@@ -377,6 +390,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -394,6 +408,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleSaveSessionSummary = async (sessionId: string, data: any) => {
     try {
       const {
@@ -442,9 +457,11 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleViewSummary = async (sessionId: string) => {
     navigate(`/all-meeting-summaries`);
   };
+
   const renderSessionCard = (session: UpcomingSession, showSummaryButton: boolean = true) => {
     const sessionDate = new Date(session.session_date);
     const isToday = isSameDay(sessionDate, new Date());
@@ -514,6 +531,7 @@ const DashboardCoach = () => {
         </CardContent>
       </Card>;
   };
+
   const fetchCalendarEvents = async (userId: string) => {
     try {
       const {
@@ -564,6 +582,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const handleAddEvent = async (eventData: any) => {
     try {
       if (!user?.id) {
@@ -597,6 +616,7 @@ const DashboardCoach = () => {
       throw error;
     }
   };
+
   const handleSessionFormSubmit = async (sessionData: {
     player_id: string;
     session_date: string;
@@ -615,6 +635,7 @@ const DashboardCoach = () => {
       return Promise.reject(error);
     }
   };
+
   useEffect(() => {
     const initializeDashboard = async () => {
       const {
@@ -629,6 +650,8 @@ const DashboardCoach = () => {
         if (coachData) {
           setCoachName(coachData.full_name);
           setProfilePicture(coachData.profile_picture);
+          
+          setShowHomeRedirectPopup(true);
         }
         await fetchData(authUser.id);
         await fetchNotifications(authUser.id);
@@ -656,6 +679,7 @@ const DashboardCoach = () => {
     };
     initializeDashboard();
   }, []);
+
   const handleEventClick = (eventId: string) => {
     const session = upcomingSessions.find(s => s.id === eventId);
     if (session) {
@@ -666,6 +690,7 @@ const DashboardCoach = () => {
       });
     }
   };
+
   const getMonthlySessionsData = () => {
     return [{
       name: 'לפני חודשיים',
@@ -685,6 +710,7 @@ const DashboardCoach = () => {
       fill: '#3B82F6'
     }];
   };
+
   useEffect(() => {
     const fetchPlayers = async () => {
       const {
@@ -705,6 +731,7 @@ const DashboardCoach = () => {
     };
     fetchPlayers();
   }, []);
+
   useEffect(() => {
     const handleSessionSummarized = (event: any) => {
       const {
@@ -726,13 +753,19 @@ const DashboardCoach = () => {
       window.removeEventListener('sessionSummarized', handleSessionSummarized);
     };
   }, [pastSessionsToSummarize]);
+
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>;
   }
-  console.log("Rendering DashboardCoach with landing page button");
+
   return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
+      <HomeRedirectPopup 
+        open={showHomeRedirectPopup} 
+        onOpenChange={setShowHomeRedirectPopup}
+      />
+      
       <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1141,4 +1174,5 @@ const DashboardCoach = () => {
       <LandingPageDialog open={showLandingPageDialog} onOpenChange={setShowLandingPageDialog} />
     </div>;
 };
+
 export default DashboardCoach;
