@@ -10,6 +10,7 @@ import { Question, QuestionnaireTemplate } from '@/types/questionnaire';
 import { Separator } from '@/components/ui/separator';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 interface EditQuestionnaireDialogProps {
   open: boolean;
@@ -30,6 +31,38 @@ const EditQuestionnaireDialog: React.FC<EditQuestionnaireDialogProps> = ({
   const [title, setTitle] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication when the component mounts
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session);
+        
+        if (!session) {
+          toast({
+            variant: "destructive",
+            title: "שגיאת אימות",
+            description: "יש להתחבר למערכת כדי לערוך שאלונים"
+          });
+          onOpenChange(false);
+        }
+      } catch (error) {
+        console.error('Authentication error:', error);
+        toast({
+          variant: "destructive",
+          title: "שגיאת אימות",
+          description: "אירעה שגיאה בבדיקת פרטי המשתמש"
+        });
+        onOpenChange(false);
+      }
+    };
+    
+    if (open) {
+      checkAuth();
+    }
+  }, [open, onOpenChange, toast]);
 
   useEffect(() => {
     if (template) {
@@ -62,6 +95,15 @@ const EditQuestionnaireDialog: React.FC<EditQuestionnaireDialogProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (!isAuthenticated) {
+      toast({
+        variant: "destructive",
+        title: "שגיאת אימות",
+        description: "יש להתחבר למערכת כדי לשמור שאלונים"
+      });
+      return;
+    }
+
     if (!title.trim()) {
       toast({
         variant: "destructive",
@@ -106,6 +148,10 @@ const EditQuestionnaireDialog: React.FC<EditQuestionnaireDialogProps> = ({
       setIsSubmitting(false);
     }
   };
+
+  if (!isAuthenticated && open) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

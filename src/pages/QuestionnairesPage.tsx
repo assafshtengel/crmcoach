@@ -26,6 +26,22 @@ const QuestionnairesPage = () => {
   
   const hasCustomTemplates = customTemplates.length > 0;
 
+  // Set up an auth state change listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setIsAuthenticated(false);
+          navigate('/auth');
+        } else if (event === 'SIGNED_IN' && session) {
+          setIsAuthenticated(true);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -76,25 +92,22 @@ const QuestionnairesPage = () => {
     checkSession();
   }, [navigate, toast]);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          setIsAuthenticated(false);
-          navigate('/auth');
-        } else if (event === 'SIGNED_IN' && session) {
-          setIsAuthenticated(true);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Don't render the full page if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4">
+        <h1 className="text-2xl font-bold">יש להתחבר למערכת תחילה</h1>
+        <Button onClick={() => navigate('/auth')}>
+          לדף התחברות
+        </Button>
       </div>
     );
   }

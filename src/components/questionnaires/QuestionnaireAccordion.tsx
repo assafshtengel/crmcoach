@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Accordion, 
@@ -17,6 +16,7 @@ import { Pencil, Save, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
 import AssignQuestionnaireDialog from './AssignQuestionnaireDialog';
+import EditQuestionModal from './EditQuestionModal';
 
 interface QuestionnaireAccordionProps {
   template: QuestionnaireTemplate;
@@ -26,6 +26,8 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
   const [isEditing, setIsEditing] = useState(false);
   const [editedQuestions, setEditedQuestions] = useState<Question[]>(template.questions);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [editQuestionDialogOpen, setEditQuestionDialogOpen] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const { toast } = useToast();
 
   const openQuestions = editedQuestions.filter(q => q.type === 'open');
@@ -37,6 +39,49 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
         q.id === id ? { ...q, question_text: newText } : q
       )
     );
+  };
+
+  const handleEditQuestion = (question: Question) => {
+    setCurrentQuestion(question);
+    setEditQuestionDialogOpen(true);
+  };
+
+  const handleSaveQuestionEdit = async (id: string, newText: string) => {
+    // Update the local state
+    handleQuestionChange(id, newText);
+    
+    // If this is not a system template, save the changes to the database
+    if (!template.is_system_template) {
+      try {
+        const updatedQuestions = editedQuestions.map(q => 
+          q.id === id ? { ...q, question_text: newText } : q
+        );
+        
+        const { error } = await supabase
+          .from('questionnaire_templates')
+          .update({ 
+            questions: updatedQuestions,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', template.id);
+          
+        if (error) {
+          throw error;
+        }
+        
+        toast({
+          title: "השאלה נשמרה",
+          description: "השינויים בשאלה נשמרו בהצלחה."
+        });
+      } catch (error) {
+        console.error('Error saving question:', error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה בשמירה",
+          description: "אירעה שגיאה בעת שמירת השאלה. נסה שנית."
+        });
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -143,6 +188,8 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
     }
   };
 
+  const canEdit = !template.is_system_template;
+
   return (
     <Card className="mb-4 overflow-hidden">
       <Accordion type="single" collapsible className="w-full">
@@ -173,7 +220,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                   <h3 className="font-semibold text-md">שאלות פתוחות</h3>
                   <div className="space-y-4">
                     {openQuestions.map((question) => (
-                      <div key={question.id} className="space-y-2">
+                      <div key={question.id} className="space-y-2 relative">
                         {isEditing ? (
                           <Textarea
                             value={question.question_text}
@@ -182,7 +229,19 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                             dir="rtl"
                           />
                         ) : (
-                          <p className="text-right">{question.question_text}</p>
+                          <div className="group flex justify-between items-start">
+                            <p className="text-right flex-1">{question.question_text}</p>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="opacity-70 hover:opacity-100 ml-2"
+                                onClick={() => handleEditQuestion(question)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </div>
                     ))}
@@ -204,7 +263,19 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                             dir="rtl"
                           />
                         ) : (
-                          <Label className="text-right block">{question.question_text}</Label>
+                          <div className="flex justify-between items-center">
+                            <Label className="text-right block flex-1">{question.question_text}</Label>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="opacity-70 hover:opacity-100 ml-2"
+                                onClick={() => handleEditQuestion(question)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         )}
                         <div className="pr-2 pl-2">
                           <Slider
@@ -252,6 +323,13 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({ templat
                 onOpenChange={setIsAssignDialogOpen}
                 template={template}
                 onAssign={handleAssignQuestionnaire}
+              />
+              
+              <EditQuestionModal
+                open={editQuestionDialogOpen}
+                onOpenChange={setEditQuestionDialogOpen}
+                question={currentQuestion}
+                onSave={handleSaveQuestionEdit}
               />
             </div>
           </AccordionContent>
