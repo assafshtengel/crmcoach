@@ -12,6 +12,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { User, Calendar, FileText, Video, ArrowRight, LogOut, ExternalLink, ClipboardList } from 'lucide-react';
 import { PlayerData, PlayerSession, SessionSummary } from "@/types/player";
 import QuestionnairesSectionAlt from "@/components/player/QuestionnairesSectionAlt";
+import CompletedQuestionnairesSection from "@/components/player/CompletedQuestionnaireSection";
 
 const PlayerProfileAlternative = () => {
   const navigate = useNavigate();
@@ -395,6 +396,15 @@ const PlayerProfileAlternative = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          {player?.id && <CompletedQuestionnairesSection playerId={player.id} />}
+        </motion.div>
+
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.35 }}
         >
           <Card className="shadow-md">
             <CardHeader className="bg-gradient-to-r from-[#F2FCE2]/50 to-[#E5DEFF]/50 pb-3">
