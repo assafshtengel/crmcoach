@@ -35,7 +35,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
           coach:coaches (
             full_name
           ),
-          questionnaires:questionnaire_templates!inner (
+          questionnaires:questionnaires (
             title,
             type,
             questions
@@ -47,6 +47,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
 
       if (error) throw error;
       
+      console.log('Fetched assigned questionnaires:', data);
       setQuestionnaires(data || []);
     } catch (err) {
       console.error('Error fetching assigned questionnaires:', err);
@@ -156,4 +157,3 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
     </Card>
   );
 };
-
