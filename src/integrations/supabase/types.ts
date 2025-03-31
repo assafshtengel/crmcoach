@@ -1762,6 +1762,42 @@ export type Database = {
         }
         Relationships: []
       }
+      questionnaires: {
+        Row: {
+          coach_id: string | null
+          created_at: string | null
+          id: string
+          is_completed: boolean | null
+          player_id: string | null
+          questions: Json | null
+          template_id: string | null
+          title: string | null
+          type: string | null
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          player_id?: string | null
+          questions?: Json | null
+          template_id?: string | null
+          title?: string | null
+          type?: string | null
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          player_id?: string | null
+          questions?: Json | null
+          template_id?: string | null
+          title?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
       registration_links: {
         Row: {
           coach_id: string

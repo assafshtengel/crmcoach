@@ -105,7 +105,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
         
         toast({
           title: "השינויים נשמרו",
-          description: "השינויי�� בשאלון נשמרו בהצלחה."
+          description: "השינויים בשאלון נשמרו בהצלחה."
         });
       } catch (error) {
         console.error('Error saving changes:', error);
