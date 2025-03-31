@@ -36,7 +36,7 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
           coach:coaches (
             full_name
           ),
-          questionnaire:questionnaire_templates!inner (
+          questionnaire:questionnaires (
             title,
             type,
             questions
