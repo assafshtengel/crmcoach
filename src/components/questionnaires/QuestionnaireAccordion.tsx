@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Accordion, 
@@ -54,10 +53,8 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
   };
 
   const handleSaveQuestionEdit = async (id: string, newText: string) => {
-    // Update the local state
     handleQuestionChange(id, newText);
     
-    // If this is not a system template, save the changes to the database
     if (!template.is_system_template) {
       try {
         const updatedQuestions = editedQuestions.map(q => 
@@ -92,7 +89,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
   };
 
   const handleSave = async () => {
-    // Only save if this is a custom (non-system) template
     if (!template.is_system_template) {
       try {
         const { error } = await supabase
@@ -109,7 +105,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
         
         toast({
           title: "השינויים נשמרו",
-          description: "השינויים בשאלון נשמרו בהצלחה."
+          description: "השינויי�� בשאלון נשמרו בהצלחה."
         });
       } catch (error) {
         console.error('Error saving changes:', error);
@@ -134,7 +130,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
 
   const handleSaveTemplate = async (updatedTemplate: Partial<QuestionnaireTemplate>) => {
     try {
-      // Get the current user session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -148,7 +143,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
 
       const now = new Date().toISOString();
       
-      // If editing a system template, create a new custom template
       if (template.is_system_template) {
         const newTemplate = {
           title: updatedTemplate.title || template.title,
@@ -158,7 +152,7 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
           coach_id: session.user.id,
           created_at: now,
           updated_at: now,
-          parent_template_id: template.id // Reference to original system template
+          parent_template_id: template.id
         };
         
         const { data, error } = await supabase
@@ -171,7 +165,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
           throw error;
         }
         
-        // Notify parent component of the new template
         if (onTemplateCreated && data) {
           onTemplateCreated(data);
         }
@@ -181,7 +174,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
           description: "גרסה אישית של השאלון נוצרה בהצלחה"
         });
       } 
-      // If editing a custom template, update it
       else {
         const { error } = await supabase
           .from('questionnaire_templates')
@@ -213,7 +205,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
 
   const handleAssignQuestionnaire = async (templateId: string, playerId: string) => {
     try {
-      // Get the current user's auth session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session || !session.user) {
@@ -227,7 +218,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
 
       const coachId = session.user.id;
       
-      // Create a questionnaire instance from the template
       const { data: questionnaire, error: questionnaireError } = await supabase
         .from('questionnaires')
         .insert({
@@ -247,7 +237,6 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
         throw questionnaireError;
       }
 
-      // Create a record in the assigned_questionnaires table
       const { error } = await supabase
         .from('assigned_questionnaires')
         .insert({
