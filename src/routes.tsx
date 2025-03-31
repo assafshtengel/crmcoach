@@ -14,11 +14,12 @@ import PlayerProfileView from "./pages/player/PlayerProfileView";
 import PlayerQuestionnaireForm from "./pages/player/PlayerQuestionnaireForm";
 import PlayerGameEvaluation from "./pages/player/PlayerGameEvaluation";
 import PlayerProfileAlternative from "./pages/player/PlayerProfileAlternative";
+import CoachRedirect from "./components/coach/CoachRedirect";
 
 const routes = createBrowserRouter([
   {
     path: "/",
-    element: <App />,
+    element: <CoachRedirect />,
   },
   {
     path: "/player-auth",
