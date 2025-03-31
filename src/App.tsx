@@ -1,9 +1,9 @@
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { CoachRedirect } from '@/components/auth/CoachRedirect';
 import { Layout } from '@/components/layout/Layout';
 import ToolManagement from '@/pages/ToolManagement';
 import AutoVideoManagement from '@/pages/AutoVideoManagement';
@@ -74,7 +74,9 @@ function App() {
             
             {/* All other routes use the Layout component */}
             <Route element={<Layout />}>
-              <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
+              {/* Wrap the root path with CoachRedirect to redirect coaches to /index */}
+              <Route path="/" element={<CoachRedirect><AuthGuard><DashboardCoach /></AuthGuard></CoachRedirect>} />
+              
               <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
               <Route path="/new" element={<AuthGuard><NewIndex /></AuthGuard>} />
               <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
