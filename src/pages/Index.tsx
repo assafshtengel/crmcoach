@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -55,7 +54,7 @@ const Index = () => {
         // If the user is a coach, redirect to the coach dashboard
         if (!coachError && coachData) {
           console.log("Coach user detected, redirecting to coach dashboard");
-          navigate('/dashboard-coach');
+          navigate('/');
           return;
         }
         
