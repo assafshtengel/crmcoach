@@ -50,7 +50,7 @@ export interface AssignedQuestionnaire {
   coach?: {
     full_name: string;
   };
-  questionnaire?: {
+  questionnaires?: {
     title: string;
     type: string;
     questions: Question[];

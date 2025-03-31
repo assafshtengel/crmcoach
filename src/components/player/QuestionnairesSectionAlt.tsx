@@ -83,6 +83,9 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
         return;
       }
       
+      // Log data to help debug
+      console.log('Assigned questionnaires data:', data);
+      
       setQuestionnaires(data || []);
       setLastRefreshed(Date.now());
     } catch (err) {
