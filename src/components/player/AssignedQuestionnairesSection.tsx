@@ -35,7 +35,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
           coach:coaches (
             full_name
           ),
-          questionnaire:questionnaire_templates!inner (
+          questionnaires:questionnaire_templates!inner (
             title,
             type,
             questions
@@ -122,7 +122,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
         <div className="space-y-4">
           {questionnaires.map((questionnaire) => (
             <div key={questionnaire.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-              <h3 className="font-medium text-lg">{questionnaire.questionnaire?.title}</h3>
+              <h3 className="font-medium text-lg">{questionnaire.questionnaires?.title}</h3>
               
               <div className="mt-2 text-sm text-gray-500 space-y-1">
                 <div className="flex items-center gap-2">
@@ -156,3 +156,4 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
     </Card>
   );
 };
+
