@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from 'date-fns';
 import { Loader2, FileText, Calendar, User, ArrowRight } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useScreenSize } from '@/hooks/use-screen-size';
 
 interface AssignedQuestionnaire {
   id: string;
@@ -29,6 +30,7 @@ const PlayerQuestionnaires = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isDesktop } = useScreenSize();
 
   useEffect(() => {
     const checkPlayerAuth = async () => {
@@ -121,17 +123,17 @@ const PlayerQuestionnaires = () => {
         <Separator className="my-6" />
 
         {questionnaires.length > 0 ? (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {questionnaires.map((questionnaire) => (
-              <Card key={questionnaire.id} className="overflow-hidden">
+              <Card key={questionnaire.id} className="overflow-hidden h-full flex flex-col">
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-primary" />
                     {questionnaire.questionnaire?.title || "שאלון"}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col space-y-2">
+                <CardContent className="flex-1 flex flex-col">
+                  <div className="flex flex-col space-y-2 flex-1">
                     {questionnaire.coach && (
                       <div className="flex items-center text-sm">
                         <User className="h-4 w-4 mr-2 text-gray-500" />
@@ -142,10 +144,10 @@ const PlayerQuestionnaires = () => {
                       <Calendar className="h-4 w-4 mr-2 text-gray-500" />
                       <span>תאריך שיוך: {format(new Date(questionnaire.assigned_at), 'dd/MM/yyyy')}</span>
                     </div>
-                    <div className="mt-4">
+                    <div className="mt-auto pt-4">
                       <Button 
                         onClick={() => handleAnswerNow(questionnaire.questionnaire_id)}
-                        className="w-full sm:w-auto"
+                        className="w-full"
                       >
                         ענה עכשיו 
                         <ArrowRight className="h-4 w-4 mr-2" />
