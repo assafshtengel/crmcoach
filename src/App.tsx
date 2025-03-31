@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -73,13 +74,8 @@ function App() {
             
             {/* All other routes use the Layout component */}
             <Route element={<Layout />}>
-              {/* Root path will check and redirect coaches to /index */}
-              <Route path="/" element={<AuthGuard coachRedirect={true}><DashboardCoach /></AuthGuard>} />
-              
-              {/* /index is now the main coach dashboard */}
-              <Route path="/index" element={<AuthGuard coachRedirect={false}><Index /></AuthGuard>} />
-              
-              {/* Keep all other routes unchanged */}
+              <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
+              <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
               <Route path="/new" element={<AuthGuard><NewIndex /></AuthGuard>} />
               <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
               <Route path="/dashboard/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
@@ -96,7 +92,7 @@ function App() {
               <Route path="/new-session" element={<AuthGuard><NewSessionForm /></AuthGuard>} />
               <Route path="/edit-session" element={<AuthGuard><EditSessionForm /></AuthGuard>} />
               <Route path="/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
-              <Route path="/dashboard-coach" element={<AuthGuard coachRedirect={true}><DashboardCoach /></AuthGuard>} />
+              <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
               <Route path="/goal-details-questions" element={<AuthGuard><GoalDetailsQuestions /></AuthGuard>} />
               <Route path="/profile-coach" element={<AuthGuard><ProfileCoach /></AuthGuard>} />
               <Route path="/reports" element={<AuthGuard><Reports /></AuthGuard>} />

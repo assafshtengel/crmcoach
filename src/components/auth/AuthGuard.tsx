@@ -6,10 +6,9 @@ import { supabase } from "@/lib/supabase";
 interface AuthGuardProps {
   children: ReactNode;
   playerOnly?: boolean;
-  coachRedirect?: boolean; // New prop to control coach redirect behavior
 }
 
-export const AuthGuard = ({ children, playerOnly = false, coachRedirect = true }: AuthGuardProps) => {
+export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { playerId } = useParams<{ playerId: string }>();
@@ -88,25 +87,6 @@ export const AuthGuard = ({ children, playerOnly = false, coachRedirect = true }
           return;
         }
 
-        // Check if user is a coach and apply redirection if needed
-        if (coachRedirect && location.pathname === '/') {
-          try {
-            const { data: coachData, error: coachError } = await supabase
-              .from('coaches')
-              .select('id')
-              .eq('id', user.id)
-              .maybeSingle();
-              
-            if (!coachError && coachData) {
-              console.log("Coach user detected at root path, redirecting to index");
-              navigate('/index');
-              return;
-            }
-          } catch (err) {
-            console.error("Error checking coach status:", err);
-          }
-        }
-
         // מאחר שאנחנו מאפשרים למאמנים להתחבר מיד לאחר הרשמה, לא נבדוק הרשאות באופן מחמיר
         setIsLoading(false);
       } catch (error) {
@@ -116,7 +96,7 @@ export const AuthGuard = ({ children, playerOnly = false, coachRedirect = true }
     };
 
     checkAuth();
-  }, [navigate, playerId, playerOnly, location.pathname, coachRedirect]);
+  }, [navigate, playerId, playerOnly, location.pathname]);
 
   if (isLoading) {
     return (
