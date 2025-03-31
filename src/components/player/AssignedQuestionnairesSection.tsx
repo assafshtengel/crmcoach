@@ -35,7 +35,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
           coach:coaches (
             full_name
           ),
-          questionnaires:questionnaires (
+          questionnaires:questionnaires!questionnaire_id (
             title,
             type,
             questions
