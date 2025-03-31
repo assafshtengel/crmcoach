@@ -1,6 +1,7 @@
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Layout } from '@/components/layout/Layout';
@@ -64,9 +65,6 @@ function App() {
         <ThemeProvider attribute="class">
           <Toaster />
           <Routes>
-            {/* Root redirect */}
-            <Route path="/" element={<Navigate to="/index" replace />} />
-
             {/* Auth pages and registration pages that don't use the layout */}
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/player-auth" element={<PlayerAuth />} />
