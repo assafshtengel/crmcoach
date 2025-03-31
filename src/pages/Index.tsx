@@ -44,6 +44,21 @@ const Index = () => {
       if (user) {
         setUserId(user.id);
         
+        // Check if the user is a coach (exists in the coaches table)
+        const { data: coachData, error: coachError } = await supabase
+          .from('coaches')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+        
+        // If the user is a coach, redirect to the coach dashboard
+        if (!coachError && coachData) {
+          console.log("Coach user detected, redirecting to coach dashboard");
+          navigate('/');
+          return;
+        }
+        
+        // Continue with player-related data fetching only if not a coach
         const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('coach_id')
@@ -250,6 +265,7 @@ const Index = () => {
                 variant="outline" 
                 onClick={() => {
                   if (userId && coachId) {
+                    // This just refreshes the component
                     setLoading(true);
                     setTimeout(() => setLoading(false), 100);
                   }
