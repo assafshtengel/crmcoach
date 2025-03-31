@@ -127,6 +127,7 @@ const PlayerProfileView = () => {
             </TabsContent>
             
             <TabsContent value="questionnaires" className="space-y-6">
+              {/* Move the console.log outside of JSX, or remove it */}
               {console.log("Rendering questionnaires tab with player ID:", player?.id)}
               <AssignedQuestionnairesSection playerId={player?.id} />
             </TabsContent>
