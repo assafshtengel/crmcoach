@@ -49,14 +49,20 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
     try {
       setLoading(true);
       
+      // Fixed query to properly join assigned_questionnaires with the questionnaires table
       const { data, error } = await supabase
         .from('assigned_questionnaires')
         .select(`
-          *,
+          id,
+          player_id,
+          coach_id,
+          questionnaire_id,
+          status,
+          assigned_at,
           coach:coaches (
             full_name
           ),
-          questionnaire:questionnaires (
+          questionnaires:questionnaires!questionnaire_id (
             title,
             type,
             questions
@@ -158,7 +164,7 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
             >
               <div className="flex flex-col md:flex-row justify-between gap-4">
                 <div>
-                  <h3 className="font-semibold text-lg">{questionnaire.questionnaire?.title}</h3>
+                  <h3 className="font-semibold text-lg">{questionnaire.questionnaires?.title}</h3>
                   
                   <div className="mt-2 text-sm text-gray-500 space-y-1">
                     <div className="flex items-center gap-2">
