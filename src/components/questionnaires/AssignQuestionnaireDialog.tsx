@@ -96,19 +96,12 @@ const AssignQuestionnaireDialog: React.FC<AssignQuestionnaireDialogProps> = ({
       setIsSubmitting(true);
       await onAssign(template.id, selectedPlayer);
       
-      toast({
-        title: "השאלון נשלח בהצלחה",
-        description: "השאלון נשלח לשחקן בהצלחה"
-      });
+      // Remove the toast notification from here since onAssign will handle it
       
       onOpenChange(false);
     } catch (error) {
       console.error('Error assigning questionnaire:', error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בשליחת השאלון",
-        description: "אירעה שגיאה בעת שליחת השאלון. נסה שנית."
-      });
+      // Don't show toast here, it will be shown in the parent component
     } finally {
       setIsSubmitting(false);
     }
