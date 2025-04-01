@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
@@ -17,13 +18,15 @@ import { formSchema, FormValues } from "./summary-form/schemaValidation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Wrench } from "lucide-react";
+import { AudioRecorder } from "./summary-form/AudioRecorder";
+import { uploadAudio } from "@/lib/uploadAudio";
 
 interface SessionSummaryFormProps {
   sessionId: string;
   playerName: string;
   sessionDate: string;
   playerId: string; 
-  onSubmit: (data: FormValues & { tools_used: string[] }) => Promise<void>;
+  onSubmit: (data: FormValues & { tools_used: string[], audio_url?: string }) => Promise<void>;
   onCancel: () => void;
   forceEnable?: boolean;
 }
@@ -40,6 +43,8 @@ export function SessionSummaryForm({
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
   const { tools, selectedTools, setSelectedTools, loading } = useTools();
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  
   console.log("playerId", playerId);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -59,9 +64,21 @@ export function SessionSummaryForm({
     console.log("data", data);
     try {
       console.log("Submitting form data with player ID:", playerId);
-      console.log("Complete form data:", { ...data, tools_used: selectedTools });
       
-      await onSubmit({ ...data, tools_used: selectedTools });
+      let audioUrl = undefined;
+      
+      // Upload audio if exists
+      if (audioBlob) {
+        const timestamp = new Date().getTime();
+        const fileName = `${playerId}_${sessionId}_${timestamp}.webm`;
+        
+        toast.info("מעלה הקלטת קול...");
+        audioUrl = await uploadAudio(audioBlob, fileName);
+      }
+      
+      console.log("Complete form data:", { ...data, tools_used: selectedTools, audio_url: audioUrl });
+      
+      await onSubmit({ ...data, tools_used: selectedTools, audio_url: audioUrl });
       console.log("Form submitted successfully");
       
       if (!forceEnable) {
@@ -162,6 +179,10 @@ export function SessionSummaryForm({
     );
   };
 
+  const handleAudioReady = (blob: Blob | null) => {
+    setAudioBlob(blob);
+  };
+
   const formRef = React.useRef<HTMLFormElement>(null);
 
   return (
@@ -175,6 +196,10 @@ export function SessionSummaryForm({
           id="session-summary-content"
         >
           <SummaryTab form={form} selectedTools={selectedTools} />
+          
+          <div className="mt-6 mb-4">
+            <AudioRecorder onAudioReady={handleAudioReady} />
+          </div>
           
           <div className="pt-4 border-t border-gray-200">
             <h3 className="text-lg font-semibold text-center mb-4 flex items-center justify-center">
