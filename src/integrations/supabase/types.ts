@@ -1730,6 +1730,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_coach_id_answers"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_questionnaire_id_answers"
             columns: ["questionnaire_id"]
             isOneToOne: false
