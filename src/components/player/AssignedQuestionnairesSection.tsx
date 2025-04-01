@@ -29,6 +29,16 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
       console.log("Fetching questionnaires for player ID:", playerId);
       setLoading(true);
       
+      // Check both the playerId and questionnaire_id column types in the DB
+      console.log("Checking questionnaire_id column type...");
+      const { data: columnInfo, error: columnError } = await supabase
+        .from('assigned_questionnaires')
+        .select('questionnaire_id')
+        .limit(1);
+      
+      console.log("Column sample:", columnInfo);
+      console.log("Column error (if any):", columnError);
+      
       const { data, error } = await supabase
         .from('assigned_questionnaires')
         .select(`
@@ -48,10 +58,19 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
 
       console.log("Fetched assigned questionnaires:", data);
       console.log("Query error (if any):", error);
-
+      
       if (error) {
         console.error('Error details:', error);
         throw error;
+      }
+      
+      // Let's check if we have any questionnaires and see their exact structure
+      if (data && data.length > 0) {
+        console.log("First questionnaire details:", data[0]);
+        console.log("Questionnaire ID type:", typeof data[0].questionnaire_id);
+        console.log("Nested questionnaire data:", data[0].questionnaires);
+      } else {
+        console.log("No questionnaires found for this player");
       }
       
       setQuestionnaires(data || []);
