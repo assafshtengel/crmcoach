@@ -397,7 +397,7 @@ const PlayerProfileAlternative = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          {player?.id && <CompletedQuestionnairesSection playerId={player.id} />}
+          <CompletedQuestionnairesSection />
         </motion.div>
 
         <motion.div
