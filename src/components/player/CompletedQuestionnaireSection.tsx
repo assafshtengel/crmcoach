@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, ClipboardList, User, Eye } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -88,6 +87,7 @@ const CompletedQuestionnairesSection: React.FC<CompletedQuestionnairesSectionPro
         return;
       }
       
+      // Updated query to use the authenticated user's ID
       const { data, error } = await supabase
         .from('questionnaire_answers')
         .select(`
