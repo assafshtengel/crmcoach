@@ -47,7 +47,7 @@ const CompletedQuestionnairesList = () => {
           return;
         }
 
-        // Fetch questionnaire answers along with player information
+        // Updated query with explicit foreign key reference
         const { data, error } = await supabase
           .from('questionnaire_answers')
           .select(`
@@ -58,7 +58,9 @@ const CompletedQuestionnairesList = () => {
             submitted_at,
             coach_id,
             status,
-            players:player_id(full_name)
+            players:player_id(
+              full_name
+            )
           `)
           .eq('coach_id', session.user.id)
           .eq('status', 'answered')
