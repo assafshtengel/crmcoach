@@ -1737,6 +1737,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_player_id"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_questionnaire_id_answers"
             columns: ["questionnaire_id"]
             isOneToOne: false
