@@ -85,6 +85,11 @@ const PlayerProfileView = () => {
 
   console.log("Rendering player profile for:", player.id);
   
+  // Log questionnaires tab rendering before the return statement
+  if (player?.id) {
+    console.log("Preparing to render questionnaires tab with player ID:", player.id);
+  }
+  
   return (
     <div className="min-h-screen bg-page">
       <header className="w-full bg-primary text-white py-6 mb-8 shadow-md">
@@ -129,8 +134,6 @@ const PlayerProfileView = () => {
             </TabsContent>
             
             <TabsContent value="questionnaires" className="space-y-6">
-              {/* Debug log for questionnaires tab */}
-              {console.log("Rendering questionnaires tab with player ID:", player?.id)}
               <AssignedQuestionnairesSection playerId={player?.id} />
             </TabsContent>
           </Tabs>
