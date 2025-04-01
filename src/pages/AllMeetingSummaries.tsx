@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Eye, Search, Calendar, Check, X, Wrench, Tag } from 'lucide-react';
+import { ArrowRight, FileText, Eye, Search, Calendar, Check, X, Wrench, Tag, Volume2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,8 @@ interface SessionSummary {
   progress_rating: number;
   next_session_focus: string;
   additional_notes?: string;
-  tools_used?: string[]; // Add tools_used field
+  tools_used?: string[];
+  audio_url?: string;
   player_id: string;
   session: {
     id: string;
@@ -221,6 +222,20 @@ const AllMeetingSummaries = () => {
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#6E59A5]">סיכום המפגש</h3>
             <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{summary.summary_text}</p>
+            
+            {summary.audio_url && (
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-2 text-[#6E59A5]">
+                  <Volume2 className="h-4 w-4" />
+                  <h4 className="text-sm font-semibold">הקלטת סיכום</h4>
+                </div>
+                <audio 
+                  controls 
+                  src={summary.audio_url} 
+                  className="w-full rounded-md mt-1"
+                />
+              </div>
+            )}
           </div>
 
           <div>
@@ -396,6 +411,20 @@ const AllMeetingSummaries = () => {
                         <div>
                           <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">סיכום המפגש</h3>
                           <p className="text-sm text-gray-600 line-clamp-3 bg-gray-50 p-2 rounded-lg">{summary.summary_text}</p>
+                          
+                          {summary.audio_url && (
+                            <div className="mt-3">
+                              <div className="flex items-center gap-1.5 mb-1.5 text-[#6E59A5]">
+                                <Volume2 className="h-3.5 w-3.5" />
+                                <span className="text-xs font-medium">הקלטת סיכום</span>
+                              </div>
+                              <audio 
+                                controls 
+                                src={summary.audio_url}
+                                className="w-full h-8 rounded-md"
+                              />
+                            </div>
+                          )}
                         </div>
                         
                         {summary.tools_used && summary.tools_used.length > 0 && (
