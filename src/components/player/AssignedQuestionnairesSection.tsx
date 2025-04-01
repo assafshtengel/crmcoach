@@ -43,7 +43,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
       console.log("Raw assigned questionnaires data:", rawData);
       console.log("Raw query error (if any):", rawError);
       
-      // Now try the full query with joins
+      // Now try the full query with joins, using the explicit foreign key constraint
       const { data, error } = await supabase
         .from('assigned_questionnaires')
         .select(`

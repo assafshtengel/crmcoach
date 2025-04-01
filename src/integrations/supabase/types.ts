@@ -1723,6 +1723,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_questionnaire_id_answers"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaires"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "questionnaire_answers_assigned_questionnaire_id_fkey"
             columns: ["assigned_questionnaire_id"]
             isOneToOne: false
