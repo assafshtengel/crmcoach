@@ -13,7 +13,10 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     
     const { data, error } = await supabaseClient.storage
       .from('meeting_summaries_audio')
-      .upload(path, file);
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
 
     if (error) {
       console.error("Supabase storage upload error:", error);
@@ -26,7 +29,9 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
       .getPublicUrl(path);
     
     console.log("Upload successful, URL:", urlData?.publicUrl);
-    return urlData?.publicUrl;
+    
+    // Make sure we're returning a string (the URL) not an object
+    return urlData?.publicUrl || null;
   } catch (err) {
     console.error("Upload function error:", err);
     throw err;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -223,21 +222,22 @@ const AllMeetingSummaries = () => {
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#6E59A5]">סיכום המפגש</h3>
             <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{summary.summary_text}</p>
-            
-            {summary.audio_url && (
-              <div className="mt-4">
-                <div className="flex items-center gap-2 mb-2 text-[#6E59A5]">
-                  <Volume2 className="h-4 w-4" />
-                  <h4 className="text-sm font-semibold">הקלטת סיכום</h4>
-                </div>
-                <audio 
-                  controls 
-                  src={summary.audio_url} 
-                  className="w-full rounded-md mt-1"
-                />
-              </div>
-            )}
           </div>
+          
+          {summary.audio_url && (
+            <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="flex items-center gap-2 mb-3 text-[#6E59A5]">
+                <Volume2 className="h-5 w-5" />
+                <h4 className="text-base font-semibold">הקלטת סיכום</h4>
+              </div>
+              <audio 
+                controls 
+                src={summary.audio_url} 
+                className="w-full rounded-md"
+                preload="metadata"
+              />
+            </div>
+          )}
 
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#7E69AB]">מטרות שהושגו</h3>
@@ -414,7 +414,7 @@ const AllMeetingSummaries = () => {
                           <p className="text-sm text-gray-600 line-clamp-3 bg-gray-50 p-2 rounded-lg">{summary.summary_text}</p>
                           
                           {summary.audio_url && (
-                            <div className="mt-3">
+                            <div className="mt-3 p-2 bg-purple-50 rounded-lg border border-purple-100">
                               <div className="flex items-center gap-1.5 mb-1.5 text-[#6E59A5]">
                                 <Volume2 className="h-3.5 w-3.5" />
                                 <span className="text-xs font-medium">הקלטת סיכום</span>
@@ -422,7 +422,8 @@ const AllMeetingSummaries = () => {
                               <audio 
                                 controls 
                                 src={summary.audio_url}
-                                className="w-full h-8 rounded-md"
+                                className="w-full h-10 rounded-md"
+                                preload="metadata"
                               />
                             </div>
                           )}
