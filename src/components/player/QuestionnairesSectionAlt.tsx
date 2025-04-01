@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, ClipboardList, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -55,12 +54,7 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
       const { data, error } = await supabase
         .from('assigned_questionnaires')
         .select(`
-          id,
-          player_id,
-          coach_id,
-          questionnaire_id,
-          status,
-          assigned_at,
+          *,
           coach:coaches!fk_coach_id (
             full_name
           ),
