@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, ClipboardList, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -51,30 +50,6 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
     try {
       console.log("QuestionnairesSectionAlt: Fetching for player ID:", playerId);
       setLoading(true);
-      
-      // First, get the current authenticated user
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error('QuestionnairesSectionAlt: Auth error:', userError);
-        toast.error('שגיאה באימות', {
-          description: 'אירעה שגיאה בעת אימות המשתמש. אנא התחבר מחדש.',
-        });
-        setQuestionnaires([]);
-        return;
-      }
-      
-      const userId = userData?.user?.id;
-      
-      // Ensure the playerId matches the authenticated user's ID
-      if (userId !== playerId) {
-        console.error('QuestionnairesSectionAlt: User ID mismatch:', userId, playerId);
-        toast.error('שגיאת אימות', {
-          description: 'אין הרשאה לצפות בשאלונים של שחקן אחר.',
-        });
-        setQuestionnaires([]);
-        return;
-      }
       
       const { data, error } = await supabase
         .from('assigned_questionnaires')
