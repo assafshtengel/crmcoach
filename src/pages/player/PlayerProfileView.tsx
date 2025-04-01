@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { VideosTab } from '@/components/player/VideosTab';
-import { AssignedQuestionnairesSection } from '@/components/player/AssignedQuestionnairesSection';
+import QuestionnairesSectionAlt from '@/components/player/QuestionnairesSectionAlt';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Mail, Phone } from 'lucide-react';
@@ -126,7 +127,7 @@ const PlayerProfileView = () => {
             </TabsContent>
             
             <TabsContent value="questionnaires" className="space-y-6">
-              <AssignedQuestionnairesSection playerId={player?.id} />
+              <QuestionnairesSectionAlt playerId={player?.id} />
             </TabsContent>
           </Tabs>
         </div>
