@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, ClipboardList, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -25,12 +24,10 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
   useEffect(() => {
     fetchAssignedQuestionnaires();
 
-    // Set up refresh interval (every 30 seconds)
     const refreshInterval = setInterval(() => {
       fetchAssignedQuestionnaires();
     }, 30000);
 
-    // Add visibility change listener to refresh when tab becomes active
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         fetchAssignedQuestionnaires();
@@ -50,7 +47,6 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
       console.log("QuestionnairesSectionAlt: Fetching for player ID:", playerId);
       setLoading(true);
       
-      // Updated query to use the explicit foreign key constraint
       const { data, error } = await supabase
         .from('assigned_questionnaires')
         .select(`
@@ -60,7 +56,7 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
           questionnaire_id,
           status,
           assigned_at,
-          coach:coaches (
+          coach:coaches!fk_coach_id (
             full_name
           ),
           questionnaires:questionnaires!fk_questionnaire_id (
@@ -74,17 +70,14 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
         .order('assigned_at', { ascending: false });
 
       if (error) {
-        // More detailed error logging and user-friendly toast
         console.error('QuestionnairesSectionAlt: Error details:', error);
         toast.error('שגיאה בטעינת שאלונים', {
           description: error.message || 'לא ניתן היה לטעון את השאלונים המשוייכים. אנא נסה שוב מאוחר יותר.',
         });
-        // Set an empty array to prevent breaking the UI
         setQuestionnaires([]);
         return;
       }
       
-      // Log data to help debug
       console.log('QuestionnairesSectionAlt: Fetched data:', data);
       console.log('QuestionnairesSectionAlt: First questionnaire:', data?.[0]);
       console.log('QuestionnairesSectionAlt: Questionnaires data structure:', data?.[0]?.questionnaires);
@@ -92,7 +85,6 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
       setQuestionnaires(data || []);
       setLastRefreshed(Date.now());
     } catch (err) {
-      // Catch any unexpected errors during the fetch process
       console.error('QuestionnairesSectionAlt: Unexpected error:', err);
       toast.error('שגיאה בלתי צפויה', {
         description: 'אירעה שגיאה בעת טעינת השאלונים. אנא נסה שוב.',
