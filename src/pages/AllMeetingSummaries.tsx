@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -430,7 +431,7 @@ const AllMeetingSummaries = () => {
                         <div className="flex items-center gap-1">
                           <Wrench className="h-3 w-3 text-purple-500" />
                           <span className="text-xs text-purple-600">
-                            {summary.tools_used.length} כלים מנטליים
+                            {summary.tools_used?.length || 0} כלים מנטליים
                           </span>
                         </div>
                         
@@ -452,23 +453,24 @@ const AllMeetingSummaries = () => {
             </motion.div>
           </AnimatePresence>
         ) : (
-        <motion.div 
-          className="text-center py-12 bg-white/80 rounded-lg shadow-md"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">לא נמצאו סיכומי מפגשים</h3>
-          <p className="text-gray-500">
-            {selectedPlayer !== 'all' 
-              ? 'אין סיכומי מפגשים לשחקן זה' 
-              : searchQuery 
-                ? 'לא נמצאו תוצאות התואמות את החיפוש' 
-                : 'לא נמצאו סיכומי מפגשים במערכת'}
-          </p>
-        </motion.div>
-      )}
+          <motion.div 
+            className="text-center py-12 bg-white/80 rounded-lg shadow-md"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">לא נמצאו סיכומי מפגשים</h3>
+            <p className="text-gray-500">
+              {selectedPlayer !== 'all' 
+                ? 'אין סיכומי מפגשים לשחקן זה' 
+                : searchQuery 
+                  ? 'לא נמצאו תוצאות התואמות את החיפוש' 
+                  : 'לא נמצאו סיכומי מפגשים במערכת'}
+            </p>
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };
