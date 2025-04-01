@@ -46,16 +46,21 @@ const QuestionnaireViewDialog: React.FC<QuestionnaireViewDialogProps> = ({
       try {
         setLoading(true);
         
-        // Fetch the questionnaire template
+        // Fetch the questionnaire template to get the original questions
         const { data, error } = await supabase
           .from('questionnaire_templates')
           .select('questions')
           .eq('id', questionnaire.questionnaire_id)
           .single();
 
-        if (error && error.code !== 'PGRST116') {
+        if (error) {
           console.error('Error fetching questionnaire template:', error);
-          throw error;
+          toast({
+            title: "שגיאה בטעינת השאלון",
+            description: "אירעה שגיאה בעת טעינת פרטי השאלון",
+            variant: "destructive",
+          });
+          return;
         }
 
         if (data && data.questions) {
