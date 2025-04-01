@@ -36,7 +36,7 @@ export type Database = {
           coach_id: string
           id: string
           player_id: string
-          questionnaire_id: string
+          questionnaire_id: string | null
           status: string
           template_id: string
         }
@@ -45,7 +45,7 @@ export type Database = {
           coach_id: string
           id?: string
           player_id: string
-          questionnaire_id: string
+          questionnaire_id?: string | null
           status?: string
           template_id: string
         }
@@ -54,11 +54,19 @@ export type Database = {
           coach_id?: string
           id?: string
           player_id?: string
-          questionnaire_id?: string
+          questionnaire_id?: string | null
           status?: string
           template_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_questionnaire_id"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       auto_video_assignments: {
         Row: {
