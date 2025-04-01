@@ -53,7 +53,7 @@ const CompletedQuestionnairesSection: React.FC<CompletedQuestionnairesSectionPro
 
   useEffect(() => {
     fetchCompletedQuestionnaires();
-  }, [playerId]);
+  }, []);
 
   useEffect(() => {
     if (selectedQuestionnaire && isDetailsOpen) {
@@ -64,6 +64,29 @@ const CompletedQuestionnairesSection: React.FC<CompletedQuestionnairesSectionPro
   const fetchCompletedQuestionnaires = async () => {
     try {
       setLoading(true);
+      
+      // Get the currently authenticated user
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('Error getting authenticated user:', userError);
+        toast.error('שגיאה באימות', {
+          description: 'אירעה שגיאה בעת אימות המשתמש. אנא התחבר מחדש.',
+        });
+        setQuestionnaires([]);
+        return;
+      }
+      
+      const userId = userData?.user?.id;
+      
+      if (!userId) {
+        console.error('No authenticated user found');
+        toast.error('משתמש לא מחובר', {
+          description: 'אנא התחבר כדי לצפות בשאלונים שלך.',
+        });
+        setQuestionnaires([]);
+        return;
+      }
       
       const { data, error } = await supabase
         .from('questionnaire_answers')
@@ -81,7 +104,7 @@ const CompletedQuestionnairesSection: React.FC<CompletedQuestionnairesSectionPro
             full_name
           )
         `)
-        .eq('player_id', playerId)
+        .eq('player_id', userId)
         .eq('status', 'answered')
         .order('submitted_at', { ascending: false });
 
