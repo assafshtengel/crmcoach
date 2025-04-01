@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar, ClipboardList, User, Eye } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -13,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Question } from '@/types/questionnaire';
 
 interface CompletedQuestionnairesSectionProps {
-  playerId: string;
+  // Removed playerId prop as we'll use the authenticated user's ID
 }
 
 interface CompletedQuestionnaire {
@@ -42,7 +43,7 @@ interface QuestionnaireDetails {
   type: string;
 }
 
-const CompletedQuestionnairesSection: React.FC<CompletedQuestionnairesSectionProps> = ({ playerId }) => {
+const CompletedQuestionnairesSection: React.FC<CompletedQuestionnairesSectionProps> = () => {
   const [questionnaires, setQuestionnaires] = useState<CompletedQuestionnaire[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<CompletedQuestionnaire | null>(null);
