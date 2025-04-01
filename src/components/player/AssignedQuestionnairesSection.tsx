@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, ClipboardList, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -29,6 +28,15 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
       console.log("Fetching questionnaires for player ID:", playerId);
       setLoading(true);
       
+      // Let's first check what data we have in assigned_questionnaires for this player
+      const { data: directCheck, error: directError } = await supabase
+        .from('assigned_questionnaires')
+        .select('*')
+        .eq('player_id', playerId);
+      
+      console.log("Direct check of assigned questionnaires:", directCheck);
+      console.log("Direct check error (if any):", directError);
+      
       // Check both the playerId and questionnaire_id column types in the DB
       console.log("Checking questionnaire_id column type...");
       const { data: columnInfo, error: columnError } = await supabase
@@ -39,6 +47,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
       console.log("Column sample:", columnInfo);
       console.log("Column error (if any):", columnError);
       
+      // Now try the query with explicit type casting for the join
       const { data, error } = await supabase
         .from('assigned_questionnaires')
         .select(`
@@ -46,7 +55,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
           coach:coaches (
             full_name
           ),
-          questionnaires:questionnaires!questionnaire_id (
+          questionnaires:questionnaires (
             title,
             type,
             questions
@@ -71,6 +80,24 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
         console.log("Nested questionnaire data:", data[0].questionnaires);
       } else {
         console.log("No questionnaires found for this player");
+        
+        // If no data found, let's check both tables to see what data we have
+        const { data: assignedQData } = await supabase
+          .from('assigned_questionnaires')
+          .select('*')
+          .eq('player_id', playerId);
+          
+        console.log("All assigned questionnaires for this player:", assignedQData);
+        
+        if (assignedQData && assignedQData.length > 0) {
+          // If we have assigned questionnaires but the join failed, check if the questionnaires exist
+          const { data: qData } = await supabase
+            .from('questionnaires')
+            .select('*')
+            .in('id', assignedQData.map(q => q.questionnaire_id));
+            
+          console.log("Found questionnaires by IDs:", qData);
+        }
       }
       
       setQuestionnaires(data || []);
@@ -168,7 +195,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
               
               <div className="flex justify-end mt-3">
                 <Button 
-                  onClick={() => handleAnswerQuestionnaire(questionnaire.id)}
+                  onClick={() => handleAnswerQuestionnaire(questionnaire.questionnaire_id)}
                   className="gap-2"
                 >
                   <ClipboardList className="h-4 w-4" />
