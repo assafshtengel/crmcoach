@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar, ClipboardList, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -19,28 +20,32 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
   const [questionnaires, setQuestionnaires] = useState<AssignedQuestionnaire[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const [lastRefreshed, setLastRefreshed] = useState<number>(Date.now());
 
   useEffect(() => {
-    fetchAssignedQuestionnaires();
-
-    const refreshInterval = setInterval(() => {
+    // Only fetch questionnaires if playerId exists
+    if (playerId) {
       fetchAssignedQuestionnaires();
-    }, 30000);
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      
+      // Set up refresh interval (every 30 seconds)
+      const refreshInterval = setInterval(() => {
         fetchAssignedQuestionnaires();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+      }, 30000);
 
-    return () => {
-      clearInterval(refreshInterval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [playerId, lastRefreshed]);
+      // Add visibility change listener to refresh when tab becomes active
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          fetchAssignedQuestionnaires();
+        }
+      };
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        clearInterval(refreshInterval);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
+  }, [playerId]); // Only depend on playerId
 
   const fetchAssignedQuestionnaires = async () => {
     try {
@@ -83,7 +88,6 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
       console.log('QuestionnairesSectionAlt: Questionnaires data structure:', data?.[0]?.questionnaires);
       
       setQuestionnaires(data || []);
-      setLastRefreshed(Date.now());
     } catch (err) {
       console.error('QuestionnairesSectionAlt: Unexpected error:', err);
       toast.error('שגיאה בלתי צפויה', {
