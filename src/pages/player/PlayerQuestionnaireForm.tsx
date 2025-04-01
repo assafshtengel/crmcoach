@@ -174,23 +174,37 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
         return;
       }
       
-      // Extract player data
-      const playerSession = localStorage.getItem('playerSession');
-      if (!playerSession) throw new Error('Player not authenticated');
-      const playerData = JSON.parse(playerSession);
+      // Get the authenticated user's ID
+      const { data: userData, error: userError } = await supabase.auth.getUser();
       
-      // Insert answer to the questionnaire_answers table
+      if (userError || !userData?.user?.id) {
+        console.error("Failed to get authenticated user ID:", userError);
+        toast({
+          title: "שגיאה באימות",
+          description: "אירעה שגיאה בעת אימות המשתמש, אנא התחבר מחדש",
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return;
+      }
+      
+      const userId = userData.user.id;
+      
+      // Insert answer to the questionnaire_answers table with authenticated user ID
       const { error: insertError } = await supabase
         .from('questionnaire_answers')
         .insert({
           assigned_questionnaire_id: questionnaire.id,
-          player_id: playerData.id,
+          player_id: userId, // Using authenticated user ID
           questionnaire_id: questionnaire.questionnaire_id,
           coach_id: questionnaire.coach_id,
           answers: answers,
         });
       
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("Error submitting questionnaire:", insertError);
+        throw insertError;
+      }
       
       // Update the status of the original assigned questionnaire
       const { error: updateError } = await supabase
