@@ -21,14 +21,29 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchAssignedQuestionnaires();
+    if (playerId) {
+      console.log("Player ID changed, fetching questionnaires:", playerId);
+      fetchAssignedQuestionnaires();
+    } else {
+      console.log("No player ID provided, skipping fetch");
+    }
   }, [playerId]);
 
   const fetchAssignedQuestionnaires = async () => {
     try {
       console.log("Fetching questionnaires for player ID:", playerId);
       setLoading(true);
+
+      // First, check for raw assigned questionnaires (no joins)
+      const { data: rawData, error: rawError } = await supabase
+        .from('assigned_questionnaires')
+        .select('*')
+        .eq('player_id', playerId);
       
+      console.log("Raw assigned questionnaires data:", rawData);
+      console.log("Raw query error (if any):", rawError);
+      
+      // Now try the full query with joins
       const { data, error } = await supabase
         .from('assigned_questionnaires')
         .select(`
@@ -46,7 +61,16 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
         .eq('status', 'pending')
         .order('assigned_at', { ascending: false });
 
-      console.log("Fetched assigned questionnaires:", data);
+      console.log("Fetched assigned questionnaires with joins:", data);
+      console.log("Query error (if any):", error);
+      
+      // Check the structure of returned data
+      if (data && data.length > 0) {
+        console.log("First questionnaire details:", data[0]);
+        console.log("Questionnaire ID:", data[0].questionnaire_id);
+        console.log("Questionnaire ID type:", typeof data[0].questionnaire_id);
+        console.log("Nested questionnaires data:", data[0].questionnaires);
+      }
       
       if (error) {
         console.error('Error details:', error);
@@ -67,6 +91,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
   };
 
   const handleAnswerQuestionnaire = (questionnaireId: string) => {
+    console.log("Navigating to questionnaire:", questionnaireId);
     navigate(`/player/questionnaire/${questionnaireId}`);
   };
 
@@ -97,7 +122,9 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
     );
   }
 
+  // Log when no questionnaires found (empty state being rendered)
   if (questionnaires.length === 0) {
+    console.log("No questionnaires found, rendering empty state");
     return (
       <Card className="w-full">
         <CardHeader>
@@ -116,6 +143,7 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
     );
   }
 
+  console.log("Rendering questionnaires list:", questionnaires.length);
   return (
     <Card className="w-full">
       <CardHeader>
