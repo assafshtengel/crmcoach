@@ -46,13 +46,14 @@ export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSecti
         .eq('status', 'pending')
         .order('assigned_at', { ascending: false });
 
+      console.log("Fetched assigned questionnaires:", data);
+      console.log("Query error (if any):", error);
+
       if (error) {
         console.error('Error details:', error);
         throw error;
       }
       
-      console.log('Fetched assigned questionnaires data:', data);
-      console.log('Questionnaires data structure:', data?.[0]?.questionnaires);
       setQuestionnaires(data || []);
     } catch (err) {
       console.error('Error fetching assigned questionnaires:', err);
