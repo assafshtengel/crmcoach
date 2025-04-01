@@ -50,7 +50,7 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
       console.log("QuestionnairesSectionAlt: Fetching for player ID:", playerId);
       setLoading(true);
       
-      // Fixed query to properly join assigned_questionnaires with the questionnaires table
+      // Updated query to use the explicit foreign key constraint
       const { data, error } = await supabase
         .from('assigned_questionnaires')
         .select(`
@@ -63,7 +63,7 @@ const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ pla
           coach:coaches (
             full_name
           ),
-          questionnaires:questionnaires!questionnaire_id (
+          questionnaires:questionnaires!fk_questionnaire_id (
             title,
             type,
             questions
