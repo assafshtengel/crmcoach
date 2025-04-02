@@ -29,9 +29,16 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
         .single();
       
       isCoach = userRoles?.role === 'coach';
+      
+      if (!isCoach) {
+        throw new Error("Coach role required to upload audio files");
+      }
     } catch (roleCheckError) {
-      console.warn("Could not verify user role, proceeding with upload:", roleCheckError);
-      // Continue upload anyway, the RLS policies will enforce access control
+      console.warn("Could not verify user role:", roleCheckError);
+      // RLS policies will enforce access control, but we'll check first
+      if (!roleCheckError.message?.includes("single row")) {
+        throw new Error("Permission verification failed");
+      }
     }
 
     const file = new File([audioBlob], path, { type: 'audio/webm' });
@@ -70,28 +77,18 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     if (error) {
       console.error("Supabase storage upload error:", error);
       
-      // Check if it's a permission error
-      if (error.message && error.message.includes('permission')) {
-        throw new Error("You don't have permission to upload audio files. Coach role required.");
+      // Provide more specific error messages
+      if (error.message?.includes('permission') || error.message?.includes('not authorized')) {
+        throw new Error("Access denied: You don't have permission to upload audio files");
       }
       
       throw error;
     }
     
-    // Get the URL - use signed URLs if the bucket is private
-    let urlData = null;
-    
-    if (targetBucket === bucketName) {
-      // For the audio bucket, use signed URLs with short expiry for security
-      urlData = supabaseClient.storage
-        .from(targetBucket)
-        .getPublicUrl(filePath);
-    } else {
-      // For the public backup bucket, use regular public URLs
-      urlData = supabaseClient.storage
-        .from(targetBucket)
-        .getPublicUrl(filePath);
-    }
+    // Get the URL for the uploaded file
+    const urlData = supabaseClient.storage
+      .from(targetBucket)
+      .getPublicUrl(filePath);
     
     console.log("Upload successful, URL:", urlData?.publicUrl);
     
@@ -99,9 +96,10 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
   } catch (err) {
     console.error("Upload function error:", err);
     
-    // Provide more user-friendly error messages
-    if (err.message?.includes('permission') || err.message?.includes('not authorized')) {
-      throw new Error("Access denied: You don't have permission to upload audio files");
+    // Provide user-friendly error messages
+    if (err.message?.includes('permission') || err.message?.includes('not authorized') || 
+        err.message?.includes('Coach role required')) {
+      throw new Error("Access denied: You don't have permission to upload audio files. Coach role required.");
     }
     
     throw err;
