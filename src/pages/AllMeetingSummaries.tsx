@@ -272,6 +272,11 @@ const AllMeetingSummaries = () => {
                 className="w-full rounded-md"
                 preload="metadata"
               />
+              {summary.audio_url && !summary.audio_url.includes("audio_summaries") && (
+                <p className="text-sm text-purple-700 mt-2">
+                  <span className="font-medium">שים לב:</span> הקלטות מפגשים ישנות עשויות להיות לא זמינות. הקלטות חדשות יפעלו כרגיל.
+                </p>
+              )}
             </div>
           )}
         </div>
