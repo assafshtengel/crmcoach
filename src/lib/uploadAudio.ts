@@ -1,5 +1,6 @@
 
 import { supabaseClient } from '@/lib/supabaseClient';
+import { toast } from 'sonner';
 
 export async function uploadAudio(audioBlob: Blob, path: string) {
   // Define bucket names
@@ -7,8 +8,10 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
   const backupBucketName = 'public';
   
   console.log(`Attempting to upload audio file: ${path}`);
+  console.log(`Audio blob size: ${audioBlob.size} bytes`);
   
   if (!audioBlob) {
+    toast.error('No audio blob provided for upload');
     throw new Error("No audio blob provided for upload");
   }
   
@@ -16,10 +19,11 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     // Check if user is authenticated first
     const { data: session } = await supabaseClient.auth.getSession();
     if (!session.session) {
+      toast.error('Authentication required to upload audio files');
       throw new Error("Authentication required to upload audio files");
     }
 
-    // Attempt to get the user role to enforce coach-only access
+    // Check user role (existing code)
     let isCoach = false;
     try {
       const { data: userRoles } = await supabaseClient
@@ -31,23 +35,23 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
       isCoach = userRoles?.role === 'coach';
       
       if (!isCoach) {
+        toast.error('Coach role required to upload audio files');
         throw new Error("Coach role required to upload audio files");
       }
     } catch (roleCheckError) {
       console.warn("Could not verify user role:", roleCheckError);
-      // RLS policies will enforce access control, but we'll check first
       if (!roleCheckError.message?.includes("single row")) {
+        toast.error('Permission verification failed');
         throw new Error("Permission verification failed");
       }
     }
 
     const file = new File([audioBlob], path, { type: 'audio/webm' });
     
-    // Determine which bucket to use
+    // Determine which bucket to use (existing code)
     let targetBucket = bucketName;
     
     try {
-      // Check if primary bucket exists
       const { data: bucketData, error: bucketError } = await supabaseClient.storage
         .getBucket(bucketName);
       
@@ -77,6 +81,7 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
 
     if (error) {
       console.error("Supabase storage upload error:", error);
+      toast.error('Failed to upload audio file');
       
       // Provide more specific error messages
       if (error.message?.includes('permission') || error.message?.includes('not authorized')) {
@@ -92,17 +97,21 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
       .getPublicUrl(filePath);
     
     console.log("Upload successful, URL:", urlData?.publicUrl);
+    toast.success('Audio file uploaded successfully');
     
     return urlData?.publicUrl || null;
   } catch (err) {
-    console.error("Upload function error:", err);
+    console.error("Full upload function error:", err);
     
     // Provide user-friendly error messages
     if (err.message?.includes('permission') || err.message?.includes('not authorized') || 
         err.message?.includes('Coach role required')) {
+      toast.error('Access denied: Coach role required');
       throw new Error("Access denied: You don't have permission to upload audio files. Coach role required.");
     }
     
+    toast.error('Failed to upload audio file');
     throw err;
   }
 }
+
