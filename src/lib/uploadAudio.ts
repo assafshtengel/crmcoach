@@ -15,12 +15,22 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
   try {
     const file = new File([audioBlob], path, { type: 'audio/webm' });
     
-    // בדיקה אם הבאקט קיים
-    const { data: buckets, error: bucketsError } = await supabaseClient.storage
-      .getBuckets();
+    // בדיקה אם הבאקט קיים - לא משתמשים ב-getBuckets אלא מנסים ישירות getBucket
+    let targetBucket = bucketName;
+    
+    try {
+      // נבדוק אם הבאקט הייעודי קיים
+      const { data: bucketData, error: bucketError } = await supabaseClient.storage
+        .getBucket(bucketName);
       
-    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
-    const targetBucket = bucketExists ? bucketName : backupBucketName;
+      if (bucketError) {
+        console.log(`Bucket ${bucketName} not found, using ${backupBucketName} instead`);
+        targetBucket = backupBucketName;
+      }
+    } catch (bucketCheckError) {
+      console.log(`Error checking bucket ${bucketName}, using ${backupBucketName} instead:`, bucketCheckError);
+      targetBucket = backupBucketName;
+    }
     
     console.log(`Using storage bucket: ${targetBucket}`);
     
