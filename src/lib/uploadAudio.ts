@@ -63,7 +63,8 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     console.log(`Using storage bucket: ${targetBucket}`);
     
     // Set upload folder path - ensure it's within the allowed folder structure
-    const folderPath = 'audio_summaries';
+    const userId = session.session.user.id;
+    const folderPath = `audio_summaries/${userId}`;
     const filePath = `${folderPath}/${path}`;
     
     // Upload the file
@@ -86,7 +87,7 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     }
     
     // Get the URL for the uploaded file
-    const urlData = supabaseClient.storage
+    const { data: urlData } = supabaseClient.storage
       .from(targetBucket)
       .getPublicUrl(filePath);
     

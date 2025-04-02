@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Eye, Search, Calendar, Check, X, Wrench, Tag, Volume2 } from 'lucide-react';
+import { ArrowRight, FileText, Eye, Search, Calendar, Check, X, Wrench, Tag, Volume2, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface SessionSummary {
   id: string;
@@ -53,6 +54,7 @@ const AllMeetingSummaries = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [tools, setTools] = useState<Record<string, Tool>>({});
+  const [audioErrors, setAudioErrors] = useState<Record<string, boolean>>({});
   const isMobile = useIsMobile();
 
   const fetchTools = async () => {
@@ -172,27 +174,43 @@ const AllMeetingSummaries = () => {
     }
   };
 
-  useEffect(() => {
-    fetchPlayers();
-    fetchTools();
-  }, []);
+  const handleAudioError = (summaryId: string) => {
+    setAudioErrors(prev => ({
+      ...prev,
+      [summaryId]: true
+    }));
+    console.error(`Failed to load audio for summary ID: ${summaryId}`);
+  };
 
-  useEffect(() => {
-    fetchSummaries();
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
+  const renderAudioPlayer = (summary: SessionSummary) => {
+    if (!summary.audio_url) return null;
     
-    if (selectedPlayer !== 'all') {
-      setSearchParams({ playerId: selectedPlayer });
-    } else {
-      setSearchParams({});
+    if (audioErrors[summary.id]) {
+      return (
+        <Alert variant="destructive" className="bg-red-50 text-red-800 border border-red-200 mt-3 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            ההקלטה אינה זמינה עקב הגבלות גישה או שגיאה בטעינה
+          </AlertDescription>
+        </Alert>
+      );
     }
-  }, [selectedPlayer, searchQuery]);
 
-  const handlePlayerChange = (value: string) => {
-    setSelectedPlayer(value);
+    return (
+      <div className="mt-3 p-2 bg-purple-50 rounded-lg border border-purple-200">
+        <div className="flex items-center gap-1.5 mb-1.5 text-[#6E59A5]">
+          <Volume2 className="h-3.5 w-3.5" />
+          <span className="text-xs font-medium">הקלטת סיכום</span>
+        </div>
+        <audio 
+          controls 
+          src={summary.audio_url}
+          className="w-full h-10 rounded-md"
+          preload="metadata"
+          onError={() => handleAudioError(summary.id)}
+        />
+      </div>
+    );
   };
 
   const renderSummaryDetails = (summary: SessionSummary) => {
@@ -266,15 +284,25 @@ const AllMeetingSummaries = () => {
                 <Volume2 className="h-5 w-5" />
                 <h3 className="text-lg font-semibold">הקלטת סיכום הפגישה</h3>
               </div>
-              <audio 
-                controls 
-                src={summary.audio_url} 
-                className="w-full rounded-md"
-                preload="metadata"
-              />
+              {audioErrors[summary.id] ? (
+                <Alert className="bg-red-50 text-red-800 border border-red-200">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  <AlertDescription>
+                    לא ניתן לטעון את ההקלטה. ייתכן שאין לך הרשאות גישה או שהקובץ אינו קיים.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <audio 
+                  controls 
+                  src={summary.audio_url} 
+                  className="w-full rounded-md"
+                  preload="metadata"
+                  onError={() => handleAudioError(summary.id)}
+                />
+              )}
               {summary.audio_url && !summary.audio_url.includes("audio_summaries") && (
                 <p className="text-sm text-purple-700 mt-2">
-                  <span className="font-medium">שים לב:</span> הקלטות מפגשים ישנות עשויות להיות לא זמינות. הקלטות חדשות יפעלו כרגיל.
+                  <span className="font-medium">שים לב:</span> הקלט��ת מפגשים ישנות עשויות להיות לא זמינות. הקלטות חדשות יפעלו כרגיל.
                 </p>
               )}
             </div>
@@ -282,6 +310,29 @@ const AllMeetingSummaries = () => {
         </div>
       </ScrollArea>
     );
+  };
+
+  useEffect(() => {
+    fetchPlayers();
+    fetchTools();
+  }, []);
+
+  useEffect(() => {
+    fetchSummaries();
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+    
+    if (selectedPlayer !== 'all') {
+      setSearchParams({ playerId: selectedPlayer });
+    } else {
+      setSearchParams({});
+    }
+  }, [selectedPlayer, searchQuery]);
+
+  const handlePlayerChange = (value: string) => {
+    setSelectedPlayer(value);
   };
 
   return (
@@ -418,20 +469,7 @@ const AllMeetingSummaries = () => {
                           <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">סיכום המפגש</h3>
                           <p className="text-sm text-gray-600 line-clamp-3 bg-gray-50 p-2 rounded-lg">{summary.summary_text}</p>
                           
-                          {summary.audio_url && (
-                            <div className="mt-3 p-2 bg-purple-50 rounded-lg border border-purple-100">
-                              <div className="flex items-center gap-1.5 mb-1.5 text-[#6E59A5]">
-                                <Volume2 className="h-3.5 w-3.5" />
-                                <span className="text-xs font-medium">הקלטת סיכום</span>
-                              </div>
-                              <audio 
-                                controls 
-                                src={summary.audio_url}
-                                className="w-full h-10 rounded-md"
-                                preload="metadata"
-                              />
-                            </div>
-                          )}
+                          {summary.audio_url && renderAudioPlayer(summary)}
                         </div>
                         
                         <div className="flex items-center gap-1">
