@@ -223,21 +223,6 @@ const AllMeetingSummaries = () => {
             <h3 className="text-lg font-semibold mb-2 text-[#6E59A5]">סיכום המפגש</h3>
             <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{summary.summary_text}</p>
           </div>
-          
-          {summary.audio_url && (
-            <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <div className="flex items-center gap-2 mb-3 text-[#6E59A5]">
-                <Volume2 className="h-5 w-5" />
-                <h4 className="text-base font-semibold">הקלטת סיכום</h4>
-              </div>
-              <audio 
-                controls 
-                src={summary.audio_url} 
-                className="w-full rounded-md"
-                preload="metadata"
-              />
-            </div>
-          )}
 
           <div>
             <h3 className="text-lg font-semibold mb-2 text-[#7E69AB]">מטרות שהושגו</h3>
@@ -272,6 +257,21 @@ const AllMeetingSummaries = () => {
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <h3 className="text-lg font-semibold mb-2 text-[#8B5CF6]">הערות נוספות</h3>
               <p className="text-gray-700 whitespace-pre-wrap">{summary.additional_notes}</p>
+            </div>
+          )}
+
+          {summary.audio_url && (
+            <div className="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="flex items-center gap-2 mb-3 text-[#6E59A5]">
+                <Volume2 className="h-5 w-5" />
+                <h3 className="text-lg font-semibold">הקלטת סיכום הפגישה</h3>
+              </div>
+              <audio 
+                controls 
+                src={summary.audio_url} 
+                className="w-full rounded-md"
+                preload="metadata"
+              />
             </div>
           )}
         </div>
