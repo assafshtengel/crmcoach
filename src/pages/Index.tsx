@@ -1,340 +1,535 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { MentalPrepForm } from "@/components/MentalPrepForm";
-import { LogOut, ArrowRight, LayoutDashboard, Film, CheckCircle, Send, ExternalLink, FileCheck, BrainCircuit, BookOpen, FileEdit, RefreshCw } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { AdminMessageForm } from "@/components/admin/AdminMessageForm";
-import { BeliefBreakingCard } from "@/components/ui/BeliefBreakingCard";
-import { MentalLibrary } from "@/components/mental-library/MentalLibrary";
-import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
-import { VideosTab } from "@/components/player/VideosTab";
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/lib/supabase';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, FileText, Eye, Search, Calendar, Check, X, Wrench, Tag, Volume2, AlertCircle, Play } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from '@/components/ui/input';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const Index = () => {
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [assignedVideos, setAssignedVideos] = useState<any[]>([]);
-  const [allVideos, setAllVideos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [showLandingPageDialog, setShowLandingPageDialog] = useState(false);
-  const [coachId, setCoachId] = useState<string | null>(null);
+interface SessionSummary {
+  id: string;
+  created_at: string;
+  summary_text: string;
+  achieved_goals: string[];
+  future_goals: string[];
+  progress_rating: number;
+  next_session_focus: string;
+  additional_notes?: string;
+  tools_used?: string[];
+  audio_url?: string;
+  player_id: string;
+  session: {
+    id: string;
+    session_date: string;
+    player: {
+      id: string;
+      full_name: string;
+    } | null;
+  };
+}
+
+interface Tool {
+  id: string;
+  name: string;
+  description: string;
+}
+
+const AllMeetingSummaries = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [summaries, setSummaries] = useState<SessionSummary[]>([]);
+  const [filteredSummaries, setFilteredSummaries] = useState<SessionSummary[]>([]);
+  const [players, setPlayers] = useState<{ id: string; full_name: string }[]>([]);
+  const [selectedPlayer, setSelectedPlayer] = useState<string>(searchParams.get('playerId') || 'all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [tools, setTools] = useState<Record<string, Tool>>({});
+  const [audioErrors, setAudioErrors] = useState<Record<string, boolean>>({});
+  const isMobile = useIsMobile();
 
-  useEffect(() => {
-    const getUserInfo = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUserEmail(user?.email || null);
-      
-      if (user) {
-        setUserId(user.id);
-        
-        // Check if the user is a coach (exists in the coaches table)
-        const { data: coachData, error: coachError } = await supabase
-          .from('coaches')
-          .select('id')
-          .eq('id', user.id)
-          .single();
-        
-        // If the user is a coach, redirect to the coach dashboard
-        if (!coachError && coachData) {
-          console.log("Coach user detected, redirecting to coach dashboard");
-          navigate('/');
-          return;
-        }
-        
-        // Continue with player-related data fetching only if not a coach
-        const { data: playerData, error: playerError } = await supabase
-          .from('players')
-          .select('coach_id')
-          .eq('id', user.id)
-          .single();
-          
-        if (!playerError && playerData) {
-          setCoachId(playerData.coach_id);
-        } else {
-          console.error("Error fetching player's coach ID:", playerError);
-        }
-      } else {
-        console.log("No authenticated user found");
-        setLoading(false);
-      }
-    };
-    getUserInfo();
-  }, [navigate]);
-
-  const fetchVideos = async (userId: string) => {
-    setLoading(true);
-    
+  const fetchTools = async () => {
     try {
-      console.log("Fetching videos for player:", userId);
-      
-      const { data: assignedVideoData, error: assignedError } = await supabase
-        .from('player_videos')
-        .select(`
-          id,
-          watched,
-          watched_at,
-          videos:video_id (
-            id,
-            title,
-            url,
-            description,
-            category
-          )
-        `)
-        .eq('player_id', userId);
-      
-      if (assignedError) {
-        console.error('Error fetching assigned videos:', assignedError);
-        throw assignedError;
-      }
-      
-      console.log("Assigned videos fetched:", assignedVideoData);
-      
-      const filteredAssignedVideos = assignedVideoData?.filter(video => video.videos) || [];
-      setAssignedVideos(filteredAssignedVideos);
-      
-      const { data: allVideoData, error: allError } = await supabase
-        .from('videos')
-        .select('*')
-        .eq('is_admin_video', true);
-      
-      if (allError) {
-        console.error('Error fetching admin videos:', allError);
-        throw allError;
-      }
-      
-      console.log("Admin videos fetched:", allVideoData);
-      setAllVideos(allVideoData || []);
-      
-    } catch (error) {
-      console.error('Error fetching videos:', error);
-      toast({
-        title: "שגיאה בטעינת סרטונים",
-        description: "לא ניתן לטעון את רשימת הסרטונים",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVideoClick = (videoUrl: string) => {
-    window.open(videoUrl, '_blank');
-  };
-
-  const markVideoAsWatched = async (playerVideoId: string) => {
-    try {
-      const { error } = await supabase
-        .from('player_videos')
-        .update({
-          watched: true,
-          watched_at: new Date().toISOString()
-        })
-        .eq('id', playerVideoId);
+      const { data, error } = await supabase
+        .from('coach_tools')
+        .select('*');
       
       if (error) {
-        console.error('Error marking video as watched:', error);
-        throw error;
+        console.error('Error fetching tools:', error);
+        return;
+      }
+
+      const toolsRecord: Record<string, Tool> = {};
+      data?.forEach((tool: Tool) => {
+        toolsRecord[tool.id] = tool;
+      });
+      
+      setTools(toolsRecord);
+    } catch (error) {
+      console.error('Error fetching tools:', error);
+    }
+  };
+
+  const fetchSummaries = async () => {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('יש להתחבר למערכת');
+        navigate('/auth');
+        return;
+      }
+
+      const query = supabase
+        .from('session_summaries')
+        .select(`
+          *,
+          session:sessions (
+            id,
+            session_date,
+            player:players (
+              id,
+              full_name
+            )
+          )
+        `)
+        .eq('coach_id', user.id)
+        .order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('Error fetching summaries:', error);
+        toast.error('שגיאה בטעינת סיכומי המפגשים');
+        return;
       }
       
-      setAssignedVideos(prev => 
-        prev.map(video => 
-          video.id === playerVideoId 
-            ? { ...video, watched: true, watched_at: new Date().toISOString() } 
-            : video
-        )
-      );
+      const uniqueSessions = new Map<string, SessionSummary>();
+      data?.forEach((summary: SessionSummary) => {
+        if (summary.session && summary.session.id) {
+          uniqueSessions.set(summary.session.id, summary);
+        }
+      });
       
-      toast({
-        title: "סרטון סומן כנצפה",
-        description: "הסטטוס עודכן בהצלחה",
-      });
+      const uniqueData = Array.from(uniqueSessions.values());
+      setSummaries(uniqueData);
+      
+      applyFilters(uniqueData);
     } catch (error) {
-      console.error('Error marking video as watched:', error);
-      toast({
-        title: "שגיאה בסימון הסרטון",
-        description: "לא ניתן לעדכן את סטטוס הצפייה",
-        variant: "destructive",
-      });
+      console.error('Error fetching summaries:', error);
+      toast.error('שגיאה בטעינת סיכומי המפגשים');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
+  const applyFilters = (data: SessionSummary[] = summaries) => {
+    let filtered = [...data];
+    
+    if (selectedPlayer !== 'all') {
+      filtered = filtered.filter(summary => 
+        summary.player_id === selectedPlayer || 
+        summary.session?.player?.id === selectedPlayer
+      );
+    }
+    
+    if (searchQuery) {
+      const lowerSearchQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter(summary => 
+        (summary.session?.player?.full_name?.toLowerCase().includes(lowerSearchQuery)) ||
+        summary.summary_text.toLowerCase().includes(lowerSearchQuery)
+      );
+    }
+    
+    setFilteredSummaries(filtered);
   };
 
-  const refreshVideos = () => {
-    if (userId) {
-      fetchVideos(userId);
-      toast({
-        title: "מרענן את רשימת הסרטונים",
-        description: "רשימת הסרטונים מתעדכנת",
-      });
+  const fetchPlayers = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('players')
+        .select('id, full_name')
+        .eq('coach_id', user.id);
+
+      if (error) {
+        console.error('Error fetching players:', error);
+        toast.error('שגיאה בטעינת רשימת השחקנים');
+        return;
+      }
+      setPlayers(data);
+    } catch (error) {
+      console.error('Error fetching players:', error);
+      toast.error('שגיאה בטעינת רשימת השחקנים');
     }
   };
 
-  console.log("Landing page dialog state:", showLandingPageDialog);
-  console.log("Rendering Index.tsx page with landing page button");
+  const handleAudioError = (summaryId: string) => {
+    setAudioErrors(prev => ({
+      ...prev,
+      [summaryId]: true
+    }));
+    console.error(`Failed to load audio for summary ID: ${summaryId}`);
+  };
+
+  const handlePlay = () => {
+    // TODO: Add play functionality
+    console.log('Play button clicked');
+  };
+
+  const renderAudioPlayer = (summary: SessionSummary) => {
+    if (!summary.audio_url) return null;
+    
+    if (audioErrors[summary.id]) {
+      return (
+        <Alert variant="destructive" className="bg-red-50 text-red-800 border border-red-200 mt-3 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            ההקלטה אינה זמינה עקב הגבלות גישה או שגיאה בטעינה
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return (
+      <div className="mt-3 p-2 bg-purple-50 rounded-lg border border-purple-200">
+        <div className="flex items-center gap-1.5 mb-1.5 text-[#6E59A5]">
+          <Volume2 className="h-3.5 w-3.5" />
+          <span className="text-xs font-medium">הקלטת סיכום</span>
+        </div>
+        <audio 
+          controls 
+          src={summary.audio_url}
+          className="w-full h-10 rounded-md"
+          preload="metadata"
+          onError={() => handleAudioError(summary.id)}
+        />
+      </div>
+    );
+  };
+
+  const renderSummaryDetails = (summary: SessionSummary) => {
+    return (
+      <ScrollArea className="h-[calc(100vh-200px)] px-4">
+        <div className="space-y-6 text-right">
+          {summary.tools_used && summary.tools_used.length > 0 && (
+            <div className="mb-2 animate-fade-in">
+              <h3 className="text-lg font-semibold mb-3 text-[#8B5CF6] flex items-center">
+                <Tag className="ml-2 h-5 w-5" />
+                הכלים המנטליים שנבחרו למפגש
+              </h3>
+              <div className="flex flex-wrap gap-2 bg-purple-50 p-4 rounded-lg border border-purple-100">
+                {summary.tools_used.map((toolId, index) => (
+                  <Badge 
+                    key={index}
+                    variant="outline"
+                    className="py-1.5 px-3 bg-purple-100 hover:bg-purple-200 text-purple-800 border border-purple-200"
+                  >
+                    {tools[toolId]?.name || 'כלי לא זמין'}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2 text-[#6E59A5]">סיכום המפגש</h3>
+            <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{summary.summary_text}</p>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2 text-[#7E69AB]">מטרות שהושגו</h3>
+            <div className="space-y-2">
+              {summary.achieved_goals.map((goal, index) => (
+                <div key={index} className="flex items-start gap-2 bg-green-50 p-3 rounded-lg border border-green-100">
+                  <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-700">{goal}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-2 text-[#9b87f5]">מטרות להמשך</h3>
+            <div className="space-y-2">
+              {summary.future_goals.map((goal, index) => (
+                <div key={index} className="flex items-start gap-2 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                  <Calendar className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-gray-700">{goal}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+            <h3 className="text-lg font-semibold mb-2 text-[#D6BCFA]">פוקוס למפגש הבא</h3>
+            <p className="text-gray-700">{summary.next_session_focus}</p>
+          </div>
+
+          {summary.additional_notes && (
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold mb-2 text-[#8B5CF6]">הערות נוספות</h3>
+              <p className="text-gray-700 whitespace-pre-wrap">{summary.additional_notes}</p>
+            </div>
+          )}
+
+          {summary.audio_url && (
+            <div className="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="flex items-center gap-2 mb-3 text-[#6E59A5]">
+                <Volume2 className="h-5 w-5" />
+                <h3 className="text-lg font-semibold">הקלטת סיכום הפגישה</h3>
+              </div>
+              {audioErrors[summary.id] ? (
+                <Alert className="bg-red-50 text-red-800 border border-red-200">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  <AlertDescription>
+                    לא ניתן לטעון את ההקלטה. ייתכן שאין לך הרשאות גישה או שהקובץ אינו קיים.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <audio 
+                  controls 
+                  src={summary.audio_url} 
+                  className="w-full rounded-md"
+                  preload="metadata"
+                  onError={() => handleAudioError(summary.id)}
+                />
+              )}
+              {summary.audio_url && !summary.audio_url.includes("audio_summaries") && (
+                <p className="text-sm text-purple-700 mt-2">
+                  <span className="font-medium">שים לב:</span> הקלטות מפגשים ישנות עשויות להיות לא זמינות. הקלטות חדשות יפעלו כרגיל.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    );
+  };
+
+  useEffect(() => {
+    fetchPlayers();
+    fetchTools();
+  }, []);
+
+  useEffect(() => {
+    fetchSummaries();
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+    
+    if (selectedPlayer !== 'all') {
+      setSearchParams({ playerId: selectedPlayer });
+    } else {
+      setSearchParams({});
+    }
+  }, [selectedPlayer, searchQuery]);
+
+  const handlePlayerChange = (value: string) => {
+    setSelectedPlayer(value);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sage-50 to-white py-8 px-4 md:px-8">
-      <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
-        <header className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-md">
-          <div className="flex items-center mb-4 md:mb-0">
-            <h1 className="text-2xl font-bold text-primary">שלום, {userEmail || 'אורח'}</h1>
-          </div>
-          
-          <div className="flex flex-wrap gap-3 items-center">
-            <Button
-              onClick={() => setShowLandingPageDialog(true)}
-              variant="green"
-              className="flex items-center gap-2"
-              size="lg"
-            >
-              <FileEdit className="h-4 w-4" />
-              צור עמוד נחיתה אישי
-            </Button>
-            
+    <div className="min-h-screen bg-gradient-to-br from-[#F2FCE2] to-[#E5DEFF]">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <div className="flex items-center gap-4 w-full md:w-auto">
             <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={() => setShowLogoutDialog(true)}
+              variant="ghost" 
+              onClick={() => navigate('/')}
+              className="hover:bg-white/20 transition-colors"
             >
-              <LogOut className="h-4 w-4" />
-              התנתק
+              <ArrowRight className="h-5 w-5" />
+              חזרה לדשבורד
+            </Button>
+            <h1 className="text-2xl font-bold text-[#6E59A5]">סיכומי מפגשים</h1>
+          </div>
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+            <div className="relative w-full md:w-auto">
+              <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+              <Input
+                placeholder="חיפוש לפי תוכן..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full md:w-[200px] text-right pl-10 bg-white/90 border-gray-200 focus:border-[#6E59A5]"
+              />
+            </div>
+            <Select
+              value={selectedPlayer}
+              onValueChange={handlePlayerChange}
+            >
+              <SelectTrigger className="w-full md:w-[200px] text-right bg-white/90 border-gray-200">
+                <SelectValue placeholder="בחר שחקן" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">כל השחקנים</SelectItem>
+                {players.map(player => (
+                  <SelectItem key={player.id} value={player.id}>
+                    {player.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              onClick={handlePlay} 
+              variant="default" 
+              className="flex items-center gap-2"
+            >
+              <Play className="h-5 w-5" />
+              הפעל
             </Button>
           </div>
-        </header>
+        </div>
 
-        <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>האם אתה בטוח שברצונך להתנתק?</AlertDialogTitle>
-              <AlertDialogDescription>
-                לאחר ההתנתקות תצטרך להתחבר מחדש כדי לגשת למערכת.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>ביטול</AlertDialogCancel>
-              <AlertDialogAction onClick={handleLogout}>התנתק</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <div className="mb-4 text-sm text-gray-600">
+          מציג {filteredSummaries.length} מתוך {summaries.length} סיכומים
+        </div>
 
-        <Tabs defaultValue="videos" className="w-full">
-          <TabsList className="grid grid-cols-5 mb-8">
-            <TabsTrigger value="videos" className="flex items-center gap-2">
-              <Film className="h-4 w-4" /> סרטונים
-            </TabsTrigger>
-            <TabsTrigger value="mental-prep" className="flex items-center gap-2">
-              <FileCheck className="h-4 w-4" /> הכנה מנטלית
-            </TabsTrigger>
-            <TabsTrigger value="belief-breaking" className="flex items-center gap-2">
-              <BrainCircuit className="h-4 w-4" /> שבירת אמונות
-            </TabsTrigger>
-            <TabsTrigger value="mental-library" className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4" /> ספריה מנטלית
-            </TabsTrigger>
-            <TabsTrigger value="admin-message" className="flex items-center gap-2">
-              <Send className="h-4 w-4" /> הודעה למנהל
-            </TabsTrigger>
-          </TabsList>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+          </div>
+        ) : filteredSummaries.length > 0 ? (
+          <AnimatePresence>
+            <motion.div 
+              className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2 lg:grid-cols-3'} gap-6`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ staggerChildren: 0.05 }}
+            >
+              {filteredSummaries.map((summary, index) => (
+                <motion.div
+                  key={summary.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                >
+                  <Card className="bg-white/90 hover:bg-white transition-all duration-300 hover:shadow-lg border border-gray-100 overflow-hidden">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <div className="text-right w-full">
+                          <CardTitle className="text-lg font-medium text-[#6E59A5]">
+                            {summary.session?.player?.full_name || "שחקן לא ידוע"}
+                          </CardTitle>
+                          <p className="text-sm text-gray-500">
+                            {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 mr-2">
+                          <FileText className="h-5 w-5 text-[#9b87f5]" />
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/10 transition-colors">
+                                <Eye className="h-4 w-4 text-[#7E69AB] hover:text-[#6E59A5]" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl max-h-screen">
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center justify-between mb-4 text-right">
+                                  <span className="text-[#6E59A5]">סיכום מפגש - {summary.session?.player?.full_name || "שחקן לא ידוע"}</span>
+                                  <span className="text-sm font-normal text-gray-500">
+                                    {format(new Date(summary.session?.session_date || new Date()), 'dd/MM/yyyy', { locale: he })}
+                                  </span>
+                                </DialogTitle>
+                              </DialogHeader>
+                              {renderSummaryDetails(summary)}
+                              <div className="flex items-center justify-between pt-4 border-t mt-4">
+                                <div className="text-gray-600 text-right w-full">
+                                  דירוג התקדמות: <span className="font-semibold text-[#6E59A5]">{summary.progress_rating}/5</span>
+                                </div>
+                                <DialogClose asChild>
+                                  <Button variant="outline">סגור</Button>
+                                </DialogClose>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4 text-right">
+                        {summary.tools_used && summary.tools_used.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {summary.tools_used.slice(0, 3).map((toolId, idx) => (
+                              <Badge 
+                                key={idx}
+                                variant="outline"
+                                className="text-xs bg-purple-50 text-purple-700 border-purple-200"
+                              >
+                                {tools[toolId]?.name || 'כלי'}
+                              </Badge>
+                            ))}
+                            {summary.tools_used.length > 3 && (
+                              <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                                +{summary.tools_used.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
 
-          <TabsContent value="videos" className="space-y-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">הסרטונים שלי</h2>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  if (userId && coachId) {
-                    // This just refreshes the component
-                    setLoading(true);
-                    setTimeout(() => setLoading(false), 100);
-                  }
-                }}
-                className="flex items-center gap-2"
-                disabled={loading}
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                רענן רשימה
-              </Button>
-            </div>
-
-            {userId && coachId ? (
-              <VideosTab 
-                coachId={coachId} 
-                playerId={userId} 
-              />
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">טוען מידע...</p>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="mental-prep">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl font-bold">הכנה מנטלית</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MentalPrepForm />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="belief-breaking">
-            <BeliefBreakingCard />
-          </TabsContent>
-
-          <TabsContent value="mental-library">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl font-bold">ספריה מנטלית</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MentalLibrary />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="admin-message">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl font-bold">שלח הודעה למנהל</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AdminMessageForm />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                        <div>
+                          <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">סיכום המפגש</h3>
+                          <p className="text-sm text-gray-600 line-clamp-3 bg-gray-50 p-2 rounded-lg">{summary.summary_text}</p>
+                          
+                          {summary.audio_url && renderAudioPlayer(summary)}
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                          <Wrench className="h-3 w-3 text-purple-500" />
+                          <span className="text-xs text-purple-600">
+                            {summary.tools_used?.length || 0} כלים מנטליים
+                          </span>
+                        </div>
+                        
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-500 text-xs">
+                            {format(new Date(summary.created_at), 'HH:mm dd/MM/yyyy', { locale: he })}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium
+                            ${summary.progress_rating >= 4 ? 'bg-green-100 text-green-800' : 
+                              summary.progress_rating >= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
+                            דירוג התקדמות: {summary.progress_rating}/5
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <motion.div 
+            className="text-center py-12 bg-white/80 rounded-lg shadow-md"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">לא נמצאו סיכומי מפגשים</h3>
+            <p className="text-gray-500">
+              {selectedPlayer !== 'all' 
+                ? 'אין סיכומי מפגשים לשחקן זה' 
+                : searchQuery 
+                  ? 'לא נמצאו תוצאות התואמות את החיפוש' 
+                  : 'לא נמצאו סיכומי מפגשים במערכת'}
+            </p>
+          </motion.div>
+        )}
       </div>
-
-      <LandingPageDialog
-        open={showLandingPageDialog}
-        onOpenChange={setShowLandingPageDialog}
-      />
     </div>
   );
 };
 
-export default Index;
+export default AllMeetingSummaries;
