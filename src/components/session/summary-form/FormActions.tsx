@@ -77,7 +77,7 @@ export function FormActions({
   const handleReturnToHome = () => {
     setShowReturnDialog(false);
     navigate('/');
-    console.log("Navigating to dashboard after user clicked 'return to home'");
+    console.log("Navigating to root path (home) after user clicked 'return to home'");
   };
 
   return (
@@ -112,3 +112,4 @@ export function FormActions({
     </div>
   );
 }
+
