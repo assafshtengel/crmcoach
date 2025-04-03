@@ -302,7 +302,7 @@ const AllMeetingSummaries = () => {
               )}
               {summary.audio_url && !summary.audio_url.includes("audio_summaries") && (
                 <p className="text-sm text-purple-700 mt-2">
-                  <span className="font-medium">שים לב:</span> הקלט��ת מפגשים ישנות עשויות להיות לא זמינות. הקלטות חדשות יפעלו כרגיל.
+                  <span className="font-medium">שים לב:</span> הקלטות מפגשים ישנות עשויות להיות לא זמינות. הקלטות חדשות יפעלו כרגיל.
                 </p>
               )}
             </div>
