@@ -75,7 +75,9 @@ export function FormActions({
   };
 
   const handleReturnToHome = () => {
+    // Close the dialog and navigate to home page
     setShowReturnDialog(false);
+    // Navigate to root path (home)
     navigate('/');
     console.log("Navigating to root path (home) after user clicked 'return to home'");
   };
@@ -112,4 +114,3 @@ export function FormActions({
     </div>
   );
 }
-
