@@ -87,6 +87,12 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           return;
         }
 
+        // כאשר מאמן מתחבר מעבר ישיר לדשבורד מאמן במידה ומנסה להיכנס לעמוד הראשי
+        if (location.pathname === '/') {
+          navigate('/dashboard-coach');
+          return;
+        }
+
         // מאחר שאנחנו מאפשרים למאמנים להתחבר מיד לאחר הרשמה, לא נבדוק הרשאות באופן מחמיר
         setIsLoading(false);
       } catch (error) {
