@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Save, FileDown } from "lucide-react";
@@ -49,9 +50,9 @@ export function FormActions({
         duration: 1500,
         onAutoClose: () => {
           if (navigateAfterSave) {
-            // Navigate to all meeting summaries page after exporting
-            navigate('/all-meeting-summaries');
-            console.log("Navigating to /all-meeting-summaries after PDF export");
+            // Navigate to dashboard page after exporting
+            navigate('/');
+            console.log("Navigating to dashboard after PDF export");
           }
         },
         style: {
