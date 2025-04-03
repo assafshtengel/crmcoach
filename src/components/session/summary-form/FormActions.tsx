@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Save, FileDown, Home } from "lucide-react";
@@ -76,7 +75,7 @@ export function FormActions({
 
   const handleReturnToHome = () => {
     setShowReturnDialog(false);
-    navigate('/');
+    navigate('/dashboard');
     console.log("Navigating to dashboard after user clicked 'return to home'");
   };
 
