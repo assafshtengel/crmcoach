@@ -127,12 +127,16 @@ const EditSessionForm = () => {
     try {
       console.log("Saving session summary with player ID:", formData.player_id);
       console.log("Summary data:", data);
-      console.log("chen ", formData)
+      console.log("chen ", formData);
+      
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData?.user?.id;
+      
       const { error } = await supabase
         .from('session_summaries')
         .insert({
           session_id: sessionId,
-          coach_id: (await supabase.auth.getUser()).data.user?.id,
+          coach_id: userId || (await supabase.auth.getUser()).data.user?.id,
           player_id: formData.player_id,
           summary_text: data.summary_text,
           achieved_goals: data.achieved_goals.split('\n').filter(Boolean),

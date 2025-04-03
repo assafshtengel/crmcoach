@@ -1873,6 +1873,7 @@ export type Database = {
         Row: {
           achieved_goals: string[] | null
           additional_notes: string | null
+          audio_url: string | null
           coach_id: string
           created_at: string
           future_goals: string[] | null
@@ -1887,6 +1888,7 @@ export type Database = {
         Insert: {
           achieved_goals?: string[] | null
           additional_notes?: string | null
+          audio_url?: string | null
           coach_id: string
           created_at?: string
           future_goals?: string[] | null
@@ -1901,6 +1903,7 @@ export type Database = {
         Update: {
           achieved_goals?: string[] | null
           additional_notes?: string | null
+          audio_url?: string | null
           coach_id?: string
           created_at?: string
           future_goals?: string[] | null

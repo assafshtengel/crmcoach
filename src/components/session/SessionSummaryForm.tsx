@@ -74,6 +74,7 @@ export function SessionSummaryForm({
         
         toast.info("מעלה הקלטת קול...");
         audioUrl = await uploadAudio(audioBlob, fileName);
+        console.log("Audio URL after upload:", audioUrl); // Add logging to track the audio URL
       }
       
       console.log("Complete form data:", { ...data, tools_used: selectedTools, audio_url: audioUrl });
