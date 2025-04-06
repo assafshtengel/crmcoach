@@ -71,6 +71,8 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     const folderPath = `audio_summaries/${userId}`;
     const filePath = `${folderPath}/${path}`;
     
+    console.log(`Uploading audio file to: ${targetBucket}/${filePath}`);
+    
     // Upload the file
     const { data, error } = await supabaseClient.storage
       .from(targetBucket)

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -182,6 +181,11 @@ export function SessionSummaryForm({
 
   const handleAudioReady = (blob: Blob | null) => {
     setAudioBlob(blob);
+    if (blob) {
+      console.log("Audio recording ready, blob size:", blob.size, "bytes");
+    } else {
+      console.log("Audio recording cancelled or reset");
+    }
   };
 
   const formRef = React.useRef<HTMLFormElement>(null);
