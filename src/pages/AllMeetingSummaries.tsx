@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Eye, Search, Calendar, Check, X, Wrench, Tag, Volume2, AlertCircle } from 'lucide-react';
+import { ArrowRight, FileText, Eye, Search, Calendar, Check, X, Wrench, Tag, Volume2, AlertCircle, Play } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from '@/components/ui/input';
@@ -55,6 +55,8 @@ const AllMeetingSummaries = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [tools, setTools] = useState<Record<string, Tool>>({});
   const [audioErrors, setAudioErrors] = useState<Record<string, boolean>>({});
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const audioRefs = React.useRef<Record<string, HTMLAudioElement | null>>({});
   const isMobile = useIsMobile();
 
   const fetchTools = async () => {
@@ -182,6 +184,27 @@ const AllMeetingSummaries = () => {
     console.error(`Failed to load audio for summary ID: ${summaryId}`);
   };
 
+  const handlePlayAudio = (summaryId: string) => {
+    if (playingAudio === summaryId) {
+      if (audioRefs.current[summaryId]) {
+        audioRefs.current[summaryId]?.pause();
+        setPlayingAudio(null);
+      }
+    } else {
+      if (playingAudio && audioRefs.current[playingAudio]) {
+        audioRefs.current[playingAudio]?.pause();
+      }
+      
+      if (audioRefs.current[summaryId]) {
+        audioRefs.current[summaryId]?.play().catch(err => {
+          console.error("Error playing audio:", err);
+          handleAudioError(summaryId);
+        });
+        setPlayingAudio(summaryId);
+      }
+    }
+  };
+
   const renderAudioPlayer = (summary: SessionSummary) => {
     if (!summary.audio_url) return null;
     
@@ -238,8 +261,37 @@ const AllMeetingSummaries = () => {
           )}
 
           <div>
-            <h3 className="text-lg font-semibold mb-2 text-[#6E59A5]">סיכום המפגש</h3>
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center">
+                {summary.audio_url && !audioErrors[summary.id] && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-1 bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700"
+                    onClick={() => handlePlayAudio(summary.id)}
+                  >
+                    {playingAudio === summary.id ? (
+                      <Volume2 className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                    <span>האזן לסיכום הקולי של המפגש</span>
+                  </Button>
+                )}
+              </div>
+              <h3 className="text-lg font-semibold text-[#6E59A5]">סיכום המפגש</h3>
+            </div>
             <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{summary.summary_text}</p>
+            
+            {summary.audio_url && !audioErrors[summary.id] && (
+              <audio 
+                ref={el => audioRefs.current[summary.id] = el} 
+                src={summary.audio_url}
+                className="hidden"
+                onEnded={() => setPlayingAudio(null)}
+                onError={() => handleAudioError(summary.id)}
+              />
+            )}
           </div>
 
           <div>
@@ -334,6 +386,14 @@ const AllMeetingSummaries = () => {
   const handlePlayerChange = (value: string) => {
     setSelectedPlayer(value);
   };
+
+  useEffect(() => {
+    return () => {
+      Object.values(audioRefs.current).forEach(audioEl => {
+        if (audioEl) audioEl.pause();
+      });
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F2FCE2] to-[#E5DEFF]">
@@ -469,7 +529,15 @@ const AllMeetingSummaries = () => {
                           <h3 className="text-sm font-semibold mb-1 text-[#7E69AB]">סיכום המפגש</h3>
                           <p className="text-sm text-gray-600 line-clamp-3 bg-gray-50 p-2 rounded-lg">{summary.summary_text}</p>
                           
-                          {summary.audio_url && renderAudioPlayer(summary)}
+                          {summary.audio_url && !audioErrors[summary.id] && (
+                            <audio 
+                              ref={el => audioRefs.current[summary.id] = el} 
+                              src={summary.audio_url}
+                              className="hidden"
+                              onEnded={() => setPlayingAudio(null)}
+                              onError={() => handleAudioError(summary.id)}
+                            />
+                          )}
                         </div>
                         
                         <div className="flex items-center gap-1">
