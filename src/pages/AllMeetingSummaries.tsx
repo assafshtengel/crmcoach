@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -114,6 +115,13 @@ const AllMeetingSummaries = () => {
         return;
       }
       
+      // Debug: Log the audio URLs in the fetched summaries
+      console.log('Fetched summaries:', data?.map(summary => ({
+        id: summary.id,
+        hasAudio: !!summary.audio_url,
+        audioUrl: summary.audio_url
+      })));
+      
       const uniqueSessions = new Map<string, SessionSummary>();
       data?.forEach((summary: SessionSummary) => {
         if (summary.session && summary.session.id) {
@@ -177,14 +185,16 @@ const AllMeetingSummaries = () => {
   };
 
   const handleAudioError = (summaryId: string) => {
+    console.error(`Audio error for summary ID: ${summaryId}`);
     setAudioErrors(prev => ({
       ...prev,
       [summaryId]: true
     }));
-    console.error(`Failed to load audio for summary ID: ${summaryId}`);
   };
 
   const handlePlayAudio = (summaryId: string) => {
+    console.log(`Attempting to play audio for summary ID: ${summaryId}`);
+    
     if (playingAudio === summaryId) {
       if (audioRefs.current[summaryId]) {
         audioRefs.current[summaryId]?.pause();
@@ -237,6 +247,14 @@ const AllMeetingSummaries = () => {
   };
 
   const renderSummaryDetails = (summary: SessionSummary) => {
+    // Debug: Log the current summary details
+    console.log('Rendering summary details:', {
+      id: summary.id,
+      hasAudio: !!summary.audio_url,
+      audioUrl: summary.audio_url,
+      hasError: audioErrors[summary.id]
+    });
+    
     return (
       <ScrollArea className="h-[calc(100vh-200px)] px-4">
         <div className="space-y-6 text-right">
@@ -263,33 +281,47 @@ const AllMeetingSummaries = () => {
           <div>
             <div className="flex justify-between items-center mb-2">
               <div className="flex items-center">
-                {summary.audio_url && !audioErrors[summary.id] && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex items-center gap-1 bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700"
-                    onClick={() => handlePlayAudio(summary.id)}
-                  >
-                    {playingAudio === summary.id ? (
-                      <Volume2 className="h-4 w-4" />
-                    ) : (
-                      <Play className="h-4 w-4" />
-                    )}
-                    <span>האזן לסיכום הקולי של המפגש</span>
-                  </Button>
-                )}
+                {/* Always show the audio button for debugging purposes, but with appropriate text */}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-1 bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700"
+                  onClick={() => {
+                    if (summary.audio_url) {
+                      handlePlayAudio(summary.id);
+                    } else {
+                      console.log("No audio URL available for this summary");
+                      toast.error("אין הקלטה זמינה למפגש זה");
+                    }
+                  }}
+                  disabled={!summary.audio_url || audioErrors[summary.id]}
+                >
+                  {playingAudio === summary.id ? (
+                    <Volume2 className="h-4 w-4" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                  <span>
+                    {!summary.audio_url ? "אין הקלטה זמינה" : 
+                     audioErrors[summary.id] ? "הקלטה לא זמינה" : 
+                     "האזן לסיכום הקולי של המפגש"}
+                  </span>
+                </Button>
               </div>
               <h3 className="text-lg font-semibold text-[#6E59A5]">סיכום המפגש</h3>
             </div>
             <p className="text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg">{summary.summary_text}</p>
             
-            {summary.audio_url && !audioErrors[summary.id] && (
+            {summary.audio_url && (
               <audio 
                 ref={el => audioRefs.current[summary.id] = el} 
                 src={summary.audio_url}
                 className="hidden"
                 onEnded={() => setPlayingAudio(null)}
-                onError={() => handleAudioError(summary.id)}
+                onError={() => {
+                  console.error(`Failed to load audio for summary ID: ${summary.id}, URL: ${summary.audio_url}`);
+                  handleAudioError(summary.id);
+                }}
               />
             )}
           </div>
