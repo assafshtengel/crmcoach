@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -115,12 +114,33 @@ const AllMeetingSummaries = () => {
         return;
       }
       
-      // Debug: Log the audio URLs in the fetched summaries
-      console.log('Fetched summaries:', data?.map(summary => ({
-        id: summary.id,
-        hasAudio: !!summary.audio_url,
-        audioUrl: summary.audio_url
-      })));
+      console.log('Total summaries fetched:', data?.length);
+      
+      const audioSummaries = data?.filter(summary => !!summary.audio_url) || [];
+      console.log('Summaries with audio URLs:', audioSummaries.length);
+      
+      if (audioSummaries.length > 0) {
+        console.log('Audio URLs found:', 
+          audioSummaries.map(summary => ({
+            id: summary.id,
+            sessionId: summary.session_id,
+            playerId: summary.player_id,
+            audioUrl: summary.audio_url
+          }))
+        );
+        
+        audioSummaries.forEach(summary => {
+          const url = summary.audio_url;
+          if (url) {
+            const hasCorrectPath = url.includes('audio_summaries/') || url.includes('meeting_summaries_audio/');
+            if (!hasCorrectPath) {
+              console.warn(`Possibly incorrect audio URL format for summary ${summary.id}: ${url}`);
+            }
+          }
+        });
+      } else {
+        console.log('No audio URLs found in any summaries');
+      }
       
       const uniqueSessions = new Map<string, SessionSummary>();
       data?.forEach((summary: SessionSummary) => {
@@ -195,6 +215,11 @@ const AllMeetingSummaries = () => {
   const handlePlayAudio = (summaryId: string) => {
     console.log(`Attempting to play audio for summary ID: ${summaryId}`);
     
+    const summary = summaries.find(s => s.id === summaryId);
+    if (summary) {
+      console.log(`Audio URL: ${summary.audio_url}`);
+    }
+    
     if (playingAudio === summaryId) {
       if (audioRefs.current[summaryId]) {
         audioRefs.current[summaryId]?.pause();
@@ -216,9 +241,19 @@ const AllMeetingSummaries = () => {
   };
 
   const renderAudioPlayer = (summary: SessionSummary) => {
-    if (!summary.audio_url) return null;
+    console.log(`Rendering audio player for summary ${summary.id}:`, {
+      hasAudioUrl: !!summary.audio_url,
+      audioUrl: summary.audio_url,
+      hasError: !!audioErrors[summary.id]
+    });
+    
+    if (!summary.audio_url) {
+      console.log(`No audio URL for summary ${summary.id}`);
+      return null;
+    }
     
     if (audioErrors[summary.id]) {
+      console.log(`Audio error exists for summary ${summary.id}`);
       return (
         <Alert variant="destructive" className="bg-red-50 text-red-800 border border-red-200 mt-3 flex items-center gap-2">
           <AlertCircle className="h-4 w-4" />
@@ -240,14 +275,16 @@ const AllMeetingSummaries = () => {
           src={summary.audio_url}
           className="w-full h-10 rounded-md"
           preload="metadata"
-          onError={() => handleAudioError(summary.id)}
+          onError={() => {
+            console.error(`Error loading audio for summary ${summary.id}:`, summary.audio_url);
+            handleAudioError(summary.id);
+          }}
         />
       </div>
     );
   };
 
   const renderSummaryDetails = (summary: SessionSummary) => {
-    // Debug: Log the current summary details
     console.log('Rendering summary details:', {
       id: summary.id,
       hasAudio: !!summary.audio_url,
@@ -281,16 +318,20 @@ const AllMeetingSummaries = () => {
           <div>
             <div className="flex justify-between items-center mb-2">
               <div className="flex items-center">
-                {/* Always show the audio button for debugging purposes, but with appropriate text */}
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex items-center gap-1 bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700"
+                  className={`flex items-center gap-1 ${
+                    summary.audio_url && !audioErrors[summary.id] 
+                      ? "bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700" 
+                      : "bg-gray-50 border-gray-200 text-gray-400"
+                  }`}
                   onClick={() => {
                     if (summary.audio_url) {
+                      console.log("Play button clicked for summary with audio URL:", summary.audio_url);
                       handlePlayAudio(summary.id);
                     } else {
-                      console.log("No audio URL available for this summary");
+                      console.log("Play button clicked but no audio URL available for this summary");
                       toast.error("אין הקלטה זמינה למפגש זה");
                     }
                   }}
@@ -318,8 +359,9 @@ const AllMeetingSummaries = () => {
                 src={summary.audio_url}
                 className="hidden"
                 onEnded={() => setPlayingAudio(null)}
-                onError={() => {
+                onError={(e) => {
                   console.error(`Failed to load audio for summary ID: ${summary.id}, URL: ${summary.audio_url}`);
+                  console.error("Audio element error event:", e);
                   handleAudioError(summary.id);
                 }}
               />
@@ -381,7 +423,10 @@ const AllMeetingSummaries = () => {
                   src={summary.audio_url} 
                   className="w-full rounded-md"
                   preload="metadata"
-                  onError={() => handleAudioError(summary.id)}
+                  onError={() => {
+                    console.error(`Error loading audio player in details for summary ${summary.id}:`, summary.audio_url);
+                    handleAudioError(summary.id);
+                  }}
                 />
               )}
               {summary.audio_url && !summary.audio_url.includes("audio_summaries") && (

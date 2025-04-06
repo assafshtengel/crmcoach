@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,7 +45,8 @@ export function SessionSummaryForm({
   const { tools, selectedTools, setSelectedTools, loading } = useTools();
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   
-  console.log("playerId", playerId);
+  console.log("SessionSummaryForm: Initialized with playerId", playerId, "and sessionId", sessionId);
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -60,7 +62,10 @@ export function SessionSummaryForm({
 
   const handleSubmit = async (data: FormValues) => {
     setIsSaving(true);
-    console.log("data", data);
+    console.log("Submitting form data:", data);
+    console.log("Selected tools:", selectedTools);
+    console.log("Has audio recording:", !!audioBlob, audioBlob ? `Size: ${audioBlob.size} bytes` : "");
+    
     try {
       console.log("Submitting form data with player ID:", playerId);
       
@@ -71,22 +76,60 @@ export function SessionSummaryForm({
         const timestamp = new Date().getTime();
         const fileName = `${playerId}_${sessionId}_${timestamp}.webm`;
         
+        console.log("Preparing to upload audio recording:", fileName);
         toast.info("מעלה הקלטת קול...");
-        audioUrl = await uploadAudio(audioBlob, fileName);
-        console.log("Audio URL after upload:", audioUrl); // Add logging to track the audio URL
+        
+        try {
+          audioUrl = await uploadAudio(audioBlob, fileName);
+          console.log("Audio URL after upload:", audioUrl);
+        } catch (audioError) {
+          console.error("Audio upload failed:", audioError);
+          toast.error(`שגיאה בהעלאת הקלטת הקול: ${audioError.message}`);
+          // Continue with form submission even if audio upload fails
+        }
       }
       
-      console.log("Complete form data:", { ...data, tools_used: selectedTools, audio_url: audioUrl });
+      const completeFormData = { 
+        ...data, 
+        tools_used: selectedTools,
+        audio_url: audioUrl 
+      };
       
-      await onSubmit({ ...data, tools_used: selectedTools, audio_url: audioUrl });
+      console.log("Complete form data to be submitted:", completeFormData);
+      
+      await onSubmit(completeFormData);
       console.log("Form submitted successfully");
       
       if (!forceEnable) {
         updateSessionSummaryStatus(sessionId, playerId);
       }
+      
+      // Verify that the summary was saved with the audio URL
+      if (audioUrl) {
+        try {
+          const { data: savedSummary, error } = await supabase
+            .from('session_summaries')
+            .select('audio_url')
+            .eq('session_id', sessionId)
+            .eq('player_id', playerId)
+            .single();
+            
+          if (error) {
+            console.error("Error verifying saved audio URL:", error);
+          } else {
+            console.log("Saved summary audio URL:", savedSummary?.audio_url);
+            if (savedSummary?.audio_url !== audioUrl) {
+              console.warn("Audio URL mismatch! Expected:", audioUrl, "Saved:", savedSummary?.audio_url);
+            }
+          }
+        } catch (verifyError) {
+          console.error("Error verifying audio URL in database:", verifyError);
+        }
+      }
+      
     } catch (error) {
       console.error("Error saving session summary:", error);
-      toast.error("שגיאה בשמירת סיכום המפגש");
+      toast.error(`שגיאה בשמירת סיכום המפגש: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -183,6 +226,15 @@ export function SessionSummaryForm({
     setAudioBlob(blob);
     if (blob) {
       console.log("Audio recording ready, blob size:", blob.size, "bytes");
+      console.log("Audio recording type:", blob.type);
+      
+      // Preview the audio to ensure it was recorded correctly
+      const audioURL = URL.createObjectURL(blob);
+      console.log("Audio preview URL:", audioURL);
+      
+      // You can uncomment this to preview the audio in the console
+      // const audio = new Audio(audioURL);
+      // audio.play().catch(e => console.error("Could not play audio preview:", e));
     } else {
       console.log("Audio recording cancelled or reset");
     }
