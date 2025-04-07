@@ -106,10 +106,11 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
       .from(targetBucket)
       .getPublicUrl(filePath);
     
-    console.log("Upload successful, URL:", urlData?.publicUrl);
+    const publicUrl = urlData?.publicUrl || null;
+    console.log("Upload successful, URL:", publicUrl);
     toast.success('Audio file uploaded successfully');
     
-    return urlData?.publicUrl || null;
+    return publicUrl;
   } catch (err) {
     console.error("Full upload function error:", err);
     

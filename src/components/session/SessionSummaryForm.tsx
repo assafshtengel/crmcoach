@@ -82,6 +82,23 @@ export function SessionSummaryForm({
         try {
           audioUrl = await uploadAudio(audioBlob, fileName);
           console.log("Audio URL after upload:", audioUrl);
+          
+          // Save the audio URL to the session_summaries table
+          if (audioUrl) {
+            console.log("Updating session_summaries with audio URL:", audioUrl);
+            const { data: updateData, error: updateError } = await supabase
+              .from('session_summaries')
+              .update({ audio_url: audioUrl })
+              .eq('session_id', sessionId)
+              .eq('player_id', playerId);
+              
+            if (updateError) {
+              console.error("Error updating session summary with audio URL:", updateError);
+              toast.error(`שגיאה בשמירת קישור להקלטה: ${updateError.message}`);
+            } else {
+              console.log("Successfully updated session summary with audio URL");
+            }
+          }
         } catch (audioError) {
           console.error("Audio upload failed:", audioError);
           toast.error(`שגיאה בהעלאת הקלטת הקול: ${audioError.message}`);
@@ -120,6 +137,19 @@ export function SessionSummaryForm({
             console.log("Saved summary audio URL:", savedSummary?.audio_url);
             if (savedSummary?.audio_url !== audioUrl) {
               console.warn("Audio URL mismatch! Expected:", audioUrl, "Saved:", savedSummary?.audio_url);
+              
+              // Try updating again if mismatch
+              const { error: retryError } = await supabase
+                .from('session_summaries')
+                .update({ audio_url: audioUrl })
+                .eq('session_id', sessionId)
+                .eq('player_id', playerId);
+                
+              if (retryError) {
+                console.error("Error in retry update of audio URL:", retryError);
+              } else {
+                console.log("Successfully updated audio URL in retry attempt");
+              }
             }
           }
         } catch (verifyError) {
@@ -231,10 +261,6 @@ export function SessionSummaryForm({
       // Preview the audio to ensure it was recorded correctly
       const audioURL = URL.createObjectURL(blob);
       console.log("Audio preview URL:", audioURL);
-      
-      // You can uncomment this to preview the audio in the console
-      // const audio = new Audio(audioURL);
-      // audio.play().catch(e => console.error("Could not play audio preview:", e));
     } else {
       console.log("Audio recording cancelled or reset");
     }
