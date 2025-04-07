@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -71,7 +70,6 @@ export function SessionSummaryForm({
       
       let audioUrl = undefined;
       
-      // Upload audio if exists
       if (audioBlob) {
         const timestamp = new Date().getTime();
         const fileName = `${playerId}_${sessionId}_${timestamp}.webm`;
@@ -83,7 +81,6 @@ export function SessionSummaryForm({
           audioUrl = await uploadAudio(audioBlob, fileName);
           console.log("Audio URL after upload:", audioUrl);
           
-          // Save the audio URL to the session_summaries table
           if (audioUrl) {
             console.log("Updating session_summaries with audio URL:", audioUrl);
             const { data: updateData, error: updateError } = await supabase
@@ -91,18 +88,30 @@ export function SessionSummaryForm({
               .update({ audio_url: audioUrl })
               .eq('session_id', sessionId)
               .eq('player_id', playerId);
-              
+            
             if (updateError) {
-              console.error("Error updating session summary with audio URL:", updateError);
-              toast.error(`שגיאה בשמירת קישור להקלטה: ${updateError.message}`);
+              console.error("Failed to update session summary with audio URL:", updateError);
+              toast.error(`שגיאה בעדכון סיכום המפגש עם קישור להקלטה: ${updateError.message}`);
             } else {
-              console.log("Successfully updated session summary with audio URL");
+              console.log("Audio URL successfully saved:", updateData);
+              
+              const { data: verifyData, error: verifyError } = await supabase
+                .from('session_summaries')
+                .select('audio_url')
+                .eq('session_id', sessionId)
+                .eq('player_id', playerId)
+                .single();
+              
+              if (verifyError) {
+                console.error("Error verifying saved audio URL:", verifyError);
+              } else {
+                console.log("Verified saved audio URL:", verifyData?.audio_url);
+              }
             }
           }
         } catch (audioError) {
           console.error("Audio upload failed:", audioError);
           toast.error(`שגיאה בהעלאת הקלטת הקול: ${audioError.message}`);
-          // Continue with form submission even if audio upload fails
         }
       }
       
@@ -121,7 +130,6 @@ export function SessionSummaryForm({
         updateSessionSummaryStatus(sessionId, playerId);
       }
       
-      // Verify that the summary was saved with the audio URL
       if (audioUrl) {
         try {
           const { data: savedSummary, error } = await supabase
@@ -138,7 +146,6 @@ export function SessionSummaryForm({
             if (savedSummary?.audio_url !== audioUrl) {
               console.warn("Audio URL mismatch! Expected:", audioUrl, "Saved:", savedSummary?.audio_url);
               
-              // Try updating again if mismatch
               const { error: retryError } = await supabase
                 .from('session_summaries')
                 .update({ audio_url: audioUrl })
@@ -258,7 +265,6 @@ export function SessionSummaryForm({
       console.log("Audio recording ready, blob size:", blob.size, "bytes");
       console.log("Audio recording type:", blob.type);
       
-      // Preview the audio to ensure it was recorded correctly
       const audioURL = URL.createObjectURL(blob);
       console.log("Audio preview URL:", audioURL);
     } else {
