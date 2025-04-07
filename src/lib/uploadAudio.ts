@@ -1,3 +1,4 @@
+
 import { supabaseClient } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 
@@ -54,6 +55,7 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     
     // Check if the bucket exists
     let targetBucket = bucketName;
+    let bucketExists = false;
     
     try {
       console.log(`Checking if bucket ${bucketName} exists...`);
@@ -65,10 +67,31 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
         targetBucket = backupBucketName;
       } else {
         console.log(`Bucket ${bucketName} found:`, bucketData);
+        bucketExists = true;
       }
     } catch (bucketCheckError) {
       console.error(`Error checking bucket ${bucketName}, using ${backupBucketName} instead:`, bucketCheckError);
       targetBucket = backupBucketName;
+    }
+    
+    // If the bucket doesn't exist, try to create it
+    if (!bucketExists && targetBucket === bucketName) {
+      try {
+        console.log(`Attempting to create bucket: ${bucketName}`);
+        const { data: createBucketData, error: createBucketError } = await supabaseClient.storage.createBucket(
+          bucketName, { public: true }
+        );
+
+        if (createBucketError) {
+          console.error(`Failed to create bucket ${bucketName}:`, createBucketError);
+          targetBucket = backupBucketName;
+        } else {
+          console.log(`Successfully created bucket ${bucketName}:`, createBucketData);
+        }
+      } catch (createError) {
+        console.error(`Error creating bucket ${bucketName}:`, createError);
+        targetBucket = backupBucketName;
+      }
     }
     
     console.log(`Using storage bucket: ${targetBucket}`);
