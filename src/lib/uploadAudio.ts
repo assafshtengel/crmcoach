@@ -1,4 +1,3 @@
-
 import { supabaseClient } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 
@@ -25,13 +24,13 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
 
     console.log("User authenticated:", session.session.user.id);
 
-    // Check user role (existing code)
+    // Check user role (FIXED: using 'id' instead of 'user_id')
     let isCoach = false;
     try {
       const { data: userRoles } = await supabaseClient
         .from('user_roles')
         .select('role')
-        .eq('user_id', session.session.user.id)
+        .eq('id', session.session.user.id)  // FIXED: using 'id' instead of 'user_id'
         .single();
       
       isCoach = userRoles?.role === 'coach';
