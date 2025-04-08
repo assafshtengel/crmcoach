@@ -43,6 +43,7 @@ export function SessionSummaryForm({
   const [isSaving, setIsSaving] = useState(false);
   const { tools, selectedTools, setSelectedTools, loading } = useTools();
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioSharingOption, setAudioSharingOption] = useState<string>("coach_only");
   
   console.log("SessionSummaryForm: Initialized with playerId", playerId, "and sessionId", sessionId);
   

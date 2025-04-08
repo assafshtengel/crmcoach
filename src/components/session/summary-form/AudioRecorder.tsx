@@ -1,8 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, Square, Loader2, RotateCcw, Volume2 } from 'lucide-react';
+import { Mic, Square, Loader2, RotateCcw, Volume2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 interface AudioRecorderProps {
   onAudioReady: (audioBlob: Blob) => void;
@@ -14,6 +16,7 @@ export function AudioRecorder({ onAudioReady, initialAudioUrl }: AudioRecorderPr
   const [audioUrl, setAudioUrl] = useState<string | null>(initialAudioUrl || null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [sharingOption, setSharingOption] = useState("coach_only");
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -118,6 +121,29 @@ export function AudioRecorder({ onAudioReady, initialAudioUrl }: AudioRecorderPr
             מקליט... {formatTime(recordingTime)}
           </div>
         )}
+      </div>
+      
+      <div className="border-b border-gray-200 pb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Share2 className="h-4 w-4 text-[#6E59A5]" />
+          <label className="text-sm font-medium">שיתוף הסיכום הקולי עם:</label>
+        </div>
+        
+        <RadioGroup 
+          defaultValue="coach_only" 
+          value={sharingOption}
+          onValueChange={setSharingOption}
+          className="flex flex-col space-y-1"
+        >
+          <div className="flex items-center space-x-2 space-x-reverse">
+            <RadioGroupItem value="coach_only" id="coach_only" />
+            <Label htmlFor="coach_only">רק המאמן</Label>
+          </div>
+          <div className="flex items-center space-x-2 space-x-reverse">
+            <RadioGroupItem value="coach_and_player" id="coach_and_player" />
+            <Label htmlFor="coach_and_player">המאמן והשחקן</Label>
+          </div>
+        </RadioGroup>
       </div>
       
       {audioUrl ? (
