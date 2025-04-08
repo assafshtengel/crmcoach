@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Mic, Square, Loader2, RotateCcw, Volume2, Share2 } from 'lucide-react';
@@ -113,7 +112,7 @@ export function AudioRecorder({ onAudioReady, initialAudioUrl }: AudioRecorderPr
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Volume2 className="h-5 w-5 text-[#6E59A5]" />
-          <h3 className="text-base font-semibold text-[#6E59A5]">הקלטת סיכום קולי</h3>
+          <h3 className="text-base font-semibold text-[#6E59A5]">��קלטת סיכום קולי</h3>
         </div>
         
         {recordingTime > 0 && isRecording && (
@@ -133,15 +132,46 @@ export function AudioRecorder({ onAudioReady, initialAudioUrl }: AudioRecorderPr
           defaultValue="coach_only" 
           value={sharingOption}
           onValueChange={setSharingOption}
-          className="flex flex-col space-y-1"
+          className="grid grid-cols-2 gap-2"
         >
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <RadioGroupItem value="coach_only" id="coach_only" />
-            <Label htmlFor="coach_only">רק המאמן</Label>
+          <div className="relative">
+            <RadioGroupItem 
+              value="coach_only" 
+              id="coach_only" 
+              className="sr-only" 
+            />
+            <Label 
+              htmlFor="coach_only" 
+              className={`
+                block w-full p-3 rounded-lg text-center cursor-pointer
+                transition-all duration-300 ease-in-out
+                ${sharingOption === 'coach_only' 
+                  ? 'bg-primary text-white shadow-md transform scale-105' 
+                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}
+              `}
+            >
+              רק המאמן
+            </Label>
           </div>
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <RadioGroupItem value="coach_and_player" id="coach_and_player" />
-            <Label htmlFor="coach_and_player">המאמן והשחקן</Label>
+          
+          <div className="relative">
+            <RadioGroupItem 
+              value="coach_and_player" 
+              id="coach_and_player" 
+              className="sr-only" 
+            />
+            <Label 
+              htmlFor="coach_and_player" 
+              className={`
+                block w-full p-3 rounded-lg text-center cursor-pointer
+                transition-all duration-300 ease-in-out
+                ${sharingOption === 'coach_and_player' 
+                  ? 'bg-primary text-white shadow-md transform scale-105' 
+                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}
+              `}
+            >
+              המאמן והשחקן
+            </Label>
           </div>
         </RadioGroup>
       </div>
