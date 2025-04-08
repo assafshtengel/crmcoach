@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Mic, Square, Loader2, RotateCcw, Volume2, Share2 } from 'lucide-react';
@@ -112,13 +113,13 @@ export function AudioRecorder({
           <label className="text-sm font-medium">שיתוף הסיכום הקולי עם:</label>
         </div>
         
-        <RadioGroup defaultValue="coach_only" value={sharingOption} onValueChange={setSharingOption} className="grid grid-cols-2 gap-2">
+        <RadioGroup defaultValue="coach_only" value={sharingOption} onValueChange={setSharingOption} className="grid grid-cols-2 gap-3">
           <div className="relative">
             <RadioGroupItem value="coach_only" id="coach_only" className="sr-only" />
             <Label htmlFor="coach_only" className={`
-                block w-full p-3 rounded-lg text-center cursor-pointer
+                block w-full p-3 rounded-md text-center cursor-pointer
                 transition-all duration-300 ease-in-out
-                ${sharingOption === 'coach_only' ? 'bg-primary text-white shadow-md transform scale-105' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}
+                ${sharingOption === 'coach_only' ? 'bg-primary text-white shadow-md transform scale-105' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}
               `}>
               רק המאמן
             </Label>
@@ -127,9 +128,9 @@ export function AudioRecorder({
           <div className="relative">
             <RadioGroupItem value="coach_and_player" id="coach_and_player" className="sr-only" />
             <Label htmlFor="coach_and_player" className={`
-                block w-full p-3 rounded-lg text-center cursor-pointer
+                block w-full p-3 rounded-md text-center cursor-pointer
                 transition-all duration-300 ease-in-out
-                ${sharingOption === 'coach_and_player' ? 'bg-primary text-white shadow-md transform scale-105' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}
+                ${sharingOption === 'coach_and_player' ? 'bg-primary text-white shadow-md transform scale-105' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'}
               `}>
               המאמן והשחקן
             </Label>
