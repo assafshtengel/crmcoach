@@ -26,6 +26,7 @@ import { Film } from 'lucide-react';
 import { AdminMessageForm } from '@/components/admin/AdminMessageForm';
 import { LandingPageDialog } from "@/components/landing-page/LandingPageDialog";
 import { ClipboardList } from 'lucide-react';
+import { CalendarEvent, DashboardStats, UpcomingSession, Notification, SessionResponse } from '@/types/dashboard';
 
 const HeaderMenu = ({
   navigate,
