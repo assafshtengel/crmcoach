@@ -913,32 +913,51 @@ const DashboardCoach = () => {
               <div className="text-3xl font-bold text-[#2C3E50]">{stats.upcomingSessions}</div>
               <p className="text-sm text-gray-500 mb-2">בשבוע הקרוב ({stats.upcomingSessions} מפגשים)</p>
               
-              {upcomingSessions.length > 0 && <Collapsible className="mt-2">
+              {upcomingSessions.length > 0 && (
+                <Collapsible className="mt-2 w-full">
                   <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="w-full flex items-center justify-center text-[#3498DB]">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full flex items-center justify-center text-[#3498DB] hover:bg-[#3498DB]/5 transition-colors"
+                    >
                       הצג רשימת מפגשים
-                      <ChevronDown className="h-4 w-4 ml-1" />
+                      <ChevronDown className="h-4 w-4 mr-1" />
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="space-y-2 mt-2 max-h-[200px] overflow-y-auto pr-1">
-                      {upcomingSessions.map(session => <div key={session.id} className="p-2 rounded-md bg-gray-50 flex justify-between items-center text-sm hover:bg-gray-100 cursor-pointer" onClick={() => navigate('/edit-session', {
-                    state: {
-                      sessionId: session.id
-                    }
-                  })}>
+                    <div className="space-y-2 mt-2 max-h-[200px] overflow-y-auto pl-1 pr-0">
+                      {upcomingSessions.map(session => (
+                        <div 
+                          key={session.id} 
+                          className="p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors flex justify-between items-center text-sm cursor-pointer shadow-sm hover:shadow" 
+                          onClick={() => navigate('/edit-session', {
+                            state: {
+                              sessionId: session.id
+                            }
+                          })}
+                        >
                           <div>
-                            <p className="font-medium">{session.player.full_name}</p>
-                            <p className="text-gray-500 text-xs">{session.session_date} | {session.session_time}</p>
+                            <p className="font-medium text-gray-800">{session.player.full_name}</p>
+                            <p className="text-gray-500 text-xs flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {session.session_date} | {session.session_time}
+                            </p>
                           </div>
                           <div className="flex items-center">
-                            {session.location && <span className="text-xs text-gray-500 ml-2">{session.location}</span>}
+                            {session.location && (
+                              <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full mr-2">
+                                {session.location}
+                              </span>
+                            )}
                             <ChevronUp className="h-4 w-4 text-gray-400" />
                           </div>
-                        </div>)}
+                        </div>
+                      ))}
                     </div>
                   </CollapsibleContent>
-                </Collapsible>}
+                </Collapsible>
+              )}
             </CardContent>
           </Card>
 
