@@ -6,8 +6,23 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Eye, Search, Calendar, Check, X, Wrench, Tag, Volume2, AlertCircle, Play } from 'lucide-react';
+import { 
+  ArrowRight, 
+  FileText, 
+  Eye, 
+  Search, 
+  Calendar, 
+  Check, 
+  X, 
+  Wrench, 
+  Tag, 
+  Volume2, 
+  AlertCircle, 
+  Play,
+  Trash2 
+} from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -28,6 +43,7 @@ interface SessionSummary {
   tools_used?: string[];
   audio_url?: string;
   player_id: string;
+  is_deleted?: boolean;
   session: {
     id: string;
     session_date: string;
@@ -56,6 +72,8 @@ const AllMeetingSummaries = () => {
   const [tools, setTools] = useState<Record<string, Tool>>({});
   const [audioErrors, setAudioErrors] = useState<Record<string, boolean>>({});
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const [summaryToDelete, setSummaryToDelete] = useState<SessionSummary | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const audioRefs = React.useRef<Record<string, HTMLAudioElement | null>>({});
   const isMobile = useIsMobile();
 
@@ -105,6 +123,7 @@ const AllMeetingSummaries = () => {
           )
         `)
         .eq('coach_id', user.id)
+        .eq('is_deleted', false)
         .order('created_at', { ascending: false });
 
       const { data, error } = await query;
@@ -441,6 +460,40 @@ const AllMeetingSummaries = () => {
     );
   };
 
+  const handleDeleteSummary = async (summary: SessionSummary) => {
+    setSummaryToDelete(summary);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteSummary = async () => {
+    if (!summaryToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from('session_summaries')
+        .update({ is_deleted: true })
+        .eq('id', summaryToDelete.id);
+        
+      if (error) {
+        console.error('Error deleting summary:', error);
+        toast.error('שגיאה במחיקת סיכום המפגש');
+        return;
+      }
+      
+      const updatedSummaries = summaries.filter(s => s.id !== summaryToDelete.id);
+      setSummaries(updatedSummaries);
+      applyFilters(updatedSummaries);
+      
+      toast.success('סיכום המפגש הוסתר בהצלחה');
+    } catch (error) {
+      console.error('Error in delete operation:', error);
+      toast.error('שגיאה במחיקת סיכום המפגש');
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setSummaryToDelete(null);
+    }
+  };
+
   useEffect(() => {
     fetchPlayers();
     fetchTools();
@@ -551,6 +604,17 @@ const AllMeetingSummaries = () => {
                           </p>
                         </div>
                         <div className="flex items-center gap-2 mr-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 hover:bg-red-50 text-red-500 hover:text-red-600 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteSummary(summary);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                           <FileText className="h-5 w-5 text-[#9b87f5]" />
                           <Dialog>
                             <DialogTrigger asChild>
@@ -620,7 +684,7 @@ const AllMeetingSummaries = () => {
                         <div className="flex items-center gap-1">
                           <Wrench className="h-3 w-3 text-purple-500" />
                           <span className="text-xs text-purple-600">
-                            {summary.tools_used?.length || 0} כלים מנטליים
+                            {summary.tools_used?.length || 0} כלים מנטלי��ם
                           </span>
                         </div>
                         
@@ -660,6 +724,26 @@ const AllMeetingSummaries = () => {
           </motion.div>
         )}
       </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="text-right">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-right">נא אשר מחיקת סיכום האימון הזה</AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
+              סיכום זה יוסתר מהרשימה אך יישמר במערכת.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-row-reverse justify-start gap-2">
+            <AlertDialogAction 
+              onClick={confirmDeleteSummary}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              כן, מחק
+            </AlertDialogAction>
+            <AlertDialogCancel>בטל</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
