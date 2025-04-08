@@ -98,7 +98,7 @@ export function AudioRecorder({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Volume2 className="h-5 w-5 text-[#6E59A5]" />
-          <h3 className="text-base font-semibold text-[#6E59A5]">��קלטת סיכום קולי</h3>
+          
         </div>
         
         {recordingTime > 0 && isRecording && <div className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium animate-pulse">
