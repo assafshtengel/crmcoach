@@ -169,8 +169,7 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
           is_system_template: false,
           coach_id: session.user.id,
           created_at: now,
-          updated_at: now,
-          parent_template_id: templateId
+          updated_at: now
         };
         
         const { data, error } = await supabase
@@ -266,7 +265,7 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
           coach_id: coachId,
           player_id: playerId,
           questionnaire_id: questionnaire.id,
-          template_id: template.is_system_template ? templateId : template.parent_template_id || templateId,
+          template_id: templateId,
           status: 'pending'
         });
 
@@ -406,8 +405,8 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
                                 />
                               </div>
                               <div className="flex justify-between text-xs text-gray-500 px-2">
-                                <span>1</span>
                                 <span>10</span>
+                                <span>1</span>
                               </div>
                             </div>
                           ))}
