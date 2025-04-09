@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Loader2, Plus, Home } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
-import QuestionnaireAccordion from '@/components/questionnaires/QuestionnaireAccordion';
 import { systemTemplates } from '@/data/systemTemplates';
 import { PlayersProvider } from '@/contexts/PlayersContext';
 import { supabase } from '@/lib/supabase';
@@ -14,6 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import CreateQuestionnaireDialog from '@/components/questionnaires/CreateQuestionnaireDialog';
 import { QuestionnaireTemplate } from '@/types/questionnaire';
 import CompletedQuestionnairesList from '@/components/questionnaires/CompletedQuestionnairesList';
+
+// Import the new component instead of QuestionnaireAccordion
+import QuestionnaireTemplateStack from '@/components/questionnaires/QuestionnaireTemplateStack';
 
 const QuestionnairesPage = () => {
   const navigate = useNavigate();
@@ -183,14 +185,12 @@ const QuestionnairesPage = () => {
                     </CardContent>
                   </Card>
                 ) : (
+                  // Replace the old QuestionnaireAccordion component with the new QuestionnaireTemplateStack component
                   <div className="grid grid-cols-1 gap-4">
-                    {customTemplates.map((template) => (
-                      <QuestionnaireAccordion 
-                        key={template.id} 
-                        template={template} 
-                        onTemplateCreated={handleTemplateCreated}
-                      />
-                    ))}
+                    <QuestionnaireTemplateStack 
+                      templates={customTemplates}
+                      onTemplateCreated={handleTemplateCreated}
+                    />
                   </div>
                 )}
 
@@ -199,13 +199,11 @@ const QuestionnairesPage = () => {
                 <div>
                   <h2 className="text-xl font-semibold mb-4">תבניות שאלונים מובנות</h2>
                   <div className="grid grid-cols-1 gap-4">
-                    {systemTemplates.map((template) => (
-                      <QuestionnaireAccordion 
-                        key={template.id} 
-                        template={template} 
-                        onTemplateCreated={handleTemplateCreated}
-                      />
-                    ))}
+                    {/* Replace the old QuestionnaireAccordion component with the new QuestionnaireTemplateStack component */}
+                    <QuestionnaireTemplateStack 
+                      templates={systemTemplates}
+                      onTemplateCreated={handleTemplateCreated}
+                    />
                   </div>
                 </div>
               </div>
