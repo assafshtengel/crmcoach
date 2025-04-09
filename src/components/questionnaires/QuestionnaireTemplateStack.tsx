@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Accordion, 
@@ -407,8 +406,8 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
                                 />
                               </div>
                               <div className="flex justify-between text-xs text-gray-500 px-2">
-                                <span>10</span>
                                 <span>1</span>
+                                <span>10</span>
                               </div>
                             </div>
                           ))}
