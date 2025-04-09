@@ -13,6 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Check, Search, Send, User } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 
 interface Player {
   id: string;
@@ -37,11 +40,13 @@ const AssignQuestionnaireDialog: React.FC<AssignQuestionnaireDialogProps> = ({
   const [selectedPlayer, setSelectedPlayer] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     if (open) {
       loadPlayers();
       setSelectedPlayer(''); // Reset selected player when dialog opens
+      setSearchQuery('');
     }
   }, [open]);
 
@@ -96,77 +101,128 @@ const AssignQuestionnaireDialog: React.FC<AssignQuestionnaireDialogProps> = ({
       setIsSubmitting(true);
       await onAssign(template.id, selectedPlayer);
       
-      // Remove the toast notification from here since onAssign will handle it
+      toast({
+        title: "השאלון שויך בהצלחה!",
+        description: "השאלון נשלח לשחקן בהצלחה",
+      });
       
       onOpenChange(false);
     } catch (error) {
       console.error('Error assigning questionnaire:', error);
-      // Don't show toast here, it will be shown in the parent component
+      // Show error toast if needed
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const filteredPlayers = searchQuery 
+    ? players.filter(player => player.full_name.includes(searchQuery)) 
+    : players;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" dir="rtl">
         <DialogHeader>
-          <DialogTitle>שליחת שאלון לשחקן</DialogTitle>
+          <DialogTitle className="text-right text-xl font-bold">שייך שאלון לשחקן</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="player">בחר שחקן</Label>
+        <div className="space-y-6 py-4">
+          <div className="space-y-3">
+            <Label htmlFor="player" className="text-right block text-base font-medium">בחר שחקן</Label>
             {isLoading ? (
-              <div className="text-center p-4">טוען רשימת שחקנים...</div>
+              <div className="flex items-center justify-center p-6">
+                <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary"></div>
+                <span className="mr-2">טוען רשימת שחקנים...</span>
+              </div>
             ) : (
-              <Select
-                value={selectedPlayer}
-                onValueChange={setSelectedPlayer}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="בחר שחקן" />
-                </SelectTrigger>
-                <SelectContent>
-                  {players.length > 0 ? (
-                    players.map((player) => (
-                      <SelectItem key={player.id} value={player.id}>
-                        {player.full_name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="p-2 text-center text-sm text-gray-500">
-                      לא נמצאו שחקנים
+              <div className="relative">
+                <Select
+                  value={selectedPlayer}
+                  onValueChange={setSelectedPlayer}
+                >
+                  <SelectTrigger className="w-full h-12 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary focus:border-primary text-right">
+                    <SelectValue placeholder="הקלד או בחר שחקן מהרשימה" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80 bg-white" position="popper">
+                    <div className="sticky top-0 p-2 bg-white border-b">
+                      <div className="relative">
+                        <Search className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="חיפוש שחקן..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-2 pr-9 h-10 text-right w-full"
+                        />
+                      </div>
                     </div>
-                  )}
-                </SelectContent>
-              </Select>
+                    {filteredPlayers.length > 0 ? (
+                      filteredPlayers.map((player) => (
+                        <SelectItem key={player.id} value={player.id} className="text-right">
+                          <div className="flex items-center gap-2 justify-end">
+                            <span>{player.full_name}</span>
+                            <User size={16} className="text-gray-500" />
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-3 text-center text-sm text-gray-500">
+                        {searchQuery ? "לא נמצאו שחקנים תואמים" : "לא נמצאו שחקנים"}
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </div>
 
           {template && (
-            <div className="space-y-2">
-              <Label>פרטי השאלון</Label>
-              <div className="bg-gray-50 p-3 rounded-md">
-                <p className="font-medium">{template.title}</p>
-                <p className="text-sm text-gray-600">
-                  {template.questions.length} שאלות ({template.questions.filter(q => q.type === 'open').length} פתוחות, {template.questions.filter(q => q.type === 'closed').length} דירוג)
-                </p>
+            <div className="space-y-3">
+              <Label className="text-right block text-base font-medium">פרטי השאלון</Label>
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 shadow-sm">
+                <h3 className="font-medium text-base text-right">{template.title}</h3>
+                <div className="flex flex-wrap gap-2 mt-2 justify-end">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    {template.questions.length} שאלות
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    {template.questions.filter(q => q.type === 'open').length} פתוחות
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    {template.questions.filter(q => q.type === 'closed').length} דירוג
+                  </span>
+                </div>
               </div>
             </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            ביטול
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            disabled={isSubmitting || !selectedPlayer}
-          >
-            {isSubmitting ? 'שולח...' : 'שלח שאלון'}
-          </Button>
+          <div className="flex flex-col-reverse sm:flex-row gap-3 w-full sm:justify-between mt-2">
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
+            >
+              ביטול
+            </Button>
+            <Button 
+              onClick={handleSubmit}
+              disabled={isSubmitting || !selectedPlayer}
+              className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  שולח...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 ml-2" />
+                  שלח שאלון
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
