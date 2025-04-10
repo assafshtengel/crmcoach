@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Accordion, 
@@ -14,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Question, QuestionnaireTemplate } from '@/types/questionnaire';
 import { Pencil, Save, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import AssignQuestionnaireDialog from './AssignQuestionnaireDialog';
 import EditQuestionModal from './EditQuestionModal';
 import EditQuestionnaireDialog from './EditQuestionnaireDialog';
@@ -34,7 +35,13 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
   const [editQuestionDialogOpen, setEditQuestionDialogOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<{ question: Question, templateId: string } | null>(null);
   const [templateEditDialogOpen, setTemplateEditDialogOpen] = useState<string | null>(null);
+  const [localTemplates, setLocalTemplates] = useState<QuestionnaireTemplate[]>(templates);
   const { toast } = useToast();
+
+  // Update local templates state when props change
+  React.useEffect(() => {
+    setLocalTemplates(templates);
+  }, [templates]);
 
   const handleQuestionChange = (templateId: string, questionId: string, newText: string) => {
     setEditedQuestions(prev => {
@@ -66,7 +73,7 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
     const templateId = currentQuestion.templateId;
     handleQuestionChange(templateId, questionId, newText);
     
-    const template = templates.find(t => t.id === templateId);
+    const template = localTemplates.find(t => t.id === templateId);
     if (!template || template.is_system_template) return;
     
     try {
@@ -74,17 +81,27 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
         q.id === questionId ? { ...q, question_text: newText } : q
       );
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('questionnaire_templates')
         .update({ 
           questions: updatedQuestions,
           updated_at: new Date().toISOString()
         })
-        .eq('id', templateId);
+        .eq('id', templateId)
+        .select();
         
       if (error) {
         throw error;
       }
+      
+      if (!data || data.length === 0) {
+        throw new Error('No template was updated');
+      }
+      
+      // Update local state with the updated template
+      setLocalTemplates(prev => prev.map(t => 
+        t.id === templateId ? { ...t, questions: updatedQuestions } : t
+      ));
       
       toast({
         title: "השאלה נשמרה",
@@ -101,21 +118,32 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
   };
 
   const handleSaveTemplate = async (templateId: string) => {
-    const template = templates.find(t => t.id === templateId);
+    const template = localTemplates.find(t => t.id === templateId);
     if (!template || template.is_system_template) return;
     
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('questionnaire_templates')
         .update({ 
           questions: editedQuestions[templateId] || template.questions,
           updated_at: new Date().toISOString()
         })
-        .eq('id', templateId);
+        .eq('id', templateId)
+        .select()
+        .single();
         
       if (error) {
         throw error;
       }
+      
+      if (!data) {
+        throw new Error('No template was updated');
+      }
+      
+      // Update local state with the updated template
+      setLocalTemplates(prev => prev.map(t => 
+        t.id === templateId ? { ...t, questions: data.questions } : t
+      ));
       
       toast({
         title: "השינויים נשמרו",
@@ -148,7 +176,7 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
   const handleSaveTemplateEdit = async (templateId: string, updatedTemplate: Partial<QuestionnaireTemplate>) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const template = templates.find(t => t.id === templateId);
+      const template = localTemplates.find(t => t.id === templateId);
       
       if (!session || !template) {
         toast({
@@ -182,6 +210,13 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
           throw error;
         }
         
+        if (!data) {
+          throw new Error('Failed to create new template');
+        }
+        
+        // Add the new template to local state
+        setLocalTemplates(prev => [data, ...prev]);
+        
         if (onTemplateCreated && data) {
           onTemplateCreated(data);
         }
@@ -192,18 +227,30 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
         });
       } 
       else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('questionnaire_templates')
           .update({ 
             title: updatedTemplate.title,
             questions: updatedTemplate.questions,
             updated_at: now
           })
-          .eq('id', templateId);
+          .eq('id', templateId)
+          .eq('coach_id', session.user.id)  // Ensure the coach can only update their templates
+          .select()
+          .single();
           
         if (error) {
           throw error;
         }
+        
+        if (!data) {
+          throw new Error('No template was updated. It might not belong to you.');
+        }
+        
+        // Update local state with the updated template
+        setLocalTemplates(prev => prev.map(t => 
+          t.id === templateId ? { ...t, ...data } : t
+        ));
         
         toast({
           title: "השאלון עודכן",
@@ -224,7 +271,7 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
 
   const handleAssignQuestionnaire = async (templateId: string, playerId: string) => {
     try {
-      const template = templates.find(t => t.id === templateId);
+      const template = localTemplates.find(t => t.id === templateId);
       if (!template) return;
       
       const { data: { session } } = await supabase.auth.getSession();
@@ -298,7 +345,7 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
 
   return (
     <>
-      {templates.map(template => {
+      {localTemplates.map(template => {
         const questions = getQuestionsForTemplate(template);
         const openQuestions = questions?.filter(q => q.type === 'open') || [];
         const closedQuestions = questions?.filter(q => q.type === 'closed') || [];
@@ -448,7 +495,7 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
         <AssignQuestionnaireDialog
           open={!!assignDialogOpenFor}
           onOpenChange={(open) => !open && setAssignDialogOpenFor(null)}
-          template={templates.find(t => t.id === assignDialogOpenFor)!}
+          template={localTemplates.find(t => t.id === assignDialogOpenFor)!}
           onAssign={handleAssignQuestionnaire}
         />
       )}
@@ -464,9 +511,9 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
         <EditQuestionnaireDialog
           open={!!templateEditDialogOpen}
           onOpenChange={(open) => !open && setTemplateEditDialogOpen(null)}
-          template={templates.find(t => t.id === templateEditDialogOpen)!}
+          template={localTemplates.find(t => t.id === templateEditDialogOpen)!}
           onSave={(updatedTemplate) => handleSaveTemplateEdit(templateEditDialogOpen, updatedTemplate)}
-          isNewTemplate={templates.find(t => t.id === templateEditDialogOpen)?.is_system_template || false}
+          isNewTemplate={localTemplates.find(t => t.id === templateEditDialogOpen)?.is_system_template || false}
         />
       )}
     </>
