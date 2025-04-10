@@ -47,7 +47,7 @@ const CompletedQuestionnairesList = () => {
           return;
         }
 
-        // Updated query with explicit foreign key reference
+        // Updated query to correctly fetch player name and questionnaire details
         const { data, error } = await supabase
           .from('questionnaire_answers')
           .select(`
@@ -60,6 +60,10 @@ const CompletedQuestionnairesList = () => {
             status,
             players:player_id(
               full_name
+            ),
+            questionnaire:questionnaire_id(
+              title,
+              type
             )
           `)
           .eq('coach_id', session.user.id)
@@ -71,34 +75,13 @@ const CompletedQuestionnairesList = () => {
           throw error;
         }
 
-        // Get the questionnaire details for each answer
-        const enhancedData = await Promise.all(
-          data.map(async (item) => {
-            // Fetch the questionnaire template to get its title and type
-            const { data: templateData, error: templateError } = await supabase
-              .from('questionnaire_templates')
-              .select('title, type')
-              .eq('id', item.questionnaire_id)
-              .single();
-
-            if (templateError && templateError.code !== 'PGRST116') {
-              console.error('Error fetching template:', templateError);
-              return {
-                ...item,
-                player_name: item.players?.full_name || 'Unknown Player',
-                questionnaire_title: 'Unknown Title',
-                template_type: 'Unknown Type'
-              };
-            }
-
-            return {
-              ...item,
-              player_name: item.players?.full_name || 'Unknown Player',
-              questionnaire_title: templateData?.title || 'Unknown Title',
-              template_type: templateData?.type || 'Unknown Type'
-            };
-          })
-        );
+        // Transform data to include player name and questionnaire title
+        const enhancedData = data.map(item => ({
+          ...item,
+          player_name: item.players?.full_name || 'Unknown Player',
+          questionnaire_title: item.questionnaire?.title || 'Unknown Title',
+          template_type: item.questionnaire?.type || 'Unknown Type'
+        }));
 
         setCompletedQuestionnaires(enhancedData);
       } catch (error) {
