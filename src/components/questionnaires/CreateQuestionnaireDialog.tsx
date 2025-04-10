@@ -16,17 +16,19 @@ import { Plus, X, Save, Trash2 } from 'lucide-react';
 import { Question, QuestionnaireTemplate } from '@/types/questionnaire';
 import { Separator } from '@/components/ui/separator';
 import { v4 as uuidv4 } from 'uuid';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
 interface CreateQuestionnaireDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onTemplateCreated?: (template: QuestionnaireTemplate) => void; // Add this prop
 }
 
 const CreateQuestionnaireDialog: React.FC<CreateQuestionnaireDialogProps> = ({
   open,
-  onOpenChange
+  onOpenChange,
+  onTemplateCreated
 }) => {
   const { toast } = useToast();
   const [title, setTitle] = useState('');
@@ -123,8 +125,13 @@ const CreateQuestionnaireDialog: React.FC<CreateQuestionnaireDialogProps> = ({
       handleReset();
       onOpenChange(false);
       
-      // Reload the page to show the new template
-      window.location.reload();
+      // Call the onTemplateCreated callback if provided
+      if (onTemplateCreated && data) {
+        onTemplateCreated(data as QuestionnaireTemplate);
+      } else {
+        // Reload the page if callback not provided (fallback behavior)
+        window.location.reload();
+      }
       
     } catch (error) {
       console.error('Error saving template:', error);
