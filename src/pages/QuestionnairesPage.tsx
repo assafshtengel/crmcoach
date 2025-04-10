@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import CreateQuestionnaireDialog from '@/components/questionnaires/CreateQuestionnaireDialog';
 import { QuestionnaireTemplate } from '@/types/questionnaire';
 import CompletedQuestionnairesList from '@/components/questionnaires/CompletedQuestionnairesList';
+import CreateCustomQuestionnaireDialog from '@/components/questionnaires/CreateCustomQuestionnaireDialog';
 
 // Import the new component instead of QuestionnaireAccordion
 import QuestionnaireTemplateStack from '@/components/questionnaires/QuestionnaireTemplateStack';
@@ -23,6 +24,7 @@ const QuestionnairesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCreateCustomDialogOpen, setIsCreateCustomDialogOpen] = useState(false);
   const [customTemplates, setCustomTemplates] = useState<QuestionnaireTemplate[]>([]);
   const { toast } = useToast();
   
@@ -120,6 +122,18 @@ const QuestionnairesPage = () => {
     });
   };
 
+  const handleCustomQuestionnaireCreated = () => {
+    // Refresh completed questionnaires if we're on that tab
+    if (activeTab === 'saved') {
+      // If there's a refresh function exposed by CompletedQuestionnairesList, call it here
+    }
+    // Show success notification
+    toast({
+      title: "שאלון נוצר בהצלחה",
+      description: "השאלון החדש נשמר במערכת",
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -179,10 +193,16 @@ const QuestionnairesPage = () => {
               <div className="space-y-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-semibold">תבניות שאלונים מותאמות אישית</h2>
-                  <Button onClick={() => setIsCreateDialogOpen(true)} className="flex items-center">
-                    <Plus className="h-4 w-4 ml-2" />
-                    צור שאלון מותאם
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button onClick={() => setIsCreateCustomDialogOpen(true)} className="flex items-center">
+                      <Plus className="h-4 w-4 ml-2" />
+                      צור שאלון חדש
+                    </Button>
+                    <Button onClick={() => setIsCreateDialogOpen(true)} variant="outline" className="flex items-center">
+                      <Plus className="h-4 w-4 ml-2" />
+                      צור שאלון מתבנית
+                    </Button>
+                  </div>
                 </div>
 
                 {!hasCustomTemplates ? (
@@ -230,6 +250,12 @@ const QuestionnairesPage = () => {
             open={isCreateDialogOpen} 
             onOpenChange={setIsCreateDialogOpen} 
             onTemplateCreated={handleTemplateCreated}
+          />
+
+          <CreateCustomQuestionnaireDialog
+            open={isCreateCustomDialogOpen}
+            onOpenChange={setIsCreateCustomDialogOpen}
+            onQuestionnaireCreated={handleCustomQuestionnaireCreated}
           />
         </div>
       </div>
