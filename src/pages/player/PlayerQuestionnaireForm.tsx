@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -173,32 +173,54 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
         setIsSaving(false);
         return;
       }
+
+      // Get player session data
+      const playerSessionData = localStorage.getItem('playerSession');
       
-      // Get the authenticated user's ID
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !userData?.user?.id) {
-        console.error("Failed to get authenticated user ID:", userError);
+      if (!playerSessionData) {
         toast({
           title: "שגיאה באימות",
-          description: "אירעה שגיאה בעת אימות המשתמש, אנא התחבר מחדש",
+          description: "פרטי המשתמש לא נמצאו, אנא התחבר מחדש",
           variant: "destructive",
         });
         setIsSaving(false);
+        navigate('/player-auth');
         return;
       }
       
-      const userId = userData.user.id;
+      const playerSession = JSON.parse(playerSessionData);
+      const playerId = playerSession.playerId;
       
-      // Insert answer to the questionnaire_answers table with authenticated user ID
+      if (!playerId) {
+        toast({
+          title: "שגיאה באימות",
+          description: "פרטי השחקן לא נמצאו, אנא התחבר מחדש",
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        navigate('/player-auth');
+        return;
+      }
+      
+      console.log("Submitting answers:", {
+        assigned_questionnaire_id: questionnaire.id,
+        player_id: playerId,
+        questionnaire_id: questionnaire.questionnaire_id,
+        coach_id: questionnaire.coach_id,
+        answers: answers,
+        status: 'answered'
+      });
+      
+      // Insert answer to the questionnaire_answers table
       const { error: insertError } = await supabase
         .from('questionnaire_answers')
         .insert({
           assigned_questionnaire_id: questionnaire.id,
-          player_id: userId, // Using authenticated user ID
+          player_id: playerId,
           questionnaire_id: questionnaire.questionnaire_id,
           coach_id: questionnaire.coach_id,
           answers: answers,
+          status: 'answered'
         });
       
       if (insertError) {
@@ -212,8 +234,12 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
         .update({ status: 'answered' })
         .eq('id', questionnaire.id);
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Error updating questionnaire status:", updateError);
+        throw updateError;
+      }
       
+      // Show success toast only once
       toast({
         title: "השאלון נשלח בהצלחה!",
         description: "תודה על מילוי השאלון",

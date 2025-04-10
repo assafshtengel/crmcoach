@@ -45,12 +45,12 @@ export interface AssignedQuestionnaire {
   player_id: string;
   questionnaire_id: string;
   template_id: string;
-  status: 'pending' | 'completed';
+  status: 'pending' | 'answered';
   assigned_at: string;
   coach?: {
     full_name: string;
   };
-  questionnaires?: {
+  questionnaire?: {
     title: string;
     type: string;
     questions: Question[];
