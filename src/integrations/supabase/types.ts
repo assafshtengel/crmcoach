@@ -38,7 +38,7 @@ export type Database = {
           player_id: string
           questionnaire_id: string | null
           status: string
-          template_id: string
+          template_id: string | null
         }
         Insert: {
           assigned_at?: string
@@ -47,7 +47,7 @@ export type Database = {
           player_id: string
           questionnaire_id?: string | null
           status?: string
-          template_id: string
+          template_id?: string | null
         }
         Update: {
           assigned_at?: string
@@ -56,7 +56,7 @@ export type Database = {
           player_id?: string
           questionnaire_id?: string | null
           status?: string
-          template_id?: string
+          template_id?: string | null
         }
         Relationships: [
           {

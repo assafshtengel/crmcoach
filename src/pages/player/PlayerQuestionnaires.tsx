@@ -7,23 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { format } from 'date-fns';
 import { Loader2, FileText, Calendar, User, ArrowRight } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useScreenSize } from '@/hooks/use-screen-size';
-
-interface AssignedQuestionnaire {
-  id: string;
-  questionnaire_id: string;
-  coach_id: string;
-  assigned_at: string;
-  status: string;
-  template_id: string;
-  coach?: {
-    full_name: string;
-  };
-  questionnaire?: {
-    title: string;
-  };
-}
+import { AssignedQuestionnaire } from '@/types/questionnaire';
 
 const PlayerQuestionnaires = () => {
   const [questionnaires, setQuestionnaires] = useState<AssignedQuestionnaire[]>([]);
@@ -146,7 +132,7 @@ const PlayerQuestionnaires = () => {
                     </div>
                     <div className="mt-auto pt-4">
                       <Button 
-                        onClick={() => handleAnswerNow(questionnaire.questionnaire_id)}
+                        onClick={() => handleAnswerNow(questionnaire.id)}
                         className="w-full"
                       >
                         ענה עכשיו 
@@ -162,7 +148,7 @@ const PlayerQuestionnaires = () => {
           <Card className="bg-gray-50 border-dashed">
             <CardContent className="text-center p-8">
               <p className="text-gray-500">
-                אין לך שאלונים חדשים לענות עליהם כרגע.
+                לא נמצאו שאלונים
               </p>
             </CardContent>
           </Card>
