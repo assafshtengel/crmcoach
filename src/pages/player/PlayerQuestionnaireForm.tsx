@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -29,7 +28,7 @@ interface AssignedQuestionnaire {
   };
 }
 
-const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
+const PlayerQuestionnaireForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -55,7 +54,6 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
         return;
       }
       
-      // Validate player session format
       try {
         const parsedSession = JSON.parse(playerSession);
         if (!parsedSession.id) {
@@ -83,7 +81,6 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
 
   const fetchQuestionnaire = async (questionnaireId: string) => {
     try {
-      // Fetch the assigned questionnaire
       const { data, error } = await supabase
         .from('assigned_questionnaires')
         .select(`
@@ -110,7 +107,6 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
 
       setQuestionnaire(data);
       
-      // Initialize answers object
       const initialAnswers: Record<string, { answer?: string; rating?: number }> = {};
       data.questionnaire?.questions.forEach((q: Question) => {
         initialAnswers[q.id] = { 
@@ -165,7 +161,6 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
       
       setIsSaving(true);
       
-      // Validate all questions are answered
       const unansweredQuestions = questionnaire.questionnaire?.questions.filter((q: Question) => {
         if (q.type === 'open' && (!answers[q.id]?.answer || answers[q.id]?.answer === '')) {
           return true;
@@ -186,7 +181,6 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
         return;
       }
 
-      // Validate player session
       const { valid, playerId, error } = validatePlayerSession();
       
       if (!valid || !playerId) {
@@ -198,7 +192,6 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
         });
         setIsSaving(false);
         
-        // Only redirect if session is completely missing
         if (!localStorage.getItem('playerSession')) {
           navigate('/player-auth');
         }
@@ -214,7 +207,6 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
         status: 'answered'
       });
       
-      // Insert answer to the questionnaire_answers table
       const { error: insertError } = await supabase
         .from('questionnaire_answers')
         .insert({
@@ -231,7 +223,6 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
         throw insertError;
       }
       
-      // Update the status of the original assigned questionnaire
       const { error: updateError } = await supabase
         .from('assigned_questionnaires')
         .update({ status: 'answered' })
@@ -242,13 +233,11 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
         throw updateError;
       }
       
-      // Show success toast only once
       toast({
         title: "השאלון נשלח בהצלחה!",
         description: "תודה על מילוי השאלון",
       });
       
-      // Navigate back to the questionnaires list
       navigate('/player/questionnaires');
     } catch (error) {
       console.error('Error submitting questionnaire:', error);
@@ -353,7 +342,7 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
                         <span className="text-sm text-gray-500">נמוך</span>
                         {[...Array(9)].map((_, i) => (
                           <span key={i} className="text-sm text-gray-400 hidden sm:block">
-                            {i + 1}
+                            {10 - i}
                           </span>
                         ))}
                         <span className="text-sm text-gray-500">גבוה</span>

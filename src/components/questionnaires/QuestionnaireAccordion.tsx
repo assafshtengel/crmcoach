@@ -365,11 +365,12 @@ const QuestionnaireAccordion: React.FC<QuestionnaireAccordionProps> = ({
                             min={1}
                             step={1}
                             disabled={true}
+                            dir="rtl"
                           />
                         </div>
                         <div className="flex justify-between text-xs text-gray-500 px-2">
-                          <span>10</span>
                           <span>1</span>
+                          <span>10</span>
                         </div>
                       </div>
                     ))}
