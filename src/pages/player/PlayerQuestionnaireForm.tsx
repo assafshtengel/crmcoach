@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -49,7 +48,7 @@ const PlayerQuestionnaireForm: React.FC = () => {
       setIsLoading(true);
       setSessionError(null);
       
-      // First check Supabase authentication
+      // Check Supabase authentication
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError) {
@@ -59,7 +58,7 @@ const PlayerQuestionnaireForm: React.FC = () => {
       }
       
       if (user) {
-        // If user is authenticated via Supabase, get their player ID
+        // If user is authenticated via Supabase, verify they exist in players table
         const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('id')
@@ -74,34 +73,14 @@ const PlayerQuestionnaireForm: React.FC = () => {
             setSessionError("לא נמצא מזהה שאלון");
           }
           return;
-        }
-      }
-      
-      // If no Supabase auth, check player session in localStorage
-      const playerSession = localStorage.getItem('playerSession');
-      
-      if (!playerSession) {
-        setSessionError("יש להתחבר תחילה כדי למלא את השאלון");
-        return;
-      }
-      
-      try {
-        const parsedSession = JSON.parse(playerSession);
-        if (!parsedSession.id) {
-          console.warn("Session found but missing player ID");
-          setSessionError("נתוני המשתמש לא תקינים, יש להתחבר מחדש");
+        } else {
+          console.log("User authenticated but not found in players table:", playerError);
+          setSessionError("המשתמש אינו רשום כשחקן במערכת");
           return;
         }
-        
-        if (id) {
-          await fetchQuestionnaire(id);
-        } else {
-          setSessionError("לא נמצא מזהה שאלון");
-        }
-      } catch (parseError) {
-        console.error('Error parsing player session:', parseError);
-        setSessionError("אירעה שגיאה בטעינת נתוני המשתמש");
       }
+      
+      setSessionError("יש להתחבר תחילה כדי למלא את השאלון");
     } catch (error) {
       console.error('Error checking auth:', error);
       setSessionError("אירעה שגיאה בעת בדיקת המשתמש המחובר");
@@ -167,33 +146,9 @@ const PlayerQuestionnaireForm: React.FC = () => {
     }));
   };
 
-  const validatePlayerSession = () => {
-    try {
-      // First check if we have a playerIdFromAuth (from Supabase auth)
-      if (playerIdFromAuth) {
-        return { valid: true, playerId: playerIdFromAuth, error: null };
-      }
-      
-      // Fall back to localStorage session if no auth player id
-      const playerSessionData = localStorage.getItem('playerSession');
-      if (!playerSessionData) {
-        return { valid: false, playerId: null, error: "פרטי המשתמש לא נמצאו, אנא התחבר מחדש" };
-      }
-      
-      const playerSession = JSON.parse(playerSessionData);
-      if (!playerSession.id) {
-        return { valid: false, playerId: null, error: "פרטי השחקן לא תקינים, אנא התחבר מחדש" };
-      }
-      
-      return { valid: true, playerId: playerSession.id, error: null };
-    } catch (error) {
-      console.error("Error validating player session:", error);
-      return { valid: false, playerId: null, error: "שגיאה באימות נתוני המשתמש" };
-    }
-  };
-
   const handleSubmit = async () => {
     try {
+      // Get authenticated user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       // Check for authenticated user
@@ -205,25 +160,6 @@ const PlayerQuestionnaireForm: React.FC = () => {
         });
         return;
       }
-      
-      // Get player ID from authenticated user
-      const { data: playerData, error: playerError } = await supabase
-        .from('players')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
-      
-      if (playerError || !playerData) {
-        console.error("Error fetching player data:", playerError);
-        toast({
-          title: "שגיאת אימות",
-          description: "לא נמצאו נתוני שחקן תקפים עבור המשתמש המחובר",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      const playerId = playerData.id;
       
       if (!questionnaire) {
         toast({
@@ -266,13 +202,13 @@ const PlayerQuestionnaireForm: React.FC = () => {
         return;
       }
       
-      console.log("Submitting answer with player ID:", playerId);
+      console.log("Submitting answer with player ID:", user.id);
       
       const { error: insertError } = await supabase
         .from('questionnaire_answers')
         .insert({
           assigned_questionnaire_id: questionnaire.id,
-          player_id: playerId, // Use validated player ID from supabase auth
+          player_id: user.id, // Use authenticated user ID
           questionnaire_id: questionnaire.questionnaire_id,
           coach_id: questionnaire.coach_id,
           answers: answers,
