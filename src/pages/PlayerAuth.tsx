@@ -1,7 +1,7 @@
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +17,6 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 
-type AuthMode = "login";
-
 const PlayerAuth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +24,38 @@ const PlayerAuth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showContactCoachDialog, setShowContactCoachDialog] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Handle redirect parameter if exists
+  const params = new URLSearchParams(location.search);
+  const redirectPath = params.get('redirect');
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkLoggedIn = async () => {
+      const playerSession = localStorage.getItem('playerSession');
+      if (playerSession) {
+        try {
+          // Validate session
+          const session = JSON.parse(playerSession);
+          if (session.id) {
+            // If there's a redirect path, navigate there
+            if (redirectPath) {
+              navigate(redirectPath);
+            } else {
+              navigate('/player/profile-alt');
+            }
+          }
+        } catch (e) {
+          // Invalid session format, clear it
+          localStorage.removeItem('playerSession');
+        }
+      }
+    };
+    
+    checkLoggedIn();
+  }, [navigate, redirectPath]);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -40,7 +69,7 @@ const PlayerAuth = () => {
       // First, check if this email belongs to a player
       const { data: playerData, error: playerError } = await supabase
         .from('players')
-        .select('id, email, password')
+        .select('id, email, password, full_name')
         .eq('email', email)
         .maybeSingle();
 
@@ -86,11 +115,16 @@ const PlayerAuth = () => {
       localStorage.setItem('playerSession', JSON.stringify({
         id: playerData.id,
         email: playerData.email,
+        name: playerData.full_name,
         password: playerData.password
       }));
 
-      // Navigate to the alternative player profile view
-      navigate('/player/profile-alt');
+      // Navigate to redirect path or default profile view
+      if (redirectPath) {
+        navigate(redirectPath);
+      } else {
+        navigate('/player/profile-alt');
+      }
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

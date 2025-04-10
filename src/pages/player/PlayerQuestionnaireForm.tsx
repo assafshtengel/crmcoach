@@ -37,50 +37,52 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [questionnaire, setQuestionnaire] = useState<AssignedQuestionnaire | null>(null);
   const [answers, setAnswers] = useState<Record<string, { answer?: string; rating?: number }>>({});
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkPlayerAuth = async () => {
+    checkPlayerAuth();
+  }, [id, navigate, toast]);
+
+  const checkPlayerAuth = async () => {
+    try {
+      setIsLoading(true);
+      setSessionError(null);
+      
+      const playerSession = localStorage.getItem('playerSession');
+      
+      if (!playerSession) {
+        setSessionError("יש להתחבר תחילה כדי למלא את השאלון");
+        return;
+      }
+      
+      // Validate player session format
       try {
-        const playerSession = localStorage.getItem('playerSession');
-        
-        if (!playerSession) {
-          toast({
-            title: "יש להתחבר תחילה",
-            description: "עליך להתחבר למערכת כדי למלא את השאלון",
-            variant: "destructive",
-          });
-          navigate('/player-auth');
+        const parsedSession = JSON.parse(playerSession);
+        if (!parsedSession.id) {
+          console.warn("Session found but missing player ID");
+          setSessionError("נתוני המשתמש לא תקינים, יש להתחבר מחדש");
           return;
         }
         
         if (id) {
           await fetchQuestionnaire(id);
         } else {
-          toast({
-            title: "שגיאה בטעינת השאלון",
-            description: "לא נמצא מזהה שאלון",
-            variant: "destructive",
-          });
-          navigate('/player/questionnaires');
+          setSessionError("לא נמצא מזהה שאלון");
         }
-      } catch (error) {
-        console.error('Error checking auth:', error);
-        toast({
-          title: "שגיאה באימות",
-          description: "אירעה שגיאה בעת בדיקת המשתמש המחובר",
-          variant: "destructive",
-        });
-        setIsLoading(false);
+      } catch (parseError) {
+        console.error('Error parsing player session:', parseError);
+        setSessionError("אירעה שגיאה בטעינת נתוני המשתמש");
       }
-    };
-
-    checkPlayerAuth();
-  }, [id, navigate, toast]);
+    } catch (error) {
+      console.error('Error checking auth:', error);
+      setSessionError("אירעה שגיאה בעת בדיקת המשתמש המחובר");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const fetchQuestionnaire = async (questionnaireId: string) => {
     try {
-      setIsLoading(true);
-      
       // Fetch the assigned questionnaire
       const { data, error } = await supabase
         .from('assigned_questionnaires')
@@ -96,16 +98,13 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
         .single();
 
       if (error) {
-        throw error;
+        console.error("Error fetching questionnaire:", error);
+        setSessionError("השאלון אינו זמין או שכבר מולא");
+        return;
       }
 
       if (!data) {
-        toast({
-          title: "שאלון לא נמצא",
-          description: "השאלון אינו זמין או שכבר מולא",
-          variant: "destructive",
-        });
-        navigate('/player/questionnaires');
+        setSessionError("השאלון אינו זמין או שכבר מולא");
         return;
       }
 
@@ -123,13 +122,7 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
       setAnswers(initialAnswers);
     } catch (error) {
       console.error('Error fetching questionnaire:', error);
-      toast({
-        title: "שגיאה בטעינת השאלון",
-        description: "אירעה שגיאה בעת טעינת השאלון, אנא נסה שוב",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      setSessionError("אירעה שגיאה בעת טעינת השאלון");
     }
   };
 
@@ -145,6 +138,25 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
       ...prev,
       [questionId]: { ...prev[questionId], rating: value }
     }));
+  };
+
+  const validatePlayerSession = () => {
+    try {
+      const playerSessionData = localStorage.getItem('playerSession');
+      if (!playerSessionData) {
+        return { valid: false, playerId: null, error: "פרטי המשתמש לא נמצאו, אנא התחבר מחדש" };
+      }
+      
+      const playerSession = JSON.parse(playerSessionData);
+      if (!playerSession.id) {
+        return { valid: false, playerId: null, error: "פרטי השחקן לא תקינים, אנא התחבר מחדש" };
+      }
+      
+      return { valid: true, playerId: playerSession.id, error: null };
+    } catch (error) {
+      console.error("Error validating player session:", error);
+      return { valid: false, playerId: null, error: "שגיאה באימות נתוני המשתמש" };
+    }
   };
 
   const handleSubmit = async () => {
@@ -174,31 +186,22 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
         return;
       }
 
-      // Get player session data
-      const playerSessionData = localStorage.getItem('playerSession');
+      // Validate player session
+      const { valid, playerId, error } = validatePlayerSession();
       
-      if (!playerSessionData) {
+      if (!valid || !playerId) {
+        console.error("Invalid player session:", error);
         toast({
           title: "שגיאה באימות",
-          description: "פרטי המשתמש לא נמצאו, אנא התחבר מחדש",
+          description: error || "יש להתחבר מחדש למערכת",
           variant: "destructive",
         });
         setIsSaving(false);
-        navigate('/player-auth');
-        return;
-      }
-      
-      const playerSession = JSON.parse(playerSessionData);
-      const playerId = playerSession.playerId;
-      
-      if (!playerId) {
-        toast({
-          title: "שגיאה באימות",
-          description: "פרטי השחקן לא נמצאו, אנא התחבר מחדש",
-          variant: "destructive",
-        });
-        setIsSaving(false);
-        navigate('/player-auth');
+        
+        // Only redirect if session is completely missing
+        if (!localStorage.getItem('playerSession')) {
+          navigate('/player-auth');
+        }
         return;
       }
       
@@ -263,6 +266,24 @@ const PlayerQuestionnaireForm: React.FC<QuestionnaireFormProps> = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (sessionError) {
+    return (
+      <div className="min-h-screen p-6 flex flex-col items-center justify-center" dir="rtl">
+        <Card className="w-full max-w-3xl">
+          <CardContent className="text-center py-8">
+            <p className="text-lg text-gray-500 mb-4">{sessionError}</p>
+            <Button 
+              className="mt-4"
+              onClick={() => navigate('/player-auth')}
+            >
+              התחבר למערכת
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

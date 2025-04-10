@@ -23,7 +23,9 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           
           if (!playerSession) {
             console.log("No player session found, redirecting to player login");
-            navigate("/player-auth");
+            // Save the current path for redirect after login
+            const currentPath = location.pathname + location.search;
+            navigate(`/player-auth?redirect=${encodeURIComponent(currentPath)}`);
             return;
           }
           
@@ -102,7 +104,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
     };
 
     checkAuth();
-  }, [navigate, playerId, playerOnly, location.pathname]);
+  }, [navigate, playerId, playerOnly, location.pathname, location.search]);
 
   if (isLoading) {
     return (
