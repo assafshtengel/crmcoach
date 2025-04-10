@@ -14,7 +14,7 @@ interface AssignedQuestionnairesSectionProps {
   playerId: string;
 }
 
-const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSectionProps> = ({ playerId }) => {
+export const AssignedQuestionnairesSection: React.FC<AssignedQuestionnairesSectionProps> = ({ playerId }) => {
   const [questionnaires, setQuestionnaires] = useState<AssignedQuestionnaire[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();

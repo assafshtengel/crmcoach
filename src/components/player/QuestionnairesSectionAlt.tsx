@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -14,7 +13,7 @@ interface QuestionnairesSectionAltProps {
   playerId: string;
 }
 
-const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ playerId }) => {
+export const QuestionnairesSectionAlt: React.FC<QuestionnairesSectionAltProps> = ({ playerId }) => {
   const [questionnaires, setQuestionnaires] = useState<AssignedQuestionnaire[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
