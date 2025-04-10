@@ -68,6 +68,10 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout);
 };
 
+// Track recently shown toasts to avoid duplicates
+const recentToasts = new Map<string, number>();
+const RECENT_TOAST_TIMEOUT = 3000; // 3 seconds
+
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case actionTypes.ADD_TOAST:
@@ -136,12 +140,36 @@ type Toast = Omit<ToasterToast, "id">;
 
 function toast({ ...props }: Toast) {
   const id = genId();
+  
+  // Check for duplicate toasts
+  const toastKey = `${props.title}-${props.description}`;
+  const now = Date.now();
+  
+  // If the same toast was shown recently, don't show it again
+  if (recentToasts.has(toastKey)) {
+    if (now - (recentToasts.get(toastKey) || 0) < RECENT_TOAST_TIMEOUT) {
+      return {
+        id: "",
+        dismiss: () => {},
+        update: () => {},
+      };
+    }
+  }
+  
+  // Mark this toast as recently shown
+  recentToasts.set(toastKey, now);
+  
+  // Clean up old entries from recentToasts
+  setTimeout(() => {
+    recentToasts.delete(toastKey);
+  }, RECENT_TOAST_TIMEOUT);
 
   const update = (props: ToasterToast) =>
     dispatch({
       type: actionTypes.UPDATE_TOAST,
       toast: { ...props, id },
     });
+    
   const dismiss = () => dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
 
   dispatch({

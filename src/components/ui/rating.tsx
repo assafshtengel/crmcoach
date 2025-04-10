@@ -17,9 +17,9 @@ export function RatingControl({
   className,
 }: RatingProps) {
   return (
-    <div className={cn("flex flex-row-reverse space-x-reverse space-x-1", className)}>
+    <div className={cn("flex space-x-1", className)} dir="rtl">
       {Array.from({ length: max }).map((_, i) => {
-        const starValue = max - i; // Reverse order for RTL
+        const starValue = i + 1; // Normal order for RTL display
         const isFilled = starValue <= value;
         
         return (

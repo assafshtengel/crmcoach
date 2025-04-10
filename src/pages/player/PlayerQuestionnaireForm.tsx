@@ -338,20 +338,21 @@ const PlayerQuestionnaireForm: React.FC = () => {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="grid grid-cols-3 sm:grid-cols-11 gap-1 pt-2 text-center">
-                        <span className="text-sm text-gray-500">נמוך</span>
+                      <div className="grid grid-cols-3 sm:grid-cols-11 gap-1 pt-2 text-center" dir="rtl">
+                        <span className="text-sm text-gray-500">גבוה</span>
                         {[...Array(9)].map((_, i) => (
                           <span key={i} className="text-sm text-gray-400 hidden sm:block">
                             {10 - i}
                           </span>
                         ))}
-                        <span className="text-sm text-gray-500">גבוה</span>
+                        <span className="text-sm text-gray-500">נמוך</span>
                       </div>
                       
                       <div className="py-2">
                         <div className="flex items-center gap-4">
-                          <Label className="w-12 text-sm text-gray-500">1</Label>
+                          <Label className="w-12 text-sm text-gray-500">10</Label>
                           <Slider
+                            dir="ltr"
                             id={`slider-${question.id}`}
                             min={1}
                             max={10}
@@ -359,7 +360,7 @@ const PlayerQuestionnaireForm: React.FC = () => {
                             value={[answers[question.id]?.rating || 5]}
                             onValueChange={([value]) => handleClosedQuestionChange(question.id, value)}
                           />
-                          <Label className="w-12 text-sm text-gray-500">10</Label>
+                          <Label className="w-12 text-sm text-gray-500">1</Label>
                         </div>
                       </div>
                       

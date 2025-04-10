@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -11,9 +12,18 @@ import {
 export function Toaster() {
   const { toasts } = useToast()
 
+  // Filter out duplicate toasts based on title and description
+  const uniqueToasts = toasts.reduce((acc, toast) => {
+    const key = `${toast.title}-${toast.description}`;
+    if (!acc.some(t => `${t.title}-${t.description}` === key)) {
+      acc.push(toast);
+    }
+    return acc;
+  }, [] as typeof toasts);
+
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {uniqueToasts.map(function ({ id, title, description, action, ...props }) {
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">
