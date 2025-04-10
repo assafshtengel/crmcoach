@@ -135,6 +135,8 @@ const QuestionnaireViewDialog: React.FC<QuestionnaireViewDialogProps> = ({
           {/* Questions and answers */}
           {loading ? (
             <div className="text-center p-4">טוען שאלות...</div>
+          ) : questions.length === 0 ? (
+            <div className="text-center p-4">אין תשובות להצגה</div>
           ) : (
             <div className="space-y-4">
               {questions.map((question, index) => {

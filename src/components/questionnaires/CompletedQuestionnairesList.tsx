@@ -47,7 +47,7 @@ const CompletedQuestionnairesList = () => {
           return;
         }
 
-        // Updated query to correctly fetch player name and questionnaire details
+        // Query to fetch questionnaire answers with player name and questionnaire details
         const { data, error } = await supabase
           .from('questionnaire_answers')
           .select(`
