@@ -19,3 +19,38 @@ export interface Player {
   contact_status?: string;
   created_at?: string;
 }
+
+// PlayerData type alias to ensure compatibility with existing code
+export type PlayerData = Player;
+
+// Session type for player sessions
+export interface PlayerSession {
+  id: string;
+  player_id: string;
+  session_date: string;
+  session_time: string;
+  location?: string;
+  notes?: string;
+  created_at?: string;
+  status?: string;
+}
+
+// Session summary type
+export interface SessionSummary {
+  id: string;
+  player_id: string;
+  session_id?: string;
+  coach_id?: string;
+  summary_text?: string;
+  progress_rating: number;
+  achieved_goals?: string[];
+  future_goals?: string[];
+  tools_used?: string[];
+  next_session_focus?: string;
+  created_at: string;
+  session?: {
+    id: string;
+    session_date: string;
+    session_time: string;
+  };
+}
