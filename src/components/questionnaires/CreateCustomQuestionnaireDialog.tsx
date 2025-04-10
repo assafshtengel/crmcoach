@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -88,7 +87,6 @@ const CreateCustomQuestionnaireDialog: React.FC<CreateCustomQuestionnaireDialogP
     try {
       setIsSubmitting(true);
       
-      // Get the current user's auth session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session || !session.user) {
@@ -100,7 +98,6 @@ const CreateCustomQuestionnaireDialog: React.FC<CreateCustomQuestionnaireDialogP
         return;
       }
       
-      // Create a new questionnaire directly (not a template)
       const newQuestionnaire = {
         coach_id: session.user.id,
         title,
@@ -121,21 +118,15 @@ const CreateCustomQuestionnaireDialog: React.FC<CreateCustomQuestionnaireDialogP
       }
       
       toast({
-        title: "השאלון נוצר בהצלחה",
-        description: "השאלון המותאם האישי נוצר בהצלחה וזמין לשימוש."
+        title: "שאלון מותאם אישית נוצר",
+        description: "השאלון המותאם האישית נשמר וזמין לשימוש"
       });
       
-      // Store the created questionnaire ID for potential assignment
       setCreatedQuestionnaireId(data.id);
       
-      // Reset the form and close the dialog
       handleReset();
       onOpenChange(false);
       
-      // Ask if the user wants to assign the questionnaire
-      setIsAssignDialogOpen(true);
-      
-      // Callback if provided
       if (onQuestionnaireCreated) {
         onQuestionnaireCreated();
       }
@@ -278,7 +269,6 @@ const CreateCustomQuestionnaireDialog: React.FC<CreateCustomQuestionnaireDialogP
         </DialogContent>
       </Dialog>
 
-      {/* Dialog for assigning the newly created questionnaire */}
       {createdQuestionnaireId && (
         <AssignCustomQuestionnaireDialog
           open={isAssignDialogOpen}

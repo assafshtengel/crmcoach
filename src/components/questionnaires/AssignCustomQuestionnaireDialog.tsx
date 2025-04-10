@@ -1,26 +1,24 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Loader2, Send, Search, UserRound } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Check, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Questionnaire, PlayerData } from '@/types/questionnaire';
+import { supabase } from '@/lib/supabase';
+import { Player } from '@/types/player';
 
 interface AssignCustomQuestionnaireDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  questionnaireId?: string;
-  questionnaireName?: string;
+  questionnaireId: string;
+  questionnaireName: string;
   onAssigned?: () => void;
 }
 
@@ -32,231 +30,166 @@ const AssignCustomQuestionnaireDialog: React.FC<AssignCustomQuestionnaireDialogP
   onAssigned
 }) => {
   const { toast } = useToast();
-  const [players, setPlayers] = useState<PlayerData[]>([]);
-  const [filteredPlayers, setFilteredPlayers] = useState<PlayerData[]>([]);
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | undefined>(undefined);
+  const [isAssigning, setIsAssigning] = useState(false);
 
-  // Fetch players when dialog opens
   useEffect(() => {
-    if (open) {
-      fetchPlayers();
-      // Reset states
-      setSelectedPlayerId('');
-      setSearchQuery('');
-    }
-  }, [open]);
+    const fetchPlayers = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-  // Filter players based on search query
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredPlayers(players);
-    } else {
-      const lowercaseQuery = searchQuery.toLowerCase();
-      const filtered = players.filter(player => 
-        player.full_name.toLowerCase().includes(lowercaseQuery)
-      );
-      setFilteredPlayers(filtered);
-    }
-  }, [searchQuery, players]);
+        if (!session?.user) {
+          toast({
+            title: "לא מחובר",
+            description: "עליך להיות מחובר כדי לשייך שאלונים.",
+            variant: "destructive",
+          });
+          return;
+        }
 
-  const fetchPlayers = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Get the current user's auth session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session || !session.user) {
+        const coachId = session.user.id;
+
+        const { data: playersData, error } = await supabase
+          .from('players')
+          .select('*')
+          .eq('coach_id', coachId);
+
+        if (error) {
+          console.error("שגיאה בטעינת שחקנים:", error);
+          toast({
+            title: "שגיאה",
+            description: "שגיאה בטעינת רשימת השחקנים.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setPlayers(playersData);
+      } catch (error) {
+        console.error("שגיאה כללית:", error);
         toast({
-          title: "יש להתחבר תחילה",
-          description: "עליך להתחבר למערכת כדי לשייך שאלונים",
+          title: "שגיאה",
+          description: "שגיאה כללית.",
           variant: "destructive",
+          duration: 5000,
         });
-        onOpenChange(false);
-        return;
       }
-      
-      // Fetch players that belong to the current coach
-      const { data, error } = await supabase
-        .from('players')
-        .select('id, full_name, email, profile_image, sport_field, club, year_group')
-        .eq('coach_id', session.user.id)
-        .order('full_name');
-      
-      if (error) {
-        throw error;
-      }
-      
-      setPlayers(data || []);
-      setFilteredPlayers(data || []);
-      
-    } catch (error) {
-      console.error('Error fetching players:', error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בטעינת השחקנים",
-        description: "אירעה שגיאה בעת טעינת רשימת השחקנים"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
-  const handleSubmit = async () => {
+    fetchPlayers();
+  }, [toast]);
+
+  const handleAssign = async () => {
     if (!selectedPlayerId) {
       toast({
-        variant: "destructive",
         title: "שגיאה",
-        description: "יש לבחור שחקן מהרשימה"
-      });
-      return;
-    }
-
-    if (!questionnaireId) {
-      toast({
+        description: "יש לבחור שחקן כדי לשייך את השאלון.",
         variant: "destructive",
-        title: "שגיאה",
-        description: "שאלון לא נבחר"
       });
       return;
     }
 
     try {
-      setIsSubmitting(true);
-      
-      // Get the current user's auth session
+      setIsAssigning(true);
+
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session || !session.user) {
+
+      if (!session?.user) {
         toast({
-          title: "יש להתחבר תחילה",
-          description: "עליך להתחבר למערכת כדי לשייך שאלונים",
+          title: "לא מחובר",
+          description: "עליך להיות מחובר כדי לשייך שאלונים.",
           variant: "destructive",
         });
         return;
       }
 
-      // Create a new assignment record
+      const coachId = session.user.id;
+
+      // Insert into assigned_questionnaires table
       const { data, error } = await supabase
         .from('assigned_questionnaires')
-        .insert({
-          coach_id: session.user.id,
-          player_id: selectedPlayerId,
-          questionnaire_id: questionnaireId,
-          status: 'pending',
-          template_id: questionnaireId // Using questionnaire ID as template_id for tracking purposes
-        })
-        .select()
-        .single();
-        
+        .insert([
+          {
+            questionnaire_id: questionnaireId,
+            player_id: selectedPlayerId,
+            coach_id: coachId,
+            status: 'pending',
+          },
+        ]);
+
       if (error) {
-        throw error;
+        console.error("שגיאה בשיוך השאלון:", error);
+        toast({
+          title: "שגיאה",
+          description: "שגיאה בשיוך השאלון לשחקן.",
+          variant: "destructive",
+        });
+        return;
       }
-      
+
+      // Consolidated success toast
       toast({
-        title: "השאלון שויך בהצלחה!",
-        description: "השאלון נשלח לשחקן"
+        title: "שאלון שויך בהצלחה",
+        description: `השאלון "${questionnaireName}" שויך לשחקן הנבחר`
       });
-      
-      // Reset and close the dialog
-      setSelectedPlayerId('');
+
+      // Close dialog and trigger callback
       onOpenChange(false);
-      
-      // Callback if provided
       if (onAssigned) {
         onAssigned();
       }
-      
     } catch (error) {
-      console.error('Error assigning questionnaire:', error);
+      console.error("שגיאה כללית:", error);
       toast({
+        title: "שגיאה",
+        description: "שגיאה כללית.",
         variant: "destructive",
-        title: "שגיאה בשיוך השאלון",
-        description: "אירעה שגיאה בעת שיוך השאלון לשחקן. נסה שנית."
+        duration: 5000,
       });
     } finally {
-      setIsSubmitting(false);
+      setIsAssigning(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md overflow-y-auto" dir="rtl">
+      <DialogContent className="max-w-md overflow-y-auto max-h-[90vh]" dir="rtl">
         <DialogHeader>
-          <DialogTitle className="text-xl">שייך שאלון לשחקן</DialogTitle>
+          <DialogTitle>שיוך שאלון לשחקן</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-6 py-4">
-          {questionnaireId && questionnaireName && (
-            <div className="text-center p-2 bg-muted rounded-md">
-              <p className="text-md font-medium">שאלון: {questionnaireName}</p>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="player-search">חיפוש שחקנים</Label>
-            <div className="relative">
-              <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="player-search"
-                className="pl-10"
-                placeholder="חפש לפי שם..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="player-select">בחר שחקן</Label>
-            {isLoading ? (
-              <div className="flex items-center justify-center p-4">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              </div>
-            ) : filteredPlayers.length > 0 ? (
-              <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
-                <SelectTrigger id="player-select">
-                  <SelectValue placeholder="בחר שחקן..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredPlayers.map((player) => (
-                    <SelectItem key={player.id} value={player.id}>
-                      <div className="flex items-center">
-                        <UserRound className="h-4 w-4 ml-2 text-muted-foreground" />
-                        <span>{player.full_name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="text-center p-4 border border-dashed rounded-md">
-                <p className="text-muted-foreground">לא נמצאו שחקנים</p>
-              </div>
-            )}
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="player">בחר שחקן:</Label>
+            <Select
+              id="player"
+              value={selectedPlayerId}
+              onValueChange={setSelectedPlayerId}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="בחר שחקן" />
+              </SelectTrigger>
+              <SelectContent>
+                {players.map((player) => (
+                  <SelectItem key={player.id} value={player.id}>
+                    {player.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
-
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             ביטול
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isSubmitting || !selectedPlayerId}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                שולח...
-              </>
+          <Button type="button" onClick={handleAssign} disabled={isAssigning}>
+            {isAssigning ? (
+              <>משייך...</>
             ) : (
               <>
-                <Send className="h-4 w-4 ml-2" />
-                שלח שאלון
+                שייך שאלון
+                <Send className="h-4 w-4 mr-2" />
               </>
             )}
           </Button>

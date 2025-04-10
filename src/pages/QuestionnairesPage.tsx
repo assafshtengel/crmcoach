@@ -146,6 +146,11 @@ const QuestionnairesPage = () => {
       }
       return prev;
     });
+    
+    toast({
+      title: "תבנית שאלון נוצרה בהצלחה",
+      description: "תבנית השאלון המותאמת האישית נשמרה במערכת"
+    });
   };
 
   const handleCustomQuestionnaireCreated = async () => {
@@ -156,13 +161,18 @@ const QuestionnairesPage = () => {
     
     toast({
       title: "שאלון נוצר בהצלחה",
-      description: "השאלון החדש נשמר במערכת",
+      description: "השאלון החדש נשמר במערכת"
     });
   };
 
   const handleAssignQuestionnaire = (questionnaire: Questionnaire) => {
     setSelectedQuestionnaire(questionnaire);
     setIsAssignDialogOpen(true);
+    
+    toast({
+      title: "שיוך שאלון",
+      description: "בחר שחקן לשיוך השאלון"
+    });
   };
 
   if (isLoading) {
