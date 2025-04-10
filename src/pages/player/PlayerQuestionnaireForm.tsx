@@ -158,6 +158,17 @@ const PlayerQuestionnaireForm: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
+      // בדיקת אימות משתמש בתחילת הפונקציה
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "שגיאת התחברות",
+          description: "עליך להתחבר לפני שליחת השאלון",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       if (!questionnaire) {
         toast({
           title: "שגיאה",
