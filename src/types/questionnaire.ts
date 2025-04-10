@@ -56,3 +56,14 @@ export interface AssignedQuestionnaire {
     questions: Question[];
   };
 }
+
+export interface PlayerData {
+  id: string;
+  full_name: string;
+  email: string;
+  sport_field?: string;
+  club?: string;
+  year_group?: string;
+  profile_image?: string;
+  coach_id?: string;
+}

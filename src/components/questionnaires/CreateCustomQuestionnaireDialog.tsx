@@ -12,12 +12,13 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, Send } from 'lucide-react';
 import { Question } from '@/types/questionnaire';
 import { Separator } from '@/components/ui/separator';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import AssignCustomQuestionnaireDialog from './AssignCustomQuestionnaireDialog';
 
 interface CreateCustomQuestionnaireDialogProps {
   open: boolean;
@@ -35,6 +36,8 @@ const CreateCustomQuestionnaireDialog: React.FC<CreateCustomQuestionnaireDialogP
   const [questions, setQuestions] = useState<Question[]>([]);
   const [type, setType] = useState('custom');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdQuestionnaireId, setCreatedQuestionnaireId] = useState<string | null>(null);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
   const handleAddQuestion = (type: 'open' | 'closed') => {
     const newId = uuidv4();
@@ -60,6 +63,7 @@ const CreateCustomQuestionnaireDialog: React.FC<CreateCustomQuestionnaireDialogP
     setTitle('');
     setQuestions([]);
     setType('custom');
+    setCreatedQuestionnaireId(null);
   };
 
   const handleSubmit = async () => {
@@ -121,9 +125,15 @@ const CreateCustomQuestionnaireDialog: React.FC<CreateCustomQuestionnaireDialogP
         description: "השאלון המותאם האישי נוצר בהצלחה וזמין לשימוש."
       });
       
+      // Store the created questionnaire ID for potential assignment
+      setCreatedQuestionnaireId(data.id);
+      
       // Reset the form and close the dialog
       handleReset();
       onOpenChange(false);
+      
+      // Ask if the user wants to assign the questionnaire
+      setIsAssignDialogOpen(true);
       
       // Callback if provided
       if (onQuestionnaireCreated) {
@@ -143,129 +153,141 @@ const CreateCustomQuestionnaireDialog: React.FC<CreateCustomQuestionnaireDialogP
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]" dir="rtl">
-        <DialogHeader>
-          <DialogTitle className="text-xl">צור שאלון חדש</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-3xl overflow-y-auto max-h-[90vh]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-xl">צור שאלון חדש</DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">כותרת השאלון</Label>
-            <Input 
-              id="title" 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
-              placeholder="הזן כותרת לשאלון"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="type">סוג השאלון</Label>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger id="type">
-                <SelectValue placeholder="בחר סוג שאלון" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="custom">מותאם אישית</SelectItem>
-                <SelectItem value="day_opening">פתיחת יום</SelectItem>
-                <SelectItem value="day_summary">סיכום יום</SelectItem>
-                <SelectItem value="post_game">אחרי משחק</SelectItem>
-                <SelectItem value="mental_prep">מוכנות מנטלית</SelectItem>
-                <SelectItem value="personal_goals">מטרות אישיות</SelectItem>
-                <SelectItem value="motivation">מוטיבציה ולחץ</SelectItem>
-                <SelectItem value="season_end">סיום עונה</SelectItem>
-                <SelectItem value="team_communication">תקשורת קבוצתית</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator className="my-4" />
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold">שאלות</h3>
-              <div className="space-x-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleAddQuestion('closed')}
-                  type="button"
-                >
-                  <Plus className="h-4 w-4 ml-2" />
-                  הוסף שאלת דירוג
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleAddQuestion('open')}
-                  type="button"
-                >
-                  <Plus className="h-4 w-4 ml-2" />
-                  הוסף שאלה פתוחה
-                </Button>
-              </div>
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">כותרת השאלון</Label>
+              <Input 
+                id="title" 
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)} 
+                placeholder="הזן כותרת לשאלון"
+              />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type">סוג השאלון</Label>
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger id="type">
+                  <SelectValue placeholder="בחר סוג שאלון" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="custom">מותאם אישית</SelectItem>
+                  <SelectItem value="day_opening">פתיחת יום</SelectItem>
+                  <SelectItem value="day_summary">סיכום יום</SelectItem>
+                  <SelectItem value="post_game">אחרי משחק</SelectItem>
+                  <SelectItem value="mental_prep">מוכנות מנטלית</SelectItem>
+                  <SelectItem value="personal_goals">מטרות אישיות</SelectItem>
+                  <SelectItem value="motivation">מוטיבציה ולחץ</SelectItem>
+                  <SelectItem value="season_end">סיום עונה</SelectItem>
+                  <SelectItem value="team_communication">תקשורת קבוצתית</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator className="my-4" />
 
             <div className="space-y-4">
-              {questions.map((question, index) => (
-                <div 
-                  key={question.id} 
-                  className="bg-gray-50 p-4 rounded-lg border border-gray-200 relative"
-                >
-                  <div className="flex justify-between items-start">
-                    <Label className="font-medium mb-2 block">
-                      שאלה {index + 1} ({question.type === 'open' ? 'פתוחה' : 'דירוג'})
-                    </Label>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleRemoveQuestion(question.id)}
-                      className="absolute top-2 left-2 text-gray-500 hover:text-red-500"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <Textarea
-                    value={question.question_text}
-                    onChange={(e) => handleQuestionTextChange(question.id, e.target.value)}
-                    className="mt-1"
-                    rows={2}
-                  />
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">שאלות</h3>
+                <div className="space-x-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleAddQuestion('closed')}
+                    type="button"
+                  >
+                    <Plus className="h-4 w-4 ml-2" />
+                    הוסף שאלת דירוג
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleAddQuestion('open')}
+                    type="button"
+                  >
+                    <Plus className="h-4 w-4 ml-2" />
+                    הוסף שאלה פתוחה
+                  </Button>
+                </div>
+              </div>
 
-                  {question.type === 'closed' && (
-                    <div className="mt-2 text-sm text-gray-500">
-                      * שאלת דירוג תציג סולם מ-1 עד 10 למענה
+              <div className="space-y-4">
+                {questions.map((question, index) => (
+                  <div 
+                    key={question.id} 
+                    className="bg-gray-50 p-4 rounded-lg border border-gray-200 relative"
+                  >
+                    <div className="flex justify-between items-start">
+                      <Label className="font-medium mb-2 block">
+                        שאלה {index + 1} ({question.type === 'open' ? 'פתוחה' : 'דירוג'})
+                      </Label>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleRemoveQuestion(question.id)}
+                        className="absolute top-2 left-2 text-gray-500 hover:text-red-500"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  )}
-                </div>
-              ))}
+                    
+                    <Textarea
+                      value={question.question_text}
+                      onChange={(e) => handleQuestionTextChange(question.id, e.target.value)}
+                      className="mt-1"
+                      rows={2}
+                    />
 
-              {questions.length === 0 && (
-                <div className="text-center p-8 border border-dashed border-gray-300 rounded-lg">
-                  <p className="text-gray-500">אין עדיין שאלות. לחץ על "הוסף שאלה" כדי להתחיל.</p>
-                </div>
-              )}
+                    {question.type === 'closed' && (
+                      <div className="mt-2 text-sm text-gray-500">
+                        * שאלת דירוג תציג סולם מ-1 עד 10 למענה
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {questions.length === 0 && (
+                  <div className="text-center p-8 border border-dashed border-gray-300 rounded-lg">
+                    <p className="text-gray-500">אין עדיין שאלות. לחץ על "הוסף שאלה" כדי להתחיל.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            ביטול
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>טוען...</>
-            ) : (
-              <>
-                <Save className="h-4 w-4 ml-2" />
-                שמור שאלון
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              ביטול
+            </Button>
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>טוען...</>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 ml-2" />
+                  שמור שאלון
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for assigning the newly created questionnaire */}
+      {createdQuestionnaireId && (
+        <AssignCustomQuestionnaireDialog
+          open={isAssignDialogOpen}
+          onOpenChange={setIsAssignDialogOpen}
+          questionnaireId={createdQuestionnaireId}
+          questionnaireName={title}
+        />
+      )}
+    </>
   );
 };
 

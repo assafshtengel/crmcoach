@@ -1,21 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Loader2, Plus, Home } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Home, Send } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { systemTemplates } from '@/data/systemTemplates';
 import { PlayersProvider } from '@/contexts/PlayersContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/hooks/use-toast";
 import CreateQuestionnaireDialog from '@/components/questionnaires/CreateQuestionnaireDialog';
-import { QuestionnaireTemplate } from '@/types/questionnaire';
+import { QuestionnaireTemplate, Questionnaire } from '@/types/questionnaire';
 import CompletedQuestionnairesList from '@/components/questionnaires/CompletedQuestionnairesList';
 import CreateCustomQuestionnaireDialog from '@/components/questionnaires/CreateCustomQuestionnaireDialog';
+import AssignCustomQuestionnaireDialog from '@/components/questionnaires/AssignCustomQuestionnaireDialog';
 
-// Import the new component instead of QuestionnaireAccordion
 import QuestionnaireTemplateStack from '@/components/questionnaires/QuestionnaireTemplateStack';
 
 const QuestionnairesPage = () => {
@@ -26,11 +25,14 @@ const QuestionnairesPage = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateCustomDialogOpen, setIsCreateCustomDialogOpen] = useState(false);
   const [customTemplates, setCustomTemplates] = useState<QuestionnaireTemplate[]>([]);
+  const [customQuestionnaires, setCustomQuestionnaires] = useState<Questionnaire[]>([]);
+  const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<Questionnaire | null>(null);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const { toast } = useToast();
   
   const hasCustomTemplates = customTemplates.length > 0;
+  const hasCustomQuestionnaires = customQuestionnaires.length > 0;
 
-  // Set up an auth state change listener
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -73,6 +75,33 @@ const QuestionnairesPage = () => {
     }
   };
 
+  const fetchCustomQuestionnaires = async (userId: string) => {
+    try {
+      const { data: questionnaires, error } = await supabase
+        .from('questionnaires')
+        .select('*')
+        .eq('coach_id', userId)
+        .is('template_id', null)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching questionnaires:', error);
+        throw error;
+      }
+      
+      if (questionnaires) {
+        setCustomQuestionnaires(questionnaires);
+      }
+    } catch (error) {
+      console.error('Error fetching custom questionnaires:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת השאלונים",
+        description: "אירעה שגיאה בעת טעינת השאלונים המותאמים אישית"
+      });
+    }
+  };
+
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -91,8 +120,8 @@ const QuestionnairesPage = () => {
         
         setIsAuthenticated(true);
         
-        // Fetch custom templates created by the coach
         await fetchCustomTemplates(session.user.id);
+        await fetchCustomQuestionnaires(session.user.id);
         
       } catch (error) {
         console.error('Error checking auth session:', error);
@@ -110,10 +139,7 @@ const QuestionnairesPage = () => {
   }, [navigate, toast]);
 
   const handleTemplateCreated = (newTemplate: QuestionnaireTemplate) => {
-    // This function is called when a new template is created or when a system template is customized
-    // Update the customTemplates state to include the new template at the beginning of the array
     setCustomTemplates(prev => {
-      // Check if the template already exists in the array
       const exists = prev.some(t => t.id === newTemplate.id);
       if (!exists) {
         return [newTemplate, ...prev];
@@ -122,16 +148,21 @@ const QuestionnairesPage = () => {
     });
   };
 
-  const handleCustomQuestionnaireCreated = () => {
-    // Refresh completed questionnaires if we're on that tab
-    if (activeTab === 'saved') {
-      // If there's a refresh function exposed by CompletedQuestionnairesList, call it here
+  const handleCustomQuestionnaireCreated = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await fetchCustomQuestionnaires(session.user.id);
     }
-    // Show success notification
+    
     toast({
       title: "שאלון נוצר בהצלחה",
       description: "השאלון החדש נשמר במערכת",
     });
+  };
+
+  const handleAssignQuestionnaire = (questionnaire: Questionnaire) => {
+    setSelectedQuestionnaire(questionnaire);
+    setIsAssignDialogOpen(true);
   };
 
   if (isLoading) {
@@ -142,7 +173,6 @@ const QuestionnairesPage = () => {
     );
   }
 
-  // Don't render the full page if not authenticated
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
@@ -186,6 +216,7 @@ const QuestionnairesPage = () => {
           <Tabs defaultValue="templates" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="templates">תבניות שאלונים</TabsTrigger>
+              <TabsTrigger value="custom">שאלונים מותאמים אישית</TabsTrigger>
               <TabsTrigger value="saved">שאלונים שמולאו</TabsTrigger>
             </TabsList>
 
@@ -214,7 +245,6 @@ const QuestionnairesPage = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  // Pass the handleTemplateCreated callback to both instances
                   <div className="grid grid-cols-1 gap-4">
                     <QuestionnaireTemplateStack 
                       templates={customTemplates}
@@ -228,13 +258,62 @@ const QuestionnairesPage = () => {
                 <div>
                   <h2 className="text-xl font-semibold mb-4">תבניות שאלונים מובנות</h2>
                   <div className="grid grid-cols-1 gap-4">
-                    {/* Pass the handleTemplateCreated callback to this instance too */}
                     <QuestionnaireTemplateStack 
                       templates={systemTemplates}
                       onTemplateCreated={handleTemplateCreated}
                     />
                   </div>
                 </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="custom" className="mt-0">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">שאלונים מותאמים אישית</h2>
+                  <Button onClick={() => setIsCreateCustomDialogOpen(true)} className="flex items-center">
+                    <Plus className="h-4 w-4 ml-2" />
+                    צור שאלון חדש
+                  </Button>
+                </div>
+
+                {!hasCustomQuestionnaires ? (
+                  <Card className="bg-gray-50 border-dashed">
+                    <CardContent className="text-center p-8">
+                      <p className="text-gray-500">
+                        אין לך עדיין שאלונים מותאמים אישית. לחץ על "צור שאלון חדש" כדי להתחיל.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {customQuestionnaires.map((questionnaire) => (
+                      <Card key={questionnaire.id} className="overflow-hidden">
+                        <CardContent className="p-6">
+                          <div className="flex flex-col h-full">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-medium mb-2">{questionnaire.title}</h3>
+                              <p className="text-sm text-gray-500 mb-2">סוג: {questionnaire.type}</p>
+                              <p className="text-sm text-gray-500">
+                                שאלות: {questionnaire.questions ? questionnaire.questions.length : 0}
+                              </p>
+                            </div>
+                            <div className="mt-4">
+                              <Button 
+                                onClick={() => handleAssignQuestionnaire(questionnaire)} 
+                                className="w-full"
+                                variant="default"
+                              >
+                                <Send className="h-4 w-4 ml-2" />
+                                שייך לשחקן
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
             </TabsContent>
 
@@ -257,6 +336,16 @@ const QuestionnairesPage = () => {
             onOpenChange={setIsCreateCustomDialogOpen}
             onQuestionnaireCreated={handleCustomQuestionnaireCreated}
           />
+
+          {selectedQuestionnaire && (
+            <AssignCustomQuestionnaireDialog
+              open={isAssignDialogOpen}
+              onOpenChange={setIsAssignDialogOpen}
+              questionnaireId={selectedQuestionnaire.id}
+              questionnaireName={selectedQuestionnaire.title}
+              onAssigned={handleCustomQuestionnaireCreated}
+            />
+          )}
         </div>
       </div>
     </PlayersProvider>
