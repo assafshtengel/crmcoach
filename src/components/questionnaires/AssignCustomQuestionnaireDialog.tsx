@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -9,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { Check, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Player } from '@/types/player';
@@ -31,7 +32,7 @@ const AssignCustomQuestionnaireDialog: React.FC<AssignCustomQuestionnaireDialogP
 }) => {
   const { toast } = useToast();
   const [players, setPlayers] = useState<Player[]>([]);
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string | undefined>(undefined);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('');
   const [isAssigning, setIsAssigning] = useState(false);
 
   useEffect(() => {
@@ -77,8 +78,10 @@ const AssignCustomQuestionnaireDialog: React.FC<AssignCustomQuestionnaireDialogP
       }
     };
 
-    fetchPlayers();
-  }, [toast]);
+    if (open) {
+      fetchPlayers();
+    }
+  }, [open, toast]);
 
   const handleAssign = async () => {
     if (!selectedPlayerId) {
@@ -128,7 +131,7 @@ const AssignCustomQuestionnaireDialog: React.FC<AssignCustomQuestionnaireDialogP
         return;
       }
 
-      // Consolidated success toast
+      // Single success toast
       toast({
         title: "שאלון שויך בהצלחה",
         description: `השאלון "${questionnaireName}" שויך לשחקן הנבחר`
@@ -160,9 +163,8 @@ const AssignCustomQuestionnaireDialog: React.FC<AssignCustomQuestionnaireDialogP
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="player">בחר שחקן:</Label>
+            <Label htmlFor="player-select">בחר שחקן:</Label>
             <Select
-              id="player"
               value={selectedPlayerId}
               onValueChange={setSelectedPlayerId}
             >

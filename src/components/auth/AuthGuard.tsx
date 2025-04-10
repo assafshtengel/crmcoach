@@ -6,9 +6,10 @@ import { supabase } from "@/lib/supabase";
 interface AuthGuardProps {
   children: ReactNode;
   playerOnly?: boolean;
+  coachOnly?: boolean; // New prop to restrict coach-only routes
 }
 
-export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
+export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: AuthGuardProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { playerId } = useParams<{ playerId: string }>();
@@ -50,6 +51,12 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
               navigate("/player/profile-alt");
               return;
             }
+
+            // Players shouldn't access coach routes
+            if (coachOnly) {
+              navigate("/player/questionnaires");
+              return;
+            }
           } catch (err) {
             console.error("Error parsing player session:", err);
             localStorage.removeItem('playerSession');
@@ -59,6 +66,19 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
           
           setIsLoading(false);
           return;
+        }
+        
+        // בדיקת גישה לנתיבי מאמן
+        if (coachOnly) {
+          const { data: { user }, error } = await supabase.auth.getUser();
+          
+          if (error || !user) {
+            console.log("No authenticated Supabase user found");
+            navigate("/auth");
+            return;
+          }
+
+          // המשך הטיפול בנתיבי מאמן
         }
         
         // טיפול בדף פרופיל שחקן עם פרמטר ID
@@ -104,7 +124,7 @@ export const AuthGuard = ({ children, playerOnly = false }: AuthGuardProps) => {
     };
 
     checkAuth();
-  }, [navigate, playerId, playerOnly, location.pathname, location.search]);
+  }, [navigate, playerId, playerOnly, coachOnly, location.pathname, location.search]);
 
   if (isLoading) {
     return (

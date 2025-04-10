@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -157,10 +158,18 @@ const PlayerQuestionnaireForm: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
-      if (!questionnaire) return;
+      if (!questionnaire) {
+        toast({
+          title: "שגיאה",
+          description: "לא נמצאו נתוני שאלון",
+          variant: "destructive",
+        });
+        return;
+      }
       
       setIsSaving(true);
       
+      // בדוק שכל השאלות נענו
       const unansweredQuestions = questionnaire.questionnaire?.questions.filter((q: Question) => {
         if (q.type === 'open' && (!answers[q.id]?.answer || answers[q.id]?.answer === '')) {
           return true;
@@ -181,10 +190,10 @@ const PlayerQuestionnaireForm: React.FC = () => {
         return;
       }
 
+      // בדוק שיש מזהה שחקן תקף
       const { valid, playerId, error } = validatePlayerSession();
       
       if (!valid || !playerId) {
-        console.error("Invalid player session:", error);
         toast({
           title: "שגיאה באימות",
           description: error || "יש להתחבר מחדש למערכת",
@@ -197,16 +206,19 @@ const PlayerQuestionnaireForm: React.FC = () => {
         }
         return;
       }
+
+      // ודא שיש את כל הפרטים הנדרשים לשמירה
+      if (!questionnaire.id || !questionnaire.questionnaire_id || !questionnaire.coach_id) {
+        toast({
+          title: "שגיאה בנתוני השאלון",
+          description: "חסרים פרטים הכרחיים בשאלון",
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return;
+      }
       
-      console.log("Submitting answers:", {
-        assigned_questionnaire_id: questionnaire.id,
-        player_id: playerId,
-        questionnaire_id: questionnaire.questionnaire_id,
-        coach_id: questionnaire.coach_id,
-        answers: answers,
-        status: 'answered'
-      });
-      
+      // שמירת תשובות השאלון
       const { error: insertError } = await supabase
         .from('questionnaire_answers')
         .insert({
@@ -223,6 +235,7 @@ const PlayerQuestionnaireForm: React.FC = () => {
         throw insertError;
       }
       
+      // עדכון סטטוס השאלון ל-'answered'
       const { error: updateError } = await supabase
         .from('assigned_questionnaires')
         .update({ status: 'answered' })
@@ -233,6 +246,7 @@ const PlayerQuestionnaireForm: React.FC = () => {
         throw updateError;
       }
       
+      // הודעת הצלחה
       toast({
         title: "השאלון נשלח בהצלחה!",
         description: "תודה על מילוי השאלון",

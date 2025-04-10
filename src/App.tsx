@@ -1,10 +1,10 @@
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Layout } from '@/components/layout/Layout';
+
 import ToolManagement from '@/pages/ToolManagement';
 import AutoVideoManagement from '@/pages/AutoVideoManagement';
 import QuestionnairesPage from '@/pages/QuestionnairesPage';
@@ -74,48 +74,48 @@ function App() {
             
             {/* All other routes use the Layout component */}
             <Route element={<Layout />}>
-              <Route path="/" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
-              <Route path="/index" element={<AuthGuard><Index /></AuthGuard>} />
-              <Route path="/new" element={<AuthGuard><NewIndex /></AuthGuard>} />
-              <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
-              <Route path="/dashboard/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
-              <Route path="/huze" element={<AuthGuard><Huze /></AuthGuard>} />
-              <Route path="/contract" element={<AuthGuard><Contract /></AuthGuard>} />
-              <Route path="/mental-commitment" element={<AuthGuard><MentalCommitment /></AuthGuard>} />
-              <Route path="/admin" element={<AuthGuard><Admin /></AuthGuard>} />
-              <Route path="/mental-tools" element={<AuthGuard><MentalTools /></AuthGuard>} />
-              <Route path="/short-term-goals" element={<AuthGuard><ShortTermGoals /></AuthGuard>} />
-              <Route path="/daily-challenge" element={<AuthGuard><DailyChallenge /></AuthGuard>} />
-              <Route path="/player-form" element={<AuthGuard><PlayerForm /></AuthGuard>} />
-              <Route path="/sessions-list" element={<AuthGuard><SessionsList /></AuthGuard>} />
-              <Route path="/players-list" element={<AuthGuard><PlayersList /></AuthGuard>} />
-              <Route path="/new-session" element={<AuthGuard><NewSessionForm /></AuthGuard>} />
-              <Route path="/edit-session" element={<AuthGuard><EditSessionForm /></AuthGuard>} />
-              <Route path="/player-profile/:playerId" element={<AuthGuard><PlayerProfile /></AuthGuard>} />
-              <Route path="/dashboard-coach" element={<AuthGuard><DashboardCoach /></AuthGuard>} />
-              <Route path="/goal-details-questions" element={<AuthGuard><GoalDetailsQuestions /></AuthGuard>} />
-              <Route path="/profile-coach" element={<AuthGuard><ProfileCoach /></AuthGuard>} />
-              <Route path="/reports" element={<AuthGuard><Reports /></AuthGuard>} />
-              <Route path="/contact" element={<AuthGuard><Contact /></AuthGuard>} />
-              <Route path="/next" element={<AuthGuard><Next /></AuthGuard>} />
-              <Route path="/player-evaluation" element={<AuthGuard><PlayerEvaluation /></AuthGuard>} />
-              <Route path="/analytics" element={<AuthGuard><AnalyticsDashboard /></AuthGuard>} />
-              <Route path="/player-statistics" element={<AuthGuard><PlayerStatistics /></AuthGuard>} />
-              <Route path="/game-prep" element={<AuthGuard><GamePreparation /></AuthGuard>} />
-              <Route path="/notifications" element={<AuthGuard><NotificationsDashboard /></AuthGuard>} />
-              <Route path="/action-plan" element={<AuthGuard><ActionPlan /></AuthGuard>} />
-              <Route path="/session-summaries" element={<AuthGuard><SessionSummaries /></AuthGuard>} />
-              <Route path="/new-player" element={<AuthGuard><NewPlayerForm /></AuthGuard>} />
-              <Route path="/edit-player" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
-              <Route path="/edit-player/:playerId" element={<AuthGuard><EditPlayerForm /></AuthGuard>} />
-              <Route path="/registration-links" element={<AuthGuard><RegistrationLinks /></AuthGuard>} />
-              <Route path="/tool-management" element={<AuthGuard><ToolManagement /></AuthGuard>} />
-              <Route path="/auto-video-management" element={<AuthGuard><AutoVideoManagement /></AuthGuard>} />
-              <Route path="/all-meeting-summaries" element={<AuthGuard><AllMeetingSummaries /></AuthGuard>} />
-              <Route path="/goals" element={<AuthGuard><Goals /></AuthGuard>} />
-              <Route path="/mental-library" element={<AuthGuard><MentalLibrary /></AuthGuard>} />
-              <Route path="/game-evaluation/:playerId" element={<AuthGuard><PlayerGameEvaluationForm /></AuthGuard>} />
-              <Route path="/questionnaires" element={<AuthGuard><QuestionnairesPage /></AuthGuard>} />
+              <Route path="/" element={<AuthGuard coachOnly={true}><DashboardCoach /></AuthGuard>} />
+              <Route path="/index" element={<AuthGuard coachOnly={true}><Index /></AuthGuard>} />
+              <Route path="/new" element={<AuthGuard coachOnly={true}><NewIndex /></AuthGuard>} />
+              <Route path="/dashboard" element={<AuthGuard coachOnly={true}><Dashboard /></AuthGuard>} />
+              <Route path="/dashboard/player-profile/:playerId" element={<AuthGuard coachOnly={true}><PlayerProfile /></AuthGuard>} />
+              <Route path="/huze" element={<AuthGuard coachOnly={true}><Huze /></AuthGuard>} />
+              <Route path="/contract" element={<AuthGuard coachOnly={true}><Contract /></AuthGuard>} />
+              <Route path="/mental-commitment" element={<AuthGuard coachOnly={true}><MentalCommitment /></AuthGuard>} />
+              <Route path="/admin" element={<AuthGuard coachOnly={true}><Admin /></AuthGuard>} />
+              <Route path="/mental-tools" element={<AuthGuard coachOnly={true}><MentalTools /></AuthGuard>} />
+              <Route path="/short-term-goals" element={<AuthGuard coachOnly={true}><ShortTermGoals /></AuthGuard>} />
+              <Route path="/daily-challenge" element={<AuthGuard coachOnly={true}><DailyChallenge /></AuthGuard>} />
+              <Route path="/player-form" element={<AuthGuard coachOnly={true}><PlayerForm /></AuthGuard>} />
+              <Route path="/sessions-list" element={<AuthGuard coachOnly={true}><SessionsList /></AuthGuard>} />
+              <Route path="/players-list" element={<AuthGuard coachOnly={true}><PlayersList /></AuthGuard>} />
+              <Route path="/new-session" element={<AuthGuard coachOnly={true}><NewSessionForm /></AuthGuard>} />
+              <Route path="/edit-session" element={<AuthGuard coachOnly={true}><EditSessionForm /></AuthGuard>} />
+              <Route path="/player-profile/:playerId" element={<AuthGuard coachOnly={true}><PlayerProfile /></AuthGuard>} />
+              <Route path="/dashboard-coach" element={<AuthGuard coachOnly={true}><DashboardCoach /></AuthGuard>} />
+              <Route path="/goal-details-questions" element={<AuthGuard coachOnly={true}><GoalDetailsQuestions /></AuthGuard>} />
+              <Route path="/profile-coach" element={<AuthGuard coachOnly={true}><ProfileCoach /></AuthGuard>} />
+              <Route path="/reports" element={<AuthGuard coachOnly={true}><Reports /></AuthGuard>} />
+              <Route path="/contact" element={<AuthGuard coachOnly={true}><Contact /></AuthGuard>} />
+              <Route path="/next" element={<AuthGuard coachOnly={true}><Next /></AuthGuard>} />
+              <Route path="/player-evaluation" element={<AuthGuard coachOnly={true}><PlayerEvaluation /></AuthGuard>} />
+              <Route path="/analytics" element={<AuthGuard coachOnly={true}><AnalyticsDashboard /></AuthGuard>} />
+              <Route path="/player-statistics" element={<AuthGuard coachOnly={true}><PlayerStatistics /></AuthGuard>} />
+              <Route path="/game-prep" element={<AuthGuard coachOnly={true}><GamePreparation /></AuthGuard>} />
+              <Route path="/notifications" element={<AuthGuard coachOnly={true}><NotificationsDashboard /></AuthGuard>} />
+              <Route path="/action-plan" element={<AuthGuard coachOnly={true}><ActionPlan /></AuthGuard>} />
+              <Route path="/session-summaries" element={<AuthGuard coachOnly={true}><SessionSummaries /></AuthGuard>} />
+              <Route path="/new-player" element={<AuthGuard coachOnly={true}><NewPlayerForm /></AuthGuard>} />
+              <Route path="/edit-player" element={<AuthGuard coachOnly={true}><EditPlayerForm /></AuthGuard>} />
+              <Route path="/edit-player/:playerId" element={<AuthGuard coachOnly={true}><EditPlayerForm /></AuthGuard>} />
+              <Route path="/registration-links" element={<AuthGuard coachOnly={true}><RegistrationLinks /></AuthGuard>} />
+              <Route path="/tool-management" element={<AuthGuard coachOnly={true}><ToolManagement /></AuthGuard>} />
+              <Route path="/auto-video-management" element={<AuthGuard coachOnly={true}><AutoVideoManagement /></AuthGuard>} />
+              <Route path="/all-meeting-summaries" element={<AuthGuard coachOnly={true}><AllMeetingSummaries /></AuthGuard>} />
+              <Route path="/goals" element={<AuthGuard coachOnly={true}><Goals /></AuthGuard>} />
+              <Route path="/mental-library" element={<AuthGuard coachOnly={true}><MentalLibrary /></AuthGuard>} />
+              <Route path="/game-evaluation/:playerId" element={<AuthGuard coachOnly={true}><PlayerGameEvaluationForm /></AuthGuard>} />
+              <Route path="/questionnaires" element={<AuthGuard coachOnly={true}><QuestionnairesPage /></AuthGuard>} />
 
               {/* Player-specific routes */}
               <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />

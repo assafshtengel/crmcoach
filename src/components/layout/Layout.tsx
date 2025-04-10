@@ -1,12 +1,21 @@
+
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home } from 'lucide-react';
+
 export function Layout() {
   const [actionCount, setActionCount] = useState(0);
   const [showSplash, setShowSplash] = useState(false);
+  const [isPlayerView, setIsPlayerView] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Check if this is a player view based on the URL
+  useEffect(() => {
+    const isPlayerRoute = location.pathname.startsWith('/player/');
+    setIsPlayerView(isPlayerRoute);
+  }, [location.pathname]);
 
   // Track navigation changes
   useEffect(() => {
@@ -33,13 +42,22 @@ export function Layout() {
       window.removeEventListener('sessionSummarySaved', handleSessionSummarySaved);
     };
   }, [navigate]);
+
   return <div className="flex min-h-screen flex-col">
       <header className="bg-white shadow-sm sticky top-0 z-50 py-3 px-4 md:px-6">
         <div className="container mx-auto flex justify-between items-center">
           <div>
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="text-[#030336] text-center bg-zinc-300 hover:bg-zinc-200">
-              <Home className="h-5 w-5" />
-            </Button>
+            {/* Only show home button for coach views */}
+            {!isPlayerView && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate('/')} 
+                className="text-[#030336] text-center bg-zinc-300 hover:bg-zinc-200"
+              >
+                <Home className="h-5 w-5" />
+              </Button>
+            )}
           </div>
           
           <div className="flex items-center gap-4">
