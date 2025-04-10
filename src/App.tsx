@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -54,6 +55,7 @@ import MentalLibrary from '@/pages/MentalLibrary';
 import PlayerGameEvaluationForm from '@/pages/player/PlayerGameEvaluationForm';
 import PlayerQuestionnaires from '@/pages/player/PlayerQuestionnaires';
 import PlayerQuestionnaireForm from '@/pages/player/PlayerQuestionnaireForm';
+import PlayerDashboard from '@/pages/player/PlayerDashboard';
 
 import "./App.css";
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
@@ -120,6 +122,7 @@ function App() {
               {/* Player-specific routes */}
               <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
               <Route path="/player/profile-alt" element={<AuthGuard playerOnly={true}><PlayerProfileAlternative /></AuthGuard>} />
+              <Route path="/player/dashboard" element={<AuthGuard playerOnly={true}><PlayerDashboard /></AuthGuard>} />
               <Route path="/player/game-evaluation/:playerId" element={<AuthGuard playerOnly={true}><PlayerGameEvaluationForm /></AuthGuard>} />
               <Route path="/player/questionnaires" element={<AuthGuard playerOnly={true}><PlayerQuestionnaires /></AuthGuard>} />
               <Route path="/player/questionnaire/:id" element={<AuthGuard playerOnly={true}><PlayerQuestionnaireForm /></AuthGuard>} />

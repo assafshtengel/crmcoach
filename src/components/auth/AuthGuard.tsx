@@ -2,15 +2,17 @@
 import { useState, useEffect, ReactNode } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import PlayerRegistration from "../player/PlayerRegistration";
 
 interface AuthGuardProps {
   children: ReactNode;
   playerOnly?: boolean;
-  coachOnly?: boolean; // New prop to restrict coach-only routes
+  coachOnly?: boolean;
 }
 
 export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: AuthGuardProps) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [needsPlayerRegistration, setNeedsPlayerRegistration] = useState(false);
   const navigate = useNavigate();
   const { playerId } = useParams<{ playerId: string }>();
   const location = useLocation();
@@ -20,47 +22,57 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
       try {
         // בדיקה אם זה נתיב שחקן
         if (playerOnly) {
-          const playerSession = localStorage.getItem('playerSession');
+          // First, check with Supabase auth
+          const { data: { user }, error: authError } = await supabase.auth.getUser();
           
-          if (!playerSession) {
-            console.log("No player session found, redirecting to player login");
-            // Save the current path for redirect after login
-            const currentPath = location.pathname + location.search;
-            navigate(`/player-auth?redirect=${encodeURIComponent(currentPath)}`);
-            return;
-          }
-          
-          // אימות מפגש שחקן - בדיקה אם השחקן קיים במסד הנתונים
-          try {
-            const playerData = JSON.parse(playerSession);
-            const { data, error } = await supabase
-              .from('players')
-              .select('id')
-              .eq('id', playerData.id)
-              .maybeSingle();
-              
-            if (error || !data) {
-              console.log("Invalid player session, redirecting to player login");
+          if (authError || !user) {
+            console.log("No authenticated Supabase user found for player route");
+            
+            // Fallback to legacy player session
+            const playerSession = localStorage.getItem('playerSession');
+            if (!playerSession) {
+              console.log("No player session found, redirecting to player login");
+              // Save the current path for redirect after login
+              const currentPath = location.pathname + location.search;
+              navigate(`/player-auth?redirect=${encodeURIComponent(currentPath)}`);
+              return;
+            }
+            
+            // Legacy player session handling
+            try {
+              const playerData = JSON.parse(playerSession);
+              const { data, error } = await supabase
+                .from('players')
+                .select('id')
+                .eq('id', playerData.id)
+                .maybeSingle();
+                
+              if (error || !data) {
+                console.log("Invalid player session, redirecting to player login");
+                localStorage.removeItem('playerSession');
+                navigate("/player-auth");
+                return;
+              }
+            } catch (err) {
+              console.error("Error parsing player session:", err);
               localStorage.removeItem('playerSession');
               navigate("/player-auth");
               return;
             }
-            
-            // Redirect from original profile page to alternative profile page
-            if (location.pathname === "/player/profile") {
-              navigate("/player/profile-alt");
-              return;
-            }
+          } else {
+            // We have a valid authenticated user, check if they have a player record
+            setNeedsPlayerRegistration(true);
+          }
+          
+          // Redirect from original profile page to alternative profile page
+          if (location.pathname === "/player/profile") {
+            navigate("/player/profile-alt");
+            return;
+          }
 
-            // Players shouldn't access coach routes
-            if (coachOnly) {
-              navigate("/player/questionnaires");
-              return;
-            }
-          } catch (err) {
-            console.error("Error parsing player session:", err);
-            localStorage.removeItem('playerSession');
-            navigate("/player-auth");
+          // Players shouldn't access coach routes
+          if (coachOnly) {
+            navigate("/player/questionnaires");
             return;
           }
           
@@ -134,5 +146,10 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {needsPlayerRegistration && <PlayerRegistration />}
+      {children}
+    </>
+  );
 };
