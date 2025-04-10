@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Accordion, 
   AccordionContent, 
@@ -39,7 +39,7 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
   const { toast } = useToast();
 
   // Update local templates state when props change
-  React.useEffect(() => {
+  useEffect(() => {
     setLocalTemplates(templates);
   }, [templates]);
 
@@ -190,12 +190,14 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
       const now = new Date().toISOString();
       
       if (template.is_system_template) {
+        // Create a new custom template based on the system template
         const newTemplate = {
           title: updatedTemplate.title || template.title,
           questions: updatedTemplate.questions || template.questions,
           type: updatedTemplate.type || template.type,
           is_system_template: false,
           coach_id: session.user.id,
+          parent_template_id: template.id, // Reference to original template
           created_at: now,
           updated_at: now
         };
@@ -215,10 +217,12 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
         }
         
         // Add the new template to local state
-        setLocalTemplates(prev => [data, ...prev]);
+        const newTemplateWithId = data as QuestionnaireTemplate;
+        setLocalTemplates(prev => [newTemplateWithId, ...prev]);
         
-        if (onTemplateCreated && data) {
-          onTemplateCreated(data);
+        // Call the callback to inform the parent component about the new template
+        if (onTemplateCreated) {
+          onTemplateCreated(newTemplateWithId);
         }
         
         toast({
@@ -227,7 +231,8 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
         });
       } 
       else {
-        const { data, error } = await supabase
+        // Update existing custom template
+        const { data: updatedTemplateData, error } = await supabase
           .from('questionnaire_templates')
           .update({ 
             title: updatedTemplate.title,
@@ -243,13 +248,13 @@ const QuestionnaireTemplateStack: React.FC<QuestionnaireTemplateStackProps> = ({
           throw error;
         }
         
-        if (!data) {
+        if (!updatedTemplateData) {
           throw new Error('No template was updated. It might not belong to you.');
         }
         
         // Update local state with the updated template
         setLocalTemplates(prev => prev.map(t => 
-          t.id === templateId ? { ...t, ...data } : t
+          t.id === templateId ? { ...t, ...updatedTemplateData } : t
         ));
         
         toast({

@@ -108,7 +108,16 @@ const QuestionnairesPage = () => {
   }, [navigate, toast]);
 
   const handleTemplateCreated = (newTemplate: QuestionnaireTemplate) => {
-    setCustomTemplates(prev => [newTemplate, ...prev]);
+    // This function is called when a new template is created or when a system template is customized
+    // Update the customTemplates state to include the new template at the beginning of the array
+    setCustomTemplates(prev => {
+      // Check if the template already exists in the array
+      const exists = prev.some(t => t.id === newTemplate.id);
+      if (!exists) {
+        return [newTemplate, ...prev];
+      }
+      return prev;
+    });
   };
 
   if (isLoading) {
@@ -185,7 +194,7 @@ const QuestionnairesPage = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  // Replace the old QuestionnaireAccordion component with the new QuestionnaireTemplateStack component
+                  // Pass the handleTemplateCreated callback to both instances
                   <div className="grid grid-cols-1 gap-4">
                     <QuestionnaireTemplateStack 
                       templates={customTemplates}
@@ -199,7 +208,7 @@ const QuestionnairesPage = () => {
                 <div>
                   <h2 className="text-xl font-semibold mb-4">תבניות שאלונים מובנות</h2>
                   <div className="grid grid-cols-1 gap-4">
-                    {/* Replace the old QuestionnaireAccordion component with the new QuestionnaireTemplateStack component */}
+                    {/* Pass the handleTemplateCreated callback to this instance too */}
                     <QuestionnaireTemplateStack 
                       templates={systemTemplates}
                       onTemplateCreated={handleTemplateCreated}
@@ -220,6 +229,7 @@ const QuestionnairesPage = () => {
           <CreateQuestionnaireDialog 
             open={isCreateDialogOpen} 
             onOpenChange={setIsCreateDialogOpen} 
+            onTemplateCreated={handleTemplateCreated}
           />
         </div>
       </div>
