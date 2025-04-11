@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Mic, Square, Loader2, RotateCcw, Volume2, Share2 } from 'lucide-react';
@@ -95,7 +94,7 @@ export function AudioRecorder({
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
-  return <div className="space-y-4 border border-muted rounded-lg p-4 bg-gray-50">
+  return <div className="space-y-4 border border-muted rounded-lg p-4 bg-zinc-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Volume2 className="h-5 w-5 text-[#6E59A5]" />
