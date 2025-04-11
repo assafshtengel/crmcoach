@@ -42,6 +42,20 @@ const PlayerQuestionnaires = () => {
             return;
           } else {
             console.log("User not found in players table:", playerError);
+            
+            // Show error toast and redirect to login
+            toast({
+              title: "המשתמש אינו רשום כשחקן במערכת",
+              description: "מפנה אותך לדף ההתחברות...",
+              variant: "destructive",
+            });
+            
+            // Redirect after 2 seconds
+            setTimeout(() => {
+              navigate('/player-auth');
+            }, 2000);
+            
+            return;
           }
         }
         
@@ -197,3 +211,4 @@ const PlayerQuestionnaires = () => {
 };
 
 export default PlayerQuestionnaires;
+
