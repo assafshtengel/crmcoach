@@ -4,7 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, UserRound, CircleCheck, Clipboard, ChevronDown, PlusCircle, BarChart3, Eye, PenLine, BookOpen, Settings2, UserCircle, CircleUser, MailCheck, SendHorizonal } from "lucide-react";
+import { 
+  Settings2, PenLine, PlusCircle, Calendar, MailCheck, 
+  ChevronDown, BookOpen, Eye, BarChart3, CircleCheck, 
+  Clipboard, UserRound, CircleUser, SendHorizonal
+} from "lucide-react";
 import { format } from 'date-fns';
 
 const DashboardCoach = () => {
@@ -65,21 +69,21 @@ const DashboardCoach = () => {
             <Settings2 size={18} />
           </button>
           <button className="hover:bg-[#2a2f3c] p-2 rounded-md flex items-center">
-            <PenLine size={16} className="mr-1" />
+            <PenLine size={16} className="ml-1" />
             <span className="text-sm">ליצור רשומה</span>
           </button>
           <button className="hover:bg-[#2a2f3c] p-2 rounded-md flex items-center" onClick={() => navigate('/new-player')}>
-            <PlusCircle size={16} className="mr-1" />
+            <PlusCircle size={16} className="ml-1" />
             <span className="text-sm">הוסף שחקן</span>
           </button>
           <button className="hover:bg-[#2a2f3c] p-2 rounded-md flex items-center" onClick={() => navigate('/new-session')}>
-            <Calendar size={16} className="mr-1" />
+            <Calendar size={16} className="ml-1" />
             <span className="text-sm">קבע מפגש</span>
           </button>
         </div>
         <div className="flex items-center">
-          <Badge className="bg-red-500 p-1 h-6 w-6 flex items-center justify-center rounded-full mr-3">10</Badge>
-          <UserCircle size={24} className="mr-2" />
+          <Badge className="bg-red-500 p-1 h-6 w-6 flex items-center justify-center rounded-full ml-3">10</Badge>
+          <CircleUser size={24} className="ml-2" />
           <div className="text-right">
             <div className="font-semibold">{userFullName || 'ברוך הבא'}</div>
             <div className="text-xs opacity-75">יום חמישי, {new Date().getDate()} באפריל {new Date().getFullYear()}</div>
@@ -99,7 +103,7 @@ const DashboardCoach = () => {
           >
             <ChevronDown size={20} className={`transition-transform ${isMessagesExpanded ? 'rotate-180' : ''}`} />
             <div className="flex items-center text-blue-700">
-              <MailCheck size={20} className="ml-2" />
+              <MailCheck size={20} className="mr-2" />
               <span className="font-medium">שליחת הודעת לתזכורת האתר</span>
             </div>
           </div>
@@ -111,11 +115,11 @@ const DashboardCoach = () => {
           )}
         </div>
 
-        {/* Cards grid */}
+        {/* Cards grid - First Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Card 1 */}
-          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5">
-            <div className="border-r-4 border-yellow-400 pr-3 mb-3">
+          {/* Card 1 - Videos + Mental Tools */}
+          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5 border-r-4 border-yellow-400">
+            <div className="pr-3 mb-3">
               <h2 className="text-lg font-medium text-right">סרטונים + כלים מנטאליים</h2>
             </div>
             <div className="text-right">
@@ -126,14 +130,14 @@ const DashboardCoach = () => {
             </div>
           </div>
 
-          {/* Card 2 */}
-          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5">
-            <div className="border-r-4 border-blue-400 pr-3 mb-3">
+          {/* Card 2 - Upcoming Sessions */}
+          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5 border-r-4 border-blue-400">
+            <div className="pr-3 mb-3">
               <h2 className="text-lg font-medium text-right">מפגשים קרובים</h2>
             </div>
             <div className="text-right">
               <div className="flex items-center justify-end mb-1">
-                <PlusCircle size={18} className="ml-1 text-blue-500" onClick={() => navigate('/new-session')} />
+                <PlusCircle size={18} className="mr-1 text-blue-500" onClick={() => navigate('/new-session')} />
                 <span className="text-sm text-blue-500">הוסף מפגש</span>
               </div>
               <div className="text-4xl font-bold text-center my-3">{upcomingSessionsCount}</div>
@@ -141,9 +145,9 @@ const DashboardCoach = () => {
             </div>
           </div>
 
-          {/* Card 3 */}
-          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5">
-            <div className="border-r-4 border-green-400 pr-3 mb-3">
+          {/* Card 3 - Active Players */}
+          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5 border-r-4 border-green-400">
+            <div className="pr-3 mb-3">
               <h2 className="text-lg font-medium text-right">שחקנים פעילים</h2>
             </div>
             <div className="text-right">
@@ -153,7 +157,7 @@ const DashboardCoach = () => {
                   className="flex items-center text-sm text-green-600 border border-green-300 rounded-full px-4 py-1.5"
                   onClick={() => navigate('/players-list')}
                 >
-                  <CircleUser size={16} className="ml-1" />
+                  <CircleUser size={16} className="mr-1" />
                   <span>צפה ברשימות השחקנים</span>
                 </button>
               </div>
@@ -161,10 +165,11 @@ const DashboardCoach = () => {
           </div>
         </div>
 
+        {/* Cards grid - Second Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Row 2, Card 1 */}
-          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5">
-            <div className="border-r-4 border-purple-400 pr-3 mb-3">
+          {/* Row 2, Card 1 - Meeting Summaries */}
+          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5 border-r-4 border-purple-400">
+            <div className="pr-3 mb-3">
               <h2 className="text-lg font-medium text-right">סיכומי מפגשים</h2>
             </div>
             <div className="text-right">
@@ -174,16 +179,16 @@ const DashboardCoach = () => {
                   className="bg-purple-100 text-purple-600 font-medium rounded-md py-2 px-4 w-full"
                   onClick={() => navigate('/all-meeting-summaries')}
                 >
-                  <Eye size={18} className="inline ml-2 mb-1" />
+                  <Eye size={18} className="inline mr-2 mb-1" />
                   צפה בכל הסיכומים
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Row 2, Card 2 */}
-          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5">
-            <div className="border-r-4 border-orange-400 pr-3 mb-3">
+          {/* Row 2, Card 2 - Reports and Statistics */}
+          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5 border-r-4 border-orange-400">
+            <div className="pr-3 mb-3">
               <h2 className="text-lg font-medium text-right">דוחות וסטטיסטיקה</h2>
             </div>
             <div className="text-right">
@@ -193,16 +198,16 @@ const DashboardCoach = () => {
                   className="bg-orange-100 text-orange-600 font-medium rounded-md py-2 px-4 w-full"
                   onClick={() => navigate('/analytics')}
                 >
-                  <BarChart3 size={18} className="inline ml-2 mb-1" />
+                  <BarChart3 size={18} className="inline mr-2 mb-1" />
                   צפה בדוחות
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Row 2, Card 3 */}
-          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5">
-            <div className="border-r-4 border-green-400 pr-3 mb-3">
+          {/* Row 2, Card 3 - Game Preparation */}
+          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5 border-r-4 border-green-400">
+            <div className="pr-3 mb-3">
               <h2 className="text-lg font-medium text-right">הכנה למשחק</h2>
             </div>
             <div className="text-right">
@@ -212,7 +217,7 @@ const DashboardCoach = () => {
                   className="bg-green-100 text-green-600 font-medium rounded-md py-2 px-4 w-full"
                   onClick={() => navigate('/game-prep')}
                 >
-                  <CircleCheck size={18} className="inline ml-2 mb-1" />
+                  <CircleCheck size={18} className="inline mr-2 mb-1" />
                   מלא טופס הכנה
                 </button>
               </div>
@@ -220,10 +225,11 @@ const DashboardCoach = () => {
           </div>
         </div>
 
+        {/* Cards grid - Third Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          {/* Row 3, Card 1 */}
-          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5">
-            <div className="border-r-4 border-blue-400 pr-3 mb-3">
+          {/* Row 3, Card 1 - Mental Research */}
+          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5 border-r-4 border-blue-400">
+            <div className="pr-3 mb-3">
               <h2 className="text-lg font-medium text-right">מחקרים מנטאליים עדכניים</h2>
             </div>
             <div className="text-right">
@@ -233,16 +239,16 @@ const DashboardCoach = () => {
                   className="bg-blue-100 text-blue-600 font-medium rounded-md py-2 px-4 w-full"
                   onClick={() => navigate('/mental-library')}
                 >
-                  <BookOpen size={18} className="inline ml-2 mb-1" />
+                  <BookOpen size={18} className="inline mr-2 mb-1" />
                   צפה בספרייה
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Row 3, Card 2 */}
-          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5">
-            <div className="border-r-4 border-yellow-400 pr-3 mb-3">
+          {/* Row 3, Card 2 - Player Evaluation */}
+          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5 border-r-4 border-yellow-400">
+            <div className="pr-3 mb-3">
               <h2 className="text-lg font-medium text-right">הערכת שחקן</h2>
             </div>
             <div className="text-right">
@@ -252,16 +258,16 @@ const DashboardCoach = () => {
                   className="bg-yellow-100 text-yellow-600 font-medium rounded-md py-2 px-4 w-full"
                   onClick={() => navigate('/player-evaluation')}
                 >
-                  <Clipboard size={18} className="inline ml-2 mb-1" />
+                  <Clipboard size={18} className="inline mr-2 mb-1" />
                   הערך שחקן
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Row 3, Card 3 */}
-          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5">
-            <div className="border-r-4 border-purple-400 pr-3 mb-3">
+          {/* Row 3, Card 3 - Coach Profile */}
+          <div className="bg-white rounded-lg shadow-sm relative overflow-hidden p-5 border-r-4 border-purple-400">
+            <div className="pr-3 mb-3">
               <h2 className="text-lg font-medium text-right">מפרסת המאמן</h2>
             </div>
             <div className="text-right">
@@ -271,7 +277,7 @@ const DashboardCoach = () => {
                   className="bg-gray-100 text-gray-600 font-medium rounded-md py-2 px-4 w-full"
                   onClick={() => navigate('/profile-coach')}
                 >
-                  <UserRound size={18} className="inline ml-2 mb-1" />
+                  <UserRound size={18} className="inline mr-2 mb-1" />
                   צפה במפרסת
                 </button>
               </div>
@@ -279,10 +285,11 @@ const DashboardCoach = () => {
           </div>
         </div>
 
+        {/* Cards grid - Fourth Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 mb-10">
-          {/* Row 4, Card 1 */}
-          <div className="bg-[#1A1F2C] rounded-lg shadow-sm relative overflow-hidden p-5 text-white">
-            <div className="border-r-4 border-purple-400 pr-3 mb-3">
+          {/* Row 4, Card 1 - Questionnaires */}
+          <div className="bg-[#1A1F2C] rounded-lg shadow-sm relative overflow-hidden p-5 text-white border-r-4 border-purple-400">
+            <div className="pr-3 mb-3">
               <h2 className="text-lg font-medium text-right">שאלונים</h2>
             </div>
             <div className="text-right">
@@ -293,16 +300,16 @@ const DashboardCoach = () => {
                   className="bg-orange-500 text-white font-medium rounded-md py-2 px-4 w-full"
                   onClick={() => navigate('/questionnaires')}
                 >
-                  <Clipboard size={18} className="inline ml-2 mb-1" />
+                  <Clipboard size={18} className="inline mr-2 mb-1" />
                   צפה בשאלונים
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Row 4, Card 2 */}
+          {/* Row 4, Card 2 - Coming Soon Feature */}
           <div className="bg-[#5a2542] rounded-lg shadow-sm relative overflow-hidden p-5 text-white">
-            <div className="border-r-0 mb-3">
+            <div className="mb-3">
               <h2 className="text-lg font-medium text-right">בניה - יישומון בקרוב</h2>
             </div>
             <div className="text-right">
