@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, ensureUserInUsersTable } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -52,6 +53,9 @@ export const SignUpForm = ({ onLoginClick }: SignUpFormProps) => {
 
       if (data.user) {
         console.log("User created successfully:", data.user);
+        
+        // Ensure user is added to the users table
+        await ensureUserInUsersTable(data.user.id);
         
         try {
           // התחברות אוטומטית מיד לאחר הרשמה

@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase } from '@/lib/supabase';
+import { supabase, ensureUserInUsersTable } from '@/lib/supabase';
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { formSchema, FormValues } from "@/components/public-registration/types";
@@ -214,6 +213,11 @@ export const usePublicRegistration = () => {
 
       if (!data || data.length === 0) {
         throw new Error("שגיאה בשמירת הנתונים - לא התקבל אישור מהשרת");
+      }
+
+      // Ensure the new player is added to the users table
+      if (data[0] && data[0].id) {
+        await ensureUserInUsersTable(data[0].id);
       }
 
       // Send notification to coach

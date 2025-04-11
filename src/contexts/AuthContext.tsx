@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { supabase, ensureUserInUsersTable } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // First set up the auth state listener to avoid missing any auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
+      async (event, newSession) => {
         console.log('Auth state changed:', event);
         setSession(newSession);
         setUser(newSession?.user ?? null);
@@ -44,9 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const fullName = newSession?.user?.user_metadata?.full_name || null;
         setUserFullName(fullName);
 
-        // Defer profile check to avoid Supabase auth deadlocks
-        if (newSession?.user) {
-          setTimeout(() => {
+        // Ensure user is in the users table when authenticated
+        if (newSession?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          setTimeout(async () => {
+            await ensureUserInUsersTable(newSession.user.id);
             checkUserRole(newSession.user.id);
           }, 0);
         } else {
@@ -90,6 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUserFullName(fullName);
           
           if (data.session?.user) {
+            // Ensure user exists in users table
+            await ensureUserInUsersTable(data.session.user.id);
             await checkUserRole(data.session.user.id);
           }
         }

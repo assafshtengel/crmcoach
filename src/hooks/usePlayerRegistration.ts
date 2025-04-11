@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, ensureUserInUsersTable } from '@/lib/supabase';
 import { Player } from '@/types/player';
 
 /**
@@ -34,7 +34,10 @@ export function usePlayerRegistration() {
         
         console.log("Successfully retrieved authenticated user:", user.id);
 
-        // Step 2: Check if there is a record in the "players" table
+        // Step 2: Ensure the user exists in the users table
+        await ensureUserInUsersTable(user.id);
+
+        // Step 3: Check if there is a record in the "players" table
         const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('*')
@@ -48,7 +51,7 @@ export function usePlayerRegistration() {
           return;
         }
 
-        // Step 3: If no player exists, insert a new row
+        // Step 4: If no player exists, insert a new row
         if (!playerData) {
           console.log("No player record found. Creating new player with ID:", user.id);
           
