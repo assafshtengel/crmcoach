@@ -40,7 +40,7 @@ const EditSessionForm = () => {
   const [needsSummary, setNeedsSummary] = useState(false);
   const [forceEnable, setForceEnable] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-
+  
   const [formData, setFormData] = useState<SessionFormData>({
     session_date: '',
     session_time: '',
@@ -205,6 +205,10 @@ const EditSessionForm = () => {
     setFormData(prev => ({ ...prev, player_id: value }));
   };
 
+  const handleClose = () => {
+    navigate('/sessions-list');
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-8">
@@ -223,6 +227,7 @@ const EditSessionForm = () => {
         onSubmit={onSubmitSummary}
         onCancel={() => navigate('/sessions-list')}
         forceEnable={forceEnable}
+        onClose={handleClose}
       />
     );
   }

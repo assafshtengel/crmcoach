@@ -17,13 +17,15 @@ interface FormActionsProps {
   onExportPDF?: () => void;
   isSaving?: boolean;
   navigateAfterSave?: boolean;
+  onClose?: () => void; // נוסיף פרופ חדש לסגירת הדיאלוג
 }
 
 export function FormActions({
   onSubmit,
   onExportPDF,
   isSaving = false,
-  navigateAfterSave = true
+  navigateAfterSave = true,
+  onClose
 }: FormActionsProps) {
   const navigate = useNavigate();
   const [showReturnDialog, setShowReturnDialog] = useState(false);
@@ -40,6 +42,10 @@ export function FormActions({
           // Navigate to all meeting summaries page after saving
           navigate('/all-meeting-summaries');
           console.log("Navigating to /all-meeting-summaries after save");
+        }
+        // קוראים לפונקציה לסגירת הדיאלוג אם היא קיימת
+        if (onClose) {
+          onClose();
         }
       },
       style: {
@@ -69,8 +75,13 @@ export function FormActions({
         }
       });
       
-      // Show the return to home dialog after PDF export
-      setShowReturnDialog(true);
+      // סוגר את הדיאלוג אם קיימת פונקציית סגירה
+      if (onClose) {
+        onClose();
+      } else {
+        // Show the return to home dialog after PDF export
+        setShowReturnDialog(true);
+      }
     }
   };
 

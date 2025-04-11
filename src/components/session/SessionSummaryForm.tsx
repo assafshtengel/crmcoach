@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Wrench } from "lucide-react";
 import { AudioRecorder } from "./summary-form/AudioRecorder";
 import { uploadAudio } from "@/lib/uploadAudio";
+
 interface SessionSummaryFormProps {
   sessionId: string;
   playerName: string;
@@ -29,7 +30,9 @@ interface SessionSummaryFormProps {
   }) => Promise<void>;
   onCancel: () => void;
   forceEnable?: boolean;
+  onClose?: () => void;
 }
+
 export function SessionSummaryForm({
   sessionId,
   playerName,
@@ -37,7 +40,8 @@ export function SessionSummaryForm({
   playerId,
   onSubmit,
   onCancel,
-  forceEnable = false
+  forceEnable = false,
+  onClose
 }: SessionSummaryFormProps) {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
@@ -50,6 +54,7 @@ export function SessionSummaryForm({
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioSharingOption, setAudioSharingOption] = useState<string>("coach_only");
   console.log("SessionSummaryForm: Initialized with playerId", playerId, "and sessionId", sessionId);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -62,6 +67,7 @@ export function SessionSummaryForm({
       player_id: playerId
     }
   });
+
   const handleSubmit = async (data: FormValues) => {
     setIsSaving(true);
     console.log("Submitting form data:", data);
@@ -153,6 +159,7 @@ export function SessionSummaryForm({
       setIsSaving(false);
     }
   };
+
   const updateSessionSummaryStatus = async (sessionId: string, playerId: string) => {
     try {
       const {
@@ -180,6 +187,7 @@ export function SessionSummaryForm({
       console.error("Error updating session summary status:", error);
     }
   };
+
   const handleExportPDF = async () => {
     try {
       const currentFormValues = form.getValues();
@@ -218,11 +226,13 @@ export function SessionSummaryForm({
       toast.error("שגיאה ביצירת ה-PDF");
     }
   };
+
   const toggleTool = (toolId: string, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
     setSelectedTools(prev => prev.includes(toolId) ? prev.filter(id => id !== toolId) : [...prev, toolId]);
   };
+
   const handleAudioReady = (blob: Blob | null) => {
     setAudioBlob(blob);
     if (blob) {
@@ -234,7 +244,9 @@ export function SessionSummaryForm({
       console.log("Audio recording cancelled or reset");
     }
   };
+
   const formRef = React.useRef<HTMLFormElement>(null);
+
   return <Form {...form}>
       <SessionHeader playerName={playerName} sessionDate={sessionDate} />
       <ScrollArea className="h-[calc(100vh-280px)] px-1">
@@ -244,10 +256,14 @@ export function SessionSummaryForm({
           <div className="mt-6 mb-4">
             <AudioRecorder onAudioReady={handleAudioReady} />
           </div>
-          
-          
         </form>
       </ScrollArea>
-      <FormActions onSubmit={form.handleSubmit(handleSubmit)} onExportPDF={handleExportPDF} isSaving={isSaving} navigateAfterSave={true} />
+      <FormActions 
+        onSubmit={form.handleSubmit(handleSubmit)} 
+        onExportPDF={handleExportPDF} 
+        isSaving={isSaving} 
+        navigateAfterSave={true}
+        onClose={onClose}
+      />
     </Form>;
 }
