@@ -64,6 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
           } else {
             console.error('Auth error:', error.message);
+            toast({
+              title: "שגיאת התחברות",
+              description: "שגיאת התחברות. נסה שוב או פנה לתמיכה.",
+              variant: "destructive",
+            });
           }
           setIsAuthenticated(false);
         } else {
@@ -77,6 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Unexpected auth error:', error);
+        toast({
+          title: "שגיאת התחברות",
+          description: "שגיאת התחברות. נסה שוב או פנה לתמיכה.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
