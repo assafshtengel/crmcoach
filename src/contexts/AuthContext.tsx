@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkUserRole = async (userId: string) => {
     try {
       // Check if user is a player
-      const { data: playerData } = await supabase
+      const { data: playerData, error: playerError } = await supabase
         .from('players')
         .select('id')
         .eq('id', userId)
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       // Check if user is a coach
-      const { data: coachData } = await supabase
+      const { data: coachData, error: coachError } = await supabase
         .from('coaches')
         .select('id')
         .eq('id', userId)
