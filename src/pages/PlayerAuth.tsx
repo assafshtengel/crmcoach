@@ -34,23 +34,62 @@ const PlayerAuth = () => {
   // Check if user is already logged in
   useEffect(() => {
     const checkLoggedIn = async () => {
-      const playerSession = localStorage.getItem('playerSession');
-      if (playerSession) {
-        try {
-          // Validate session
-          const session = JSON.parse(playerSession);
-          if (session.id) {
+      try {
+        // First check Supabase auth
+        const { data } = await supabase.auth.getSession();
+        
+        if (data.session?.user) {
+          // Verify this user has a player record
+          const { data: playerData } = await supabase
+            .from('players')
+            .select('id')
+            .eq('id', data.session.user.id)
+            .maybeSingle();
+            
+          if (playerData) {
             // If there's a redirect path, navigate there
             if (redirectPath) {
-              navigate(redirectPath);
+              navigate(decodeURIComponent(redirectPath));
             } else {
-              navigate('/player/profile-alt');
+              navigate('/player/dashboard');
             }
+            return;
           }
-        } catch (e) {
-          // Invalid session format, clear it
-          localStorage.removeItem('playerSession');
         }
+        
+        // Fallback to legacy player session
+        const playerSession = localStorage.getItem('playerSession');
+        if (playerSession) {
+          try {
+            // Validate session
+            const session = JSON.parse(playerSession);
+            if (session.id) {
+              // Check if player still exists in database
+              const { data: playerCheck } = await supabase
+                .from('players')
+                .select('id')
+                .eq('id', session.id)
+                .maybeSingle();
+                
+              if (playerCheck) {
+                // If there's a redirect path, navigate there
+                if (redirectPath) {
+                  navigate(decodeURIComponent(redirectPath));
+                } else {
+                  navigate('/player/profile-alt');
+                }
+              } else {
+                // Player no longer exists, clear session
+                localStorage.removeItem('playerSession');
+              }
+            }
+          } catch (e) {
+            // Invalid session format, clear it
+            localStorage.removeItem('playerSession');
+          }
+        }
+      } catch (error) {
+        console.error("Error checking auth status:", error);
       }
     };
     
@@ -66,64 +105,108 @@ const PlayerAuth = () => {
     setLoading(true);
 
     try {
-      // First, check if this email belongs to a player
-      const { data: playerData, error: playerError } = await supabase
-        .from('players')
-        .select('id, email, password, full_name')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (playerError) {
-        console.error("Error checking player:", playerError);
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "אירעה שגיאה בבדיקת פרטי השחקן",
-        });
-        setLoading(false);
-        return;
-      }
-
-      if (!playerData) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה בהתחברות",
-          description: "לא נמצא שחקן עם כתובת האימייל הזו",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Verify password
-      if (playerData.password !== password) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה בהתחברות",
-          description: "הסיסמה שהוזנה אינה נכונה",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Login successful
-      toast({
-        title: "התחברות הצליחה",
-        description: "מיד תועבר לפרופיל השחקן",
+      // First check if Supabase auth has a user with this email
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      // Store player session data
-      localStorage.setItem('playerSession', JSON.stringify({
-        id: playerData.id,
-        email: playerData.email,
-        name: playerData.full_name,
-        password: playerData.password
-      }));
+      if (signInData.user) {
+        // Check if this user has a player record
+        const { data: playerData, error: playerError } = await supabase
+          .from('players')
+          .select('id, email, full_name')
+          .eq('id', signInData.user.id)
+          .maybeSingle();
 
-      // Navigate to redirect path or default profile view
-      if (redirectPath) {
-        navigate(redirectPath);
-      } else {
-        navigate('/player/profile-alt');
+        if (playerData) {
+          // Login successful with Supabase auth
+          toast({
+            title: "התחברות הצליחה",
+            description: "מיד תועבר לפרופיל השחקן",
+          });
+
+          // Navigate to redirect path or default profile view
+          if (redirectPath) {
+            navigate(decodeURIComponent(redirectPath));
+          } else {
+            navigate('/player/dashboard');
+          }
+          return;
+        } else {
+          // User exists in auth but not as a player
+          await supabase.auth.signOut();
+          toast({
+            variant: "destructive",
+            title: "שגיאה בהתחברות",
+            description: "המשתמש הזה אינו רשום כשחקן",
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Supabase auth failed, try legacy player authentication
+      if (signInError) {
+        // Check if this email belongs to a player
+        const { data: playerData, error: playerError } = await supabase
+          .from('players')
+          .select('id, email, password, full_name')
+          .eq('email', email)
+          .maybeSingle();
+
+        if (playerError) {
+          console.error("Error checking player:", playerError);
+          toast({
+            variant: "destructive",
+            title: "שגיאה",
+            description: "אירעה שגיאה בבדיקת פרטי השחקן",
+          });
+          setLoading(false);
+          return;
+        }
+
+        if (!playerData) {
+          toast({
+            variant: "destructive",
+            title: "שגיאה בהתחברות",
+            description: "לא נמצא שחקן עם כתובת האימייל הזו",
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Verify password for legacy player
+        if (playerData.password !== password) {
+          toast({
+            variant: "destructive",
+            title: "שגיאה בהתחברות",
+            description: "הסיסמה שהוזנה אינה נכונה",
+          });
+          setLoading(false);
+          return;
+        }
+
+        // Legacy login successful
+        toast({
+          title: "התחברות הצליחה",
+          description: "מיד תועבר לפרופיל השחקן",
+        });
+
+        // Store player session data
+        localStorage.setItem('playerSession', JSON.stringify({
+          id: playerData.id,
+          email: playerData.email,
+          name: playerData.full_name,
+          password: playerData.password
+        }));
+
+        // Navigate to redirect path or default profile view
+        if (redirectPath) {
+          navigate(decodeURIComponent(redirectPath));
+        } else {
+          navigate('/player/profile-alt');
+        }
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -149,7 +232,7 @@ const PlayerAuth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4" dir="rtl">
             <div className="space-y-2">
               <Label htmlFor="email">כתובת אימייל</Label>
               <div className="relative">
@@ -162,6 +245,7 @@ const PlayerAuth = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
                   required
+                  dir="rtl"
                 />
               </div>
             </div>
@@ -177,6 +261,7 @@ const PlayerAuth = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
                   required
+                  dir="rtl"
                 />
                 <button 
                   type="button"
@@ -222,7 +307,7 @@ const PlayerAuth = () => {
 
       {/* Contact Coach Dialog */}
       <Dialog open={showContactCoachDialog} onOpenChange={setShowContactCoachDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]" dir="rtl">
           <DialogHeader>
             <DialogTitle className="text-center text-xl">שכחת סיסמה</DialogTitle>
             <DialogDescription className="text-center">

@@ -3,6 +3,9 @@ import { useState, useEffect, ReactNode } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import PlayerRegistration from "../player/PlayerRegistration";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -16,17 +19,18 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
   const navigate = useNavigate();
   const { playerId } = useParams<{ playerId: string }>();
   const location = useLocation();
+  const { isAuthenticated, user, isPlayer, isCoach } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        setIsLoading(true);
+        
         // בדיקה אם זה נתיב שחקן
         if (playerOnly) {
-          // First, check with Supabase auth
-          const { data: { user }, error: authError } = await supabase.auth.getUser();
-          
-          if (authError || !user) {
-            console.log("No authenticated Supabase user found for player route");
+          if (!isAuthenticated) {
+            console.log("No authenticated user found for player route");
             
             // Fallback to legacy player session
             const playerSession = localStorage.getItem('playerSession');
@@ -59,7 +63,16 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
               navigate("/player-auth");
               return;
             }
-          } else {
+          } else if (!isPlayer && isCoach) {
+            // Someone is authenticated but as coach, not player
+            toast({
+              title: "הרשאות שגויות",
+              description: "אתה מחובר כמאמן, לא כשחקן. אנא התחבר כשחקן.",
+              variant: "destructive",
+            });
+            navigate("/player-auth");
+            return;
+          } else if (isAuthenticated && user) {
             // We have a valid authenticated user, check if they have a player record
             setNeedsPlayerRegistration(true);
           }
@@ -75,22 +88,24 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
             navigate("/player/questionnaires");
             return;
           }
-          
-          setIsLoading(false);
-          return;
         }
         
         // בדיקת גישה לנתיבי מאמן
         if (coachOnly) {
-          const { data: { user }, error } = await supabase.auth.getUser();
-          
-          if (error || !user) {
-            console.log("No authenticated Supabase user found");
+          if (!isAuthenticated) {
+            console.log("No authenticated user found");
+            navigate("/auth");
+            return;
+          } else if (!isCoach && isPlayer) {
+            // Someone is authenticated but as player, not coach
+            toast({
+              title: "הרשאות שגויות",
+              description: "אתה מחובר כשחקן, לא כמאמן. אנא התחבר כמאמן.",
+              variant: "destructive",
+            });
             navigate("/auth");
             return;
           }
-
-          // המשך הטיפול בנתיבי מאמן
         }
         
         // טיפול בדף פרופיל שחקן עם פרמטר ID
@@ -101,7 +116,6 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
             const playerData = JSON.parse(playerSession);
             
             if (playerData.id === playerId) {
-              setIsLoading(false);
               return;
             } else {
               console.log("Player trying to access unauthorized profile");
@@ -112,31 +126,21 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
           }
         }
         
-        // בנתיבי מאמן, בדיקת אימות Supabase
-        const { data: { user }, error } = await supabase.auth.getUser();
-        
-        if (error || !user) {
-          console.log("No authenticated Supabase user found");
-          navigate("/auth");
-          return;
-        }
-
         // כאשר מאמן מתחבר מעבר ישיר לדשבורד מאמן במידה ומנסה להיכנס לעמוד הראשי
-        if (location.pathname === '/') {
+        if (location.pathname === '/' && isCoach && isAuthenticated) {
           navigate('/dashboard-coach');
           return;
         }
-
-        // מאחר שאנחנו מאפשרים למאמנים להתחבר מיד לאחר הרשמה, לא נבדוק הרשאות באופן מחמיר
-        setIsLoading(false);
       } catch (error) {
         console.error("Authentication check failed:", error);
         navigate("/auth");
+      } finally {
+        setIsLoading(false);
       }
     };
 
     checkAuth();
-  }, [navigate, playerId, playerOnly, coachOnly, location.pathname, location.search]);
+  }, [navigate, playerId, playerOnly, coachOnly, location.pathname, location.search, isAuthenticated, isPlayer, isCoach, user, toast]);
 
   if (isLoading) {
     return (

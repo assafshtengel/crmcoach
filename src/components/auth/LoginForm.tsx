@@ -1,10 +1,10 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { SecurityCodeDialog } from "./SecurityCodeDialog";
 
 interface LoginFormProps {
@@ -18,7 +18,12 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
   const [loading, setLoading] = useState(false);
   const [showSecurityDialog, setShowSecurityDialog] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+
+  // Get redirect URL from query parameters if it exists
+  const params = new URLSearchParams(location.search);
+  const redirectTo = params.get('redirect');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,19 +51,24 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
             description: error.message,
           });
         }
+        setLoading(false);
         return;
       }
 
       if (data.user) {
         console.log("User authenticated:", data.user);
         
-        // Navigate to /index after successful login
-        navigate('/index');
-        
         toast({
           title: "התחברות בוצעה בהצלחה",
           description: "ברוך הבא למערכת",
         });
+
+        // Navigate to redirect URL if available, otherwise to default page
+        if (redirectTo) {
+          navigate(decodeURIComponent(redirectTo));
+        } else {
+          navigate('/dashboard-coach');
+        }
       }
 
     } catch (error: any) {
@@ -68,7 +78,6 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
         title: "שגיאה בהתחברות",
         description: error.message,
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -87,6 +96,7 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          dir="rtl"
         />
       </div>
       <div>
@@ -96,6 +106,7 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          dir="rtl"
         />
       </div>
       <Button

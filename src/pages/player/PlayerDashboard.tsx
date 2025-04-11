@@ -1,57 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import PlayerRegistration from '@/components/player/PlayerRegistration';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 const PlayerDashboard = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Check if user is authenticated
-        const { data: { user }, error } = await supabase.auth.getUser();
-        
-        if (error || !user) {
-          console.error("Authentication error:", error?.message);
-          toast({
-            title: "שגיאת התחברות",
-            description: "נראה שאתה לא מחובר, אנא התחבר שוב.",
-            variant: "destructive",
-          });
-          
-          // Redirect to login page after showing toast
-          setTimeout(() => {
-            navigate('/auth');
-          }, 1500);
-          
-          return;
-        }
-        
-        // User is authenticated
-        console.log("User authenticated:", user.id);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error("Unexpected error during auth check:", error);
-        toast({
-          title: "שגיאה",
-          description: "אירעה שגיאה בעת בדיקת הרשאות. אנא נסה שוב.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [navigate, toast]);
+  const { isLoading, isAuthenticated, isPlayer } = useAuth();
 
   if (isLoading) {
     return (
@@ -64,8 +19,8 @@ const PlayerDashboard = () => {
     );
   }
 
-  // Only render dashboard content if authenticated
-  return isAuthenticated ? (
+  // Only render dashboard content if authenticated as player
+  return (isAuthenticated && isPlayer) ? (
     <div className="container mx-auto p-4 direction-rtl">
       {/* This component runs in the background, ensuring a player record exists */}
       <PlayerRegistration />
@@ -101,7 +56,7 @@ const PlayerDashboard = () => {
         </Card>
       </div>
     </div>
-  ) : null; // Return null if not authenticated (redirect is already happening)
+  ) : null; // Return null if not authenticated or not a player (redirect is handled in AuthGuard)
 };
 
 export default PlayerDashboard;
