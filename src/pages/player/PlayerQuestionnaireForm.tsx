@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -172,6 +173,24 @@ const PlayerQuestionnaireForm: React.FC = () => {
       
       setIsSaving(true);
       
+      // Verify user is a player by checking players table
+      const { data: playerData, error: playerError } = await supabase
+        .from('players')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (playerError || !playerData) {
+        console.error("Error verifying player:", playerError);
+        toast({
+          title: "שגיאת אימות",
+          description: "משתמש זה אינו שחקן במערכת",
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return;
+      }
+      
       const unansweredQuestions = questionnaire.questionnaire?.questions.filter((q: Question) => {
         if (q.type === 'open' && (!answers[q.id]?.answer || answers[q.id]?.answer === '')) {
           return true;
@@ -202,13 +221,13 @@ const PlayerQuestionnaireForm: React.FC = () => {
         return;
       }
       
-      console.log("Submitting answer with player ID:", user.id);
+      console.log("Submitting answer with player ID:", playerData.id);
       
       const { error: insertError } = await supabase
         .from('questionnaire_answers')
         .insert({
           assigned_questionnaire_id: questionnaire.id,
-          player_id: user.id, // Use authenticated user ID
+          player_id: playerData.id, // Use verified player ID from players table
           questionnaire_id: questionnaire.questionnaire_id,
           coach_id: questionnaire.coach_id,
           answers: answers,
