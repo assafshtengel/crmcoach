@@ -12,6 +12,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isPlayer: boolean;
   isCoach: boolean;
+  userFullName: string | null;
+  userRole: 'player' | 'coach' | null;
   signOut: () => Promise<void>;
 }
 
@@ -24,6 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isPlayer, setIsPlayer] = useState(false);
   const [isCoach, setIsCoach] = useState(false);
+  const [userFullName, setUserFullName] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<'player' | 'coach' | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -35,6 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setIsAuthenticated(!!newSession?.user);
+        
+        // Extract full_name from user metadata if available
+        const fullName = newSession?.user?.user_metadata?.full_name || null;
+        setUserFullName(fullName);
 
         // Defer profile check to avoid Supabase auth deadlocks
         if (newSession?.user) {
@@ -44,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setIsPlayer(false);
           setIsCoach(false);
+          setUserRole(null);
         }
       }
     );
@@ -66,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error('Auth error:', error.message);
             toast({
               title: "שגיאת התחברות",
-              description: "שגיאת התחברות. נסה שוב או פנה לתמיכה.",
+              description: "שגיאה בהתחברות. נסה שנית.",
               variant: "destructive",
             });
           }
@@ -76,6 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(data.session?.user ?? null);
           setIsAuthenticated(!!data.session?.user);
           
+          // Extract full_name from user metadata if available
+          const fullName = data.session?.user?.user_metadata?.full_name || null;
+          setUserFullName(fullName);
+          
           if (data.session?.user) {
             await checkUserRole(data.session.user.id);
           }
@@ -84,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Unexpected auth error:', error);
         toast({
           title: "שגיאת התחברות",
-          description: "שגיאת התחברות. נסה שוב או פנה לתמיכה.",
+          description: "שגיאה בהתחברות. נסה שנית.",
           variant: "destructive",
         });
       } finally {
@@ -112,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (playerData) {
         setIsPlayer(true);
         setIsCoach(false);
+        setUserRole('player');
         return;
       }
       
@@ -125,15 +139,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (coachData) {
         setIsCoach(true);
         setIsPlayer(false);
+        setUserRole('coach');
         return;
       }
       
+      // If no role found in database
       setIsPlayer(false);
       setIsCoach(false);
+      setUserRole(null);
+      
+      // Check for role in user metadata as fallback
+      const role = user?.user_metadata?.role as string | undefined;
+      if (role === 'player') {
+        setIsPlayer(true);
+        setUserRole('player');
+      } else if (role === 'coach') {
+        setIsCoach(true);
+        setUserRole('coach');
+      }
     } catch (error) {
       console.error('Error checking user role:', error);
       setIsPlayer(false);
       setIsCoach(false);
+      setUserRole(null);
     }
   };
 
@@ -141,6 +169,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await supabase.auth.signOut();
       navigate('/auth');
+      toast({
+        title: "התנתקות בוצעה",
+        description: "התנתקת בהצלחה מהמערכת",
+      });
     } catch (error) {
       console.error('Error signing out:', error);
       toast({
@@ -160,6 +192,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         isPlayer,
         isCoach,
+        userFullName,
+        userRole,
         signOut
       }}
     >
@@ -174,4 +208,14 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+}
+
+// Utility function to get the user's role from metadata
+export function getUserRole(user: User | null): 'player' | 'coach' | null {
+  if (!user) return null;
+  
+  const role = user.user_metadata?.role as string | undefined;
+  if (role === 'player') return 'player';
+  if (role === 'coach') return 'coach';
+  return null;
 }

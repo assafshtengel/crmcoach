@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
@@ -44,10 +44,12 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
 
   // Role-based access checks
   if (playerOnly && !isPlayer) {
+    // Player-only route accessed by non-player
     return <Navigate to="/auth" replace />;
   }
 
   if (coachOnly && !isCoach) {
+    // Coach-only route accessed by non-coach
     return <Navigate to="/player-auth" replace />;
   }
 

@@ -4,9 +4,10 @@ import PlayerRegistration from '@/components/player/PlayerRegistration';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const PlayerDashboard = () => {
-  const { isLoading, isAuthenticated, isPlayer } = useAuth();
+  const { isLoading, isAuthenticated, isPlayer, userFullName } = useAuth();
 
   if (isLoading) {
     return (
@@ -21,30 +22,36 @@ const PlayerDashboard = () => {
 
   // Only render dashboard content if authenticated as player
   return (isAuthenticated && isPlayer) ? (
-    <div className="container mx-auto p-4 direction-rtl">
+    <div className="container mx-auto p-4" dir="rtl">
       {/* This component runs in the background, ensuring a player record exists */}
       <PlayerRegistration />
       
-      <h1 className="text-3xl font-bold mb-6">דשבורד שחקן</h1>
+      <h1 className="text-3xl font-bold mb-6">
+        {userFullName ? `שלום ${userFullName}` : 'דשבורד שחקן'}
+      </h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>פרופיל</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>צפה ועדכן את פרטי הפרופיל שלך</p>
-          </CardContent>
-        </Card>
+        <Link to="/player/profile">
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <CardTitle>פרופיל</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>צפה ועדכן את פרטי הפרופיל שלך</p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>שאלונים</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>שאלונים למילוי והערכה</p>
-          </CardContent>
-        </Card>
+        <Link to="/player/questionnaires">
+          <Card className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <CardTitle>שאלונים</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>שאלונים למילוי והערכה</p>
+            </CardContent>
+          </Card>
+        </Link>
         
         <Card>
           <CardHeader>

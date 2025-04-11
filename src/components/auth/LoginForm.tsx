@@ -48,7 +48,7 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
           toast({
             variant: "destructive",
             title: "שגיאת התחברות",
-            description: "שגיאת התחברות. נסה שוב או פנה לתמיכה.",
+            description: "שגיאה בהתחברות. נסה שנית.",
           });
         }
         setLoading(false);
@@ -76,7 +76,7 @@ export const LoginForm = ({ onForgotPasswordClick }: LoginFormProps) => {
       toast({
         variant: "destructive",
         title: "שגיאה בהתחברות",
-        description: "שגיאת התחברות. נסה שוב או פנה לתמיכה.",
+        description: "שגיאה בהתחברות. נסה שנית.",
       });
       setLoading(false);
     }
