@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, ensureUserInUsersTable } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,9 +40,6 @@ export default function CoachSignUp() {
 
       if (data.user) {
         console.log("User created successfully:", data.user);
-        
-        // Ensure user is added to the users table
-        await ensureUserInUsersTable(data.user.id);
         
         try {
           // בדיקה אם המאמן כבר קיים
