@@ -20,67 +20,61 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // בדיקה אם זה נתיב שחקן
+        // If this is a player route
         if (playerOnly) {
           // First, check with Supabase auth
           const { data: { user }, error: authError } = await supabase.auth.getUser();
           
-          if (authError || !user) {
-            console.log("No authenticated Supabase user found for player route");
-            
-            // Fallback to legacy player session
-            const playerSession = localStorage.getItem('playerSession');
-            if (!playerSession) {
-              console.log("No player session found, redirecting to player login");
-              // Save the current path for redirect after login
-              const currentPath = location.pathname + location.search;
-              navigate(`/player-auth?redirect=${encodeURIComponent(currentPath)}`);
-              return;
-            }
-            
-            // Legacy player session handling
-            try {
-              const playerData = JSON.parse(playerSession);
-              const { data, error } = await supabase
-                .from('players')
-                .select('id')
-                .eq('id', playerData.id)
-                .maybeSingle();
-                
-              if (error || !data) {
-                console.log("Invalid player session, redirecting to player login");
-                localStorage.removeItem('playerSession');
-                navigate("/player-auth");
-                return;
-              }
-            } catch (err) {
-              console.error("Error parsing player session:", err);
-              localStorage.removeItem('playerSession');
-              navigate("/player-auth");
-              return;
-            }
-          } else {
-            // We have a valid authenticated user, check if they have a player record
-            setNeedsPlayerRegistration(true);
-          }
-          
-          // Redirect from original profile page to alternative profile page
-          if (location.pathname === "/player/profile") {
-            navigate("/player/profile-alt");
+          if (authError) {
+            console.log("Auth error:", authError);
+            // Check for legacy player session as fallback
+            handleLegacyPlayerAuth();
             return;
           }
+          
+          if (user) {
+            console.log("Found authenticated user:", user.id);
+            // Player is authenticated via Supabase, check if they have a player record
+            const { data: playerData, error: playerError } = await supabase
+              .from('players')
+              .select('id')
+              .eq('id', user.id)
+              .maybeSingle();
+              
+            if (playerError) {
+              console.error("Error checking player record:", playerError);
+            }
+            
+            if (!playerData) {
+              console.log("User authenticated but not found in players table - registration needed");
+              setNeedsPlayerRegistration(true);
+            } else {
+              console.log("Player record found:", playerData.id);
+            }
+            
+            // Redirect from original profile page to alternative profile page
+            if (location.pathname === "/player/profile") {
+              navigate("/player/profile-alt");
+              return;
+            }
 
-          // Players shouldn't access coach routes
-          if (coachOnly) {
-            navigate("/player/questionnaires");
+            // Players shouldn't access coach routes
+            if (coachOnly) {
+              navigate("/player/questionnaires");
+              return;
+            }
+            
+            setIsLoading(false);
+            return;
+          } else {
+            console.log("No authenticated Supabase user found for player route");
+            // No Supabase auth, check legacy player session
+            handleLegacyPlayerAuth();
             return;
           }
-          
-          setIsLoading(false);
-          return;
         }
         
-        // בדיקת גישה לנתיבי מאמן
+        // Check access to coach routes
         if (coachOnly) {
           const { data: { user }, error } = await supabase.auth.getUser();
           
@@ -90,10 +84,10 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
             return;
           }
 
-          // המשך הטיפול בנתיבי מאמן
+          // Coach route handling continues here
         }
         
-        // טיפול בדף פרופיל שחקן עם פרמטר ID
+        // Handle player profile page with ID parameter
         if (playerId && window.location.pathname.includes('/player-profile/')) {
           const playerSession = localStorage.getItem('playerSession');
           
@@ -112,7 +106,7 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
           }
         }
         
-        // בנתיבי מאמן, בדיקת אימות Supabase
+        // For coach routes, check Supabase authentication
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error || !user) {
@@ -121,17 +115,48 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
           return;
         }
 
-        // כאשר מאמן מתחבר מעבר ישיר לדשבורד מאמן במידה ומנסה להיכנס לעמוד הראשי
+        // When a coach logs in, direct to coach dashboard if trying to access the root path
         if (location.pathname === '/') {
           navigate('/dashboard-coach');
           return;
         }
 
-        // מאחר שאנחנו מאפשרים למאמנים להתחבר מיד לאחר הרשמה, לא נבדוק הרשאות באופן מחמיר
+        // Since we allow coaches to log in immediately after registration, no strict permission check
         setIsLoading(false);
       } catch (error) {
         console.error("Authentication check failed:", error);
         navigate("/auth");
+      }
+    };
+
+    const handleLegacyPlayerAuth = () => {
+      // Fallback to legacy player session
+      const playerSession = localStorage.getItem('playerSession');
+      if (!playerSession) {
+        console.log("No player session found, redirecting to player login");
+        // Save the current path for redirect after login
+        const currentPath = location.pathname + location.search;
+        navigate(`/player-auth?redirect=${encodeURIComponent(currentPath)}`);
+        return;
+      }
+      
+      // Legacy player session handling
+      try {
+        const playerData = JSON.parse(playerSession);
+        // Verify player ID exists and proceed
+        if (playerData && playerData.id) {
+          console.log("Using legacy player session with ID:", playerData.id);
+          setIsLoading(false);
+          return;
+        } else {
+          console.log("Invalid player session, redirecting to player login");
+          localStorage.removeItem('playerSession');
+          navigate("/player-auth");
+        }
+      } catch (err) {
+        console.error("Error parsing player session:", err);
+        localStorage.removeItem('playerSession');
+        navigate("/player-auth");
       }
     };
 

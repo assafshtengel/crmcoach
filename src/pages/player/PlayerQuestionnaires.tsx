@@ -23,10 +23,33 @@ const PlayerQuestionnaires = () => {
       try {
         setIsLoading(true);
         
-        // בדיקה אם השחקן מחובר
+        // Try with Supabase auth first
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (user && !authError) {
+          console.log("Found authenticated user:", user.id);
+          
+          // Check if user exists in players table
+          const { data: playerData, error: playerError } = await supabase
+            .from('players')
+            .select('id')
+            .eq('id', user.id)
+            .maybeSingle();
+            
+          if (playerData) {
+            console.log("User found in players table:", playerData.id);
+            await fetchQuestionnaires(user.id);
+            return;
+          } else {
+            console.log("User not found in players table:", playerError);
+          }
+        }
+        
+        // Fallback to legacy player session
         const playerSession = localStorage.getItem('playerSession');
         
         if (!playerSession) {
+          console.log("No player session found, redirecting to login");
           toast({
             title: "יש להתחבר תחילה",
             description: "עליך להתחבר למערכת כדי לצפות בשאלונים שלך",
@@ -36,10 +59,23 @@ const PlayerQuestionnaires = () => {
           return;
         }
         
-        const playerData = JSON.parse(playerSession);
-        
-        // טעינת השאלונים המשויכים לשחקן
-        await fetchQuestionnaires(playerData.id);
+        try {
+          const playerData = JSON.parse(playerSession);
+          if (!playerData.id) {
+            throw new Error("Invalid player session data");
+          }
+          
+          console.log("Using legacy player session:", playerData.id);
+          await fetchQuestionnaires(playerData.id);
+        } catch (parseError) {
+          console.error("Error parsing player session:", parseError);
+          toast({
+            title: "שגיאה באימות",
+            description: "אירעה שגיאה בעת אימות המשתמש המחובר",
+            variant: "destructive",
+          });
+          navigate('/player-auth');
+        }
       } catch (error) {
         console.error('Error checking player auth:', error);
         toast({
@@ -57,7 +93,9 @@ const PlayerQuestionnaires = () => {
 
   const fetchQuestionnaires = async (playerId: string) => {
     try {
-      // טעינת כל השאלונים המשויכים לשחקן שעדיין במצב "ממתין"
+      console.log(`Fetching questionnaires for player ${playerId}`);
+      
+      // Load all questionnaires assigned to the player that are still in "pending" status
       const { data, error } = await supabase
         .from('assigned_questionnaires')
         .select(`

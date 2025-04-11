@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -49,17 +48,14 @@ const PlayerQuestionnaireForm: React.FC = () => {
       setIsLoading(true);
       setSessionError(null);
       
-      // Check Supabase authentication
+      // First try Supabase auth
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (authError) {
-        console.error("Auth error:", authError);
-        setSessionError("שגיאה באימות המשתמש, נא להתחבר מחדש");
-        return;
-      }
-      
-      if (user) {
-        // If user is authenticated via Supabase, verify they exist in players table
+      // If we have a Supabase authenticated user
+      if (user && !authError) {
+        console.log("Found authenticated user:", user.id);
+        
+        // Verify this user exists in the players table
         const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('id')
@@ -67,21 +63,45 @@ const PlayerQuestionnaireForm: React.FC = () => {
           .maybeSingle();
           
         if (playerData) {
+          console.log("User authenticated and found in players table:", playerData.id);
           setPlayerIdFromAuth(user.id);
           if (id) {
-            await fetchQuestionnaire(id);
+            await fetchQuestionnaire(id, user.id);
           } else {
             setSessionError("לא נמצא מזהה שאלון");
           }
           return;
         } else {
           console.log("User authenticated but not found in players table:", playerError);
-          setSessionError("המשתמש אינו רשום כשחקן במערכת");
-          return;
         }
+      } else {
+        console.log("No Supabase authenticated user found, checking legacy auth");
       }
       
-      setSessionError("יש להתחבר תחילה כדי למלא את השאלון");
+      // Fallback to legacy player session
+      const playerSession = localStorage.getItem('playerSession');
+      
+      if (playerSession) {
+        try {
+          const playerData = JSON.parse(playerSession);
+          console.log("Using legacy player session:", playerData.id);
+          
+          if (playerData.id) {
+            setPlayerIdFromAuth(playerData.id);
+            if (id) {
+              await fetchQuestionnaire(id, playerData.id);
+            } else {
+              setSessionError("לא נמצא מזהה שאלון");
+            }
+            return;
+          }
+        } catch (parseError) {
+          console.error("Error parsing player session:", parseError);
+          setSessionError("יש להתחבר תחילה כדי למלא את השאלון");
+        }
+      } else {
+        setSessionError("יש להתחבר תחילה כדי למלא את השאלון");
+      }
     } catch (error) {
       console.error('Error checking auth:', error);
       setSessionError("אירעה שגיאה בעת בדיקת המשתמש המחובר");
@@ -90,9 +110,12 @@ const PlayerQuestionnaireForm: React.FC = () => {
     }
   };
 
-  const fetchQuestionnaire = async (questionnaireId: string) => {
+  const fetchQuestionnaire = async (questionnaireId: string, playerId: string) => {
     try {
-      const { data, error } = await supabase
+      console.log(`Fetching questionnaire ${questionnaireId} for player ${playerId}`);
+      
+      // First, check if this questionnaire is assigned to this player
+      const { data: assignedData, error: assignedError } = await supabase
         .from('assigned_questionnaires')
         .select(`
           *,
@@ -102,24 +125,57 @@ const PlayerQuestionnaireForm: React.FC = () => {
           )
         `)
         .eq('id', questionnaireId)
-        .eq('status', 'pending')
-        .single();
-
-      if (error) {
-        console.error("Error fetching questionnaire:", error);
-        setSessionError("השאלון אינו זמין או שכבר מולא");
+        .eq('player_id', playerId)
+        .maybeSingle();
+        
+      if (assignedError) {
+        console.error("Error checking assigned questionnaire:", assignedError);
+        setSessionError("השאלון אינו זמין או שאין לך הרשאה לצפות בו");
         return;
       }
-
-      if (!data) {
-        setSessionError("השאלון אינו זמין או שכבר מולא");
-        return;
-      }
-
-      setQuestionnaire(data);
       
+      if (!assignedData) {
+        console.log("Questionnaire not assigned to this player, checking if available for anyone");
+        
+        // Try to get the questionnaire without player filtering
+        const { data, error } = await supabase
+          .from('assigned_questionnaires')
+          .select(`
+            *,
+            questionnaire:questionnaire_id (
+              title,
+              questions
+            )
+          `)
+          .eq('id', questionnaireId)
+          .eq('status', 'pending')
+          .single();
+
+        if (error || !data) {
+          console.error("Error fetching questionnaire or not found:", error);
+          setSessionError("השאלון אינו זמין או שכבר מולא");
+          return;
+        }
+        
+        console.log("Questionnaire found, but checking permissions");
+        
+        // Check if this questionnaire is assigned to this player
+        if (data.player_id !== playerId) {
+          console.log("Questionnaire is not assigned to this player");
+          setSessionError("אין לך הרשאה לצפות בשאלון זה");
+          return;
+        }
+        
+        setQuestionnaire(data);
+      } else {
+        // Questionnaire is properly assigned to this player
+        console.log("Questionnaire found and assigned to this player");
+        setQuestionnaire(assignedData);
+      }
+      
+      // Initialize answers
       const initialAnswers: Record<string, { answer?: string; rating?: number }> = {};
-      data.questionnaire?.questions.forEach((q: Question) => {
+      assignedData?.questionnaire?.questions.forEach((q: Question) => {
         initialAnswers[q.id] = { 
           answer: q.type === 'open' ? '' : undefined,
           rating: q.type === 'closed' ? 5 : undefined
@@ -149,19 +205,6 @@ const PlayerQuestionnaireForm: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
-      // Get authenticated user
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      // Check for authenticated user
-      if (!user) {
-        toast({
-          title: "שגיאת התחברות",
-          description: "עליך להתחבר לפני שליחת השאלון",
-          variant: "destructive",
-        });
-        return;
-      }
-      
       if (!questionnaire) {
         toast({
           title: "שגיאה",
@@ -173,23 +216,28 @@ const PlayerQuestionnaireForm: React.FC = () => {
       
       setIsSaving(true);
       
-      // Verify user is a player by checking players table
-      const { data: playerData, error: playerError } = await supabase
-        .from('players')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
+      // Determine player ID - either from Supabase auth or from legacy auth
+      let playerId = playerIdFromAuth;
       
-      if (playerError || !playerData) {
-        console.error("Error verifying player:", playerError);
+      if (!playerId) {
+        const playerSession = localStorage.getItem('playerSession');
+        if (playerSession) {
+          const playerData = JSON.parse(playerSession);
+          playerId = playerData.id;
+        }
+      }
+      
+      if (!playerId) {
         toast({
-          title: "שגיאת אימות",
-          description: "משתמש זה אינו שחקן במערכת",
+          title: "שגיאת התחברות",
+          description: "עליך להתחבר לפני שליחת השאלון",
           variant: "destructive",
         });
         setIsSaving(false);
         return;
       }
+      
+      console.log("Submitting answer with player ID:", playerId);
       
       const unansweredQuestions = questionnaire.questionnaire?.questions.filter((q: Question) => {
         if (q.type === 'open' && (!answers[q.id]?.answer || answers[q.id]?.answer === '')) {
@@ -221,13 +269,11 @@ const PlayerQuestionnaireForm: React.FC = () => {
         return;
       }
       
-      console.log("Submitting answer with player ID:", playerData.id);
-      
       const { error: insertError } = await supabase
         .from('questionnaire_answers')
         .insert({
           assigned_questionnaire_id: questionnaire.id,
-          player_id: playerData.id, // Use verified player ID from players table
+          player_id: playerId,
           questionnaire_id: questionnaire.questionnaire_id,
           coach_id: questionnaire.coach_id,
           answers: answers,
