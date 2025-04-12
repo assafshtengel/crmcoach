@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bell, CheckCircle, AlertCircle } from 'lucide-react';
+import { Bell, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -30,26 +30,21 @@ const PlayerNotifications = () => {
       setLoading(true);
       
       // Get current authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (!user) {
-        // Check for legacy player session if no Supabase user
-        const playerSession = localStorage.getItem('playerSession');
-        if (!playerSession) {
-          console.error('No authenticated user or player session found');
-          setLoading(false);
-          return;
-        }
-        
-        const playerData = JSON.parse(playerSession);
-        const playerId = playerData.id;
-        
-        // Get notifications for the player from local storage session
-        fetchNotificationsForPlayer(playerId);
-      } else {
-        // Get notifications for the authenticated user
-        fetchNotificationsForPlayer(user.id);
+      if (authError || !user) {
+        console.error('No authenticated user found', authError);
+        toast({
+          title: "שגיאה בטעינת התראות",
+          description: "אנא התחבר מחדש כדי לצפות בהתראות שלך",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
       }
+      
+      // Get notifications for the authenticated user
+      fetchNotificationsForPlayer(user.id);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast({
@@ -130,21 +125,21 @@ const PlayerNotifications = () => {
       }
 
       // Get current authenticated user or from local storage
-      let playerId;
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (user) {
-        playerId = user.id;
-      } else {
-        const playerSession = localStorage.getItem('playerSession');
-        if (!playerSession) return;
-        playerId = JSON.parse(playerSession).id;
+      if (!user) {
+        toast({
+          title: "שגיאת התחברות",
+          description: "אנא התחבר מחדש",
+          variant: "destructive"
+        });
+        return;
       }
 
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
-        .eq('player_id', playerId)
+        .eq('player_id', user.id)
         .eq('is_read', false);
 
       if (error) throw error;

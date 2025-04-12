@@ -20,21 +20,23 @@ const PlayerProfileView = () => {
     const fetchPlayerProfile = async () => {
       try {
         setLoading(true);
-        const playerId = localStorage.getItem('playerSession')
-          ? JSON.parse(localStorage.getItem('playerSession')!).id
-          : null;
-
-        console.log("Player profile - playerSession ID:", playerId);
-
-        if (!playerId) {
+        
+        // Get the authenticated user from Supabase
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          console.error("Authentication error:", authError);
           navigate('/player-auth');
           return;
         }
 
+        console.log("Player profile - authenticated user ID:", user.id);
+
+        // Fetch player data from players table
         const { data, error } = await supabase
           .from('players')
           .select('*')
-          .eq('id', playerId)
+          .eq('id', user.id)
           .single();
 
         if (error) {
@@ -47,7 +49,7 @@ const PlayerProfileView = () => {
         setPlayer(data);
         
         // Fetch unread notifications count
-        fetchUnreadNotificationsCount(playerId);
+        fetchUnreadNotificationsCount(user.id);
       } catch (error) {
         console.error("Unexpected error:", error);
         navigate('/player-auth');

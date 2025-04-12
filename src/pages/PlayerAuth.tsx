@@ -34,23 +34,19 @@ const PlayerAuth = () => {
   // Check if user is already logged in
   useEffect(() => {
     const checkLoggedIn = async () => {
-      const playerSession = localStorage.getItem('playerSession');
-      if (playerSession) {
-        try {
-          // Validate session
-          const session = JSON.parse(playerSession);
-          if (session.id) {
-            // If there's a redirect path, navigate there
-            if (redirectPath) {
-              navigate(redirectPath);
-            } else {
-              navigate('/player/profile-alt');
-            }
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (user) {
+          // If there's a redirect path, navigate there
+          if (redirectPath) {
+            navigate(redirectPath);
+          } else {
+            navigate('/player/profile-alt');
           }
-        } catch (e) {
-          // Invalid session format, clear it
-          localStorage.removeItem('playerSession');
         }
+      } catch (e) {
+        console.error("Error checking auth state:", e);
       }
     };
     
@@ -66,64 +62,57 @@ const PlayerAuth = () => {
     setLoading(true);
 
     try {
-      // First, check if this email belongs to a player
-      const { data: playerData, error: playerError } = await supabase
-        .from('players')
-        .select('id, email, password, full_name')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (playerError) {
-        console.error("Error checking player:", playerError);
-        toast({
-          variant: "destructive",
-          title: "שגיאה",
-          description: "אירעה שגיאה בבדיקת פרטי השחקן",
-        });
-        setLoading(false);
-        return;
-      }
-
-      if (!playerData) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה בהתחברות",
-          description: "לא נמצא שחקן עם כתובת האימייל הזו",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Verify password
-      if (playerData.password !== password) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה בהתחברות",
-          description: "הסיסמה שהוזנה אינה נכונה",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Login successful
-      toast({
-        title: "התחברות הצליחה",
-        description: "מיד תועבר לפרופיל השחקן",
+      // Use Supabase auth to sign in
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
 
-      // Store player session data
-      localStorage.setItem('playerSession', JSON.stringify({
-        id: playerData.id,
-        email: playerData.email,
-        name: playerData.full_name,
-        password: playerData.password
-      }));
+      if (authError) {
+        console.error("Auth error:", authError);
+        toast({
+          variant: "destructive",
+          title: "שגיאה בהתחברות",
+          description: "אנא בדוק את הדוא״ל והסיסמה שלך.",
+        });
+        setLoading(false);
+        return;
+      }
 
-      // Navigate to redirect path or default profile view
-      if (redirectPath) {
-        navigate(redirectPath);
-      } else {
-        navigate('/player/profile-alt');
+      if (authData.user) {
+        // Check if this user exists in the players table
+        const { data: playerData, error: playerError } = await supabase
+          .from('players')
+          .select('id, email, full_name')
+          .eq('id', authData.user.id)
+          .maybeSingle();
+
+        if (playerError || !playerData) {
+          console.error("Player lookup error:", playerError);
+          toast({
+            variant: "destructive",
+            title: "שגיאה בהתחברות",
+            description: "משתמש לא נמצא במערכת כשחקן.",
+          });
+          
+          // Sign out since this user is not a player
+          await supabase.auth.signOut();
+          setLoading(false);
+          return;
+        }
+
+        // Login successful
+        toast({
+          title: "התחברות הצליחה",
+          description: "מיד תועבר לפרופיל השחקן",
+        });
+
+        // Navigate to redirect path or default profile view
+        if (redirectPath) {
+          navigate(redirectPath);
+        } else {
+          navigate('/player/profile-alt');
+        }
       }
     } catch (error: any) {
       console.error("Login error:", error);

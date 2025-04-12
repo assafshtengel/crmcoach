@@ -15,6 +15,7 @@ import PlayerQuestionnaireForm from "./pages/player/PlayerQuestionnaireForm";
 import PlayerGameEvaluation from "./pages/player/PlayerGameEvaluation";
 import PlayerProfileAlternative from "./pages/player/PlayerProfileAlternative";
 import PlayerNotifications from "./pages/player/PlayerNotifications";
+import PlayerDashboard from "./pages/player/PlayerDashboard";
 
 const routes = createBrowserRouter([
   {
@@ -58,6 +59,10 @@ const routes = createBrowserRouter([
   {
     path: "/player/profile-alt",
     element: <PlayerProfileAlternative />,
+  },
+  {
+    path: "/player/dashboard",
+    element: <PlayerDashboard />,
   },
   {
     path: "/player/questionnaire/:questionnaireId",
