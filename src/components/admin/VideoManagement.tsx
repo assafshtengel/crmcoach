@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -645,10 +646,13 @@ export default function VideoManagement() {
         <CardContent>
           <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
             <div className="flex gap-2">
-              <Button onClick={() => {
-                resetForm();
-                setOpenAddDialog(true);
-              }} className="my-[17px] text-left py-[21px] mx-[164px] px-[141px] font-normal text-white">
+              <Button 
+                onClick={() => {
+                  resetForm();
+                  setOpenAddDialog(true);
+                }} 
+                className="my-[17px] text-left py-[21px] mx-[164px] px-[141px] font-normal text-white"
+              >
                 <Plus className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
                 הוסף סרטון
               </Button>
@@ -807,4 +811,71 @@ export default function VideoManagement() {
               </ScrollArea>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול
+            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול</Button>
+            <Button type="submit" onClick={handleAssignVideo} disabled={selectedPlayers.length === 0}>
+              הקצה סרטון
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>הגדר תזמון אוטומטי</DialogTitle>
+            <DialogDescription>
+              ניתן להגדיר שליחה אוטומטית של הסרטון כמה ימים לאחר הרשמת שחקן חדש
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+              <Switch
+                checked={autoScheduleData.is_auto_scheduled}
+                onCheckedChange={(value) => handleAutoScheduleChange("is_auto_scheduled", value)}
+                id="auto-schedule"
+              />
+              <Label htmlFor="auto-schedule">הפעל תזמון אוטומטי</Label>
+            </div>
+            
+            {autoScheduleData.is_auto_scheduled && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="days-after">ימים לאחר הרשמת שחקן</Label>
+                  <Input
+                    id="days-after"
+                    type="number"
+                    min="1"
+                    value={autoScheduleData.days_after_registration}
+                    onChange={(e) => handleAutoScheduleChange("days_after_registration", parseInt(e.target.value) || 1)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    הסרטון יישלח אוטומטית לכל שחקן חדש לאחר מספר הימים שיוגדר
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sequence-order">סדר ברצף</Label>
+                  <Input
+                    id="sequence-order"
+                    type="number"
+                    min="1"
+                    value={autoScheduleData.auto_sequence_order}
+                    onChange={(e) => handleAutoScheduleChange("auto_sequence_order", parseInt(e.target.value) || 1)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    מספר סידורי של הסרטון ברשימת הסרטונים האוטומטיים
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
+            <Button type="submit" onClick={handleAutoScheduleSave}>
+              שמור הגדרות
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
