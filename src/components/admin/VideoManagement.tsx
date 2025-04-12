@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -800,11 +801,101 @@ export default function VideoManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            {players.length === 0 ? <div className="text-center py-8">
+            {players.length === 0 ? (
+              <div className="text-center py-8">
                 <User className="mx-auto h-10 w-10 text-gray-300" />
                 <p className="mt-2 text-gray-500">אין שחקנים זמינים</p>
-              </div> : <ScrollArea className="h-[250px] pr-4 -mr-4">
+              </div>
+            ) : (
+              <ScrollArea className="h-[250px] pr-4 -mr-4">
                 <div className="space-y-4">
-                  {players.map(player => <div key={player.id} className={`flex items-center justify-between p-2 rounded-md border ${selectedPlayers.includes(player.id) ? 'bg-blue-50 border-blue-200' : 'border-gray-200 hover:bg-gray-50'} ${playersWithAssignments[player.id] ? 'opacity-60' : ''}`}>
+                  {players.map(player => (
+                    <div key={player.id} className={`flex items-center justify-between p-2 rounded-md border ${selectedPlayers.includes(player.id) ? 'bg-blue-50 border-blue-200' : 'border-gray-200 hover:bg-gray-50'} ${playersWithAssignments[player.id] ? 'opacity-60' : ''}`}>
                       <div className="flex items-center">
-                        <input type="checkbox" id={`player-${player.id}`} checked={selectedPlayers.includes(player.id)} onChange={() => togglePlayerSelection(player.id)} className="h-4 w-4 rounded border-gray-300 text-blue-600 mr
+                        <input 
+                          type="checkbox" 
+                          id={`player-${player.id}`} 
+                          checked={selectedPlayers.includes(player.id)} 
+                          onChange={() => togglePlayerSelection(player.id)} 
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 mr-2 rtl:ml-2 rtl:mr-0" 
+                        />
+                        <Label htmlFor={`player-${player.id}`} className="cursor-pointer">
+                          {player.full_name}
+                        </Label>
+                      </div>
+                      {playersWithAssignments[player.id] && (
+                        <Badge variant="outline" className="text-green-600 border-green-200 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          <span>נשלח</span>
+                        </Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול</Button>
+            <Button type="submit" onClick={handleAssignVideo} disabled={selectedPlayers.length === 0}>
+              הקצה סרטון
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>תזמון אוטומטי לסרטון</DialogTitle>
+            <DialogDescription>
+              הגדר את הסרטון לשליחה אוטומטית לשחקנים חדשים
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="auto-schedule">שליחה אוטומטית</Label>
+              <Switch 
+                id="auto-schedule" 
+                checked={autoScheduleData.is_auto_scheduled} 
+                onCheckedChange={(checked) => handleAutoScheduleChange("is_auto_scheduled", checked)} 
+              />
+            </div>
+            
+            {autoScheduleData.is_auto_scheduled && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="days-after">ימים לאחר ההרשמה</Label>
+                  <Input 
+                    id="days-after" 
+                    type="number" 
+                    min="1" 
+                    value={autoScheduleData.days_after_registration} 
+                    onChange={(e) => handleAutoScheduleChange("days_after_registration", parseInt(e.target.value) || 1)} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sequence-order">סדר הופעה ברצף</Label>
+                  <Input 
+                    id="sequence-order" 
+                    type="number" 
+                    min="1" 
+                    value={autoScheduleData.auto_sequence_order} 
+                    onChange={(e) => handleAutoScheduleChange("auto_sequence_order", parseInt(e.target.value) || 1)} 
+                  />
+                  <p className="text-xs text-gray-500">קובע באיזה סדר יישלחו סרטונים אוטומטיים מרובים</p>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
+            <Button type="submit" onClick={handleAutoScheduleSave}>
+              שמור הגדרות
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
