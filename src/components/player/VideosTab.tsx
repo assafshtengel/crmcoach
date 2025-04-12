@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,71 +69,11 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       setError("לא ניתן לטעון את הסרטונים");
       toast({
         title: "שגיאה בטעינת סרטונים",
-        description: "לא ניתן לטעון את הסרטונים, מנסה שיטות חלופיות...",
+        description: "לא ניתן לטעון את הסרטונים.",
         variant: "destructive"
       });
-      
-      // If we have a playerId, try fallback methods
-      if (playerId) {
-        console.log("Trying fallback methods to fetch videos");
-        try {
-          await fetchFallbackVideos(playerId);
-        } catch (fallbackError) {
-          console.error("All fallback attempts failed:", fallbackError);
-        }
-      }
     } finally {
       setLoading(false);
-    }
-  };
-  
-  const fetchFallbackVideos = async (playerId: string) => {
-    console.log("Trying direct player_videos lookup");
-    
-    try {
-      // Simpler approach: Just get all player_videos records for this player
-      const { data: directPlayerVideos, error: directError } = await supabase
-        .from("player_videos")
-        .select("*, video:video_id(*)")
-        .eq("player_id", playerId);
-        
-      if (directError) {
-        console.error("Direct player_videos lookup failed:", directError);
-        throw directError;
-      }
-      
-      console.log("Direct player_videos results:", directPlayerVideos?.length || 0);
-      
-      if (directPlayerVideos && directPlayerVideos.length > 0) {
-        const processedVideos = directPlayerVideos
-          .filter(item => item.video) // Filter out any null videos
-          .map(item => ({
-            id: item.video.id,
-            title: item.video.title,
-            url: item.video.url,
-            description: item.video.description,
-            category: item.video.category,
-            created_at: item.video.created_at,
-            watched: item.watched,
-            watched_at: item.watched_at,
-            player_video_id: item.id
-          })) as Video[];
-          
-        if (processedVideos.length > 0) {
-          console.log("Found videos via direct lookup:", processedVideos.length);
-          setVideos(processedVideos);
-          setActiveVideo(processedVideos[0]);
-          setError(null);
-          return;
-        }
-      }
-      
-      // If direct lookup fails, try getting admin videos
-      await fetchAdminVideos();
-      
-    } catch (error) {
-      console.error("Error in fetchFallbackVideos:", error);
-      await fetchAdminVideos(); // Final fallback
     }
   };
   
@@ -209,56 +150,9 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         })
         .filter(Boolean) || [];
       
-      // Collect any missing video IDs
-      const videoIds = new Set<string>();
-      let missingVideoIds: string[] = [];
-      
-      playerVideos?.forEach(pv => {
-        if (pv.video_id && !pv.videos) {
-          videoIds.add(pv.video_id);
-          missingVideoIds.push(pv.video_id);
-        }
-      });
-      
-      autoAssignments?.forEach(aa => {
-        if (aa.video_id && !aa.videos && !videoIds.has(aa.video_id)) {
-          videoIds.add(aa.video_id);
-          missingVideoIds.push(aa.video_id);
-        }
-      });
-      
-      // Fetch any missing videos
-      let missingVideos: any[] = [];
-      if (missingVideoIds.length > 0) {
-        const { data: fetchedVideos, error: missingError } = await supabase
-          .from("videos")
-          .select("*")
-          .in("id", missingVideoIds);
-          
-        if (missingError) {
-          console.error("Error fetching missing videos:", missingError);
-        } else if (fetchedVideos) {
-          missingVideos = fetchedVideos;
-        }
-      }
-      
-      // Process missing videos and add player_video_id if available
-      const mappedMissingVideos = missingVideos.map(mv => {
-        const playerVideo = playerVideos?.find(pv => pv.video_id === mv.id);
-        if (playerVideo) {
-          return {
-            ...mv,
-            watched: playerVideo.watched,
-            watched_at: playerVideo.watched_at,
-            player_video_id: playerVideo.id
-          };
-        }
-        return mv;
-      });
-      
       // Combine all videos, removing duplicates
       const videoMap = new Map<string, Video>();
-      [...manuallyAssignedVideos, ...autoAssignedVideos, ...mappedMissingVideos].forEach(video => {
+      [...manuallyAssignedVideos, ...autoAssignedVideos].forEach(video => {
         if (video && video.id) {
           videoMap.set(video.id, video as Video);
         }
@@ -268,34 +162,28 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       console.log("Combined assigned videos:", allAssignedVideos.length);
       
-      if (allAssignedVideos.length === 0) {
-        console.log("No assigned videos found for player, trying fallbacks");
-        // Try to get admin videos if no player-specific videos found
-        await fetchAdminVideos();
-        return;
-      }
-      
       // Filter out invalid videos and sort by date
       const validVideos = allAssignedVideos.filter(video => 
         video && video.id && video.title && video.created_at
       );
       
-      if (validVideos.length === 0) {
-        console.log("No valid videos found after filtering");
-        await fetchAdminVideos();
-      } else {
-        validVideos.sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        
-        setVideos(validVideos);
+      validVideos.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      setVideos(validVideos);
+      if (validVideos.length > 0) {
         setActiveVideo(validVideos[0]);
-        setError(null);
+      } else {
+        setActiveVideo(null);
       }
+      setError(null);
+      
     } catch (error) {
       console.error("Error in fetchPlayerAssignedVideos:", error);
-      // Fall back to admin videos
-      await fetchAdminVideos();
+      setVideos([]);
+      setActiveVideo(null);
+      setError("לא נמצאו סרטונים שהוקצו לך");
     }
   };
   
@@ -318,15 +206,9 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       console.log("Coach videos:", coachVideos?.length || 0);
       
-      if (!coachVideos || coachVideos.length === 0) {
-        console.log("No coach videos found, fetching admin videos");
-        await fetchAdminVideos();
-        return;
-      }
+      setVideos(coachVideos || []);
       
-      setVideos(coachVideos);
-      
-      if (coachVideos.length > 0) {
+      if (coachVideos && coachVideos.length > 0) {
         setActiveVideo(coachVideos[0]);
         setError(null);
       } else {
@@ -335,38 +217,6 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       }
     } catch (error) {
       console.error("Error fetching coach videos:", error);
-      await fetchAdminVideos();
-    }
-  };
-  
-  const fetchAdminVideos = async () => {
-    try {
-      console.log("Fetching admin videos as final fallback");
-      
-      const { data: adminVideos, error: adminVideosError } = await supabase
-        .from("videos")
-        .select("*")
-        .eq("is_admin_video", true)
-        .order("created_at", { ascending: false });
-        
-      if (adminVideosError) {
-        console.error("Error fetching admin videos:", adminVideosError);
-        throw adminVideosError;
-      }
-      
-      console.log("Admin videos:", adminVideos?.length || 0);
-      
-      setVideos(adminVideos || []);
-      
-      if (adminVideos && adminVideos.length > 0) {
-        setActiveVideo(adminVideos[0]);
-        setError(null);
-      } else {
-        setActiveVideo(null);
-        setError("לא נמצאו סרטונים זמינים");
-      }
-    } catch (error) {
-      console.error("Error fetching admin videos:", error);
       setVideos([]);
       setActiveVideo(null);
       setError("לא ניתן לטעון את הסרטונים");

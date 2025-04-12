@@ -12,9 +12,9 @@ export const getSupabase = () => {
   if (!supabaseInstance) {
     supabaseInstance = createClient<Database>(supabaseUrl, supabaseKey, {
       auth: {
-        storage: localStorage,
-        persistSession: true,
-        autoRefreshToken: true,
+        storage: typeof window !== 'undefined' ? localStorage : null,
+        persistSession: typeof window !== 'undefined',
+        autoRefreshToken: typeof window !== 'undefined',
       }
     });
   }
