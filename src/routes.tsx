@@ -14,6 +14,7 @@ import PlayerProfileView from "./pages/player/PlayerProfileView";
 import PlayerQuestionnaireForm from "./pages/player/PlayerQuestionnaireForm";
 import PlayerGameEvaluation from "./pages/player/PlayerGameEvaluation";
 import PlayerProfileAlternative from "./pages/player/PlayerProfileAlternative";
+import PlayerNotifications from "./pages/player/PlayerNotifications";
 
 const routes = createBrowserRouter([
   {
@@ -65,6 +66,10 @@ const routes = createBrowserRouter([
   {
     path: "/player/game-evaluation",
     element: <PlayerGameEvaluation />,
+  },
+  {
+    path: "/player/notifications",
+    element: <PlayerNotifications />,
   },
 ]);
 

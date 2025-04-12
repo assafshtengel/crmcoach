@@ -56,6 +56,7 @@ import PlayerGameEvaluationForm from '@/pages/player/PlayerGameEvaluationForm';
 import PlayerQuestionnaires from '@/pages/player/PlayerQuestionnaires';
 import PlayerQuestionnaireForm from '@/pages/player/PlayerQuestionnaireForm';
 import PlayerDashboard from '@/pages/player/PlayerDashboard';
+import PlayerNotifications from '@/pages/player/PlayerNotifications';
 
 import "./App.css";
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
@@ -126,6 +127,7 @@ function App() {
               <Route path="/player/game-evaluation/:playerId" element={<AuthGuard playerOnly={true}><PlayerGameEvaluationForm /></AuthGuard>} />
               <Route path="/player/questionnaires" element={<AuthGuard playerOnly={true}><PlayerQuestionnaires /></AuthGuard>} />
               <Route path="/player/questionnaire/:id" element={<AuthGuard playerOnly={true}><PlayerQuestionnaireForm /></AuthGuard>} />
+              <Route path="/player/notifications" element={<AuthGuard playerOnly={true}><PlayerNotifications /></AuthGuard>} />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />

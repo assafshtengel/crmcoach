@@ -8,11 +8,12 @@ import { VideosTab } from '@/components/player/VideosTab';
 import AssignedQuestionnairesSection from '@/components/player/AssignedQuestionnairesSection';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, Bell } from 'lucide-react';
 
 const PlayerProfileView = () => {
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,6 +45,9 @@ const PlayerProfileView = () => {
 
         console.log("Player profile data loaded:", data);
         setPlayer(data);
+        
+        // Fetch unread notifications count
+        fetchUnreadNotificationsCount(playerId);
       } catch (error) {
         console.error("Unexpected error:", error);
         navigate('/player-auth');
@@ -54,6 +58,25 @@ const PlayerProfileView = () => {
 
     fetchPlayerProfile();
   }, [navigate]);
+  
+  const fetchUnreadNotificationsCount = async (playerId: string) => {
+    try {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('player_id', playerId)
+        .eq('is_read', false);
+        
+      if (error) {
+        console.error("Error fetching notification count:", error);
+        return;
+      }
+      
+      setUnreadCount(count || 0);
+    } catch (error) {
+      console.error("Error fetching unread notifications count:", error);
+    }
+  };
 
   if (loading) {
     return (
@@ -93,8 +116,19 @@ const PlayerProfileView = () => {
   return (
     <div className="min-h-screen bg-page">
       <header className="w-full bg-primary text-white py-6 mb-8 shadow-md">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 flex justify-between items-center">
           <h1 className="text-3xl font-bold">פרופיל שחקן</h1>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate('/player/notifications')} 
+            className="relative text-white hover:bg-primary-light"
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{unreadCount}</span>
+            )}
+          </Button>
         </div>
       </header>
       
