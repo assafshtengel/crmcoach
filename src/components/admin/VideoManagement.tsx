@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -438,45 +437,56 @@ export default function VideoManagement() {
         });
         if (incrementError) console.error('Error incrementing video count:', incrementError);
 
-        // Enhanced notification creation with improved error handling and logging
+        // Create notification for the player about the new video assignment
         const notificationData = {
           coach_id: user.id,
           player_id: playerId,
           type: 'video_assigned',
-          message: `סרטון חדש הוקצה: ${selectedVideo.title}`,
+          message: "הוקצה לך סרטון חדש לצפייה",
           is_read: false,
-          video_id: selectedVideo.id,
-          timestamp: new Date().toISOString() // Adding timestamp for better tracking
+          created_at: new Date().toISOString()
         };
         
         try {
+          console.log('Creating notification for player:', playerId, notificationData);
+          
           const {
-            error: notificationError,
-            data: notificationResult
+            error: notificationError
           } = await supabase.from('notifications').insert(notificationData);
           
           if (notificationError) {
             console.error('Error creating notification:', notificationError);
+            console.error('Error details:', notificationError.message);
             console.error('Notification data that failed:', notificationData);
             
-            // Retry notification creation once with simplified data
-            const retryNotificationData = {
-              coach_id: user.id,
+            // Try a second time with minimal data if the first attempt failed
+            const minimalNotificationData = {
               player_id: playerId,
-              type: 'video_assigned',
-              message: `סרטון חדש הוקצה`,
-              is_read: false
+              message: "הוקצה לך סרטון חדש",
+              type: "video_assigned",
+              created_at: new Date().toISOString()
             };
             
-            const { error: retryError } = await supabase.from('notifications').insert(retryNotificationData);
+            console.log('Retrying with minimal notification data:', minimalNotificationData);
+            const { error: retryError } = await supabase.from('notifications').insert(minimalNotificationData);
             
             if (retryError) {
               console.error('Retry for notification creation also failed:', retryError);
+              console.error('Retry error details:', retryError.message);
+              
+              // Log specific error types for easier debugging
+              if (retryError.code === '23502') {
+                console.error('NOT NULL constraint failed - check required fields');
+              } else if (retryError.code === '23503') {
+                console.error('Foreign key constraint failed - check player_id exists');
+              } else if (retryError.code === '42501') {
+                console.error('Permission denied error - check RLS policies');
+              }
             } else {
               console.log('Notification created successfully on retry for player:', playerId);
             }
           } else {
-            console.log('Notification created successfully for player:', playerId, notificationResult);
+            console.log('Notification created successfully for player:', playerId);
           }
         } catch (notificationException) {
           console.error('Exception during notification creation:', notificationException);
@@ -797,85 +807,4 @@ export default function VideoManagement() {
                 <div className="space-y-4">
                   {players.map(player => <div key={player.id} className={`flex items-center justify-between p-2 rounded-md border ${selectedPlayers.includes(player.id) ? 'bg-blue-50 border-blue-200' : 'border-gray-200 hover:bg-gray-50'} ${playersWithAssignments[player.id] ? 'opacity-60' : ''}`}>
                       <div className="flex items-center">
-                        <input type="checkbox" id={`player-${player.id}`} checked={selectedPlayers.includes(player.id)} onChange={() => togglePlayerSelection(player.id)} className="h-4 w-4 rounded border-gray-300 text-blue-600 mr-2 rtl:ml-2 rtl:mr-0" />
-                        <Label htmlFor={`player-${player.id}`} className="cursor-pointer">
-                          {player.full_name}
-                        </Label>
-                      </div>
-                      {playersWithAssignments[player.id] && <Badge variant="outline" className="text-green-600 border-green-200 flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          <span>נשלח</span>
-                        </Badge>}
-                    </div>)}
-                </div>
-              </ScrollArea>}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול</Button>
-            <Button type="submit" onClick={handleAssignVideo} disabled={selectedPlayers.length === 0}>
-              הקצה סרטון
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>הגדר תזמון אוטומטי</DialogTitle>
-            <DialogDescription>
-              ניתן להגדיר שליחה אוטומטית של הסרטון כמה ימים לאחר הרשמת שחקן חדש
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="flex items-center space-x-2 rtl:space-x-reverse">
-              <Switch
-                checked={autoScheduleData.is_auto_scheduled}
-                onCheckedChange={(value) => handleAutoScheduleChange("is_auto_scheduled", value)}
-                id="auto-schedule"
-              />
-              <Label htmlFor="auto-schedule">הפעל תזמון אוטומטי</Label>
-            </div>
-            
-            {autoScheduleData.is_auto_scheduled && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="days-after">ימים לאחר הרשמת שחקן</Label>
-                  <Input
-                    id="days-after"
-                    type="number"
-                    min="1"
-                    value={autoScheduleData.days_after_registration}
-                    onChange={(e) => handleAutoScheduleChange("days_after_registration", parseInt(e.target.value) || 1)}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    הסרטון יישלח אוטומטית לכל שחקן חדש לאחר מספר הימים שיוגדר
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sequence-order">סדר ברצף</Label>
-                  <Input
-                    id="sequence-order"
-                    type="number"
-                    min="1"
-                    value={autoScheduleData.auto_sequence_order}
-                    onChange={(e) => handleAutoScheduleChange("auto_sequence_order", parseInt(e.target.value) || 1)}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    מספר סידורי של הסרטון ברשימת הסרטונים האוטומטיים
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
-            <Button type="submit" onClick={handleAutoScheduleSave}>
-              שמור הגדרות
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+                        <input type="checkbox" id={`player-${player.id}`} checked={selectedPlayers.includes(player.id)} onChange={() => togglePlayerSelection(player.id)} className="h-4 w-4 rounded border-gray-300 text-blue-600 mr
