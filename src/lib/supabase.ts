@@ -23,3 +23,9 @@ export const getSupabase = () => {
 
 // For backward compatibility, also export as supabase
 export const supabase = getSupabase();
+
+// Expose Supabase client globally during development
+if (typeof window !== 'undefined') {
+  (window as any).supabase = supabase;
+}
+
