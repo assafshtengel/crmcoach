@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Film, Plus, Pencil, Trash2, CheckCircle, User, ExternalLink, Clock, Calendar, AlertTriangle, Info } from "lucide-react";
+
 export default function VideoManagement() {
   const [videos, setVideos] = useState<any[]>([]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -40,10 +41,12 @@ export default function VideoManagement() {
   const {
     toast
   } = useToast();
+
   useEffect(() => {
     fetchVideos();
     fetchPlayers();
   }, []);
+
   const fetchVideos = async () => {
     setLoading(true);
     try {
@@ -77,6 +80,7 @@ export default function VideoManagement() {
       setLoading(false);
     }
   };
+
   const fetchPlayers = async () => {
     try {
       const {
@@ -96,6 +100,7 @@ export default function VideoManagement() {
       console.error('Error fetching players:', error);
     }
   };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const {
       name,
@@ -106,12 +111,14 @@ export default function VideoManagement() {
       [name]: value
     });
   };
+
   const handleSelectChange = (name: string, value: string) => {
     setFormData({
       ...formData,
       [name]: value
     });
   };
+
   const resetForm = () => {
     setFormData({
       title: "",
@@ -127,12 +134,14 @@ export default function VideoManagement() {
       auto_sequence_order: 1
     });
   };
+
   const handleAutoScheduleChange = (name: string, value: any) => {
     setAutoScheduleData({
       ...autoScheduleData,
       [name]: value
     });
   };
+
   const handleAutoScheduleSave = async () => {
     if (!selectedVideo) return;
     try {
@@ -159,6 +168,7 @@ export default function VideoManagement() {
       });
     }
   };
+
   const handleAddVideo = async () => {
     if (addingVideo) return;
     setAddingVideo(true);
@@ -230,6 +240,7 @@ export default function VideoManagement() {
       setAddingVideo(false);
     }
   };
+
   const handleEditVideo = async () => {
     if (!selectedVideo) return;
     try {
@@ -259,6 +270,7 @@ export default function VideoManagement() {
       });
     }
   };
+
   const handleDeleteVideo = async () => {
     if (!selectedVideo) return;
     try {
@@ -333,6 +345,7 @@ export default function VideoManagement() {
       });
     }
   };
+
   const handleAssignClick = async (video: any) => {
     setSelectedVideo(video);
     setSelectedPlayers([]);
@@ -364,6 +377,7 @@ export default function VideoManagement() {
       });
     }
   };
+
   const handleAssignVideo = async () => {
     if (!selectedVideo || !selectedPlayers.length) return;
     try {
@@ -469,9 +483,11 @@ export default function VideoManagement() {
       });
     }
   };
+
   const openVideoUrl = (url: string) => {
     window.open(url, '_blank');
   };
+
   const handleEditClick = (video: any) => {
     setSelectedVideo(video);
     setFormData({
@@ -483,6 +499,7 @@ export default function VideoManagement() {
     });
     setOpenEditDialog(true);
   };
+
   const handleAutoScheduleClick = (video: any) => {
     setSelectedVideo(video);
     setAutoScheduleData({
@@ -492,10 +509,12 @@ export default function VideoManagement() {
     });
     setOpenAutoScheduleDialog(true);
   };
+
   const handleDeleteClick = (video: any) => {
     setSelectedVideo(video);
     setOpenDeleteDialog(true);
   };
+
   const togglePlayerSelection = (playerId: string) => {
     if (selectedPlayers.includes(playerId)) {
       setSelectedPlayers(selectedPlayers.filter(id => id !== playerId));
@@ -503,6 +522,7 @@ export default function VideoManagement() {
       setSelectedPlayers([...selectedPlayers, playerId]);
     }
   };
+
   const triggerProcessAutoAssignments = async () => {
     try {
       const {
@@ -522,11 +542,13 @@ export default function VideoManagement() {
       });
     }
   };
+
   const isAutoScheduled = useMemo(() => {
     return (video: any) => {
       return video.is_auto_scheduled === true;
     };
   }, []);
+
   const renderVideoCards = (videoList: any[]) => {
     if (loading) {
       return <div className="text-center py-12">
@@ -584,6 +606,7 @@ export default function VideoManagement() {
           </Card>)}
       </div>;
   };
+
   return <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -776,4 +799,4 @@ export default function VideoManagement() {
               ניתן להגדיר שליחה אוטומטית של הסרטון כמה ימים לאחר הרשמת שחקן חדש
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-
+          <div className="py-4 space-y-4">
