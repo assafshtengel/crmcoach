@@ -46,22 +46,11 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       // If no player ID, we're in coach view, show all videos for coach
       if (!playerId) {
-        await fetchAllVideos();
+        await fetchCoachVideos();
         return;
       }
       
-      // First check if this player belongs to the specified coach
-      const { data: playerData, error: playerCheckError } = await supabase
-        .from("players")
-        .select("coach_id")
-        .eq("id", playerId)
-        .single();
-        
-      if (playerCheckError) {
-        console.error("Error checking player's coach:", playerCheckError);
-      }
-      
-      // Even if the player doesn't belong to this coach, we'll still attempt to fetch assigned videos
+      // Player view - fetch only explicitly assigned videos
       await fetchPlayerAssignedVideos(playerId);
       
     } catch (error) {
@@ -187,7 +176,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     }
   };
   
-  const fetchAllVideos = async () => {
+  const fetchCoachVideos = async () => {
     try {
       console.log("Fetching coach videos");
       
