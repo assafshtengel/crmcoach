@@ -1083,7 +1083,6 @@ export type Database = {
           id: string
           is_read: boolean
           message: string
-          player_id: string | null
           timestamp: string
           type: string
         }
@@ -1093,7 +1092,6 @@ export type Database = {
           id?: string
           is_read?: boolean
           message: string
-          player_id?: string | null
           timestamp?: string
           type: string
         }
@@ -1103,18 +1101,10 @@ export type Database = {
           id?: string
           is_read?: boolean
           message?: string
-          player_id?: string | null
           timestamp?: string
           type?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_player"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "notifications_coach_id_fkey"
             columns: ["coach_id"]

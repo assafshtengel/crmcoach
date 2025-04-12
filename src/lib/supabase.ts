@@ -28,3 +28,4 @@ export const supabase = getSupabase();
 if (typeof window !== 'undefined') {
   (window as any).supabase = supabase;
 }
+
