@@ -607,7 +607,8 @@ export default function VideoManagement() {
       </div>;
   };
 
-  return <div className="space-y-6">
+  return (
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-xl flex items-center mx-[240px] text-justify">
@@ -799,4 +800,4 @@ export default function VideoManagement() {
               ניתן להגדיר שליחה אוטומטית של הסרטון כמה ימים לאחר הרשמת שחקן חדש
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-4">
+          <div className="py-4 space-y-
