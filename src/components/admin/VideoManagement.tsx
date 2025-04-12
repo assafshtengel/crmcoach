@@ -393,10 +393,12 @@ export default function VideoManagement() {
         assigned_by: user.id,
         watched: false
       }));
+      
       const {
         data,
         error
       } = await supabase.from('player_videos').insert(assignmentsToInsert);
+      
       if (error) {
         console.error('Error assigning video:', error);
         if (error.code === '23505') {
@@ -413,6 +415,7 @@ export default function VideoManagement() {
 
       // Update video count for each player and send notifications
       for (const playerId of newAssignments) {
+        // Increment video count
         const {
           error: incrementError
         } = await supabase.rpc('increment_player_video_count', {
@@ -420,19 +423,28 @@ export default function VideoManagement() {
         });
         if (incrementError) console.error('Error incrementing video count:', incrementError);
 
-        // Send notification to the player about the new video assignment
+        // Create notification for the player about the new video assignment
         const notificationData = {
           coach_id: user.id,
+          player_id: playerId,
           type: 'video_assigned',
           message: `סרטון חדש הוקצה: ${selectedVideo.title}`,
-          player_id: playerId,
-          video_id: selectedVideo.id,
-          is_read: false
+          is_read: false,
+          video_id: selectedVideo.id
         };
+        
         const {
           error: notificationError
         } = await supabase.from('notifications').insert(notificationData);
-        if (notificationError) console.error('Error creating notification:', notificationError);
+        
+        if (notificationError) {
+          console.error('Error creating notification:', notificationError);
+          // Log detailed error but continue with other players
+          console.error('Notification data that failed:', notificationData);
+          console.error('Error details:', notificationError);
+        } else {
+          console.log('Notification created successfully for player:', playerId);
+        }
 
         // Update the local state to reflect the new assignment
         setPlayersWithAssignments(prev => ({
@@ -440,10 +452,12 @@ export default function VideoManagement() {
           [playerId]: true
         }));
       }
+      
       toast({
         title: "סרטון הוקצה בהצלחה",
         description: `הסרטון הוקצה ל-${newAssignments.length} שחקנים חדשים`
       });
+      
       setSelectedPlayers([]);
       setOpenAssignDialog(false);
     } catch (error) {
@@ -762,50 +776,4 @@ export default function VideoManagement() {
               ניתן להגדיר שליחה אוטומטית של הסרטון כמה ימים לאחר הרשמת שחקן חדש
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="flex items-center justify-between space-x-2 rtl:space-x-reverse">
-              <Label htmlFor="auto-schedule" className="flex-1">
-                שליחה אוטומטית לשחקנים חדשים
-              </Label>
-              <Switch id="auto-schedule" checked={autoScheduleData.is_auto_scheduled} onCheckedChange={checked => handleAutoScheduleChange("is_auto_scheduled", checked)} />
-            </div>
-
-            {autoScheduleData.is_auto_scheduled && <>
-                <div className="space-y-2">
-                  <Label htmlFor="days-after">מספר ימים אחרי הרשמה</Label>
-                  <Select value={autoScheduleData.days_after_registration.toString()} onValueChange={value => handleAutoScheduleChange("days_after_registration", parseInt(value))}>
-                    <SelectTrigger id="days-after">
-                      <SelectValue placeholder="בחר מספר ימים" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 5, 7, 10, 14, 21, 30].map(days => <SelectItem key={days} value={days.toString()}>
-                          {days} ימים
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sequence-order">סדר רצף (נמוך = ראשון)</Label>
-                  <Select value={autoScheduleData.auto_sequence_order.toString()} onValueChange={value => handleAutoScheduleChange("auto_sequence_order", parseInt(value))}>
-                    <SelectTrigger id="sequence-order">
-                      <SelectValue placeholder="בחר סדר" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(order => <SelectItem key={order} value={order.toString()}>
-                          {order}
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
-            <Button type="submit" onClick={handleAutoScheduleSave}>
-              שמור הגדרות
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>;
-}
+          <div className="py-4 space-y-
