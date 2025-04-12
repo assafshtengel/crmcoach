@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Film, Plus, Pencil, Trash2, CheckCircle, User, ExternalLink, Clock, Calendar, AlertTriangle, Info } from "lucide-react";
+
 export default function VideoManagement() {
   const [videos, setVideos] = useState<any[]>([]);
   const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -40,10 +41,12 @@ export default function VideoManagement() {
   const {
     toast
   } = useToast();
+
   useEffect(() => {
     fetchVideos();
     fetchPlayers();
   }, []);
+
   const fetchVideos = async () => {
     setLoading(true);
     try {
@@ -77,6 +80,7 @@ export default function VideoManagement() {
       setLoading(false);
     }
   };
+
   const fetchPlayers = async () => {
     try {
       const {
@@ -96,6 +100,7 @@ export default function VideoManagement() {
       console.error('Error fetching players:', error);
     }
   };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const {
       name,
@@ -106,12 +111,14 @@ export default function VideoManagement() {
       [name]: value
     });
   };
+
   const handleSelectChange = (name: string, value: string) => {
     setFormData({
       ...formData,
       [name]: value
     });
   };
+
   const resetForm = () => {
     setFormData({
       title: "",
@@ -127,12 +134,14 @@ export default function VideoManagement() {
       auto_sequence_order: 1
     });
   };
+
   const handleAutoScheduleChange = (name: string, value: any) => {
     setAutoScheduleData({
       ...autoScheduleData,
       [name]: value
     });
   };
+
   const handleAutoScheduleSave = async () => {
     if (!selectedVideo) return;
     try {
@@ -159,6 +168,7 @@ export default function VideoManagement() {
       });
     }
   };
+
   const handleAddVideo = async () => {
     if (addingVideo) return;
     setAddingVideo(true);
@@ -230,6 +240,7 @@ export default function VideoManagement() {
       setAddingVideo(false);
     }
   };
+
   const handleEditVideo = async () => {
     if (!selectedVideo) return;
     try {
@@ -259,6 +270,7 @@ export default function VideoManagement() {
       });
     }
   };
+
   const handleDeleteVideo = async () => {
     if (!selectedVideo) return;
     try {
@@ -333,6 +345,7 @@ export default function VideoManagement() {
       });
     }
   };
+
   const handleAssignClick = async (video: any) => {
     setSelectedVideo(video);
     setSelectedPlayers([]);
@@ -364,6 +377,7 @@ export default function VideoManagement() {
       });
     }
   };
+
   const handleAssignVideo = async () => {
     if (!selectedVideo || !selectedPlayers.length) return;
     try {
@@ -393,10 +407,12 @@ export default function VideoManagement() {
         assigned_by: user.id,
         watched: false
       }));
+      
       const {
         data,
         error
       } = await supabase.from('player_videos').insert(assignmentsToInsert);
+      
       if (error) {
         console.error('Error assigning video:', error);
         if (error.code === '23505') {
@@ -413,6 +429,7 @@ export default function VideoManagement() {
 
       // Update video count for each player and send notifications
       for (const playerId of newAssignments) {
+        // Increment video count
         const {
           error: incrementError
         } = await supabase.rpc('increment_player_video_count', {
@@ -420,19 +437,49 @@ export default function VideoManagement() {
         });
         if (incrementError) console.error('Error incrementing video count:', incrementError);
 
-        // Send notification to the player about the new video assignment
+        // Enhanced notification creation with improved error handling and logging
         const notificationData = {
           coach_id: user.id,
+          player_id: playerId,
           type: 'video_assigned',
           message: `סרטון חדש הוקצה: ${selectedVideo.title}`,
-          player_id: playerId,
+          is_read: false,
           video_id: selectedVideo.id,
-          is_read: false
+          timestamp: new Date().toISOString() // Adding timestamp for better tracking
         };
-        const {
-          error: notificationError
-        } = await supabase.from('notifications').insert(notificationData);
-        if (notificationError) console.error('Error creating notification:', notificationError);
+        
+        try {
+          const {
+            error: notificationError,
+            data: notificationResult
+          } = await supabase.from('notifications').insert(notificationData);
+          
+          if (notificationError) {
+            console.error('Error creating notification:', notificationError);
+            console.error('Notification data that failed:', notificationData);
+            
+            // Retry notification creation once with simplified data
+            const retryNotificationData = {
+              coach_id: user.id,
+              player_id: playerId,
+              type: 'video_assigned',
+              message: `סרטון חדש הוקצה`,
+              is_read: false
+            };
+            
+            const { error: retryError } = await supabase.from('notifications').insert(retryNotificationData);
+            
+            if (retryError) {
+              console.error('Retry for notification creation also failed:', retryError);
+            } else {
+              console.log('Notification created successfully on retry for player:', playerId);
+            }
+          } else {
+            console.log('Notification created successfully for player:', playerId, notificationResult);
+          }
+        } catch (notificationException) {
+          console.error('Exception during notification creation:', notificationException);
+        }
 
         // Update the local state to reflect the new assignment
         setPlayersWithAssignments(prev => ({
@@ -440,10 +487,12 @@ export default function VideoManagement() {
           [playerId]: true
         }));
       }
+      
       toast({
         title: "סרטון הוקצה בהצלחה",
         description: `הסרטון הוקצה ל-${newAssignments.length} שחקנים חדשים`
       });
+      
       setSelectedPlayers([]);
       setOpenAssignDialog(false);
     } catch (error) {
@@ -455,9 +504,11 @@ export default function VideoManagement() {
       });
     }
   };
+
   const openVideoUrl = (url: string) => {
     window.open(url, '_blank');
   };
+
   const handleEditClick = (video: any) => {
     setSelectedVideo(video);
     setFormData({
@@ -469,6 +520,7 @@ export default function VideoManagement() {
     });
     setOpenEditDialog(true);
   };
+
   const handleAutoScheduleClick = (video: any) => {
     setSelectedVideo(video);
     setAutoScheduleData({
@@ -478,10 +530,12 @@ export default function VideoManagement() {
     });
     setOpenAutoScheduleDialog(true);
   };
+
   const handleDeleteClick = (video: any) => {
     setSelectedVideo(video);
     setOpenDeleteDialog(true);
   };
+
   const togglePlayerSelection = (playerId: string) => {
     if (selectedPlayers.includes(playerId)) {
       setSelectedPlayers(selectedPlayers.filter(id => id !== playerId));
@@ -489,6 +543,7 @@ export default function VideoManagement() {
       setSelectedPlayers([...selectedPlayers, playerId]);
     }
   };
+
   const triggerProcessAutoAssignments = async () => {
     try {
       const {
@@ -508,11 +563,13 @@ export default function VideoManagement() {
       });
     }
   };
+
   const isAutoScheduled = useMemo(() => {
     return (video: any) => {
       return video.is_auto_scheduled === true;
     };
   }, []);
+
   const renderVideoCards = (videoList: any[]) => {
     if (loading) {
       return <div className="text-center py-12">
@@ -520,6 +577,7 @@ export default function VideoManagement() {
           <p className="mt-2 text-gray-500">טוען סרטונים...</p>
         </div>;
     }
+
     if (videoList.length === 0) {
       return <div className="text-center py-12">
           <Film className="mx-auto h-12 w-12 text-gray-300" />
@@ -527,6 +585,7 @@ export default function VideoManagement() {
           <p className="text-sm text-gray-400 mt-1">ניתן להוסיף סרטונים באמצעות כפתור ההוספה</p>
         </div>;
     }
+
     return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {videoList.map(video => <Card key={video.id} className="overflow-hidden">
             <CardHeader className="pb-2">
@@ -570,7 +629,9 @@ export default function VideoManagement() {
           </Card>)}
       </div>;
   };
-  return <div className="space-y-6">
+
+  return (
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-xl flex items-center mx-[240px] text-justify">
@@ -585,9 +646,9 @@ export default function VideoManagement() {
           <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
             <div className="flex gap-2">
               <Button onClick={() => {
-              resetForm();
-              setOpenAddDialog(true);
-            }} className="my-[17px] text-left py-[21px] mx-[164px] px-[141px] font-normal text-white">
+                resetForm();
+                setOpenAddDialog(true);
+              }} className="my-[17px] text-left py-[21px] mx-[164px] px-[141px] font-normal text-white">
                 <Plus className="h-4 w-4 mr-1 rtl:ml-1 rtl:mr-0" />
                 הוסף סרטון
               </Button>
@@ -746,66 +807,4 @@ export default function VideoManagement() {
               </ScrollArea>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול</Button>
-            <Button type="submit" onClick={handleAssignVideo} disabled={selectedPlayers.length === 0}>
-              הקצה סרטון
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>הגדר תזמון אוטומטי</DialogTitle>
-            <DialogDescription>
-              ניתן להגדיר שליחה אוטומטית של הסרטון כמה ימים לאחר הרשמת שחקן חדש
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="flex items-center justify-between space-x-2 rtl:space-x-reverse">
-              <Label htmlFor="auto-schedule" className="flex-1">
-                שליחה אוטומטית לשחקנים חדשים
-              </Label>
-              <Switch id="auto-schedule" checked={autoScheduleData.is_auto_scheduled} onCheckedChange={checked => handleAutoScheduleChange("is_auto_scheduled", checked)} />
-            </div>
-
-            {autoScheduleData.is_auto_scheduled && <>
-                <div className="space-y-2">
-                  <Label htmlFor="days-after">מספר ימים אחרי הרשמה</Label>
-                  <Select value={autoScheduleData.days_after_registration.toString()} onValueChange={value => handleAutoScheduleChange("days_after_registration", parseInt(value))}>
-                    <SelectTrigger id="days-after">
-                      <SelectValue placeholder="בחר מספר ימים" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 5, 7, 10, 14, 21, 30].map(days => <SelectItem key={days} value={days.toString()}>
-                          {days} ימים
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sequence-order">סדר רצף (נמוך = ראשון)</Label>
-                  <Select value={autoScheduleData.auto_sequence_order.toString()} onValueChange={value => handleAutoScheduleChange("auto_sequence_order", parseInt(value))}>
-                    <SelectTrigger id="sequence-order">
-                      <SelectValue placeholder="בחר סדר" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(order => <SelectItem key={order} value={order.toString()}>
-                          {order}
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </>}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
-            <Button type="submit" onClick={handleAutoScheduleSave}>
-              שמור הגדרות
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>;
-}
+            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול
