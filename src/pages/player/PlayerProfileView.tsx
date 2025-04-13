@@ -80,6 +80,11 @@ const PlayerProfileView = () => {
     }
   };
 
+  const handleWatchVideo = async (videoId: string) => {
+    console.log("Video watched in player profile view:", videoId);
+    // כאן אפשר להוסיף לוגיקה נוספת אם נדרש
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-page">
@@ -109,10 +114,12 @@ const PlayerProfileView = () => {
   }
 
   console.log("Rendering player profile for:", player.id);
+  console.log("Player coach_id:", player.coach_id);
   
   // Log questionnaires tab rendering before the return statement
   if (player?.id) {
     console.log("Preparing to render questionnaires tab with player ID:", player.id);
+    console.log("Preparing to render videos tab with player ID:", player.id, "and coach ID:", player.coach_id);
   }
   
   return (
@@ -166,7 +173,11 @@ const PlayerProfileView = () => {
             </TabsList>
             
             <TabsContent value="videos" className="space-y-6">
-              <VideosTab playerId={player?.id} coachId={player?.coach_id} />
+              <VideosTab 
+                playerId={player?.id} 
+                coachId={player?.coach_id} 
+                onWatchVideo={handleWatchVideo}
+              />
             </TabsContent>
             
             <TabsContent value="questionnaires" className="space-y-6">

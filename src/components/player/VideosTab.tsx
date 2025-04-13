@@ -68,13 +68,25 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     try {
       console.log("[AUDIT] Fetching assigned videos for player:", playerId);
       
+      // בדיקה ישירה אם קיימים רשומות player_videos לשחקן זה
+      const { data: playerVideosCheck, error: checkError } = await supabase
+        .from("player_videos")
+        .select("*")
+        .eq("player_id", playerId);
+      
+      console.log("[AUDIT] Initial check for player_videos:", playerVideosCheck?.length || 0, "records found");
+      
+      if (checkError) {
+        console.error("[AUDIT] Error checking player_videos:", checkError);
+      }
+      
       // גישה 1: לקבל קודם את רשימת הסרטונים המשויכים לשחקן
       const { data: playerVideosData, error: playerVideosError } = await supabase
         .from("player_videos")
         .select("*")
         .eq("player_id", playerId);
         
-      console.log("[AUDIT] Raw player_videos data:", playerVideosData);
+      console.log("[AUDIT] Raw player_videos data:", JSON.stringify(playerVideosData));
       
       if (playerVideosError) {
         console.error("[AUDIT] Error fetching player_videos:", playerVideosError);
@@ -82,7 +94,14 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       }
       
       if (!playerVideosData || playerVideosData.length === 0) {
-        console.log("[AUDIT] No player_videos found for this player");
+        console.log("[AUDIT] No player_videos found for this player, fetching coach videos instead");
+        
+        // אם אין סרטונים ייחודיים לשחקן, אנסה לקבל סרטונים של המאמן
+        if (coachId) {
+          await fetchCoachVideos();
+          return;
+        }
+        
         setVideos([]);
         setActiveVideo(null);
         setError("אין סרטונים זמינים כרגע");
@@ -124,7 +143,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
             id: video.id,
             title: video.title,
             url: video.url,
-            description: video.description,
+            description: video.description || "",
             category: video.category,
             created_at: video.created_at,
             is_auto_scheduled: video.is_auto_scheduled,
@@ -147,8 +166,10 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         
         if (formattedVideos.length > 0) {
           setActiveVideo(formattedVideos[0]);
+          setError(null);
         } else {
           setActiveVideo(null);
+          setError("לא נמצאו סרטונים לשחקן זה");
         }
       } else {
         setVideos([]);
@@ -158,9 +179,19 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
     } catch (error) {
       console.error("[AUDIT] Error in fetchPlayerAssignedVideos:", error);
-      setVideos([]);
-      setActiveVideo(null);
-      setError("אין סרטונים זמינים כרגע");
+      
+      // אם נכשל בשליפת סרטונים ייחודיים לשחקן, אנסה את סרטוני המאמן
+      try {
+        if (coachId) {
+          console.log("[AUDIT] Trying to fetch coach videos instead");
+          await fetchCoachVideos();
+        }
+      } catch (coachError) {
+        console.error("[AUDIT] Error fetching coach videos fallback:", coachError);
+        setVideos([]);
+        setActiveVideo(null);
+        setError("אין סרטונים זמינים כרגע");
+      }
     }
   };
   
@@ -182,12 +213,24 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       console.log("[AUDIT] Coach videos:", coachVideos?.length || 0);
       
-      setVideos(coachVideos || []);
-      
       if (coachVideos && coachVideos.length > 0) {
-        setActiveVideo(coachVideos[0]);
+        const formattedVideos = coachVideos.map(video => ({
+          id: video.id,
+          title: video.title,
+          url: video.url,
+          description: video.description || "",
+          category: video.category,
+          created_at: video.created_at,
+          is_auto_scheduled: video.is_auto_scheduled,
+          days_after_registration: video.days_after_registration,
+          watched: false
+        }));
+        
+        setVideos(formattedVideos);
+        setActiveVideo(formattedVideos[0]);
         setError(null);
       } else {
+        setVideos([]);
         setActiveVideo(null);
         setError("לא נמצאו סרטונים זמינים");
       }
@@ -199,7 +242,9 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     }
   };
 
+  // הוספת שימוש ב-useEffect כדי להפעיל מידית טעינת סרטונים כאשר הכרטיסייה מוצגת
   useEffect(() => {
+    console.log("[AUDIT] VideosTab mounted - coachId:", coachId, "playerId:", playerId);
     if (coachId) {
       fetchVideos();
     } else {
