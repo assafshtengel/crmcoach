@@ -266,177 +266,6 @@ const formSchema = z.object({
   respectSkills: z.string().min(2, {
     message: "צריך להכניס לפחות 2 תווים",
   }),
-  attitudeSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  effortSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  focusSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  resilienceSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  confidenceSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  emotionalControlSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  decisionMakingSkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  problemSolvingSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  creativitySkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  visionSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  anticipationSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  awarenessSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  adaptabilityTacticalSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  adaptabilityTechnicalSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  adaptabilityPhysicalSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  adaptabilityMentalSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  speedSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  agilitySkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  strengthSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  enduranceSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  powerSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  flexibilitySkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  balanceSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  coordinationSkills: z.string().min(2, {
-    message: צריך להכניס לפחות 2 תווים",
-  }),
-  reactionTimeSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  ballControlSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  passingAccuracySkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  shootingAccuracySkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  tacklingTechniqueSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  headingAbilitySkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  setPieceDeliverySkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  dribblingSkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  finishingAbilitySkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  defensiveSkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  attackingSkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  transitionSkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  setPieceSkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  goalkeepingSkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  communicationSkills3: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  tacticalUnderstandingSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  positionalAwarenessSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  decisionMakingSkills3: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  gameReadingAbilitySkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  leadershipQualitiesSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  teamworkAbilitySkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  workEthicSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  disciplineSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  mentalToughnessSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  emotionalIntelligenceSkills: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  coachabilitySkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  adaptabilitySkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  initiativeSkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  communicationSkills4: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  ethicsSkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  attendanceSkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  punctualitySkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
-  respectSkills2: z.string().min(2, {
-    message: "צריך להכניס לפחות 2 תווים",
-  }),
   attitudeSkills2: z.string().min(2, {
     message: "צריך להכניס לפחות 2 תווים",
   }),
@@ -672,4 +501,172 @@ const formSchema = z.object({
     message: "צריך להכניס לפחות 2 תווים",
   }),
   flexibilitySkills3: z.string().min(2, {
-    message: "צריך להכ
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  balanceSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  coordinationSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  reactionTimeSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  ballControlSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  passingAccuracySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  shootingAccuracySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  tacklingTechniqueSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  headingAbilitySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  setPieceDeliverySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  dribblingSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  finishingAbilitySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  defensiveSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attackingSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  transitionSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  setPieceSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  goalkeepingSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  communicationSkills7: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  tacticalUnderstandingSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  positionalAwarenessSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  decisionMakingSkills7: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  gameReadingAbilitySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  leadershipQualitiesSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  teamworkAbilitySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  workEthicSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  disciplineSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  mentalToughnessSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  emotionalIntelligenceSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  coachabilitySkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilitySkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  initiativeSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  communicationSkills8: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  ethicsSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attendanceSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  punctualitySkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  respectSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attitudeSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  effortSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  focusSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  resilienceSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  confidenceSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  emotionalControlSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  decisionMakingSkills8: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  problemSolvingSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  creativitySkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  visionSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  anticipationSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  awarenessSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityTacticalSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityTechnicalSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityPhysicalSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityMentalSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  speedSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  agilitySkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  strengthSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  enduranceSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  powerSkills4: z.string().min(2, {
+    message: "
