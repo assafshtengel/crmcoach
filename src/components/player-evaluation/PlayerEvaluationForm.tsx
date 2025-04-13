@@ -669,4 +669,31 @@ const formSchema = z.object({
     message: "צריך להכניס לפחות 2 תווים",
   }),
   powerSkills4: z.string().min(2, {
-    message: "
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  flexibilitySkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  balanceSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  coordinationSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  reactionTimeSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  ballControlSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  passingAccuracySkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  shootingAccuracySkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  })
+});
+
+export const PlayerEvaluationForm = () => {
+  // Component implementation
+}
