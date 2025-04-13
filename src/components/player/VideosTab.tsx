@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { PlayIcon, ExternalLink, RefreshCcw, Link } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -67,14 +67,23 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     try {
       console.log("[AUDIT] Fetching assigned videos for player:", playerId);
       
-      const { data: playerVideos, error: playerVideosError } = await supabase
+      // שיפור: משיכת פרטי הוידאו יחד עם רשומות ה-player_videos בשאילתה יותר יעילה
+      const { data: playerVideosData, error: playerVideosError } = await supabase
         .from("player_videos")
         .select(`
-          id,
+          id, 
           video_id,
           watched,
           watched_at,
-          video:videos(id, title, url, description, category, created_at)
+          videos:video_id (
+            id,
+            title,
+            url,
+            description,
+            category,
+            created_at,
+            days_after_registration
+          )
         `)
         .eq("player_id", playerId);
         
@@ -83,86 +92,46 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         throw playerVideosError;
       }
       
-      console.log("[AUDIT] Player videos data:", playerVideos?.length || 0, playerVideos);
+      console.log("[AUDIT] Player videos data:", playerVideosData);
       
-      const { data: autoAssignments, error: autoAssignmentsError } = await supabase
-        .from("auto_video_assignments")
-        .select(`
-          id,
-          video_id,
-          scheduled_for,
-          sent,
-          video:videos(id, title, url, description, category, created_at, days_after_registration)
-        `)
-        .eq("player_id", playerId)
-        .eq("sent", true);
-        
-      if (autoAssignmentsError) {
-        console.error("[AUDIT] Error fetching auto_video_assignments:", autoAssignmentsError);
-        throw autoAssignmentsError;
+      // שיפור: טיפול במקרה שלא נמצאו סרטונים
+      if (!playerVideosData || playerVideosData.length === 0) {
+        console.log("[AUDIT] No assigned videos found for player");
+        setVideos([]);
+        setActiveVideo(null);
+        setError("אין סרטונים זמינים כרגע");
+        return;
       }
       
-      console.log("[AUDIT] Auto-assigned videos data:", autoAssignments?.length || 0);
-      console.log("[AUDIT] Raw player videos:", playerVideos);
-      console.log("[AUDIT] Raw auto assignments:", autoAssignments);
+      // המרת הנתונים למבנה שהקומפוננטה מצפה לו
+      const formattedVideos = playerVideosData
+        .filter(item => item.videos) // שימוש רק בפריטים שיש להם סרטון מקושר
+        .map(item => {
+          return {
+            id: item.video_id,
+            title: item.videos.title,
+            url: item.videos.url,
+            description: item.videos.description,
+            category: item.videos.category,
+            created_at: item.videos.created_at,
+            player_video_id: item.id,
+            watched: item.watched,
+            watched_at: item.watched_at
+          } as Video;
+        });
       
-      const manuallyAssignedVideos = playerVideos
-        ?.filter(pv => pv.video)
-        .map(pv => {
-          if (pv.video) {
-            return {
-              ...pv.video,
-              watched: pv.watched,
-              watched_at: pv.watched_at,
-              player_video_id: pv.id
-            };
-          }
-          return null;
-        })
-        .filter(Boolean) || [];
+      console.log("[AUDIT] Formatted videos:", formattedVideos);
       
-      const autoAssignedVideos = autoAssignments
-        ?.filter(aa => aa.video && aa.sent)
-        .map(aa => {
-          if (aa.video) {
-            return {
-              ...aa.video,
-              is_auto_scheduled: true
-            };
-          }
-          return null;
-        })
-        .filter(Boolean) || [];
-      
-      console.log("[AUDIT] Processed manually assigned videos:", manuallyAssignedVideos);
-      console.log("[AUDIT] Processed auto assigned videos:", autoAssignedVideos);
-      
-      const videoMap = new Map<string, Video>();
-      [...manuallyAssignedVideos, ...autoAssignedVideos].forEach(video => {
-        if (video && video.id) {
-          videoMap.set(video.id, video as Video);
-        }
-      });
-      
-      const allAssignedVideos = Array.from(videoMap.values());
-      
-      console.log("[AUDIT] Combined assigned videos:", allAssignedVideos.length);
-      console.log("[AUDIT] Assigned video IDs:", allAssignedVideos.map(v => v.id));
-      
-      const validVideos = allAssignedVideos.filter(video => 
-        video && video.id && video.title && video.created_at
-      );
-      
-      validVideos.sort((a, b) => 
+      // מיון לפי תאריך עדכני ביותר
+      formattedVideos.sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       
-      setVideos(validVideos);
-      if (validVideos.length > 0) {
-        setActiveVideo(validVideos[0]);
+      setVideos(formattedVideos);
+      
+      if (formattedVideos.length > 0) {
+        setActiveVideo(formattedVideos[0]);
       } else {
-        console.log("[AUDIT] No assigned videos found for player");
-        setActiveVideo(null);
         setError("אין סרטונים זמינים כרגע");
       }
       
