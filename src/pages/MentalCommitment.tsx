@@ -1,26 +1,26 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useState, useEffect } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from '@/components/ui/card';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowRight } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const motivationalQuotes = [
   "הכל בראש – והראש שלי בלתי ניתן לעצירה",
@@ -152,7 +152,7 @@ const MentalCommitment = () => {
       }
 
       toast({
-        title: "ההתחייבות נשמרה בהצלחה",
+        title: "התחייבות נשמרה בהצלחה",
         description: "בוא נמשיך לשלב הבא",
       });
       navigate("/contract");
@@ -277,7 +277,7 @@ const MentalCommitment = () => {
           <div className="hidden md:block">
             <div className="bg-white p-8 rounded-xl shadow-xl border-2 border-gray-100 min-h-[600px] relative">
               <div className="space-y-6 text-gray-700 leading-relaxed">
-                <h2 className="text-xl font-bold mb-4">ההתחייבות המנטלית שלי</h2>
+                <h2 className="text-xl font-bold mb-4">התחייבות המנטלית שלי</h2>
                 <p>
                   {`כדי להגיע לפסגה, ${playerName || '_________'} מתחייב לשפר את ${
                     formData.improvementArea || '_________'

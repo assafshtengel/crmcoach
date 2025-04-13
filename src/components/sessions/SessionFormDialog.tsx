@@ -1,9 +1,11 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/calendar/Calendar';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -33,29 +35,24 @@ export function SessionFormDialog({
   const [meetingType, setMeetingType] = useState<'in_person' | 'zoom'>('in_person');
 
   React.useEffect(() => {
-    // Here you would typically fetch events
-    // For now, let's just set loading to false
     setLoading(false);
   }, []);
 
   const handleEventClick = (eventId: string) => {
-    // Handle event click if needed
     console.log('Event clicked:', eventId);
   };
 
   const handleAddEvent = async (eventData: any) => {
     try {
-      // Extract the required fields from the eventData
       if (!eventData.extendedProps?.player_id) {
         toast.error('נא לבחור שחקן לפני הוספת אירוע');
         return;
       }
       
-      // Make sure all required fields exist and are formatted correctly
       const sessionData = {
         player_id: eventData.extendedProps.player_id,
         session_date: eventData.start.split('T')[0],
-        session_time: eventData.start.split('T')[1].substring(0, 5), // Ensure HH:MM format
+        session_time: eventData.start.split('T')[1].substring(0, 5),
         location: eventData.extendedProps.location || '',
         notes: eventData.extendedProps.notes || '',
         meeting_type: meetingType
@@ -67,7 +64,7 @@ export function SessionFormDialog({
         try {
           await onSessionAdd(sessionData);
           toast.success('המפגש נשמר בהצלחה');
-          onOpenChange(false); // Close the dialog after successful submission
+          onOpenChange(false);
         } catch (error) {
           console.error('Error in onSessionAdd:', error);
           toast.error('אירעה שגיאה בשמירת המפגש');

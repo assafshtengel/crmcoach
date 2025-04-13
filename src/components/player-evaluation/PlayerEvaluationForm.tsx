@@ -1,322 +1,675 @@
-
-import React, { useState, useMemo } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { categories } from '@/types/playerEvaluation';
-import type { EvaluationFormData } from '@/types/playerEvaluation';
-import { useToast } from '@/hooks/use-toast';
-import { CategorySection } from './CategorySection';
-import { ScoreSummary } from './ScoreSummary';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
+import { z } from "zod"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form"
 
-export const PlayerEvaluationForm = () => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [step, setStep] = useState(1);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [formData, setFormData] = useState<EvaluationFormData>({
-    playerName: '',
-    age: '',
-    team: '',
-    date: new Date().toISOString().split('T')[0],
-    scores: {}
-  });
-
-  const shuffledQuestions = useMemo(() => {
-    const allQuestions = categories.flatMap(category => 
-      category.questions.map(question => ({
-        ...question,
-        categoryId: category.id
-      }))
-    );
-    
-    for (let i = allQuestions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
-    }
-    
-    return allQuestions;
-  }, []);
-
-  const updateFormData = (field: keyof EvaluationFormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const updateScore = (questionId: string, score: number) => {
-    setFormData(prev => ({
-      ...prev,
-      scores: { ...prev.scores, [questionId]: score }
-    }));
-    
-    if (currentQuestionIndex < shuffledQuestions.length - 1) {
-      setTimeout(() => {
-        setCurrentQuestionIndex(prev => prev + 1);
-      }, 300);
-    }
-  };
-
-  const isPersonalInfoComplete = () => {
-    return formData.playerName && formData.age && formData.team && formData.date;
-  };
-
-  const hasMinimumScores = () => {
-    const totalQuestions = shuffledQuestions.length;
-    const answeredQuestions = Object.keys(formData.scores).length;
-    return answeredQuestions >= totalQuestions * 0.8;
-  };
-
-  const handleSubmit = async () => {
-    const totalQuestions = shuffledQuestions.length;
-    const answeredQuestions = Object.keys(formData.scores).length;
-    
-    if (answeredQuestions < totalQuestions) {
-      toast({
-        title: "לא ניתן לשמור",
-        description: "יש לענות על כל השאלות",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast({
-          title: "שגיאה",
-          description: "יש להתחבר למערכת כדי לשמור הערכת שחקן",
-          variant: "destructive",
-        });
-        navigate('/auth');
-        return;
-      }
-
-      const categoryAverages = calculateCategoryAverages();
-      const totalScore = calculateTotalScore();
-
-      const { error } = await supabase.from('player_evaluations').insert({
-        player_name: formData.playerName,
-        age: parseInt(formData.age),
-        team: formData.team,
-        evaluation_date: formData.date,
-        scores: formData.scores,
-        category_averages: categoryAverages,
-        total_score: totalScore,
-        user_id: session.user.id
-      });
-
-      if (error) throw error;
-
-      setStep(4); // מעבר לעמוד הסיכום
-      
-      toast({
-        title: "ההערכה נשמרה בהצלחה!",
-        description: "הנתונים נשמרו במערכת",
-      });
-    } catch (error) {
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בשמירת ההערכה",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="playerName">שם השחקן</Label>
-                <Input
-                  id="playerName"
-                  value={formData.playerName}
-                  onChange={(e) => updateFormData('playerName', e.target.value)}
-                  placeholder="הכנס את שם השחקן"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="age">גיל</Label>
-                <Input
-                  id="age"
-                  type="number"
-                  value={formData.age}
-                  onChange={(e) => updateFormData('age', e.target.value)}
-                  placeholder="הכנס את גיל השחקן"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="team">קבוצה</Label>
-                <Input
-                  id="team"
-                  value={formData.team}
-                  onChange={(e) => updateFormData('team', e.target.value)}
-                  placeholder="הכנס את שם הקבוצה"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="date">תאריך הערכה</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => updateFormData('date', e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-        );
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="prose max-w-none">
-              <h2 className="text-2xl font-bold text-center mb-6">ברוך הבא לשאלון חקירת האלמנטים – הדרך שלך לשיפור אישי בכדורגל! ⚽💪</h2>
-              <p className="mb-6">היי {formData.playerName},</p>
-              <p className="mb-4">כאן לא מחפשים לתת לך ציונים כמו בבית הספר, ולא בודקים אותך כדי להעיר לך על דברים שאתה עושה לא טוב.</p>
-              <p className="mb-6">המטרה של השאלון הזה היא לעזור לך להבין בדיוק איפה אתה עומד היום – מה החוזקות שלך ומה הנקודות שאתה יכול לשפר כדי להפוך לשחקן טוב יותר.</p>
-              
-              <h3 className="text-xl font-semibold mb-4">🔍 איך זה עובד?</h3>
-              <ul className="list-disc list-inside mb-6">
-                <li>יש 11 אלמנטים חשובים שכל שחקן כדורגל צריך להיות חזק בהם.</li>
-                <li>לכל אלמנט יש 4 שאלות – תענה עליהן בכנ��ת.</li>
-                <li>בתום השאלון תקבל דוח אישי עם הציונים שלך והמלצות איך להשתפר.</li>
-              </ul>
-
-              <h3 className="text-xl font-semibold mb-4">🛑 רגע לפני שמתחילים – חשוב לזכור!</h3>
-              <ul className="list-none space-y-2 mb-6">
-                <li className="flex items-center">✅ זה לא מבחן ואין פה תשובות "נכונות" או "לא נכונות".</li>
-                <li className="flex items-center">✅ מילוי האמת בלבד יעזור לך באמת להשתפר!</li>
-                <li className="flex items-center">✅ אנחנו לא פה כדי לשפוט אותך, אלא כדי לעזור לך.</li>
-                <li className="flex items-center">✅ אם יש לך ציונים גבוהים בתחום מסוים – מעולה!</li>
-                <li className="flex items-center">✅ אם יש תחום שקיבלת בו ניקוד נמוך – זה סימן טוב, כי עכשיו אתה יודע בדיוק על מה לעבוד!</li>
-              </ul>
-
-              <p className="text-center font-bold mb-6">🎯 אז אם המטרה שלך היא להפוך לשחקן טוב יותר – פשוט תהיה אמיתי עם עצמך, תענה בכנות, ותן לדוח להראות לך את הדרך קדימה.</p>
-              
-              <p className="text-center text-xl font-bold">💪 מוכן? לחץ על "המשך" ותתחיל! 🚀</p>
-            </div>
-          </div>
-        );
-      case 3:
-        const currentQuestion = shuffledQuestions[currentQuestionIndex];
-        const currentCategory = categories.find(cat => cat.id === currentQuestion.categoryId);
-        
-        if (!currentCategory) return null;
-
-        return (
-          <div className="space-y-6">
-            <CategorySection
-              category={{
-                ...currentCategory,
-                questions: [currentQuestion]
-              }}
-              scores={formData.scores}
-              updateScore={updateScore}
-              currentQuestionIndex={currentQuestionIndex}
-              totalQuestions={shuffledQuestions.length}
-            />
-            
-            <div className="flex justify-between pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                disabled={currentQuestionIndex === 0}
-              >
-                <ChevronRight className="ml-2 h-4 w-4" />
-                שאלה קודמת
-              </Button>
-              <Button
-                onClick={() => setCurrentQuestionIndex(prev => Math.min(shuffledQuestions.length - 1, prev + 1))}
-                disabled={currentQuestionIndex === shuffledQuestions.length - 1}
-              >
-                שאלה הבאה
-                <ChevronLeft className="mr-2 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        );
-      case 4:
-        return (
-          <ScoreSummary
-            scores={formData.scores}
-            playerName={formData.playerName}
-            team={formData.team}
-            date={formData.date}
-            categoryAverages={calculateCategoryAverages()}
-            totalScore={calculateTotalScore()}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
-  const calculateCategoryAverages = () => {
-    const averages: Record<string, number> = {};
-    categories.forEach(category => {
-      const scores = category.questions
-        .map(q => formData.scores[q.id])
-        .filter(score => score !== undefined);
-      if (scores.length > 0) {
-        averages[category.id] = parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2));
-      }
-    });
-    return averages;
-  };
-
-  const calculateTotalScore = () => {
-    const averages = calculateCategoryAverages();
-    const total = Object.values(averages).reduce((a, b) => a + b, 0);
-    return parseFloat((total / Object.keys(averages).length).toFixed(2));
-  };
-
-  return (
-    <Card className="w-full max-w-4xl mx-auto p-6">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between border-b pb-4">
-          <h1 className="text-2xl font-bold">טופס הערכת שחקן</h1>
-          <div className="text-sm text-gray-500">
-            שלב {step} מתוך 3
-          </div>
-        </div>
-
-        {renderStep()}
-
-        <div className={`flex ${step === 3 && currentQuestionIndex === shuffledQuestions.length - 1 ? 'justify-center' : 'justify-between'} pt-4 border-t`}>
-          {step > 1 && (
-            <Button
-              onClick={() => setStep(step - 1)}
-              variant="outline"
-              className={step === 3 && currentQuestionIndex === shuffledQuestions.length - 1 ? 'hidden' : ''}
-            >
-              חזור
-            </Button>
-          )}
-          {step < 3 ? (
-            <Button
-              onClick={() => setStep(step + 1)}
-              disabled={step === 1 && !isPersonalInfoComplete()}
-              className="mr-auto"
-            >
-              המשך
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              className={`${currentQuestionIndex === shuffledQuestions.length - 1 ? 'text-xl px-8 py-6' : 'mr-auto'}`}
-              disabled={!hasMinimumScores()}
-            >
-              שלח הערכה
-            </Button>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
-};
+const formSchema = z.object({
+  strengths: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  weaknesses: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  opportunities: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  threats: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  overall: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  positioning: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  technicalSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  physicalConditioning: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  mentalFortitude: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  teamwork: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  leadership: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  coachability: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  gameIntelligence: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  consistency: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptability: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  initiative: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  communication: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  ethics: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attendance: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  punctuality: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  respect: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attitude: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  effort: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  focus: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  resilience: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  confidence: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  emotionalControl: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  decisionMaking: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  problemSolving: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  creativity: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  vision: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  anticipation: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  awareness: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityTactical: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityTechnical: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityPhysical: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityMental: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  speed: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  agility: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  strength: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  endurance: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  power: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  flexibility: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  balance: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  coordination: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  reactionTime: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  ballControl: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  passingAccuracy: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  shootingAccuracy: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  tacklingTechnique: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  headingAbility: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  setPieceDelivery: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  dribblingSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  finishingAbility: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  defensiveSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attackingSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  transitionSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  setPieceSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  goalkeepingSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  communicationSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  tacticalUnderstanding: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  positionalAwareness: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  decisionMakingSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  gameReadingAbility: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  leadershipQualities: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  teamworkAbility: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  workEthic: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  discipline: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  mentalToughness: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  emotionalIntelligence: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  coachabilitySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilitySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  initiativeSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  communicationSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  ethicsSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attendanceSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  punctualitySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  respectSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attitudeSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  effortSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  focusSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  resilienceSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  confidenceSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  emotionalControlSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  decisionMakingSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  problemSolvingSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  creativitySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  visionSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  anticipationSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  awarenessSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityTacticalSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityTechnicalSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityPhysicalSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityMentalSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  speedSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  agilitySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  strengthSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  enduranceSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  powerSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  flexibilitySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  balanceSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  coordinationSkills: z.string().min(2, {
+    message: צריך להכניס לפחות 2 תווים",
+  }),
+  reactionTimeSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  ballControlSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  passingAccuracySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  shootingAccuracySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  tacklingTechniqueSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  headingAbilitySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  setPieceDeliverySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  dribblingSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  finishingAbilitySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  defensiveSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attackingSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  transitionSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  setPieceSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  goalkeepingSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  communicationSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  tacticalUnderstandingSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  positionalAwarenessSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  decisionMakingSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  gameReadingAbilitySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  leadershipQualitiesSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  teamworkAbilitySkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  workEthicSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  disciplineSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  mentalToughnessSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  emotionalIntelligenceSkills: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  coachabilitySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilitySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  initiativeSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  communicationSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  ethicsSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attendanceSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  punctualitySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  respectSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attitudeSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  effortSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  focusSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  resilienceSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  confidenceSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  emotionalControlSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  decisionMakingSkills4: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  problemSolvingSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  creativitySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  visionSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  anticipationSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  awarenessSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityTacticalSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityTechnicalSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityPhysicalSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityMentalSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  speedSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  agilitySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  strengthSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  enduranceSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  powerSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  flexibilitySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  balanceSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  coordinationSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  reactionTimeSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  ballControlSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  passingAccuracySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  shootingAccuracySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  tacklingTechniqueSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  headingAbilitySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  setPieceDeliverySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  dribblingSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  finishingAbilitySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  defensiveSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attackingSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  transitionSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  setPieceSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  goalkeepingSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  communicationSkills5: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  tacticalUnderstandingSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  positionalAwarenessSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  decisionMakingSkills5: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  gameReadingAbilitySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  leadershipQualitiesSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  teamworkAbilitySkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  workEthicSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  disciplineSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  mentalToughnessSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  emotionalIntelligenceSkills2: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  coachabilitySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilitySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  initiativeSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  communicationSkills6: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  ethicsSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attendanceSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  punctualitySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  respectSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  attitudeSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  effortSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  focusSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  resilienceSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  confidenceSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  emotionalControlSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  decisionMakingSkills6: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  problemSolvingSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  creativitySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  visionSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  anticipationSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  awarenessSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityTacticalSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityTechnicalSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityPhysicalSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  adaptabilityMentalSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  speedSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  agilitySkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  strengthSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  enduranceSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  powerSkills3: z.string().min(2, {
+    message: "צריך להכניס לפחות 2 תווים",
+  }),
+  flexibilitySkills3: z.string().min(2, {
+    message: "צריך להכ

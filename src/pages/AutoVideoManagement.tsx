@@ -1,609 +1,298 @@
 import React, { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Loader2, RefreshCw, Check, AlertCircle, Trash2, ExternalLink } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
+import { ArrowRight, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
-interface Video {
-  id: string;
-  coach_id: string;
-  title: string;
-  url: string;
-  description: string;
-  category: string;
-  created_at: string;
-  is_admin_video: boolean;
-}
+const formSchema = z.object({
+  videoTitle: z.string().min(2, {
+    message: "שם הסרטון חייב להכיל לפחות 2 תווים.",
+  }),
+  videoDescription: z.string().optional(),
+  isPublic: z.boolean().default(false),
+});
 
-interface Player {
-  id: string;
-  full_name: string;
-}
-
-interface AutoVideoAssignment {
-  id?: string;
-  player_id: string;
-  video_id: string;
-  scheduled_for: string;
-  sent: boolean | null;
-}
+type FormValues = z.infer<typeof formSchema>;
 
 const AutoVideoManagement = () => {
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [selectedPlayer, setSelectedPlayer] = useState<string>('');
-  const [selectedVideo, setSelectedVideo] = useState<string>('');
-  const [scheduledDate, setScheduledDate] = useState<string>('');
-  const [loadingVideos, setLoadingVideos] = useState<boolean>(true);
-  const [loadingPlayers, setLoadingPlayers] = useState<boolean>(true);
-  const [autoAssignments, setAutoAssignments] = useState<AutoVideoAssignment[]>([]);
-  const [loadingAssignments, setLoadingAssignments] = useState<boolean>(true);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [isResending, setIsResending] = useState<string | null>(null);
-  const [filterType, setFilterType] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [videos, setVideos] = useState([]);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const fetchVideos = async () => {
-    setLoadingVideos(true);
-    try {
-      const { data, error } = await supabase
-        .from('videos')
-        .select('*')
-        .order('created_at', { ascending: false });
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      videoTitle: "",
+      videoDescription: "",
+      isPublic: false,
+    },
+  });
 
-      if (error) {
-        console.error('Error fetching videos:', error);
-        toast.error('Failed to load videos.');
-      } else {
-        setVideos(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching videos:', error);
-      toast.error('Failed to load videos.');
-    } finally {
-      setLoadingVideos(false);
-    }
-  };
-
-  const fetchPlayers = async () => {
-    setLoadingPlayers(true);
-    try {
-      const { data, error } = await supabase
-        .from('players')
-        .select('id, full_name')
-        .order('full_name', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching players:', error);
-        toast.error('Failed to load players.');
-      } else {
-        setPlayers(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching players:', error);
-      toast.error('Failed to load players.');
-    } finally {
-      setLoadingPlayers(false);
-    }
-  };
-
-  const fetchAutoAssignments = async () => {
-    setLoadingAssignments(true);
-    try {
-      const { data, error } = await supabase
-        .from('auto_video_assignments')
-        .select('*')
-        .order('scheduled_for', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching auto video assignments:', error);
-        toast.error('Failed to load auto video assignments.');
-      } else {
-        setAutoAssignments(data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching auto video assignments:', error);
-      toast.error('Failed to load auto video assignments.');
-    } finally {
-      setLoadingAssignments(false);
-    }
-  };
+  const { control, handleSubmit, reset, setValue, formState: { errors } } = form;
 
   useEffect(() => {
     fetchVideos();
-    fetchPlayers();
-    fetchAutoAssignments();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    if (!selectedPlayer || !selectedVideo || !scheduledDate) {
-      toast.error('Please fill in all fields.');
-      setIsSubmitting(false);
-      return;
-    }
-
+  const fetchVideos = async () => {
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('auto_video_assignments')
-        .insert([
-          {
-            player_id: selectedPlayer,
-            video_id: selectedVideo,
-            scheduled_for: scheduledDate,
-            sent: false,
-          },
-        ]);
+        .from('videos')
+        .select('*');
 
       if (error) {
-        console.error('Error creating auto video assignment:', error);
-        toast.error('Failed to create auto video assignment.');
+        console.error("Error fetching videos:", error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "אירעה שגיאה בטעינת הסרטונים.",
+        });
       } else {
-        toast.success('Auto video assignment created successfully!');
-        fetchAutoAssignments();
-        setSelectedPlayer('');
-        setSelectedVideo('');
-        setScheduledDate('');
+        setVideos(data || []);
       }
-    } catch (error) {
-      console.error('Error creating auto video assignment:', error);
-      toast.error('Failed to create auto video assignment.');
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  const handleDeleteAssignment = async (id: string) => {
-    setIsDeleting(id);
+  const onSubmit = async (data: FormValues) => {
     try {
-      const { error } = await supabase
-        .from('auto_video_assignments')
-        .delete()
-        .eq('id', id);
+      if (isEditMode && selectedVideo) {
+        // Update existing video
+        const { error } = await supabase
+          .from('videos')
+          .update({
+            title: data.videoTitle,
+            description: data.videoDescription,
+            is_public: data.isPublic,
+          })
+          .eq('id', selectedVideo.id);
 
-      if (error) {
-        console.error('Error deleting auto video assignment:', error);
-        toast.error('Failed to delete auto video assignment.');
+        if (error) {
+          console.error("Error updating video:", error);
+          toast({
+            variant: "destructive",
+            title: "שגיאה",
+            description: "אירעה שגיאה בעדכון הסרטון.",
+          });
+        } else {
+          toast({
+            title: "הצלחה",
+            description: "הסרטון עודכן בהצלחה.",
+          });
+          fetchVideos();
+        }
       } else {
-        toast.success('Auto video assignment deleted successfully!');
-        fetchAutoAssignments();
-      }
-    } catch (error) {
-      console.error('Error deleting auto video assignment:', error);
-      toast.error('Failed to delete auto video assignment.');
-    } finally {
-      setIsDeleting(null);
-    }
-  };
-
-  const handleResendAssignment = async (assignment: AutoVideoAssignment) => {
-    if (!assignment.id) {
-      toast.error('Assignment ID is missing.');
-      return;
-    }
-
-    setIsResending(assignment.id);
-
-    try {
-      // Optimistically update the UI
-      setAutoAssignments(currentAssignments =>
-        currentAssignments.map(a =>
-          a.id === assignment.id ? { ...a, sent: null } : a
-        )
-      );
-
-      const { data: player, error: playerError } = await supabase
-        .from('players')
-        .select('coach_id')
-        .eq('id', assignment.player_id)
-        .single();
-
-      if (playerError) {
-        console.error('Error fetching player coach ID:', playerError);
-        toast.error('Failed to fetch player coach ID.');
-        return;
-      }
-
-      const coachId = player?.coach_id;
-
-      const { error } = await supabase
-        .from('auto_video_assignments')
-        .update({ sent: false })
-        .eq('id', assignment.id);
-
-      if (error) {
-        console.error('Error resending auto video assignment:', error);
-        toast.error('Failed to resend auto video assignment.');
-      } else {
-        // Create player_videos entry
-        const { error: insertError } = await supabase
-          .from("player_videos")
+        // Create new video
+        const { error } = await supabase
+          .from('videos')
           .insert({
-            player_id: assignment.player_id,
-            video_id: assignment.video_id,
-            watched: false,
-            assigned_by: coachId
+            title: data.videoTitle,
+            description: data.videoDescription,
+            is_public: data.isPublic,
           });
 
-        if (insertError) {
-          if (insertError.code === "23505") { // Unique violation
-            console.log(`Player video already exists for assignment ${assignment.id}`);
-          } else {
-            console.error(`Error creating player_video for assignment ${assignment.id}:`, insertError);
-            toast.error('Failed to create player video.');
-          }
+        if (error) {
+          console.error("Error creating video:", error);
+          toast({
+            variant: "destructive",
+            title: "שגיאה",
+            description: "אירעה שגיאה ביצירת הסרטון.",
+          });
         } else {
-          toast.success('Auto video assignment resent successfully!');
+          toast({
+            title: "הצלחה",
+            description: "הסרטון נוצר בהצלחה.",
+          });
+          fetchVideos();
         }
-
-        fetchAutoAssignments();
       }
+      reset();
+      setSelectedVideo(null);
+      setIsEditMode(false);
     } catch (error) {
-      console.error('Error resending auto video assignment:', error);
-      toast.error('Failed to resend auto video assignment.');
-    } finally {
-      setIsResending(null);
+      console.error("Unexpected error:", error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה",
+        description: "אירעה שגיאה לא צפויה.",
+      });
     }
   };
 
-  const filteredAssignments = autoAssignments.filter(assignment => {
-    const searchTermLower = searchTerm.toLowerCase();
-    const player = players.find(p => p.id === assignment.player_id);
-    const video = videos.find(v => v.id === assignment.video_id);
+  const handleEdit = (video) => {
+    setSelectedVideo(video);
+    setIsEditMode(true);
+    setValue("videoTitle", video.title);
+    setValue("videoDescription", video.description || "");
+    setValue("isPublic", video.is_public || false);
+  };
 
-    const matchesSearchTerm =
-      !searchTerm ||
-      player?.full_name.toLowerCase().includes(searchTermLower) ||
-      video?.title.toLowerCase().includes(searchTermLower);
+  const handleDelete = async (videoId) => {
+    try {
+      const { error } = await supabase
+        .from('videos')
+        .delete()
+        .eq('id', videoId);
 
-    if (filterType === 'sent') {
-      return assignment.sent === true && matchesSearchTerm;
-    } else if (filterType === 'pending') {
-      return assignment.sent === false && matchesSearchTerm;
-    } else if (filterType === 'unsent') {
-      return assignment.sent === null && matchesSearchTerm;
-    }
-
-    return matchesSearchTerm;
-  });
-
-  const FixPlayerVideosButton = () => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [result, setResult] = useState<any>(null);
-  
-    const handleFixPlayerVideos = async () => {
-      try {
-        setIsLoading(true);
-        setResult(null);
-  
-        // Call the Edge Function to fix player videos
-        const { data, error } = await supabase.functions.invoke('fix-player-videos', {
-          method: 'POST'
+      if (error) {
+        console.error("Error deleting video:", error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "אירעה שגיאה במחיקת הסרטון.",
         });
-  
-        if (error) {
-          console.error('Error fixing player videos:', error);
-          toast.error('שגיאה בתיקון סרטוני שחקנים');
-          return;
-        }
-  
-        console.log('Fix player videos result:', data);
-        setResult(data);
-        toast.success('תיקון סרטוני שחקנים הסתיים בהצלחה');
-      } catch (error) {
-        console.error('Error fixing player videos:', error);
-        toast.error('שגיאה בתיקון סרטוני שחקנים');
-      } finally {
-        setIsLoading(false);
+      } else {
+        toast({
+          title: "הצלחה",
+          description: "הסרטון נמחק בהצלחה.",
+        });
+        fetchVideos();
       }
-    };
-  
-    return (
-      <div className="space-y-4">
-        <div className="flex flex-col space-y-2">
-          <Button 
-            onClick={handleFixPlayerVideos} 
-            disabled={isLoading}
-            className="w-full"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                מתקן סרטוני שחקנים...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                תקן סרטוני שחקנים
-              </>
-            )}
-          </Button>
-          <p className="text-sm text-muted-foreground">
-            פעולה זו תתקן רשומות חסרות ותעבד משימות אוטומטיות שלא בוצעו
-          </p>
-        </div>
-  
-        {result && (
-          <Card>
-            <CardHeader className="py-3">
-              <CardTitle className="text-base">תוצאות תיקון</CardTitle>
-            </CardHeader>
-            <CardContent className="py-2 space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>רשומות player_videos שתוקנו:</span>
-                <Badge variant="outline">{result.fixed_player_videos || 0}</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span>רשומות auto_assignments עם ערכי null שתוקנו:</span>
-                <Badge variant="outline">{result.fixed_null_sent || 0}</Badge>
-              </div>
-              <div className="flex justify-between">
-                <span>משימות שעברו זמנן ובוצעו:</span>
-                <Badge variant="outline">{result.processed_past_due || 0}</Badge>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    );
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה",
+        description: "אירעה שגיאה לא צפויה.",
+      });
+    }
+  };
+
+  const handleCancel = () => {
+    reset();
+    setSelectedVideo(null);
+    setIsEditMode(false);
   };
 
   return (
-    <div className="container py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>ניהול שליחת סרטונים אוטומטית</CardTitle>
-          <CardDescription>
-            הגדרת שליחת סרטונים אוטומטית לשחקנים בתאריכים מוגדרים
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="container mx-auto p-4">
+      <Button
+        variant="outline"
+        size="icon"
+        className="mb-6"
+        onClick={() => navigate(-1)}
+      >
+        <ArrowRight className="h-4 w-4" />
+      </Button>
+      <h1 className="text-2xl font-bold mb-4">ניהול סרטונים אוטומטי</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Video Form */}
+        <div className="bg-white shadow-md rounded-md p-4">
+          <h2 className="text-lg font-semibold mb-2">{isEditMode ? 'עריכת סרטון' : 'הוספת סרטון'}</h2>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <Label htmlFor="player">שחקן</Label>
-              <Select onValueChange={setSelectedPlayer}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="בחר שחקן" />
-                </SelectTrigger>
-                <SelectContent>
-                  {loadingPlayers ? (
-                    <SelectItem value="" disabled>
-                      טוען שחקנים...
-                    </SelectItem>
-                  ) : (
-                    players.map((player) => (
-                      <SelectItem key={player.id} value={player.id}>
-                        {player.full_name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="videoTitle">שם הסרטון</Label>
+              <Controller
+                control={control}
+                name="videoTitle"
+                render={({ field }) => (
+                  <Input
+                    id="videoTitle"
+                    placeholder="הכנס שם סרטון"
+                    {...field}
+                  />
+                )}
+              />
+              {errors.videoTitle && (
+                <p className="text-red-500 text-sm">{errors.videoTitle.message}</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="video">סרטון</Label>
-              <Select onValueChange={setSelectedVideo}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="בחר סרטון" />
-                </SelectTrigger>
-                <SelectContent>
-                  {loadingVideos ? (
-                    <SelectItem value="" disabled>
-                      טוען סרטונים...
-                    </SelectItem>
-                  ) : (
-                    videos.map((video) => (
-                      <SelectItem key={video.id} value={video.id}>
-                        {video.title}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="scheduledDate">תאריך שליחה</Label>
-              <Input
-                type="datetime-local"
-                id="scheduledDate"
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
+              <Label htmlFor="videoDescription">תיאור הסרטון</Label>
+              <Controller
+                control={control}
+                name="videoDescription"
+                render={({ field }) => (
+                  <Textarea
+                    id="videoDescription"
+                    placeholder="הכנס תיאור לסרטון"
+                    {...field}
+                  />
+                )}
               />
             </div>
-            <Button type="submit" disabled={isSubmitting} className="mt-6">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  שולח...
-                </>
-              ) : (
-                <>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  הוסף משימה
-                </>
+            <div>
+              <Label htmlFor="isPublic">
+                <div className="flex items-center">
+                  <Controller
+                    control={control}
+                    name="isPublic"
+                    defaultValue={false}
+                    render={({ field }) => (
+                      <Checkbox
+                        id="isPublic"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
+                  />
+                  <span className="ml-2">סרטון ציבורי</span>
+                </div>
+              </Label>
+            </div>
+            <div className="flex justify-end">
+              {isEditMode && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="mr-2"
+                  onClick={handleCancel}
+                >
+                  ביטול
+                </Button>
               )}
-            </Button>
+              <Button type="submit">{isEditMode ? 'שמור שינויים' : 'הוסף סרטון'}</Button>
+            </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Separator className="my-8" />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>רשימת משימות אוטומטיות</CardTitle>
-          <CardDescription>
-            ניהול משימות אוטומטיות לשליחת סרטונים
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex items-center space-x-4">
-            <Input
-              type="text"
-              placeholder="חפש שחקן או סרטון..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Select onValueChange={setFilterType}>
-              <SelectTrigger>
-                <SelectValue placeholder="סנן לפי סטטוס" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">הכל</SelectItem>
-                <SelectItem value="sent">נשלח</SelectItem>
-                <SelectItem value="pending">ממתין</SelectItem>
-                <SelectItem value="unsent">לא נשלח</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {loadingAssignments ? (
-            <div className="flex items-center justify-center">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              טוען משימות...
-            </div>
-          ) : filteredAssignments.length === 0 ? (
-            <div className="flex items-center justify-center">
-              <AlertCircle className="mr-2 h-4 w-4" />
-              אין משימות אוטומטיות
-            </div>
+        {/* Video List */}
+        <div className="bg-white shadow-md rounded-md p-4">
+          <h2 className="text-lg font-semibold mb-2">רשימת סרטונים</h2>
+          {isLoading ? (
+            <p>טוען סרטונים...</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      שחקן
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      סרטון
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      תאריך שליחה
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      סטטוס
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      פעולות
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAssignments.map((assignment) => {
-                    const player = players.find((p) => p.id === assignment.player_id);
-                    const video = videos.find((v) => v.id === assignment.video_id);
-                    const scheduledDateFormatted = new Date(assignment.scheduled_for).toLocaleString();
-                    let statusText = 'ממתין';
-                    let statusColor = 'text-gray-500';
-                    if (assignment.sent === true) {
-                      statusText = 'נשלח';
-                      statusColor = 'text-green-500';
-                    } else if (assignment.sent === false) {
-                      statusText = 'ממתין';
-                      statusColor = 'text-gray-500';
-                    } else {
-                      statusText = 'לא נשלח';
-                      statusColor = 'text-red-500';
-                    }
-
-                    return (
-                      <tr key={assignment.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {player?.full_name || 'לא ידוע'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {video?.title || 'לא ידוע'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {scheduledDateFormatted}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
-                            {statusText}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          {assignment.sent === true ? (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => window.open(video?.url, '_blank')}
-                            >
-                              <ExternalLink className="h-4 w-4 ml-2" />
-                              צפה בסרטון
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={isResending === assignment.id}
-                              onClick={() => handleResendAssignment(assignment)}
-                            >
-                              {isResending === assignment.id ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  שולח מחדש...
-                                </>
-                              ) : (
-                                <>
-                                  <Check className="mr-2 h-4 w-4" />
-                                  שלח עכשיו
-                                </>
-                              )}
-                            </Button>
-                          )}
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            disabled={isDeleting === assignment.id}
-                            onClick={() => handleDeleteAssignment(assignment.id!)}
-                            className="ml-2"
-                          >
-                            {isDeleting === assignment.id ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                מוחק...
-                              </>
-                            ) : (
-                              <>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                מחק
-                              </>
-                            )}
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="space-y-2">
+              {videos.map((video) => (
+                <div key={video.id} className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100">
+                  <span>{video.title}</span>
+                  <div className="space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleEdit(video)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleDelete(video.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {videos.length === 0 && <p>אין סרטונים להצגה.</p>}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      <Separator className="my-8" />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>כלי עזר</CardTitle>
-          <CardDescription>פעולות תחזוקה</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FixPlayerVideosButton />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

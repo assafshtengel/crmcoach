@@ -1,336 +1,275 @@
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  CardDescription, 
+  CardFooter
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { ArrowRight, Edit, Trash2, PlusCircle, Book } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Plus, Edit, Video, Save, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-
-interface Tool {
+interface MentalTool {
   id: string;
-  name: string;
+  title: string;
   description: string;
-  learned: string;
-  key_points: string[];
-  implementation: string;
-  video_url?: string;
-  user_id: string;
+  content: string;
+  coach_id: string;
 }
 
 const MentalTools = () => {
-  const navigate = useNavigate();
+  const [tools, setTools] = useState<MentalTool[]>([]);
+  const [newTool, setNewTool] = useState({ title: '', description: '', content: '' });
+  const [editingToolId, setEditingToolId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTool, setEditingTool] = useState<Tool | null>(null);
-  const [tools, setTools] = useState<Tool[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [newTool, setNewTool] = useState<Omit<Tool, 'id' | 'user_id'>>({
-    name: "",
-    description: "",
-    learned: "",
-    key_points: [],
-    implementation: "",
-    video_url: ""
-  });
+  const navigate = useNavigate();
 
-  // Load tools from Supabase when component mounts
   useEffect(() => {
     fetchTools();
   }, []);
 
   const fetchTools = async () => {
+    setLoading(true);
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) return;
-
       const { data, error } = await supabase
         .from('mental_tools')
         .select('*')
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching tools:', error);
+        console.error("Error fetching mental tools:", error);
         toast({
-          title: "שגיאה בטעינת הכלים",
-          description: "אנא נסה שוב מאוחר יותר",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      setTools(data || []);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        toast({
-          title: "לא מחובר",
-          description: "יש להתחבר כדי לשמור כלים",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (editingTool) {
-        // Update existing tool
-        const { error } = await supabase
-          .from('mental_tools')
-          .update({
-            name: editingTool.name,
-            description: editingTool.description,
-            learned: editingTool.learned,
-            key_points: editingTool.key_points,
-            implementation: editingTool.implementation,
-            video_url: editingTool.video_url
-          })
-          .eq('id', editingTool.id);
-
-        if (error) {
-          console.error('Error updating tool:', error);
-          toast({
-            title: "שגיאה בעדכון הכלי",
-            description: "אנא נסה שוב מאוחר יותר",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        toast({
-          title: "הכלי עודכן בהצלחה",
-          description: `הכלי ${editingTool.name} עודכן`
+          title: "שגיאה",
+          description: "אירעה שגיאה בטעינת הכלים המנטליים",
+          variant: "destructive",
         });
       } else {
-        // Validate required fields
-        if (!newTool.name || !newTool.description || !newTool.learned || !newTool.implementation) {
-          toast({
-            title: "שגיאה",
-            description: "יש למלא את כל השדות החובה",
-            variant: "destructive"
-          });
-          return;
-        }
+        setTools(data || []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        // Add new tool
-        const { error } = await supabase
-          .from('mental_tools')
-          .insert({
-            name: newTool.name,
-            description: newTool.description,
-            learned: newTool.learned,
-            key_points: newTool.key_points,
-            implementation: newTool.implementation,
-            video_url: newTool.video_url,
-            user_id: session.session.user.id
-          });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewTool(prev => ({ ...prev, [name]: value }));
+  };
 
-        if (error) {
-          console.error('Error adding tool:', error);
-          toast({
-            title: "שגיאה בהוספת הכלי",
-            description: "אנא נסה שוב מאוחר יותר",
-            variant: "destructive"
-          });
-          return;
-        }
+  const handleCreateTool = async () => {
+    if (!newTool.title || !newTool.description || !newTool.content) {
+      toast({
+        title: "אזהרה",
+        description: "יש למלא את כל השדות",
+        variant: "warning",
+      });
+      return;
+    }
 
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const { data, error } = await supabase
+        .from('mental_tools')
+        .insert([{ ...newTool, coach_id: user.id }])
+        .select();
+
+      if (error) {
+        console.error("Error creating mental tool:", error);
         toast({
-          title: "הכלי נוסף בהצלחה",
-          description: `הכלי ${newTool.name} נוסף למאגר הכלים`
+          title: "שגיאה",
+          description: "אירעה שגיאה ביצירת הכלי המנטלי",
+          variant: "destructive",
+        });
+      } else {
+        setTools([...tools, ...(data || [])]);
+        setNewTool({ title: '', description: '', content: '' });
+        toast({
+          title: "הצלחה",
+          description: "הכלי המנטלי נוצר בהצלחה",
         });
       }
-
-      // Refresh tools list
-      await fetchTools();
-
-      // Reset form and close dialog
-      setIsDialogOpen(false);
-      setEditingTool(null);
-      setNewTool({
-        name: "",
-        description: "",
-        learned: "",
-        key_points: [],
-        implementation: "",
-        video_url: ""
-      });
-    } catch (error) {
-      console.error('Error:', error);
+    } catch (error: any) {
+      console.error("Error during tool creation:", error);
       toast({
         title: "שגיאה",
-        description: "אירעה שגיאה בשמירת הכלי",
-        variant: "destructive"
+        description: error.message || "אירעה שגיאה לא צפויה",
+        variant: "destructive",
       });
     }
   };
 
-  const handleEdit = (tool: Tool) => {
-    setEditingTool({
-      ...tool,
-      key_points: [...tool.key_points]
-    });
-    setIsDialogOpen(true);
+  const handleUpdateTool = async (id: string, updatedTool: Partial<MentalTool>) => {
+    try {
+      const { data, error } = await supabase
+        .from('mental_tools')
+        .update(updatedTool)
+        .eq('id', id)
+        .select();
+
+      if (error) {
+        console.error("Error updating mental tool:", error);
+        toast({
+          title: "שגיאה",
+          description: "אירעה שגיאה בעדכון הכלי המנטלי",
+          variant: "destructive",
+        });
+      } else {
+        setTools(tools.map(tool => (tool.id === id ? { ...tool, ...updatedTool } : tool)));
+        setEditingToolId(null);
+        toast({
+          title: "הצלחה",
+          description: "הכלי המנטלי עודכן בהצלחה",
+        });
+      }
+    } catch (error) {
+      console.error("Error during tool update:", error);
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה לא צפויה",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleNewTool = () => {
-    setEditingTool(null);
-    setNewTool({
-      name: "",
-      description: "",
-      learned: "",
-      key_points: [],
-      implementation: "",
-      video_url: ""
-    });
-    setIsDialogOpen(true);
+  const handleDeleteTool = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('mental_tools')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error("Error deleting mental tool:", error);
+        toast({
+          title: "שגיאה",
+          description: "אירעה שגיאה במחיקת הכלי המנטלי",
+          variant: "destructive",
+        });
+      } else {
+        setTools(tools.filter(tool => tool.id !== id));
+        toast({
+          title: "הצלחה",
+          description: "הכלי המנטלי נמחק בהצלחה",
+        });
+      }
+    } catch (error) {
+      console.error("Error during tool deletion:", error);
+      toast({
+        title: "שגיאה",
+        description: "אירעה שגיאה לא צפויה",
+        variant: "destructive",
+      });
+    }
   };
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center min-h-screen">
-      <p>טוען...</p>
-    </div>;
-  }
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">כלים מנטליים</h1>
 
-  return <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-          <h1 className="text-2xl md:text-3xl font-bold text-center bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-            כלים מנטליים
-          </h1>
-          <Button variant="outline" size="icon" onClick={handleNewTool}>
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Create New Tool Section */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>צור כלי מנטלי חדש</CardTitle>
+          <CardDescription>הוסף כלי חדש לספרייה שלך</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="title">כותרת</Label>
+            <Input
+              type="text"
+              id="title"
+              name="title"
+              value={newTool.title}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="description">תיאור</Label>
+            <Input
+              type="text"
+              id="description"
+              name="description"
+              value={newTool.description}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="content">תוכן</Label>
+            <Textarea
+              id="content"
+              name="content"
+              value={newTool.content}
+              onChange={handleInputChange}
+            />
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button onClick={handleCreateTool}>צור כלי</Button>
+        </CardFooter>
+      </Card>
 
-        <div className="grid gap-6">
-          {tools.map(tool => <Card key={tool.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-primary font-extrabold px-[59px] py-0 my-[4px] mx-0 text-3xl">{tool.name}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(tool)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
+      {/* List of Existing Tools */}
+      <div className="grid gap-4">
+        {loading ? (
+          <p>טוען כלים...</p>
+        ) : (
+          tools.map(tool => (
+            <Card key={tool.id}>
+              <CardHeader>
+                <CardTitle>{tool.title}</CardTitle>
+                <CardDescription>{tool.description}</CardDescription>
               </CardHeader>
-              <CardContent className="bg-zinc-200 hover:bg-zinc-100">
-                <p className="text-gray-600 mb-4 font-extrabold">{tool.description}</p>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-500">תאריך לימוד: {tool.learned}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-2">נקודות מפתח:</h4>
-                    <ul className="list-disc list-inside space-y-1 text-gray-600">
-                      {tool.key_points.map((point, idx) => <li key={idx} className="bg-zinc-50 rounded-sm">{point}</li>)}
-                    </ul>
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-2">יישום:</h4>
-                    <p className="text-gray-600 font-bold">{tool.implementation}</p>
-                  </div>
-                  {tool.video_url && <div>
-                      <h4 className="font-medium mb-2">סרטון הדרכה:</h4>
-                      <Button variant="outline" className="flex items-center gap-2" onClick={() => window.open(tool.video_url, '_blank')}>
-                        <Video className="h-4 w-4" />
-                        צפה בסרטון
-                      </Button>
-                    </div>}
-                </div>
+              <CardContent>
+                {editingToolId === tool.id ? (
+                  <Textarea
+                    defaultValue={tool.content}
+                    onBlur={(e) => handleUpdateTool(tool.id, { content: e.target.value })}
+                    className="w-full"
+                  />
+                ) : (
+                  <p>{tool.content}</p>
+                )}
               </CardContent>
-            </Card>)}
-        </div>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingTool ? "עריכת כלי" : "הוספת כלי חדש"}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">שם הכלי</Label>
-                <Input id="name" value={editingTool ? editingTool.name : newTool.name} onChange={e => editingTool ? setEditingTool({
-                ...editingTool,
-                name: e.target.value
-              }) : setNewTool({
-                ...newTool,
-                name: e.target.value
-              })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">תיאור הכלי</Label>
-                <Textarea id="description" value={editingTool ? editingTool.description : newTool.description} onChange={e => editingTool ? setEditingTool({
-                ...editingTool,
-                description: e.target.value
-              }) : setNewTool({
-                ...newTool,
-                description: e.target.value
-              })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="learned">תאריך לימוד</Label>
-                <Input id="learned" value={editingTool ? editingTool.learned : newTool.learned} onChange={e => editingTool ? setEditingTool({
-                ...editingTool,
-                learned: e.target.value
-              }) : setNewTool({
-                ...newTool,
-                learned: e.target.value
-              })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="key_points">נקודות מפתח (כל נקודה בשורה חדשה)</Label>
-                <Textarea id="key_points" value={editingTool ? editingTool.key_points.join('\n') : newTool.key_points?.join('\n')} onChange={e => {
-                const points = e.target.value.split('\n').filter(point => point.trim() !== '');
-                editingTool ? setEditingTool({
-                  ...editingTool,
-                  key_points: points
-                }) : setNewTool({
-                  ...newTool,
-                  key_points: points
-                });
-              }} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="implementation">יישום</Label>
-                <Textarea id="implementation" value={editingTool ? editingTool.implementation : newTool.implementation} onChange={e => editingTool ? setEditingTool({
-                ...editingTool,
-                implementation: e.target.value
-              }) : setNewTool({
-                ...newTool,
-                implementation: e.target.value
-              })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="video_url">קישור לסרטון</Label>
-                <Input id="video_url" type="url" placeholder="הכנס קישור לסרטון YouTube או Vimeo" value={editingTool ? editingTool.video_url : newTool.video_url} onChange={e => editingTool ? setEditingTool({
-                ...editingTool,
-                video_url: e.target.value
-              }) : setNewTool({
-                ...newTool,
-                video_url: e.target.value
-              })} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button onClick={handleSave}>
-                {editingTool ? "עדכן" : "הוסף"} כלי
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <CardFooter className="flex justify-end gap-2">
+                {editingToolId === tool.id ? (
+                  <Button variant="secondary" onClick={() => setEditingToolId(null)}>
+                    בטל
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setEditingToolId(tool.id)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      ערוך
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleDeleteTool(tool.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      מחק
+                    </Button>
+                  </>
+                )}
+              </CardFooter>
+            </Card>
+          ))
+        )}
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default MentalTools;

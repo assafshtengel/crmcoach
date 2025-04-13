@@ -1,14 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, Save } from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
+import { Button } from '@/components/ui/button';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { supabase } from '@/lib/supabase';
 import {
   Dialog,
   DialogContent,
@@ -16,21 +12,52 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@/components/ui/dialog"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { useToast } from "@/hooks/use-toast"
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Tool } from '@/types/tool';
 
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "שם הכלי חייב להכיל לפחות 2 תווים.",
+  }),
+  description: z.string().optional(),
+})
+
 export function ToolsList() {
+  const [open, setOpen] = useState(false);
   const [tools, setTools] = useState<Tool[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newToolName, setNewToolName] = useState('');
-  const [newToolDescription, setNewToolDescription] = useState('');
-  const [editMode, setEditMode] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [toolToDelete, setToolToDelete] = useState<Tool | null>(null);
-  const { toast } = useToast();
+  const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast()
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+    },
+    mode: "onChange"
+  })
 
   useEffect(() => {
     fetchTools();
@@ -39,13 +66,10 @@ export function ToolsList() {
   async function fetchTools() {
     try {
       setLoading(true);
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) return;
-
       const { data, error } = await supabase
         .from('coach_tools')
         .select('*')
-        .order('created_at', { ascending: false }) as { data: Tool[] | null; error: any };
+        .order('name', { ascending: true });
 
       if (error) {
         throw error;
@@ -56,109 +80,67 @@ export function ToolsList() {
       }
     } catch (error) {
       console.error('Error fetching tools:', error);
-      toast({
-        title: "שגיאה בטעינת הכלים",
-        description: "נסה שוב מאוחר יותר",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
   }
 
-  async function addTool() {
-    if (!newToolName.trim() || !newToolDescription.trim()) {
-      toast({
-        title: "שדות חובה",
-        description: "יש למלא שם וגם תיאור לכלי",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  async function createTool(values: z.infer<typeof formSchema>) {
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        toast({
-          title: "שגיאה בהוספת הכלי",
-          description: "יש להתחבר למערכת",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { data, error } = await supabase
         .from('coach_tools')
-        .insert([
-          {
-            name: newToolName,
-            description: newToolDescription,
-            coach_id: session.session.user.id
-          },
-        ])
-        .select() as { data: Tool[] | null; error: any };
+        .insert([values])
+        .select();
 
       if (error) {
         throw error;
       }
 
       if (data) {
-        setTools([...data, ...tools]);
-        setNewToolName('');
-        setNewToolDescription('');
         toast({
-          title: "הכלי נוסף בהצלחה",
-          description: "הכלי זמין כעת לשימוש בסיכומי אימון",
-        });
+          title: "הכלי נוצר בהצלחה!",
+        })
+        fetchTools();
       }
-    } catch (error) {
-      console.error('Error adding tool:', error);
+    } catch (error: any) {
       toast({
-        title: "שגיאה בהוספת הכלי",
-        description: "נסה שוב מאוחר יותר",
         variant: "destructive",
-      });
+        title: "אופס! משהו השתבש.",
+        description: error.message,
+      })
+    } finally {
+      setOpen(false);
+      form.reset();
     }
   }
 
-  async function updateTool(id: string) {
-    if (!editName.trim() || !editDescription.trim()) {
-      toast({
-        title: "שדות חובה",
-        description: "יש למלא שם וגם תיאור לכלי",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  async function updateTool(id: string, values: z.infer<typeof formSchema>) {
     try {
       const { data, error } = await supabase
         .from('coach_tools')
-        .update({
-          name: editName,
-          description: editDescription,
-        })
+        .update(values)
         .eq('id', id)
-        .select() as { data: Tool[] | null; error: any };
+        .select();
 
       if (error) {
         throw error;
       }
 
       if (data) {
-        setTools(tools.map(tool => tool.id === id ? data[0] : tool));
-        setEditMode(null);
         toast({
-          title: "הכלי עודכן בהצלחה",
-        });
+          title: "הכלי עודכן בהצלחה!",
+        })
+        fetchTools();
       }
-    } catch (error) {
-      console.error('Error updating tool:', error);
+    } catch (error: any) {
       toast({
-        title: "שגיאה בעדכון הכלי",
-        description: "נסה שוב מאוחר יותר",
         variant: "destructive",
-      });
+        title: "אופס! משהו השתבש.",
+        description: error.message,
+      })
+    } finally {
+      setOpen(false);
+      form.reset();
     }
   }
 
@@ -167,213 +149,148 @@ export function ToolsList() {
       const { error } = await supabase
         .from('coach_tools')
         .delete()
-        .eq('id', id) as { error: any };
+        .eq('id', id);
 
       if (error) {
         throw error;
       }
 
-      setTools(tools.filter(tool => tool.id !== id));
-      setDeleteDialogOpen(false);
-      setToolToDelete(null);
       toast({
-        title: "הכלי נמחק בהצלחה",
-      });
-    } catch (error) {
-      console.error('Error deleting tool:', error);
+        title: "הכלי נמחק בהצלחה!",
+      })
+      fetchTools();
+    } catch (error: any) {
       toast({
-        title: "שגיאה במחיקת הכלי",
-        description: "נסה שוב מאוחר יותר",
         variant: "destructive",
-      });
+        title: "אופס! משהו השתבש.",
+        description: error.message,
+      })
     }
   }
 
-  function startEdit(tool: Tool) {
-    setEditMode(tool.id);
-    setEditName(tool.name);
-    setEditDescription(tool.description);
-  }
+  const handleOpenChange = () => {
+    setOpen(!open);
+    setIsEditMode(false);
+    setSelectedTool(null);
+    form.reset();
+  };
 
-  function cancelEdit() {
-    setEditMode(null);
-    setEditName('');
-    setEditDescription('');
-  }
+  const handleEdit = (tool: Tool) => {
+    setSelectedTool(tool);
+    setIsEditMode(true);
+    setOpen(true);
+    form.setValue("name", tool.name);
+    form.setValue("description", tool.description || "");
+  };
 
-  function openDeleteDialog(tool: Tool) {
-    setToolToDelete(tool);
-    setDeleteDialogOpen(true);
+  const handleDelete = (id: string) => {
+    deleteTool(id);
+  };
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (isEditMode && selectedTool) {
+      updateTool(selectedTool.id, values);
+    } else {
+      createTool(values);
+    }
   }
 
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="tools" dir="rtl">
-        <TabsList className="mb-4">
-          <TabsTrigger value="tools">רשימת הכלים</TabsTrigger>
-          <TabsTrigger value="add">הוספת כלי חדש</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="tools" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              {loading ? (
-                <div className="text-center py-10">טוען...</div>
-              ) : tools.length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground">
-                  <p>טרם נוספו כלים למערכת</p>
-                  <Button 
-                    variant="link" 
-                    onClick={() => {
-                      const tabTrigger = document.querySelector('[data-value="add"]');
-                      if (tabTrigger) {
-                        (tabTrigger as HTMLElement).click();
-                      }
-                    }}
-                  >
-                    הוסף כלי ראשון
-                  </Button>
-                </div>
-              ) : (
-                <ScrollArea className="h-[50vh]">
-                  <div className="space-y-4 p-1">
-                    {tools.map((tool) => (
-                      <Card key={tool.id} className="overflow-hidden">
-                        <CardContent className="p-4">
-                          {editMode === tool.id ? (
-                            <div className="space-y-4">
-                              <div>
-                                <label htmlFor="editName" className="block text-sm font-medium mb-1">
-                                  שם הכלי
-                                </label>
-                                <Input
-                                  id="editName"
-                                  value={editName}
-                                  onChange={(e) => setEditName(e.target.value)}
-                                  className="w-full"
-                                />
-                              </div>
-                              <div>
-                                <label htmlFor="editDescription" className="block text-sm font-medium mb-1">
-                                  תיאור הכלי
-                                </label>
-                                <Textarea
-                                  id="editDescription"
-                                  value={editDescription}
-                                  onChange={(e) => setEditDescription(e.target.value)}
-                                  rows={4}
-                                  className="w-full"
-                                />
-                              </div>
-                              <div className="flex justify-end space-x-2 rtl:space-x-reverse">
-                                <Button variant="outline" onClick={cancelEdit}>
-                                  ביטול
-                                </Button>
-                                <Button onClick={() => updateTool(tool.id)}>
-                                  <Save className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
-                                  שמירה
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="flex justify-between items-start mb-2">
-                                <h3 className="text-lg font-semibold">{tool.name}</h3>
-                                <div className="flex space-x-2 rtl:space-x-reverse">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => startEdit(tool)}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => openDeleteDialog(tool)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <p className="text-muted-foreground whitespace-pre-wrap">
-                                {tool.description}
-                              </p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="add">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div>
-                <label htmlFor="newToolName" className="block text-sm font-medium mb-1">
-                  שם הכלי
-                </label>
-                <Input
-                  id="newToolName"
-                  value={newToolName}
-                  onChange={(e) => setNewToolName(e.target.value)}
-                  placeholder="הזן שם לכלי"
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label htmlFor="newToolDescription" className="block text-sm font-medium mb-1">
-                  תיאור הכלי
-                </label>
-                <Textarea
-                  id="newToolDescription"
-                  value={newToolDescription}
-                  onChange={(e) => setNewToolDescription(e.target.value)}
-                  placeholder="תאר כיצד ומתי להשתמש בכלי זה"
-                  rows={6}
-                  className="w-full"
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={addTool}>
-                  <Plus className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" />
-                  הוסף כלי
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+    <>
+      <div className="md:flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">רשימת כלים</h2>
+        <Button onClick={handleOpenChange}>
+          <PlusCircle className="w-4 h-4 mr-2" />
+          הוסף כלי חדש
+        </Button>
+      </div>
 
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>האם למחוק את הכלי?</DialogTitle>
+            <DialogTitle>{isEditMode ? "ערוך כלי" : "צור כלי"}</DialogTitle>
             <DialogDescription>
-              פעולה זו תמחק את הכלי &quot;{toolToDelete?.name}&quot; לצמיתות.
+              {isEditMode
+                ? "ערוך את שם הכלי והתיאור שלו כאן. לחץ על שמור כשסיימת."
+                : "הוסף כלי חדש לשימוש חוזר."}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              ביטול
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => toolToDelete && deleteTool(toolToDelete.id)}
-            >
-              מחק
-            </Button>
-          </DialogFooter>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>שם הכלי</FormLabel>
+                    <FormControl>
+                      <Input placeholder="שם הכלי" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>תיאור</FormLabel>
+                    <FormControl>
+                      <Input placeholder="תיאור" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="submit">{isEditMode ? "שמור" : "צור"}</Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
-    </div>
+
+      <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+        <Table>
+          <TableCaption>רשימת כלים לשימוש חוזר.</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">שם</TableHead>
+              <TableHead>תיאור</TableHead>
+              <TableHead className="text-right">פעולות</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">טוען...</TableCell>
+              </TableRow>
+            ) : tools.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">אין כלים</TableCell>
+              </TableRow>
+            ) : (
+              tools.map((tool) => (
+                <TableRow key={tool.id}>
+                  <TableCell className="font-medium">{tool.name}</TableCell>
+                  <TableCell>{tool.description}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(tool)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      ערוך
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(tool.id)}>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      מחק
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }

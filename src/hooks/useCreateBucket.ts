@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 
 export function useCreateBucket() {
   const [isCreating, setIsCreating] = useState(false);
@@ -12,7 +12,7 @@ export function useCreateBucket() {
     
     try {
       console.log(`Creating bucket: ${bucketName}`);
-      const { data, error } = await supabaseClient.storage.createBucket(bucketName, {
+      const { data, error } = await supabase.storage.createBucket(bucketName, {
         public: true
       });
       
