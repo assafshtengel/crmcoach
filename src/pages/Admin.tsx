@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
-import { ArrowRight, LayoutDashboard } from 'lucide-react';
+import { ArrowRight, LayoutDashboard, UserPlus } from 'lucide-react';
 
 const ADMIN_PASSWORD = 'admin123'; // This should be moved to environment variables in production
 
@@ -92,6 +92,17 @@ const Admin = () => {
         >
           <LayoutDashboard className="h-4 w-4" />
         </Button>
+      </div>
+      <div className="mb-6">
+        <Card className="p-4 mb-4">
+          <Button 
+            onClick={() => navigate('/admin/create-player-auth')}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            יצירת משתמש Auth חדש לשחקן
+          </Button>
+        </Card>
       </div>
       <AdminDashboard />
     </div>
