@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
@@ -67,72 +68,92 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     try {
       console.log("[AUDIT] Fetching assigned videos for player:", playerId);
       
-      // שיפור: משיכת פרטי הוידאו יחד עם רשומות ה-player_videos בשאילתה יותר יעילה
+      // גישה 1: לקבל קודם את רשימת הסרטונים המשויכים לשחקן
       const { data: playerVideosData, error: playerVideosError } = await supabase
         .from("player_videos")
-        .select(`
-          id, 
-          video_id,
-          watched,
-          watched_at,
-          videos:video_id (
-            id,
-            title,
-            url,
-            description,
-            category,
-            created_at,
-            days_after_registration
-          )
-        `)
+        .select("*")
         .eq("player_id", playerId);
         
+      console.log("[AUDIT] Raw player_videos data:", playerVideosData);
+      
       if (playerVideosError) {
         console.error("[AUDIT] Error fetching player_videos:", playerVideosError);
         throw playerVideosError;
       }
       
-      console.log("[AUDIT] Player videos data:", playerVideosData);
-      
-      // שיפור: טיפול במקרה שלא נמצאו סרטונים
       if (!playerVideosData || playerVideosData.length === 0) {
-        console.log("[AUDIT] No assigned videos found for player");
+        console.log("[AUDIT] No player_videos found for this player");
         setVideos([]);
         setActiveVideo(null);
         setError("אין סרטונים זמינים כרגע");
         return;
       }
       
-      // המרת הנתונים למבנה שהקומפוננטה מצפה לו
-      const formattedVideos = playerVideosData
-        .filter(item => item.videos) // שימוש רק בפריטים שיש להם סרטון מקושר
-        .map(item => {
+      // מיצוי רשימת מזהי הסרטונים
+      const videoIds = playerVideosData.map(pv => pv.video_id);
+      console.log("[AUDIT] Extracted video IDs:", videoIds);
+      
+      // שליפת מידע מלא על הסרטונים
+      if (videoIds.length > 0) {
+        const { data: videosData, error: videosError } = await supabase
+          .from("videos")
+          .select("*")
+          .in("id", videoIds);
+          
+        console.log("[AUDIT] Full videos data:", videosData);
+        
+        if (videosError) {
+          console.error("[AUDIT] Error fetching videos data:", videosError);
+          throw videosError;
+        }
+        
+        if (!videosData || videosData.length === 0) {
+          console.log("[AUDIT] No videos found with the provided IDs");
+          setVideos([]);
+          setActiveVideo(null);
+          setError("לא נמצאו סרטונים תואמים");
+          return;
+        }
+        
+        // שילוב המידע מטבלת player_videos וטבלת videos
+        const formattedVideos = videosData.map(video => {
+          // מציאת הרשומה המתאימה בטבלת player_videos
+          const playerVideo = playerVideosData.find(pv => pv.video_id === video.id);
+          
           return {
-            id: item.video_id,
-            title: item.videos.title,
-            url: item.videos.url,
-            description: item.videos.description,
-            category: item.videos.category,
-            created_at: item.videos.created_at,
-            player_video_id: item.id,
-            watched: item.watched,
-            watched_at: item.watched_at
+            id: video.id,
+            title: video.title,
+            url: video.url,
+            description: video.description,
+            category: video.category,
+            created_at: video.created_at,
+            is_auto_scheduled: video.is_auto_scheduled,
+            days_after_registration: video.days_after_registration,
+            // מידע מטבלת player_videos
+            player_video_id: playerVideo?.id,
+            watched: playerVideo?.watched || false,
+            watched_at: playerVideo?.watched_at
           } as Video;
         });
-      
-      console.log("[AUDIT] Formatted videos:", formattedVideos);
-      
-      // מיון לפי תאריך עדכני ביותר
-      formattedVideos.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      
-      setVideos(formattedVideos);
-      
-      if (formattedVideos.length > 0) {
-        setActiveVideo(formattedVideos[0]);
+        
+        console.log("[AUDIT] Formatted combined videos:", formattedVideos);
+        
+        // מיון לפי תאריך יצירה (מהחדש לישן)
+        formattedVideos.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        
+        setVideos(formattedVideos);
+        
+        if (formattedVideos.length > 0) {
+          setActiveVideo(formattedVideos[0]);
+        } else {
+          setActiveVideo(null);
+        }
       } else {
-        setError("אין סרטונים זמינים כרגע");
+        setVideos([]);
+        setActiveVideo(null);
+        setError("לא נמצאו סרטונים לשחקן זה");
       }
       
     } catch (error) {
