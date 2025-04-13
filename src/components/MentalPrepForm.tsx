@@ -13,7 +13,7 @@ import { QuestionsStep } from './mental-prep/QuestionsStep';
 import { PreviewDialog } from './mental-prep/PreviewDialog';
 import { SaveDialog } from './mental-prep/SaveDialog';
 import html2canvas from 'html2canvas';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 

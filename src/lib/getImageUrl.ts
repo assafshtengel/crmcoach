@@ -1,16 +1,22 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabaseClient } from '@/lib/supabaseClient';
 
-export const getImageUrl = async (bucket: string, path: string): Promise<string> => {
-  if (!path) {
-    return '';
+export function getImageUrl(imagePath: string | null, bucket: string = 'landing-pages') {
+  if (!imagePath) return null;
+  
+  // Check if it's a full URL already (e.g. starts with http or https)
+  if (imagePath.startsWith('http')) {
+    return imagePath;
   }
   
   try {
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+    const { data } = supabaseClient.storage
+      .from(bucket)
+      .getPublicUrl(imagePath);
+      
     return data.publicUrl;
   } catch (error) {
-    console.error('Failed to get image URL:', error);
-    return '';
+    console.error("Error getting public URL:", error);
+    return null;
   }
-};
+}

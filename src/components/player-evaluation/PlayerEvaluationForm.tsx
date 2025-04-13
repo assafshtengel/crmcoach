@@ -9,7 +9,7 @@ import type { EvaluationFormData } from '@/types/playerEvaluation';
 import { useToast } from '@/hooks/use-toast';
 import { CategorySection } from './CategorySection';
 import { ScoreSummary } from './ScoreSummary';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 

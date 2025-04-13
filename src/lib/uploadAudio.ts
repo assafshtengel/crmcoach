@@ -1,4 +1,5 @@
-import { supabase } from '@/lib/supabase';
+
+import { supabaseClient } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 
 export async function uploadAudio(audioBlob: Blob, path: string) {
@@ -16,7 +17,7 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
   
   try {
     // Check if user is authenticated first
-    const { data: session } = await supabase.auth.getSession();
+    const { data: session } = await supabaseClient.auth.getSession();
     if (!session.session) {
       toast.error('Authentication required to upload audio files');
       throw new Error("Authentication required to upload audio files");
@@ -27,7 +28,7 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     // Check user role (FIXED: using 'id' instead of 'user_id')
     let isCoach = false;
     try {
-      const { data: userRoles } = await supabase
+      const { data: userRoles } = await supabaseClient
         .from('user_roles')
         .select('role')
         .eq('id', session.session.user.id)  // FIXED: using 'id' instead of 'user_id'
@@ -58,7 +59,7 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     
     try {
       console.log(`Checking if bucket ${bucketName} exists...`);
-      const { data: bucketData, error: bucketError } = await supabase.storage
+      const { data: bucketData, error: bucketError } = await supabaseClient.storage
         .getBucket(bucketName);
       
       if (bucketError) {
@@ -77,7 +78,7 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     if (!bucketExists && targetBucket === bucketName) {
       try {
         console.log(`Attempting to create bucket: ${bucketName}`);
-        const { data: createBucketData, error: createBucketError } = await supabase.storage.createBucket(
+        const { data: createBucketData, error: createBucketError } = await supabaseClient.storage.createBucket(
           bucketName, { public: true }
         );
 
@@ -103,7 +104,7 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     console.log(`Uploading audio file to: ${targetBucket}/${filePath}`);
     
     // Upload the file
-    const { data, error } = await supabase.storage
+    const { data, error } = await supabaseClient.storage
       .from(targetBucket)
       .upload(filePath, file, {
         cacheControl: '3600',
@@ -123,7 +124,7 @@ export async function uploadAudio(audioBlob: Blob, path: string) {
     }
     
     // Get the URL for the uploaded file
-    const { data: urlData } = supabase.storage
+    const { data: urlData } = supabaseClient.storage
       .from(targetBucket)
       .getPublicUrl(filePath);
     

@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabaseClient } from '@/lib/supabaseClient';
 
 export async function uploadImage(file: File, bucket: string, path: string) {
   console.log(`Uploading image to ${bucket}/${path}`);
@@ -9,7 +9,7 @@ export async function uploadImage(file: File, bucket: string, path: string) {
   }
   
   try {
-    const { data, error } = await supabase.storage
+    const { data, error } = await supabaseClient.storage
       .from(bucket)
       .upload(path, file);
 
