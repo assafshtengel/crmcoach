@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,30 +23,46 @@ const PlayerProfileAlternative = () => {
   const [pastSessions, setPastSessions] = useState<PlayerSession[]>([]);
   const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>([]);
   const [videos, setVideos] = useState<any[]>([]);
+  const dataLoadedRef = useRef(false);
 
   useEffect(() => {
     const loadPlayerData = async () => {
+      if (dataLoadedRef.current) return;
+      
       try {
         setLoading(true);
-        const playerSession = localStorage.getItem("playerSession");
-        if (!playerSession) {
+        
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+          console.error("Authentication error:", authError);
           toast.error("לא נמצאה התחברות תקפה");
           navigate("/player-auth");
           return;
         }
-
-        const sessionData = JSON.parse(playerSession);
+        
+        if (!user) {
+          console.log("No authenticated user found");
+          navigate("/player-auth");
+          return;
+        }
+        
+        console.log("Loading data for authenticated player:", user.id);
         
         const { data, error } = await supabase
           .from("players")
           .select("*")
-          .eq("id", sessionData.id)
+          .eq("id", user.id)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching player data:", error);
+          throw error;
+        }
+        
         setPlayer(data);
         
-        const playerId = sessionData.id;
+        const playerId = user.id;
         const today = new Date().toISOString().split('T')[0];
         
         const { data: upcomingData, error: upcomingError } = await supabase
@@ -155,7 +171,9 @@ const PlayerProfileAlternative = () => {
       }
     };
 
-    loadPlayerData();
+    if (!dataLoadedRef.current) {
+      loadPlayerData();
+    }
   }, [navigate]);
 
   const handleLogout = () => {
@@ -617,7 +635,7 @@ const PlayerProfileAlternative = () => {
               ) : (
                 <div className="bg-gray-50 rounded-lg p-8 text-center">
                   <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                  <p className="text-gray-500">אין סיכומי מפגשים זמינים כרגע</p>
+                  <p className="text-gray-500">אין סיכומי מפ��שים זמינים כרגע</p>
                 </div>
               )}
             </CardContent>

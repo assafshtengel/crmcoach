@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -27,22 +26,20 @@ const PlayerAuth = () => {
   const location = useLocation();
   const { toast } = useToast();
   
-  // Handle redirect parameter if exists
   const params = new URLSearchParams(location.search);
   const redirectPath = params.get('redirect');
 
-  // Check if user is already logged in
   useEffect(() => {
     const checkLoggedIn = async () => {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (user) {
-          // If there's a redirect path, navigate there
-          if (redirectPath) {
-            navigate(redirectPath);
-          } else {
-            navigate('/player/profile-alt');
+          console.log("User already logged in:", user.id);
+          const targetPath = redirectPath || '/player/profile-alt';
+          
+          if (location.pathname !== targetPath) {
+            navigate(targetPath);
           }
         }
       } catch (e) {
@@ -51,7 +48,7 @@ const PlayerAuth = () => {
     };
     
     checkLoggedIn();
-  }, [navigate, redirectPath]);
+  }, [navigate, redirectPath, location.pathname]);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -62,7 +59,6 @@ const PlayerAuth = () => {
     setLoading(true);
 
     try {
-      // Use Supabase auth to sign in
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -80,7 +76,6 @@ const PlayerAuth = () => {
       }
 
       if (authData.user) {
-        // Check if this user exists in the players table
         const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('id, email, full_name')
@@ -95,23 +90,19 @@ const PlayerAuth = () => {
             description: "משתמש לא נמצא במערכת כשחקן.",
           });
           
-          // Sign out since this user is not a player
           await supabase.auth.signOut();
           setLoading(false);
           return;
         }
 
-        // Login successful
         toast({
           title: "התחברות הצליחה",
           description: "מיד תועבר לפרופיל השחקן",
         });
 
-        // Navigate to redirect path or default profile view
-        if (redirectPath) {
-          navigate(redirectPath);
-        } else {
-          navigate('/player/profile-alt');
+        const targetPath = redirectPath || '/player/profile-alt';
+        if (location.pathname !== targetPath) {
+          navigate(targetPath);
         }
       }
     } catch (error: any) {
@@ -119,7 +110,7 @@ const PlayerAuth = () => {
       toast({
         variant: "destructive",
         title: "שגיאה בהתחברות",
-        description: error.message || "אירעה שגיאה בהתחברות. אנא נסה שוב.",
+        description: error.message || "אירעה שגיא�� בהתחברות. אנא נסה שוב.",
       });
     } finally {
       setLoading(false);
@@ -209,7 +200,6 @@ const PlayerAuth = () => {
         </CardContent>
       </Card>
 
-      {/* Contact Coach Dialog */}
       <Dialog open={showContactCoachDialog} onOpenChange={setShowContactCoachDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

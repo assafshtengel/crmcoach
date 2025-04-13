@@ -64,6 +64,7 @@ import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 
 const AuthStateListener = () => {
   const navigate = useNavigate();
+  const redirectedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -78,8 +79,9 @@ const AuthStateListener = () => {
 
       if (event === "SIGNED_IN") {
         console.log("משתמש נכנס:", session?.user);
-        // Optionally load player profile if needed
-        // For now we'll let the normal route handling take care of this
+        // Do NOT automatically navigate on SIGNED_IN events
+        // This prevents potential redirect loops
+        // The normal route handling will take care of navigation
       }
     });
 

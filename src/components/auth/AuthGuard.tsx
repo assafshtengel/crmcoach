@@ -1,5 +1,5 @@
 
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import PlayerRegistration from "../player/PlayerRegistration";
@@ -16,8 +16,12 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
   const navigate = useNavigate();
   const { playerId } = useParams<{ playerId: string }>();
   const location = useLocation();
+  const authCheckedRef = useRef(false);
 
   useEffect(() => {
+    // Prevent repeated auth checks
+    if (authCheckedRef.current) return;
+    
     const checkAuth = async () => {
       try {
         // If this is a player route
@@ -51,8 +55,9 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
               console.log("Player record found:", playerData.id);
             }
             
-            // Redirect from original profile page to alternative profile page
-            if (location.pathname === "/player/profile") {
+            // Modify this condition to prevent infinite redirects
+            // Only redirect if we're not already on the alternative profile page
+            if (location.pathname === "/player/profile" && location.pathname !== "/player/profile-alt") {
               navigate("/player/profile-alt");
               return;
             }
@@ -63,6 +68,8 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
               return;
             }
             
+            // Mark auth as checked
+            authCheckedRef.current = true;
             setIsLoading(false);
             return;
           } else {
@@ -100,7 +107,8 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
           return;
         }
 
-        // Since we allow coaches to log in immediately after registration, no strict permission check
+        // Mark auth as checked
+        authCheckedRef.current = true;
         setIsLoading(false);
       } catch (error) {
         console.error("Authentication check failed:", error);
@@ -109,6 +117,7 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
     };
 
     checkAuth();
+    // Include location.pathname in dependencies to re-run check when route changes
   }, [navigate, playerId, playerOnly, coachOnly, location.pathname, location.search]);
 
   if (isLoading) {
