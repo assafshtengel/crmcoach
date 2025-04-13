@@ -1,10 +1,10 @@
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase as supabaseInstance } from '@/lib/supabase';
 
-const SUPABASE_URL = "https://hntgzgrlyfhojcaofbjv.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhudGd6Z3JseWZob2pjYW9mYmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkzMjY2NTYsImV4cCI6MjA1NDkwMjY1Nn0.InXLUXMCNHzBYxOEY_97y1Csm_uBeGyUsiNWlAQoHus";
+// Re-export the client from the central location
+export const supabaseClient = supabaseInstance;
 
-// Define types for the landing_pages table
+// Export the custom types that were previously defined here
 export type LandingPage = {
   id: string;
   coach_id: string;
@@ -29,8 +29,3 @@ export type LandingPage = {
   created_at?: string;
   styles?: any;
 };
-
-// Create a single client instance to avoid multiple instance warnings
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-
-export { supabaseClient };
