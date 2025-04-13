@@ -69,7 +69,7 @@ const MentalTools = () => {
       toast({
         title: "אזהרה",
         description: "יש למלא את כל השדות",
-        variant: "warning",
+        variant: "destructive",
       });
       return;
     }

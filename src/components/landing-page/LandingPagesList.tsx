@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { LandingPage } from '@/lib/supabaseClient';
+import { LandingPage } from '@/types/supabaseTypes';
 import { Edit, Eye, Copy, Trash2, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {

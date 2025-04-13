@@ -1,15 +1,10 @@
-import React, { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowRight } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
-import { useToast } from "@/components/ui/use-toast";
+import React from 'react';
 
-export const MentalPrepForm = () => {
+interface MentalPrepFormProps {
+  onFormSubmitted?: () => void;
+}
+
+export const MentalPrepForm: React.FC<MentalPrepFormProps> = ({ onFormSubmitted }) => {
   const [question1, setQuestion1] = useState('');
   const [question2, setQuestion2] = useState('');
   const [question3, setQuestion3] = useState('');
@@ -20,8 +15,8 @@ export const MentalPrepForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setLoading(true);
 
     try {
@@ -61,6 +56,11 @@ export const MentalPrepForm = () => {
       });
       
       navigate("/dashboard-coach");
+
+      // Call the callback if provided
+      if (onFormSubmitted) {
+        onFormSubmitted();
+      }
     } catch (error: any) {
       console.error('Error:', error);
       toast({

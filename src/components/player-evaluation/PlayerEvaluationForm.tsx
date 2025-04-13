@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -695,5 +696,94 @@ const formSchema = z.object({
 });
 
 export const PlayerEvaluationForm = () => {
-  // Component implementation
-}
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      strengths: "",
+      weaknesses: "",
+      opportunities: "",
+      threats: "",
+      // Include other required fields with default values
+    }
+  });
+  
+  const onSubmit = async (data: any) => {
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase
+        .from('player_evaluations')
+        .insert([data]);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "הצלחה",
+        description: "הערכת השחקן נשמרה בהצלחה",
+      });
+      
+      navigate('/players');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "שגיאה",
+        description: error.message || "אירעה שגיאה בשמירת הערכת השחקן",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>טופס הערכת שחקן</CardTitle>
+        <CardDescription>מלא את הטופס להערכת יכולות השחקן</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Basic example fields - just as a placeholder */}
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="strengths"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label>חוזקות</Label>
+                    <FormControl>
+                      <Textarea placeholder="תיאור החוזקות של השחקן" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="weaknesses"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label>חולשות</Label>
+                    <FormControl>
+                      <Textarea placeholder="תיאור החולשות של השחקן" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <Button type="submit" disabled={loading}>
+              {loading ? "שומר..." : "שמור הערכה"}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+};
