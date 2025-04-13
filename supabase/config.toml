@@ -6,3 +6,6 @@ verify_jwt = true
 
 [functions.notify-new-coach]
 verify_jwt = false
+
+[functions.create-player-auth]
+verify_jwt = true

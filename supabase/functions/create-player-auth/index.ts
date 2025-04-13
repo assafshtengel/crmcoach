@@ -47,7 +47,7 @@ serve(async (req) => {
       password,
       email_confirm: true,
       user_metadata: {
-        full_name: `${firstName} ${lastName}`
+        full_name: firstName && lastName ? `${firstName} ${lastName}` : undefined
       }
     });
     
