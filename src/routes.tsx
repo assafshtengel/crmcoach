@@ -16,7 +16,6 @@ import PlayerGameEvaluation from "./pages/player/PlayerGameEvaluation";
 import PlayerProfileAlternative from "./pages/player/PlayerProfileAlternative";
 import PlayerNotifications from "./pages/player/PlayerNotifications";
 import PlayerDashboard from "./pages/player/PlayerDashboard";
-import AdminCreatePlayerAuth from "./pages/AdminCreatePlayerAuth";
 
 const routes = createBrowserRouter([
   {
@@ -50,10 +49,6 @@ const routes = createBrowserRouter([
   {
     path: "/player-evaluation",
     element: <PlayerEvaluation />,
-  },
-  {
-    path: "/admin/create-player-auth",
-    element: <AdminCreatePlayerAuth />,
   },
   
   // Player routes
