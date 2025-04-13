@@ -1,91 +1,76 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
+// supabase/functions/create-player-auth/index.ts
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  // Handle CORS preflight request
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { email, password, firstName, lastName, playerData } = await req.json();
-    
+    // Get the request body
+    const { email, password, firstName, lastName, email_confirm = false } = await req.json()
+
+    // Validate request
     if (!email || !password) {
       return new Response(
-        JSON.stringify({
-          error: "Email and password are required fields",
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        JSON.stringify({ error: 'Email and password are required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
-      );
+      )
     }
-    
-    // Create supabase admin client with service role
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    );
-    
-    // Create the user in Supabase Auth
-    const { data: userData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+
+    // Create Supabase admin client using service role key
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Create user using admin API
+    const { data: userData, error: userError } = await supabase.auth.admin.createUser({
       email,
       password,
-      email_confirm: true,
+      email_confirm,
       user_metadata: {
-        full_name: firstName && lastName ? `${firstName} ${lastName}` : undefined
-      }
-    });
-    
-    if (createUserError) {
-      console.error("Error creating auth user:", createUserError);
+        full_name: `${firstName} ${lastName}`,
+      },
+    })
+
+    if (userError) {
+      console.error('Error creating user:', userError)
       return new Response(
-        JSON.stringify({
-          error: createUserError.message,
-          code: createUserError.code || "auth_error"
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        JSON.stringify({ error: userError.message }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
-      );
+      )
     }
-    
-    // If user created successfully, return the user id to be used for player creation
+
+    // Return the user data
     return new Response(
-      JSON.stringify({
-        id: userData.user.id,
-        email: userData.user.email
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      JSON.stringify({ id: userData.user.id }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
-    );
+    )
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error('Error processing request:', error)
     return new Response(
-      JSON.stringify({
-        error: error.message || "Unknown error occurred",
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
-    );
+    )
   }
-});
+})

@@ -115,7 +115,8 @@ const NewPlayerForm = () => {
           email,
           password,
           firstName,
-          lastName
+          lastName,
+          email_confirm: true
         },
       });
 
@@ -195,6 +196,22 @@ const NewPlayerForm = () => {
           description: "לא נמצא משתמש מחובר. אנא התחבר מחדש.",
         });
         navigate('/auth');
+        return;
+      }
+      
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+        
+      if (rolesError || !roles || roles.role !== 'coach') {
+        toast({
+          variant: "destructive",
+          title: "הרשאה נדרשת",
+          description: "רק מנהל מערכת יכול ליצור שחקנים חדשים",
+        });
+        navigate('/');
         return;
       }
 
@@ -311,6 +328,12 @@ const NewPlayerForm = () => {
 
             <div className="bg-white rounded-lg p-6 shadow-sm animate-in fade-in-50 duration-500">
               <PlayerParentInfo form={form} />
+            </div>
+
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 mt-4">
+              <p className="text-amber-600 text-sm font-medium">
+                שימו לב: רק מנהל המערכת יכול לשנות סיסמה של שחקן. אין אפשרות לשחזור סיסמה עצמאית.
+              </p>
             </div>
 
             <Button 

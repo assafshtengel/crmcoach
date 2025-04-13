@@ -91,8 +91,19 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
             navigate("/auth");
             return;
           }
-
-          // Coach route handling continues here
+          
+          // Check if user has admin role (needed for admin-only pages)
+          const { data: roles, error: rolesError } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+            
+          if (rolesError || !roles || roles.role !== 'coach') {
+            console.log("User does not have sufficient permissions");
+            navigate("/auth");
+            return;
+          }
         }
         
         // For coach routes, check Supabase authentication
