@@ -1,7 +1,8 @@
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react'; // Add useRef to the import
 import { Toaster } from '@/components/ui/toaster';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Layout } from '@/components/layout/Layout';
@@ -64,7 +65,7 @@ import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 
 const AuthStateListener = () => {
   const navigate = useNavigate();
-  const redirectedRef = useRef(false);
+  const redirectedRef = useRef(false); // Use useRef here
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
