@@ -1,713 +1,415 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { motion } from 'framer-motion';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, Check, X, Circle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Star, 
+  Calendar,
+  Target,
+  Clock,
+  Flame,
+  Trophy,
+  TrendingUp,
+  CheckCircle2,
+  Pencil
+} from 'lucide-react';
+import { useToast } from "@/components/ui/use-toast";
+import { useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-const dailyChallengeSchema = z.object({
-  challengeType: z.string().min(1, { message: "בחר סוג אתגר" }),
-  challengeDescription: z.string().min(1, { message: "תאר את האתגר" }),
-  successCriteria: z.string().min(1, { message: "הגדר קריטריונים להצלחה" }),
-  isCompleted: z.boolean().default(false),
-  reward: z.string().optional(),
-  penalty: z.string().optional(),
-  notes: z.string().optional(),
-});
+interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+  description?: string;
+}
 
-const habitSchema = z.object({
-  habitName: z.string().min(1, { message: "הכנס שם להרגל" }),
-  habitDescription: z.string().min(1, { message: "תאר את ההרגל" }),
-  frequency: z.string().min(1, { message: "בחר תדירות" }),
-  isCompleted: z.boolean().default(false),
-  notes: z.string().optional(),
-});
+interface DailyChallengeData {
+  id?: string;
+  user_id: string;
+  goal_category: string;
+  custom_goal?: string;
+  daily_tasks: Task[];
+  weekly_tasks: Task[];
+  current_day: number;
+  streak_count: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+const generateTasksForGoal = (category: string, customGoal?: string): { daily: Task[], weekly: Task[] } => {
+  // כאן נוכל להתאים את המשימות לפי הקטגוריה והמטרה המותאמת אישית
+  const defaultTasks = {
+    daily: [
+      {
+        id: 'd1',
+        title: "תרגול 15 דקות של בעיטות מדויקות",
+        completed: false,
+      },
+      {
+        id: 'd2',
+        title: "צפייה בסרטון וידאו של שחקן מצטיין",
+        completed: false,
+      },
+      {
+        id: 'd3',
+        title: "כתיבת משפט מוטיבציה אישי",
+        completed: false,
+      },
+      {
+        id: 'd4',
+        title: "5 דקות של נשימות לשיפור הריכוז",
+        completed: false,
+      }
+    ],
+    weekly: [
+      {
+        id: 'w1',
+        title: "משחק עם שחקן מנוסה",
+        description: "שחק עם שחקן מנוסה יותר ונסה ללמוד ממנו",
+        completed: false,
+      },
+      {
+        id: 'w2',
+        title: "אימוני כוח",
+        description: "בצע 3 אימוני כוח כדי לשפר יציבות על המגרש",
+        completed: false,
+      },
+      {
+        id: 'w3',
+        title: "תיעוד וניתוח משחקים",
+        description: "תיעד את המשחקים שלך וצפה בהם",
+        completed: false,
+      }
+    ]
+  };
+
+  // בעתיד נוכל להתאים את המשימות לפי הקטגוריה
+  return defaultTasks;
+};
 
 const DailyChallenge = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
-  const [challenges, setChallenges] = useState<any[]>([]);
-  const [habits, setHabits] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
-  const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { categoryId, customGoal } = location.state || {};
 
-  const challengeForm = useForm({
-    resolver: zodResolver(dailyChallengeSchema),
-    defaultValues: {
-      challengeType: "",
-      challengeDescription: "",
-      successCriteria: "",
-      isCompleted: false,
-      reward: "",
-      penalty: "",
-      notes: "",
+  // אם אין קטגוריה, נחזיר לדף הקודם
+  useEffect(() => {
+    if (!categoryId) {
+      toast({
+        title: "שגיאה",
+        description: "לא נבחרה קטגוריה",
+        variant: "destructive"
+      });
+      navigate(-1);
+    }
+  }, [categoryId, navigate, toast]);
+
+  const [notes, setNotes] = useState("");
+
+  const { data: challenge, isLoading } = useQuery({
+    queryKey: ['dailyChallenge'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
+      const { data: existingChallenge, error: fetchError } = await supabase
+        .from('daily_challenges')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error('Error fetching challenge:', fetchError);
+        throw fetchError;
+      }
+
+      if (existingChallenge) {
+        return {
+          ...existingChallenge,
+          daily_tasks: (existingChallenge.daily_tasks as unknown as Task[]) || [],
+          weekly_tasks: (existingChallenge.weekly_tasks as unknown as Task[]) || []
+        } as DailyChallengeData;
+      }
+
+      const tasks = generateTasksForGoal(categoryId, customGoal);
+      const newChallenge = {
+        user_id: user.id,
+        goal_category: categoryId,
+        custom_goal: customGoal,
+        daily_tasks: JSON.parse(JSON.stringify(tasks.daily)),
+        weekly_tasks: JSON.parse(JSON.stringify(tasks.weekly)),
+        current_day: 1,
+        streak_count: 0,
+        notes: ""
+      };
+
+      const { data, error } = await supabase
+        .from('daily_challenges')
+        .insert(newChallenge)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating challenge:', error);
+        throw error;
+      }
+
+      return {
+        ...data,
+        daily_tasks: (data.daily_tasks as unknown as Task[]) || [],
+        weekly_tasks: (data.weekly_tasks as unknown as Task[]) || []
+      } as DailyChallengeData;
     },
+    enabled: !!categoryId // רק אם יש קטגוריה נריץ את השאילתה
   });
 
-  const habitForm = useForm({
-    resolver: zodResolver(habitSchema),
-    defaultValues: {
-      habitName: "",
-      habitDescription: "",
-      frequency: "",
-      isCompleted: false,
-      notes: "",
+  const updateChallenge = useMutation({
+    mutationFn: async (updatedData: Partial<DailyChallengeData>) => {
+      if (!challenge?.id) return;
+      
+      const dataToUpdate = {
+        ...updatedData,
+        daily_tasks: updatedData.daily_tasks ? JSON.parse(JSON.stringify(updatedData.daily_tasks)) : undefined,
+        weekly_tasks: updatedData.weekly_tasks ? JSON.parse(JSON.stringify(updatedData.weekly_tasks)) : undefined
+      };
+
+      const { data, error } = await supabase
+        .from('daily_challenges')
+        .update(dataToUpdate)
+        .eq('id', challenge.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        ...data,
+        daily_tasks: (data.daily_tasks as unknown as Task[]) || [],
+        weekly_tasks: (data.weekly_tasks as unknown as Task[]) || []
+      } as DailyChallengeData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dailyChallenge'] });
+      toast({
+        title: "ההתקדמות נשמרה",
+        description: "המשך כך!",
+      });
     },
   });
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const { data: challengesData, error: challengesError } = await supabase
-        .from('daily_challenges')
-        .select('*');
-
-      if (challengesError) {
-        throw challengesError;
-      }
-
-      const { data: habitsData, error: habitsError } = await supabase
-        .from('habits')
-        .select('*');
-
-      if (habitsError) {
-        throw habitsError;
-      }
-
-      setChallenges(challengesData || []);
-      setHabits(habitsData || []);
-    } catch (error: any) {
-      console.error("Error fetching data:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בטעינת הנתונים",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    if (challenge?.notes) {
+      setNotes(challenge.notes);
     }
+  }, [challenge?.notes]);
+
+  const toggleDailyTask = (taskId: string) => {
+    if (!challenge?.daily_tasks) return;
+    
+    const updatedTasks = (challenge.daily_tasks as Task[]).map(task =>
+      task.id === taskId ? { ...task, completed: !task.completed } : task
+    );
+
+    updateChallenge.mutate({ daily_tasks: updatedTasks });
   };
 
-  const handleChallengeSubmit = async (values: any) => {
-    try {
-      const { error } = await supabase
-        .from('daily_challenges')
-        .insert([values]);
+  const toggleWeeklyTask = (taskId: string) => {
+    if (!challenge?.weekly_tasks) return;
 
-      if (error) {
-        throw error;
-      }
+    const updatedTasks = (challenge.weekly_tasks as Task[]).map(task =>
+      task.id === taskId ? { ...task, completed: !task.completed } : task
+    );
 
-      toast({
-        title: "הצלחה",
-        description: "האתגר היומי נוסף בהצלחה!",
-      });
-      challengeForm.reset();
-      fetchData();
-    } catch (error: any) {
-      console.error("Error adding challenge:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בהוספת האתגר היומי",
-        variant: "destructive",
-      });
-    }
+    updateChallenge.mutate({ weekly_tasks: updatedTasks });
   };
 
-  const handleHabitSubmit = async (values: any) => {
-    try {
-      const { error } = await supabase
-        .from('habits')
-        .insert([values]);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "הצלחה",
-        description: "ההרגל היומי נוסף בהצלחה!",
-      });
-      habitForm.reset();
-      fetchData();
-    } catch (error: any) {
-      console.error("Error adding habit:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בהוספת ההרגל היומי",
-        variant: "destructive",
-      });
-    }
+  const saveNotes = () => {
+    updateChallenge.mutate({ notes });
   };
 
-  const updateChallengeCompletion = async (id: string, isCompleted: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('daily_challenges')
-        .update({ isCompleted: !isCompleted })
-        .eq('id', id);
+  if (isLoading) {
+    return <div>טוען...</div>;
+  }
 
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "הצלחה",
-        description: "סטטוס האתגר היומי עודכן בהצלחה!",
-      });
-      fetchData();
-    } catch (error: any) {
-      console.error("Error updating challenge completion:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בעדכון סטטוס האתגר היומי",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const updateHabitCompletion = async (id: string, isCompleted: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('habits')
-        .update({ isCompleted: !isCompleted })
-        .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "הצלחה",
-        description: "סטטוס ההרגל היומי עודכן בהצלחה!",
-      });
-      fetchData();
-    } catch (error: any) {
-      console.error("Error updating habit completion:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בעדכון סטטוס ההרגל היומי",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const deleteChallenge = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('daily_challenges')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "הצלחה",
-        description: "האתגר היומי נמחק בהצלחה!",
-      });
-      fetchData();
-    } catch (error: any) {
-      console.error("Error deleting challenge:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה במחיקת האתגר היומי",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const deleteHabit = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('habits')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "הצלחה",
-        description: "ההרגל היומי נמחק בהצלחה!",
-      });
-      fetchData();
-    } catch (error: any) {
-      console.error("Error deleting habit:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה במחיקת ההרגל היומי",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSelectChallenge = (id: string) => {
-    setSelectedChallengeId(id);
-    const challenge = challenges.find((c) => c.id === id);
-    if (challenge) {
-      challengeForm.setValue("challengeType", challenge.challengeType);
-      challengeForm.setValue("challengeDescription", challenge.challengeDescription);
-      challengeForm.setValue("successCriteria", challenge.successCriteria);
-      challengeForm.setValue("isCompleted", challenge.isCompleted);
-      challengeForm.setValue("reward", challenge.reward || "");
-      challengeForm.setValue("penalty", challenge.penalty || "");
-      challengeForm.setValue("notes", challenge.notes || "");
-    }
-  };
-
-  const handleSelectHabit = (id: string) => {
-    setSelectedHabitId(id);
-    const habit = habits.find((h) => h.id === id);
-    if (habit) {
-      habitForm.setValue("habitName", habit.habitName);
-      habitForm.setValue("habitDescription", habit.habitDescription);
-      habitForm.setValue("frequency", habit.frequency);
-      habitForm.setValue("isCompleted", habit.isCompleted);
-      habitForm.setValue("notes", habit.notes || "");
-    }
-  };
-
-  const handleUpdateChallenge = async (values: any) => {
-    if (!selectedChallengeId) return;
-    try {
-      const { error } = await supabase
-        .from('daily_challenges')
-        .update(values)
-        .eq('id', selectedChallengeId);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "הצלחה",
-        description: "האתגר היומי עודכן בהצלחה!",
-      });
-      challengeForm.reset();
-      fetchData();
-      setSelectedChallengeId(null);
-    } catch (error: any) {
-      console.error("Error updating challenge:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בעדכון האתגר היומי",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateHabit = async (values: any) => {
-    if (!selectedHabitId) return;
-    try {
-      const { error } = await supabase
-        .from('habits')
-        .update(values)
-        .eq('id', selectedHabitId);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "הצלחה",
-        description: "ההרגל היומי עודכן בהצלחה!",
-      });
-      habitForm.reset();
-      fetchData();
-      setSelectedHabitId(null);
-    } catch (error: any) {
-      console.error("Error updating habit:", error);
-      toast({
-        title: "שגיאה",
-        description: "אירעה שגיאה בעדכון ההרגל היומי",
-        variant: "destructive",
-      });
-    }
-  };
+  const dailyProgress = challenge?.daily_tasks ? 
+    ((challenge.daily_tasks as Task[]).filter(t => t.completed).length / (challenge.daily_tasks as Task[]).length) * 100 : 0;
+  const weeklyProgress = challenge?.weekly_tasks ?
+    ((challenge.weekly_tasks as Task[]).filter(t => t.completed).length / (challenge.weekly_tasks as Task[]).length) * 100 : 0;
+  const totalProgress = ((challenge?.current_day || 1) - 1) / 30 * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-gray-100 py-6">
-      <div className="container mx-auto px-4">
-        <Button
-          variant="outline"
-          size="icon"
-          className="mb-6"
-          onClick={() => navigate(-1)}
+    <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 p-6">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
         >
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl font-bold text-gray-900">
+              שיפור קטן בכל יום – השינוי הגדול מתחיל כאן!
+            </h1>
+            {challenge?.custom_goal && (
+              <div className="text-xl text-primary font-medium">
+                המטרה שלך: {challenge.custom_goal}
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-2 text-primary">
+              <Flame className="w-5 h-5" />
+              <span className="font-medium">רצף של {challenge?.streak_count || 0} ימים!</span>
+            </div>
+          </div>
 
-        <Tabs defaultValue="challenges" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="challenges">אתגרים יומיים</TabsTrigger>
-            <TabsTrigger value="habits">הרגלים יומיים</TabsTrigger>
-          </TabsList>
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Target className="w-5 h-5 text-primary" />
+                  התקדמות כללית
+                </h2>
+                <div className="text-sm text-gray-600">
+                  {challenge?.current_day || 1}/30 ימים הושלמו
+                </div>
+              </div>
+              <Progress value={totalProgress} className="h-2" />
+            </div>
+          </Card>
 
-          <TabsContent value="challenges">
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle>הוסף אתגר יומי</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={challengeForm.handleSubmit(handleChallengeSubmit)} className="space-y-4">
-                  <div>
-                    <Label htmlFor="challengeType">סוג אתגר</Label>
-                    <Input
-                      id="challengeType"
-                      placeholder="לדוגמה: אתגר פיזי, אתגר מנטלי"
-                      {...challengeForm.register("challengeType")}
-                    />
-                    {challengeForm.formState.errors.challengeType && (
-                      <p className="text-sm text-red-500">{challengeForm.formState.errors.challengeType.message}</p>
-                    )}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* משימות יומיות */}
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    משימות יומיות
+                  </h2>
+                  <div className="text-sm text-gray-600">
+                    {(challenge?.daily_tasks as Task[])?.filter(t => t.completed).length || 0}/
+                    {(challenge?.daily_tasks as Task[])?.length || 0}
                   </div>
-                  <div>
-                    <Label htmlFor="challengeDescription">תיאור אתגר</Label>
-                    <Textarea
-                      id="challengeDescription"
-                      placeholder="תאר את האתגר היומי"
-                      {...challengeForm.register("challengeDescription")}
-                    />
-                    {challengeForm.formState.errors.challengeDescription && (
-                      <p className="text-sm text-red-500">{challengeForm.formState.errors.challengeDescription.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="successCriteria">קריטריונים להצלחה</Label>
-                    <Textarea
-                      id="successCriteria"
-                      placeholder="הגדר איך תדע שהצלחת באתגר"
-                      {...challengeForm.register("successCriteria")}
-                    />
-                    {challengeForm.formState.errors.successCriteria && (
-                      <p className="text-sm text-red-500">{challengeForm.formState.errors.successCriteria.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="reward">פרס (אופציונלי)</Label>
-                    <Input
-                      id="reward"
-                      placeholder="פרס לעצמך אם תצליח"
-                      {...challengeForm.register("reward")}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="penalty">עונש (אופציונלי)</Label>
-                    <Input
-                      id="penalty"
-                      placeholder="עונש לעצמך אם לא תצליח"
-                      {...challengeForm.register("penalty")}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="notes">הערות (אופציונלי)</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="הערות נוספות"
-                      {...challengeForm.register("notes")}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full">
-                    הוסף אתגר
-                  </Button>
-                </form>
-              </CardContent>
+                </div>
+                <Progress value={dailyProgress} className="h-2" />
+                <div className="space-y-3">
+                  {(challenge?.daily_tasks as Task[])?.map((task) => (
+                    <div key={task.id} className="flex items-start gap-3 p-3 rounded-lg bg-white shadow-sm">
+                      <Checkbox
+                        checked={task.completed}
+                        onCheckedChange={() => toggleDailyTask(task.id)}
+                      />
+                      <span className={`flex-1 ${task.completed ? 'line-through text-gray-400' : ''}`}>
+                        {task.title}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </Card>
 
-            <Card className="mt-6 shadow-md">
-              <CardHeader>
-                <CardTitle>עדכן אתגר יומי</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={challengeForm.handleSubmit(handleUpdateChallenge)} className="space-y-4">
-                  <div>
-                    <Label htmlFor="challengeType">סוג אתגר</Label>
-                    <Input
-                      id="challengeType"
-                      placeholder="לדוגמה: אתגר פיזי, אתגר מנטלי"
-                      {...challengeForm.register("challengeType")}
-                    />
-                    {challengeForm.formState.errors.challengeType && (
-                      <p className="text-sm text-red-500">{challengeForm.formState.errors.challengeType.message}</p>
-                    )}
+            {/* משימות שבועיות */}
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    משימות שבועיות
+                  </h2>
+                  <div className="text-sm text-gray-600">
+                    {(challenge?.weekly_tasks as Task[])?.filter(t => t.completed).length || 0}/
+                    {(challenge?.weekly_tasks as Task[])?.length || 0}
                   </div>
-                  <div>
-                    <Label htmlFor="challengeDescription">תיאור אתגר</Label>
-                    <Textarea
-                      id="challengeDescription"
-                      placeholder="תאר את האתגר היומי"
-                      {...challengeForm.register("challengeDescription")}
-                    />
-                    {challengeForm.formState.errors.challengeDescription && (
-                      <p className="text-sm text-red-500">{challengeForm.formState.errors.challengeDescription.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="successCriteria">קריטריונים להצלחה</Label>
-                    <Textarea
-                      id="successCriteria"
-                      placeholder="הגדר איך תדע שהצלחת באתגר"
-                      {...challengeForm.register("successCriteria")}
-                    />
-                    {challengeForm.formState.errors.successCriteria && (
-                      <p className="text-sm text-red-500">{challengeForm.formState.errors.successCriteria.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="reward">פרס (אופציונלי)</Label>
-                    <Input
-                      id="reward"
-                      placeholder="פרס לעצמך אם תצליח"
-                      {...challengeForm.register("reward")}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="penalty">עונש (אופציונלי)</Label>
-                    <Input
-                      id="penalty"
-                      placeholder="עונש לעצמך אם לא תצליח"
-                      {...challengeForm.register("penalty")}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="notes">הערות (אופציונלי)</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="הערות נוספות"
-                      {...challengeForm.register("notes")}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full">
-                    עדכן אתגר
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            <Card className="mt-6 shadow-md">
-              <CardHeader>
-                <CardTitle>רשימת אתגרים יומיים</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <p>טוען...</p>
-                ) : (
-                  <div className="space-y-4">
-                    {challenges.map((challenge) => (
-                      <div key={challenge.id} className="flex items-center justify-between border p-4 rounded-md">
-                        <div>
-                          <h3 className="text-lg font-semibold">{challenge.challengeType}</h3>
-                          <p className="text-gray-600">{challenge.challengeDescription}</p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`challenge-${challenge.id}`}
-                            defaultChecked={challenge.isCompleted}
-                            onCheckedChange={() => updateChallengeCompletion(challenge.id, challenge.isCompleted)}
-                          />
-                          <Label htmlFor={`challenge-${challenge.id}`}>הושלם</Label>
-                          <Button variant="outline" size="sm" onClick={() => handleSelectChallenge(challenge.id)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            ערוך
-                          </Button>
-                          <Button variant="destructive" size="sm" onClick={() => deleteChallenge(challenge.id)}>
-                            <X className="h-4 w-4 mr-2" />
-                            מחק
-                          </Button>
-                        </div>
+                </div>
+                <Progress value={weeklyProgress} className="h-2" />
+                <div className="space-y-3">
+                  {(challenge?.weekly_tasks as Task[])?.map((task) => (
+                    <div key={task.id} className="flex items-start gap-3 p-3 rounded-lg bg-white shadow-sm">
+                      <Checkbox
+                        checked={task.completed}
+                        onCheckedChange={() => toggleWeeklyTask(task.id)}
+                      />
+                      <div className={`flex-1 ${task.completed ? 'line-through text-gray-400' : ''}`}>
+                        <div className="font-medium">{task.title}</div>
+                        {task.description && (
+                          <div className="text-sm text-gray-600 mt-1">{task.description}</div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </Card>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="habits">
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle>הוסף הרגל יומי</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={habitForm.handleSubmit(handleHabitSubmit)} className="space-y-4">
-                  <div>
-                    <Label htmlFor="habitName">שם ההרגל</Label>
-                    <Input
-                      id="habitName"
-                      placeholder="לדוגמה: מדיטציה, קריאה"
-                      {...habitForm.register("habitName")}
-                    />
-                    {habitForm.formState.errors.habitName && (
-                      <p className="text-sm text-red-500">{habitForm.formState.errors.habitName.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="habitDescription">תיאור ההרגל</Label>
-                    <Textarea
-                      id="habitDescription"
-                      placeholder="תאר את ההרגל היומי"
-                      {...habitForm.register("habitDescription")}
-                    />
-                    {habitForm.formState.errors.habitDescription && (
-                      <p className="text-sm text-red-500">{habitForm.formState.errors.habitDescription.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="frequency">תדירות</Label>
-                    <Select
-                      onValueChange={(value) => habitForm.setValue("frequency", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="בחר תדירות" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">יומי</SelectItem>
-                        <SelectItem value="weekly">שבועי</SelectItem>
-                        <SelectItem value="monthly">חודשי</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {habitForm.formState.errors.frequency && (
-                      <p className="text-sm text-red-500">{habitForm.formState.errors.frequency.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="notes">הערות (אופציונלי)</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="הערות נוספות"
-                      {...habitForm.register("notes")}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full">
-                    הוסף הרגל
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+          {/* הערות */}
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Pencil className="w-5 h-5 text-primary" />
+                  הערות אישיות
+                </h2>
+                <Button onClick={saveNotes} size="sm">שמור הערות</Button>
+              </div>
+              <Textarea
+                placeholder="רשום כאן את המחשבות והתובנות שלך..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </Card>
 
-            <Card className="mt-6 shadow-md">
-              <CardHeader>
-                <CardTitle>עדכן הרגל יומי</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={habitForm.handleSubmit(handleUpdateHabit)} className="space-y-4">
-                  <div>
-                    <Label htmlFor="habitName">שם ההרגל</Label>
-                    <Input
-                      id="habitName"
-                      placeholder="לדוגמה: מדיטציה, קריאה"
-                      {...habitForm.register("habitName")}
-                    />
-                    {habitForm.formState.errors.habitName && (
-                      <p className="text-sm text-red-500">{habitForm.formState.errors.habitName.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="habitDescription">תיאור ההרגל</Label>
-                    <Textarea
-                      id="habitDescription"
-                      placeholder="תאר את ההרגל היומי"
-                      {...habitForm.register("habitDescription")}
-                    />
-                    {habitForm.formState.errors.habitDescription && (
-                      <p className="text-sm text-red-500">{habitForm.formState.errors.habitDescription.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="frequency">תדירות</Label>
-                    <Select
-                      onValueChange={(value) => habitForm.setValue("frequency", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="בחר תדירות" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">יומי</SelectItem>
-                        <SelectItem value="weekly">שבועי</SelectItem>
-                        <SelectItem value="monthly">חודשי</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {habitForm.formState.errors.frequency && (
-                      <p className="text-sm text-red-500">{habitForm.formState.errors.frequency.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="notes">הערות (אופציונלי)</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="הערות נוספות"
-                      {...habitForm.register("notes")}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full">
-                    עדכן הרגל
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-
-            <Card className="mt-6 shadow-md">
-              <CardHeader>
-                <CardTitle>רשימת הרגלים יומיים</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <p>טוען...</p>
-                ) : (
-                  <div className="space-y-4">
-                    {habits.map((habit) => (
-                      <div key={habit.id} className="flex items-center justify-between border p-4 rounded-md">
-                        <div>
-                          <h3 className="text-lg font-semibold">{habit.habitName}</h3>
-                          <p className="text-gray-600">{habit.habitDescription}</p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`habit-${habit.id}`}
-                            defaultChecked={habit.isCompleted}
-                            onCheckedChange={() => updateHabitCompletion(habit.id, habit.isCompleted)}
-                          />
-                          <Label htmlFor={`habit-${habit.id}`}>הושלם</Label>
-                          <Button variant="outline" size="sm" onClick={() => handleSelectHabit(habit.id)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            ערוך
-                          </Button>
-                          <Button variant="destructive" size="sm" onClick={() => deleteHabit(habit.id)}>
-                            <X className="h-4 w-4 mr-2" />
-                            מחק
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          {/* תגי הישגים */}
+          <Card className="p-6">
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-primary" />
+                תגי הישגים
+              </h2>
+              <div className="flex gap-4 flex-wrap">
+                <div className={`flex items-center gap-2 p-2 rounded-full ${
+                  (challenge?.streak_count || 0) >= 7 ? 'bg-primary/10' : 'bg-gray-100'
+                }`}>
+                  <Star className={`w-5 h-5 ${
+                    (challenge?.streak_count || 0) >= 7 ? 'text-primary' : 'text-gray-400'
+                  }`} />
+                  <span className={`text-sm font-medium ${
+                    (challenge?.streak_count || 0) >= 7 ? '' : 'text-gray-500'
+                  }`}>7 ימים ראשונים</span>
+                </div>
+                <div className={`flex items-center gap-2 p-2 rounded-full ${
+                  (challenge?.streak_count || 0) >= 14 ? 'bg-primary/10' : 'bg-gray-100'
+                }`}>
+                  <CheckCircle2 className={`w-5 h-5 ${
+                    (challenge?.streak_count || 0) >= 14 ? 'text-primary' : 'text-gray-400'
+                  }`} />
+                  <span className={`text-sm font-medium ${
+                    (challenge?.streak_count || 0) >= 14 ? '' : 'text-gray-500'
+                  }`}>14 ימים רצופים</span>
+                </div>
+                <div className={`flex items-center gap-2 p-2 rounded-full ${
+                  (challenge?.streak_count || 0) >= 30 ? 'bg-primary/10' : 'bg-gray-100'
+                }`}>
+                  <Clock className={`w-5 h-5 ${
+                    (challenge?.streak_count || 0) >= 30 ? 'text-primary' : 'text-gray-400'
+                  }`} />
+                  <span className={`text-sm font-medium ${
+                    (challenge?.streak_count || 0) >= 30 ? '' : 'text-gray-500'
+                  }`}>30 ימים של מחויבות</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PlayIcon, ExternalLink, RefreshCcw, Link } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,11 +44,13 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         throw new Error("חסר מזהה מאמן");
       }
       
+      // If no player ID, we're in coach view, show all videos for coach
       if (!playerId) {
         await fetchCoachVideos();
         return;
       }
       
+      // Player view - fetch only explicitly assigned videos
       await fetchPlayerAssignedVideos(playerId);
       
     } catch (error) {
@@ -67,6 +70,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     try {
       console.log("[AUDIT] Fetching assigned videos for player:", playerId);
       
+      // Get videos specifically assigned to this player through player_videos table
       const { data: playerVideos, error: playerVideosError } = await supabase
         .from("player_videos")
         .select(`
@@ -85,6 +89,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       console.log("[AUDIT] Player videos data:", playerVideos?.length || 0, playerVideos);
       
+      // Get auto-assigned videos for this specific player
       const { data: autoAssignments, error: autoAssignmentsError } = await supabase
         .from("auto_video_assignments")
         .select(`
@@ -104,6 +109,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       console.log("[AUDIT] Auto-assigned videos data:", autoAssignments?.length || 0);
       
+      // Process manually assigned videos
       const manuallyAssignedVideos = playerVideos
         ?.filter(pv => pv.videos)
         .map(pv => {
@@ -119,6 +125,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         })
         .filter(Boolean) || [];
       
+      // Process auto-assigned videos
       const autoAssignedVideos = autoAssignments
         ?.filter(aa => aa.videos && aa.sent)
         .map(aa => {
@@ -132,6 +139,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         })
         .filter(Boolean) || [];
       
+      // Combine all videos, removing duplicates
       const videoMap = new Map<string, Video>();
       [...manuallyAssignedVideos, ...autoAssignedVideos].forEach(video => {
         if (video && video.id) {
@@ -144,6 +152,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       console.log("[AUDIT] Combined assigned videos:", allAssignedVideos.length);
       console.log("[AUDIT] Assigned video IDs:", allAssignedVideos.map(v => v.id));
       
+      // Filter out invalid videos and sort by date
       const validVideos = allAssignedVideos.filter(video => 
         video && video.id && video.title && video.created_at
       );
@@ -166,6 +175,9 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       setVideos([]);
       setActiveVideo(null);
       setError("אין סרטונים זמינים כרגע");
+
+      // [AUDIT] Check if there are any fallbacks to fetchAdminVideos here
+      console.log("[AUDIT] No fallback to admin videos should happen here!");
     }
   };
   
@@ -173,6 +185,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     try {
       console.log("[AUDIT] Fetching coach videos");
       
+      // Ensure we're fetching videos only for the specific coach
       const { data: coachVideos, error: coachVideosError } = await supabase
         .from("videos")
         .select("*")
@@ -204,6 +217,9 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     }
   };
 
+  // [AUDIT] Search for any fetchAdminVideos functions or references
+  console.log("[AUDIT] Checking for any fetchAdminVideos references in the component");
+  
   useEffect(() => {
     if (coachId) {
       fetchVideos();
@@ -476,3 +492,4 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     </div>
   );
 };
+

@@ -1,6 +1,5 @@
 
-import React from 'react';
-import LandingPagesList from '@/components/landing-page/LandingPagesList';
+import { LandingPagesList } from '@/components/landing-page/LandingPagesList';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 

@@ -1,23 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { supabase } from '@/lib/supabase';
-import { ColorPicker } from '@/components/ColorPicker';
 
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { uploadImage } from "@/lib/uploadImage";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { Checkbox } from "@/components/ui/checkbox";
+import { supabaseClient } from "@/lib/supabaseClient";
+import { Eye } from "lucide-react";
 import { useCreateBucket } from '@/hooks/useCreateBucket';
 
 const ADVANTAGE_OPTIONS = [
@@ -41,7 +40,7 @@ const SUBTITLE_OPTIONS = [
 
 const CTA_OPTIONS = [
   { value: "free-consultation", label: "שיחת ייעוץ חינם!" },
-  { id: "start-now", label: "התחל עכשיו!" },
+  { value: "start-now", label: "התחל עכשיו!" },
   { value: "join-program", label: "הצטרף לתוכנית האימון!" },
   { value: "contact-me", label: "צור קשר עוד היום!" },
   { value: "book-session", label: "קבע פגישה!" }
@@ -147,7 +146,7 @@ export function LandingPageDialog({ open, onOpenChange, onPageCreated }: Landing
     try {
       console.log("Form values:", values);
       
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
       
       if (sessionError) {
         console.error("Error getting session:", sessionError);
@@ -234,7 +233,7 @@ export function LandingPageDialog({ open, onOpenChange, onPageCreated }: Landing
       
       console.log("Creating landing page with data:", landingPageData);
       
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('landing_pages')
         .insert(landingPageData)
         .select()
@@ -280,7 +279,7 @@ export function LandingPageDialog({ open, onOpenChange, onPageCreated }: Landing
     console.log("Publishing landing page:", landingPageId);
     
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('landing_pages')
         .update({ is_published: true })
         .eq('id', landingPageId)

@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabaseClient } from '@/lib/supabaseClient';
 
 export function getImageUrl(imagePath: string | null, bucket: string = 'landing-pages') {
   if (!imagePath) return null;
@@ -10,7 +10,7 @@ export function getImageUrl(imagePath: string | null, bucket: string = 'landing-
   }
   
   try {
-    const { data } = supabase.storage
+    const { data } = supabaseClient.storage
       .from(bucket)
       .getPublicUrl(imagePath);
       
