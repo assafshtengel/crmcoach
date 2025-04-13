@@ -41,6 +41,7 @@ serve(async (req) => {
       email_confirm,
       user_metadata: {
         full_name: `${firstName} ${lastName}`,
+        role: 'player'  // מגדיר את תפקיד המשתמש כשחקן
       },
     })
 
@@ -53,6 +54,25 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
         }
       )
+    }
+
+    // בדיקה והוספה לטבלת user_roles אם אין כבר רשומה
+    try {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('id', userData.user.id)
+        .maybeSingle()
+
+      // אם אין עדיין רשומת תפקיד, נוסיף אחת
+      if (!roleData) {
+        await supabase
+          .from('user_roles')
+          .insert({ id: userData.user.id, role: 'player' })
+      }
+    } catch (roleError) {
+      console.error('Warning: Unable to add user role:', roleError)
+      // נמשיך גם אם הוספת התפקיד נכשלה
     }
 
     // Return the user data
