@@ -1,10 +1,11 @@
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Layout } from '@/components/layout/Layout';
+import { supabase } from '@/lib/supabase';
 
 import ToolManagement from '@/pages/ToolManagement';
 import AutoVideoManagement from '@/pages/AutoVideoManagement';
@@ -61,12 +62,42 @@ import PlayerNotifications from '@/pages/player/PlayerNotifications';
 import "./App.css";
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 
+const AuthStateListener = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event);
+      
+      if (event === "SIGNED_OUT") {
+        console.log("משתמש התנתק");
+        navigate("/player-auth");
+      }
+
+      if (event === "SIGNED_IN") {
+        console.log("משתמש נכנס:", session?.user);
+        // Optionally load player profile if needed
+        // For now we'll let the normal route handling take care of this
+      }
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  return null;
+};
+
 function App() {
   return (
     <Router>
       <QueryClientProvider client={new QueryClient()}>
         <ThemeProvider attribute="class">
           <Toaster />
+          <AuthStateListener />
           <Routes>
             {/* Auth pages and registration pages that don't use the layout */}
             <Route path="/auth" element={<AuthPage />} />
