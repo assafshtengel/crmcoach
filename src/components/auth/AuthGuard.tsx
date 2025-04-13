@@ -1,4 +1,3 @@
-
 import { useState, useEffect, ReactNode, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -55,9 +54,13 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
               console.log("Player record found:", playerData.id);
             }
             
-            // Modify this condition to prevent infinite redirects
-            // Only redirect if we're not already on the alternative profile page
-            if (location.pathname === "/player/profile" && location.pathname !== "/player/profile-alt") {
+            // Modify redirect logic to use includes and check routes more flexibly
+            const currentPath = location.pathname;
+            const isProfileRoute = 
+              currentPath === "/player/profile" || 
+              currentPath === "/player/profile-alt";
+
+            if (isProfileRoute && !currentPath.endsWith("-alt")) {
               navigate("/player/profile-alt");
               return;
             }
