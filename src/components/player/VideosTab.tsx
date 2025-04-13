@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,7 +77,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           video_id,
           watched,
           watched_at,
-          videos:video_id (id, title, url, description, category, created_at)
+          video:video_id (id, title, url, description, category, created_at)
         `)
         .eq("player_id", playerId);
         
@@ -97,7 +96,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           video_id,
           scheduled_for,
           sent,
-          videos:video_id (id, title, url, description, category, created_at, days_after_registration)
+          video:video_id (id, title, url, description, category, created_at, days_after_registration)
         `)
         .eq("player_id", playerId)
         .eq("sent", true);
@@ -111,11 +110,11 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       // Process manually assigned videos
       const manuallyAssignedVideos = playerVideos
-        ?.filter(pv => pv.videos)
+        ?.filter(pv => pv.video)
         .map(pv => {
-          if (pv.videos) {
+          if (pv.video) {
             return {
-              ...pv.videos,
+              ...pv.video,
               watched: pv.watched,
               watched_at: pv.watched_at,
               player_video_id: pv.id
@@ -127,11 +126,11 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       // Process auto-assigned videos
       const autoAssignedVideos = autoAssignments
-        ?.filter(aa => aa.videos && aa.sent)
+        ?.filter(aa => aa.video && aa.sent)
         .map(aa => {
-          if (aa.videos) {
+          if (aa.video) {
             return {
-              ...aa.videos,
+              ...aa.video,
               is_auto_scheduled: true
             };
           }
@@ -492,4 +491,3 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     </div>
   );
 };
-
