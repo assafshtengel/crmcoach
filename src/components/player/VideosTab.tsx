@@ -38,7 +38,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     try {
       setLoading(true);
       setError(null);
-      console.log("[AUDIT] Fetching videos for coachId:", coachId, "playerId:", playerId);
+      console.log("[DEBUG] Fetching videos for coachId:", coachId, "playerId:", playerId);
       
       if (!coachId) {
         throw new Error("חסר מזהה מאמן");
@@ -52,7 +52,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       await fetchPlayerAssignedVideos(playerId);
       
     } catch (error) {
-      console.error("[AUDIT] Error fetching videos:", error);
+      console.error("[ERROR] Error fetching videos:", error);
       setError("לא ניתן לטעון את הסרטונים");
       toast({
         title: "שגיאה בטעינת סרטונים",
@@ -66,37 +66,25 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
   
   const fetchPlayerAssignedVideos = async (playerId: string) => {
     try {
-      console.log("[AUDIT] Fetching assigned videos for player:", playerId);
+      console.log("[DEBUG] Fetching assigned videos for player:", playerId);
       
-      // בדיקה ישירה אם קיימים רשומות player_videos לשחקן זה
-      const { data: playerVideosCheck, error: checkError } = await supabase
-        .from("player_videos")
-        .select("*")
-        .eq("player_id", playerId);
-      
-      console.log("[AUDIT] Initial check for player_videos:", playerVideosCheck?.length || 0, "records found");
-      
-      if (checkError) {
-        console.error("[AUDIT] Error checking player_videos:", checkError);
-      }
-      
-      // גישה 1: לקבל קודם את רשימת הסרטונים המשויכים לשחקן
+      // Get player_videos to find which videos are assigned to the player
       const { data: playerVideosData, error: playerVideosError } = await supabase
         .from("player_videos")
         .select("*")
         .eq("player_id", playerId);
         
-      console.log("[AUDIT] Raw player_videos data:", JSON.stringify(playerVideosData));
+      console.log("[DEBUG] Raw player_videos data:", playerVideosData);
       
       if (playerVideosError) {
-        console.error("[AUDIT] Error fetching player_videos:", playerVideosError);
+        console.error("[ERROR] Error fetching player_videos:", playerVideosError);
         throw playerVideosError;
       }
       
       if (!playerVideosData || playerVideosData.length === 0) {
-        console.log("[AUDIT] No player_videos found for this player, fetching coach videos instead");
+        console.log("[INFO] No player_videos found for this player, fetching coach videos instead");
         
-        // אם אין סרטונים ייחודיים לשחקן, אנסה לקבל סרטונים של המאמן
+        // If no videos specifically assigned to player, try to get coach videos
         if (coachId) {
           await fetchCoachVideos();
           return;
@@ -108,35 +96,35 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         return;
       }
       
-      // מיצוי רשימת מזהי הסרטונים
+      // Extract video IDs from player_videos
       const videoIds = playerVideosData.map(pv => pv.video_id);
-      console.log("[AUDIT] Extracted video IDs:", videoIds);
+      console.log("[DEBUG] Extracted video IDs:", videoIds);
       
-      // שליפת מידע מלא על הסרטונים
+      // Fetch the complete video information
       if (videoIds.length > 0) {
         const { data: videosData, error: videosError } = await supabase
           .from("videos")
           .select("*")
           .in("id", videoIds);
           
-        console.log("[AUDIT] Full videos data:", videosData);
+        console.log("[DEBUG] Full videos data:", videosData);
         
         if (videosError) {
-          console.error("[AUDIT] Error fetching videos data:", videosError);
+          console.error("[ERROR] Error fetching videos data:", videosError);
           throw videosError;
         }
         
         if (!videosData || videosData.length === 0) {
-          console.log("[AUDIT] No videos found with the provided IDs");
+          console.log("[INFO] No videos found with the provided IDs");
           setVideos([]);
           setActiveVideo(null);
           setError("לא נמצאו סרטונים תואמים");
           return;
         }
         
-        // שילוב המידע מטבלת player_videos וטבלת videos
+        // Combine information from player_videos and videos tables
         const formattedVideos = videosData.map(video => {
-          // מציאת הרשומה המתאימה בטבלת player_videos
+          // Find the corresponding player_video record
           const playerVideo = playerVideosData.find(pv => pv.video_id === video.id);
           
           return {
@@ -148,16 +136,16 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
             created_at: video.created_at,
             is_auto_scheduled: video.is_auto_scheduled,
             days_after_registration: video.days_after_registration,
-            // מידע מטבלת player_videos
+            // Information from player_videos
             player_video_id: playerVideo?.id,
             watched: playerVideo?.watched || false,
             watched_at: playerVideo?.watched_at
           } as Video;
         });
         
-        console.log("[AUDIT] Formatted combined videos:", formattedVideos);
+        console.log("[DEBUG] Formatted combined videos:", formattedVideos);
         
-        // מיון לפי תאריך יצירה (מהחדש לישן)
+        // Sort by creation date (newest first)
         formattedVideos.sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
@@ -178,16 +166,16 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       }
       
     } catch (error) {
-      console.error("[AUDIT] Error in fetchPlayerAssignedVideos:", error);
+      console.error("[ERROR] Error in fetchPlayerAssignedVideos:", error);
       
-      // אם נכשל בשליפת סרטונים ייחודיים לשחקן, אנסה את סרטוני המאמן
+      // Fallback to coach videos if there's an error fetching player-specific videos
       try {
         if (coachId) {
-          console.log("[AUDIT] Trying to fetch coach videos instead");
+          console.log("[INFO] Trying to fetch coach videos instead");
           await fetchCoachVideos();
         }
       } catch (coachError) {
-        console.error("[AUDIT] Error fetching coach videos fallback:", coachError);
+        console.error("[ERROR] Error fetching coach videos fallback:", coachError);
         setVideos([]);
         setActiveVideo(null);
         setError("אין סרטונים זמינים כרגע");
@@ -197,7 +185,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
   
   const fetchCoachVideos = async () => {
     try {
-      console.log("[AUDIT] Fetching coach videos");
+      console.log("[DEBUG] Fetching coach videos");
       
       const { data: coachVideos, error: coachVideosError } = await supabase
         .from("videos")
@@ -207,11 +195,11 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         .order("created_at", { ascending: false });
         
       if (coachVideosError) {
-        console.error("[AUDIT] Error fetching coach videos:", coachVideosError);
+        console.error("[ERROR] Error fetching coach videos:", coachVideosError);
         throw coachVideosError;
       }
       
-      console.log("[AUDIT] Coach videos:", coachVideos?.length || 0);
+      console.log("[DEBUG] Coach videos:", coachVideos?.length || 0);
       
       if (coachVideos && coachVideos.length > 0) {
         const formattedVideos = coachVideos.map(video => ({
@@ -235,16 +223,16 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         setError("לא נמצאו סרטונים זמינים");
       }
     } catch (error) {
-      console.error("[AUDIT] Error fetching coach videos:", error);
+      console.error("[ERROR] Error fetching coach videos:", error);
       setVideos([]);
       setActiveVideo(null);
       setError("לא ניתן לטעון את הסרטונים");
     }
   };
 
-  // הוספת שימוש ב-useEffect כדי להפעיל מידית טעינת סרטונים כאשר הכרטיסייה מוצגת
+  // Load videos when the component is mounted
   useEffect(() => {
-    console.log("[AUDIT] VideosTab mounted - coachId:", coachId, "playerId:", playerId);
+    console.log("[DEBUG] VideosTab mounted - coachId:", coachId, "playerId:", playerId);
     if (coachId) {
       fetchVideos();
     } else {
@@ -254,7 +242,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
   }, [coachId, playerId]);
   
   const handleWatchVideo = (video: Video) => {
-    console.log("[AUDIT] Handling watch video:", video);
+    console.log("[DEBUG] Handling watch video:", video);
     setActiveVideo(video);
     
     if (video.url) {
@@ -282,7 +270,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
   
   const markVideoAsWatched = async (playerId: string, videoId: string, playerVideoId?: string) => {
     try {
-      console.log("Marking video as watched:", { playerId, videoId, playerVideoId });
+      console.log("[DEBUG] Marking video as watched:", { playerId, videoId, playerVideoId });
       
       if (playerVideoId) {
         const { error } = await supabase
@@ -294,7 +282,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           .eq('id', playerVideoId);
           
         if (error) {
-          console.error("Error updating player_videos by ID:", error);
+          console.error("[ERROR] Error updating player_videos by ID:", error);
           return;
         }
       } else {
@@ -306,7 +294,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
           .maybeSingle();
         
         if (error) {
-          console.error("Error checking player_videos:", error);
+          console.error("[ERROR] Error checking player_videos:", error);
           return;
         }
         
@@ -331,31 +319,32 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
         }
       }
       
+      // Update local state to reflect the change
       setVideos(prevVideos => 
         prevVideos.map(v => 
           v.id === videoId ? { ...v, watched: true, watched_at: new Date().toISOString() } : v
         )
       );
       
-      console.log(`Video ${videoId} marked as watched for player ${playerId}`);
+      console.log(`[DEBUG] Video ${videoId} marked as watched for player ${playerId}`);
       
       toast({
         title: "סרטון סומן כנצפה",
         description: "הסטטוס עודכן בהצלחה",
       });
     } catch (error) {
-      console.error("Error marking video as watched:", error);
+      console.error("[ERROR] Error marking video as watched:", error);
     }
   };
   
   const openVideoUrl = (url: string, event?: React.MouseEvent) => {
-    console.log("Opening video URL:", url);
+    console.log("[DEBUG] Opening video URL:", url);
     if (event) {
       event.stopPropagation();
     }
     
     if (!url || typeof url !== 'string') {
-      console.error("Invalid URL provided:", url);
+      console.error("[ERROR] Invalid URL provided:", url);
       toast({
         title: "שגיאה בפתיחת סרטון",
         description: "לא נמצא קישור תקין לסרטון",
@@ -374,7 +363,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       new URL(cleanUrl);
       window.open(cleanUrl, '_blank');
     } catch (error) {
-      console.error("Invalid URL:", url, error);
+      console.error("[ERROR] Invalid URL:", url, error);
       toast({
         title: "שגיאה בפתיחת סרטון",
         description: "הקישור לסרטון אינו תקין",

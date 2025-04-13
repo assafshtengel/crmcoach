@@ -82,7 +82,64 @@ const PlayerProfileView = () => {
 
   const handleWatchVideo = async (videoId: string) => {
     console.log("Video watched in player profile view:", videoId);
-    // כאן אפשר להוסיף לוגיקה נוספת אם נדרש
+    
+    // וידוא שיש לנו ID שחקן
+    if (!player?.id) {
+      console.error("Missing player ID when trying to mark video as watched");
+      return;
+    }
+    
+    try {
+      // בדיקה האם כבר קיימת רשומה עבור הסרטון הזה
+      const { data, error } = await supabase
+        .from('player_videos')
+        .select('*')
+        .eq('player_id', player.id)
+        .eq('video_id', videoId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error checking player_videos:", error);
+        return;
+      }
+      
+      // אם קיימת רשומה, נעדכן אותה כנצפתה
+      if (data) {
+        const { error: updateError } = await supabase
+          .from('player_videos')
+          .update({ 
+            watched: true,
+            watched_at: new Date().toISOString()
+          })
+          .eq('id', data.id);
+          
+        if (updateError) {
+          console.error("Error updating player_video as watched:", updateError);
+        } else {
+          console.log("Successfully marked video as watched (existing record)");
+        }
+      }
+      // אם לא קיימת רשומה, ניצור אחת חדשה
+      else {
+        const { error: insertError } = await supabase
+          .from('player_videos')
+          .insert([{
+            player_id: player.id,
+            video_id: videoId,
+            watched: true,
+            watched_at: new Date().toISOString(),
+            assigned_by: player.coach_id
+          }]);
+          
+        if (insertError) {
+          console.error("Error creating new player_video record:", insertError);
+        } else {
+          console.log("Successfully created and marked video as watched (new record)");
+        }
+      }
+    } catch (error) {
+      console.error("Unexpected error marking video as watched:", error);
+    }
   };
 
   if (loading) {
