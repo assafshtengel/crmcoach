@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -165,7 +164,7 @@ const NewPlayerForm = () => {
           notes: values.notes,
           sport_field: finalSportField,
           profile_image: imageUrl,
-          password: generatedPassword,  // Store the generated password in the "password" column
+          password: generatedPassword,
         }
       ])
       .select()

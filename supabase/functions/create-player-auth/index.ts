@@ -9,27 +9,17 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log("Edge Function: create-player-auth started executing");
-  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    console.log("Parsing request body...");
     const { email, password, firstName, lastName, playerData } = await req.json();
     
-    // Log request information (excluding sensitive data)
-    console.log(`Request received for email: ${email}`);
-    console.log(`Additional data received: firstName=${!!firstName}, lastName=${!!lastName}, playerData=${!!playerData}`);
-    
-    // Validate required fields
     if (!email || !password) {
-      console.error("Validation error: Missing required fields");
       return new Response(
         JSON.stringify({
-          success: false,
           error: "Email and password are required fields",
         }),
         {
@@ -40,18 +30,9 @@ serve(async (req) => {
     }
     
     // Create supabase admin client with service role
-    console.log("Initializing Supabase admin client...");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error("Environment variables not properly configured");
-      throw new Error("Server configuration error: missing required environment variables");
-    }
-    
     const supabaseAdmin = createClient(
-      supabaseUrl,
-      supabaseServiceKey,
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       {
         auth: {
           autoRefreshToken: false,
@@ -61,7 +42,6 @@ serve(async (req) => {
     );
     
     // Create the user in Supabase Auth
-    console.log("Attempting to create user in Supabase Auth...");
     const { data: userData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -75,7 +55,6 @@ serve(async (req) => {
       console.error("Error creating auth user:", createUserError);
       return new Response(
         JSON.stringify({
-          success: false,
           error: createUserError.message,
           code: createUserError.code || "auth_error"
         }),
@@ -86,13 +65,9 @@ serve(async (req) => {
       );
     }
     
-    // Log successful user creation
-    console.log(`User created successfully with ID: ${userData.user.id}`);
-    
     // If user created successfully, return the user id to be used for player creation
     return new Response(
       JSON.stringify({
-        success: true,
         id: userData.user.id,
         email: userData.user.email
       }),
@@ -102,10 +77,9 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Unexpected error in create-player-auth:", error);
+    console.error("Unexpected error:", error);
     return new Response(
       JSON.stringify({
-        success: false,
         error: error.message || "Unknown error occurred",
       }),
       {
