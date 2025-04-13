@@ -110,31 +110,24 @@ const NewPlayerForm = () => {
 
   const createAuthUser = async (email: string, password: string, firstName: string, lastName: string): Promise<string> => {
     try {
-      const response = await fetch('https://hntgzgrlyfhojcaofbjv.supabase.co/functions/v1/create-player-auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.getSession().then(res => res.data.session?.access_token)}`,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke("create-player-auth", {
+        body: {
           email,
           password,
           firstName,
           lastName
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        
-        if (errorData.code === 'user-already-exists') {
-          throw new Error('משתמש עם כתובת דוא"ל זו כבר קיים במערכת');
-        }
-        
-        throw new Error(errorData.error || 'שגיאה ביצירת משתמש');
+      if (error) {
+        console.error("Error from create-player-auth function:", error);
+        throw new Error(error.message || 'שגיאה ביצירת משתמש');
       }
 
-      const data = await response.json();
+      if (!data || !data.id) {
+        throw new Error('לא התקבל מזהה משתמש מהשרת');
+      }
+
       return data.id;
     } catch (error) {
       console.error('Error creating auth user:', error);
