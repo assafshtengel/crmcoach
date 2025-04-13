@@ -113,6 +113,34 @@ export const usePublicRegistration = () => {
     });
   };
 
+  const createAuthUser = async (email: string, password: string, firstName: string, lastName: string): Promise<string> => {
+    try {
+      const response = await fetch('https://hntgzgrlyfhojcaofbjv.supabase.co/functions/v1/create-player-auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          firstName,
+          lastName
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'שגיאה ביצירת משתמש');
+      }
+
+      const data = await response.json();
+      return data.id;
+    } catch (error) {
+      console.error('Error creating auth user:', error);
+      throw error;
+    }
+  };
+
   const handleSportFieldChange = (value: string) => {
     console.log("Sport field changed to:", value);
     form.setValue('sportField', value);
@@ -166,85 +194,101 @@ export const usePublicRegistration = () => {
       const password = generatePassword(10);
       setGeneratedPassword(password);
 
-      // Prepare player data
-      const playerData = {
-        coach_id: coachId,
-        full_name: `${values.firstName} ${values.lastName}`,
-        email: values.email,
-        phone: values.phone,
-        birthdate: values.birthDate,
-        city: values.city,
-        club: values.club,
-        year_group: values.yearGroup,
-        injuries: values.injuries,
-        parent_name: values.parentName,
-        parent_phone: values.parentPhone,
-        parent_email: values.parentEmail,
-        notes: values.notes,
-        sport_field: finalSportField,
-        registration_link_id: linkId,
-        registration_timestamp: values.registrationTimestamp,
-        password: password // Store the generated password
-      };
-
-      console.log("Inserting player data for coach ID:", coachId);
-      console.log("Player data to insert:", playerData);
-      
-      // Use insert instead of upsert to avoid conflicts
-      const { data, error } = await supabase
-        .from('players')
-        .insert([playerData])
-        .select();
-
-      console.log("Insert response:", data);
-      console.log("Insert error:", error);
-
-      if (error) {
-        console.error("Database error details:", JSON.stringify(error, null, 2));
+      // Create user in Supabase Auth first
+      try {
+        // Create the auth user
+        const userId = await createAuthUser(
+          values.email,
+          password,
+          values.firstName,
+          values.lastName
+        );
         
-        // Provide specific error messages based on error code
-        if (error.code === '23505') {
-          throw new Error("כתובת האימייל כבר קיימת במערכת");
-        } else if (error.code === '23503') {
-          throw new Error("שגיאה בקישור למאמן, אנא צור קשר עם המאמן");
-        } else {
-          throw new Error(error.message || "שגיאה בשמירת הנתונים");
-        }
-      }
+        // Prepare player data
+        const playerData = {
+          id: userId, // Use the user ID from Auth
+          coach_id: coachId,
+          full_name: `${values.firstName} ${values.lastName}`,
+          email: values.email,
+          phone: values.phone,
+          birthdate: values.birthDate,
+          city: values.city,
+          club: values.club,
+          year_group: values.yearGroup,
+          injuries: values.injuries,
+          parent_name: values.parentName,
+          parent_phone: values.parentPhone,
+          parent_email: values.parentEmail,
+          notes: values.notes,
+          sport_field: finalSportField,
+          registration_link_id: linkId,
+          registration_timestamp: values.registrationTimestamp,
+          password: password // Store the generated password
+        };
 
-      if (!data || data.length === 0) {
-        throw new Error("שגיאה בשמירת הנתונים - לא התקבל אישור מהשרת");
-      }
+        console.log("Inserting player data for coach ID:", coachId);
+        console.log("Player data to insert:", playerData);
+        
+        // Insert the player record
+        const { data, error } = await supabase
+          .from('players')
+          .insert([playerData])
+          .select();
 
-      // Send notification to coach
-      const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
-      
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert([
-          {
-            coach_id: coachId,
-            message: notificationMessage,
-            type: 'new_player'
+        console.log("Insert response:", data);
+        console.log("Insert error:", error);
+
+        if (error) {
+          console.error("Database error details:", JSON.stringify(error, null, 2));
+          
+          // Provide specific error messages based on error code
+          if (error.code === '23505') {
+            throw new Error("כתובת האימייל כבר קיימת במערכת");
+          } else if (error.code === '23503') {
+            throw new Error("שגיאה בקישור למאמן, אנא צור קשר עם המאמן");
+          } else {
+            throw new Error(error.message || "שגיאה בשמירת הנתונים");
           }
-        ]);
+        }
+
+        if (!data || data.length === 0) {
+          throw new Error("שגיאה בשמירת הנתונים - לא התקבל אישור מהשרת");
+        }
+
+        // Send notification to coach
+        const notificationMessage = `שחקן חדש נרשם: ${values.firstName} ${values.lastName}`;
         
-      if (notificationError) {
-        console.error("Error creating notification:", notificationError);
-        // Continue even if notification creation fails
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert([
+            {
+              coach_id: coachId,
+              message: notificationMessage,
+              type: 'new_player'
+            }
+          ]);
+          
+        if (notificationError) {
+          console.error("Error creating notification:", notificationError);
+          // Continue even if notification creation fails
+        }
+
+        // Show success feedback with password info
+        showFeedback(
+          "נרשמת בהצלחה!",
+          `תודה על הרישום! פרטיך נשלחו למאמן ${linkData.coach.full_name} בהצלחה.`,
+          false
+        );
+
+        // After feedback is shown, we'll show the success dialog
+        setTimeout(() => {
+          setShowSuccessDialog(true);
+        }, 2000);
+        
+      } catch (error: any) {
+        console.error('Error in auth user creation:', error);
+        throw new Error(error.message || "שגיאה ביצירת חשבון המשתמש. אנא נסה שוב.");
       }
-
-      // Show success feedback with password info
-      showFeedback(
-        "נרשמת בהצלחה!",
-        `תודה על הרישום! פרטיך נשלחו למאמן ${linkData.coach.full_name} בהצלחה.`,
-        false
-      );
-
-      // After feedback is shown, we'll show the success dialog
-      setTimeout(() => {
-        setShowSuccessDialog(true);
-      }, 2000);
       
     } catch (error: any) {
       console.error('Error in form submission:', error);

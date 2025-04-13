@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { formSchema, PlayerFormValues } from '@/components/new-player/PlayerFormSchema';
 import { PlayerPersonalInfo } from '@/components/new-player/PlayerPersonalInfo';
 import { PlayerClubInfo } from '@/components/new-player/PlayerClubInfo';
@@ -108,7 +108,41 @@ const NewPlayerForm = () => {
     }
   };
 
-  const createPlayer = async (userId: string, values: PlayerFormValues, imageUrl: string = '', password: string) => {
+  const createAuthUser = async (email: string, password: string, firstName: string, lastName: string): Promise<string> => {
+    try {
+      const response = await fetch('https://hntgzgrlyfhojcaofbjv.supabase.co/functions/v1/create-player-auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.auth.getSession().then(res => res.data.session?.access_token)}`,
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          firstName,
+          lastName
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        
+        if (errorData.code === 'user-already-exists') {
+          throw new Error('משתמש עם כתובת דוא"ל זו כבר קיים במערכת');
+        }
+        
+        throw new Error(errorData.error || 'שגיאה ביצירת משתמש');
+      }
+
+      const data = await response.json();
+      return data.id;
+    } catch (error) {
+      console.error('Error creating auth user:', error);
+      throw error;
+    }
+  };
+
+  const createPlayer = async (userId: string, values: PlayerFormValues, imageUrl: string = '') => {
     console.log('Creating player with values:', values);
 
     const finalSportField = values.sportField === 'other' && values.otherSportField
@@ -121,7 +155,8 @@ const NewPlayerForm = () => {
       .from('players')
       .insert([
         {
-          coach_id: userId,
+          id: userId,
+          coach_id: (await supabase.auth.getUser()).data.user?.id,
           full_name: `${values.firstName} ${values.lastName}`,
           email: values.playerEmail,
           phone: values.playerPhone,
@@ -136,7 +171,7 @@ const NewPlayerForm = () => {
           notes: values.notes,
           sport_field: finalSportField,
           profile_image: imageUrl,
-          password: password,
+          password: generatedPassword,
         }
       ])
       .select()
@@ -170,34 +205,51 @@ const NewPlayerForm = () => {
         return;
       }
 
-      let profileImageUrl = '';
-      if (profileImage) {
-        try {
-          profileImageUrl = await uploadProfileImage(user.id, profileImage);
-        } catch (error) {
-          console.error('Error uploading image:', error);
-          toast({
-            variant: "destructive",
-            title: "שגיאה בהעלאת התמונה",
-            description: "לא הצלחנו להעלות את התמונה. השחקן יישמר ללא תמונת פרופיל.",
-          });
-        }
-      }
-
       const password = generatePassword(10);
       setGeneratedPassword(password);
       
-      const playerData = await createPlayer(user.id, values, profileImageUrl, password);
-      console.log('Player created successfully:', playerData);
+      try {
+        const userId = await createAuthUser(
+          values.playerEmail,
+          password,
+          values.firstName,
+          values.lastName
+        );
+        
+        let profileImageUrl = '';
+        if (profileImage) {
+          try {
+            profileImageUrl = await uploadProfileImage(userId, profileImage);
+          } catch (error) {
+            console.error('Error uploading image:', error);
+            toast({
+              variant: "destructive",
+              title: "שגיאה בהעלאת התמונה",
+              description: "לא הצלחנו להעלות את התמונה. השחקן יישמר ללא תמונת פרופיל.",
+            });
+          }
+        }
+        
+        const playerData = await createPlayer(userId, values, profileImageUrl);
+        console.log('Player created successfully:', playerData);
 
-      setCreatedPlayerId(playerData.id);
+        setCreatedPlayerId(playerData.id);
 
-      toast({
-        title: "השחקן נוצר בהצלחה!",
-        description: "השחקן נוסף לרשימת השחקנים שלך.",
-      });
+        toast({
+          title: "השחקן נוצר בהצלחה!",
+          description: "השחקן נוסף לרשימת השחקנים שלך.",
+        });
 
-      setShowSuccessDialog(true);
+        setShowSuccessDialog(true);
+      } catch (error: any) {
+        console.error('Error in user creation:', error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה ביצירת משתמש",
+          description: error.message || "שגיאה ביצירת חשבון המשתמש. אנא נסה שוב.",
+        });
+        throw error;
+      }
 
     } catch (error: any) {
       console.error('Error in form submission:', error);
@@ -288,6 +340,24 @@ const NewPlayerForm = () => {
             <p className="text-sm text-gray-600">
               השחקן נוסף בהצלחה לרשימת השחקנים שלך.
             </p>
+            <div className="mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+              <p className="text-sm font-semibold">סיסמה זמנית לשחקן:</p>
+              <div className="flex items-center justify-center mt-2">
+                <code className="bg-gray-100 px-3 py-1 rounded text-primary">{generatedPassword}</code>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleCopyPassword}
+                  className="ml-2 h-8 w-8"
+                  title="העתק סיסמה"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                שמור את הסיסמה הזו. השחקן יוכל להתחבר עם הסיסמה הזו והדוא"ל שסופק.
+              </p>
+            </div>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button 
