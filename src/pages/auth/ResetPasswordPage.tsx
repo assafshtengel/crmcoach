@@ -13,13 +13,15 @@ export function ResetPasswordPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Extract access token from URL hash on component mount
   useEffect(() => {
     const hashParams = new URLSearchParams(
-      location.hash.substring(1)
+      location.hash.substring(1) // Remove the # character
     );
     const accessToken = hashParams.get("access_token");
     
     if (accessToken) {
+      // Set the session with the access token
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: hashParams.get("refresh_token") || "",
@@ -106,4 +108,4 @@ export function ResetPasswordPage() {
       </Card>
     </div>
   );
-}
+} 
