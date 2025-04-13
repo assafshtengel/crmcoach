@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Download, Printer, Edit2, Save, Undo } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import SignatureCanvas from 'react-signature-canvas';

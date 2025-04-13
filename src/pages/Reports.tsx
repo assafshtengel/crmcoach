@@ -1,10 +1,12 @@
-
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { BarChart, LineChart, PieChart, Calendar } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { ResponsiveContainer, LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, FileText, MapPin, User, BarChart2, Search, Filter } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import {
   Table,
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ArrowRight, Search, FileText, MapPin, User, Filter } from "lucide-react";
 
 interface Report {
   id: string;
@@ -170,7 +171,7 @@ const Reports = () => {
             >
               <CardHeader className="pb-2">
                 <CardTitle className="text-xl flex items-center gap-2">
-                  <BarChart2 className="h-5 w-5 text-primary" />
+                  <BarChart className="h-5 w-5 text-primary" />
                   סטטיסטיקות שחקנים ומפגשים
                 </CardTitle>
               </CardHeader>

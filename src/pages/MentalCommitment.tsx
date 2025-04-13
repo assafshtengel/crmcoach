@@ -1,26 +1,23 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import { Link } from 'react-router-dom';
+import { Separator } from '@/components/ui/separator';
+import { ArrowRight, Edit, Star, Trophy } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
+import { format } from 'date-fns';
 
 const motivationalQuotes = [
   "הכל בראש – והראש שלי בלתי ניתן לעצירה",
@@ -152,7 +149,7 @@ const MentalCommitment = () => {
       }
 
       toast({
-        title: "ההתחייבות נשמרה בהצלחה",
+        title: "התחייבות נשמרה בהצלחה",
         description: "בוא נמשיך לשלב הבא",
       });
       navigate("/contract");

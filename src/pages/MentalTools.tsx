@@ -1,15 +1,15 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Plus, Edit, Video, Save, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { DialogHeader, DialogFooter, Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
+import { Play, Plus, Video, X } from 'lucide-react';
 
 interface Tool {
   id: string;
@@ -38,7 +38,6 @@ const MentalTools = () => {
     video_url: ""
   });
 
-  // Load tools from Supabase when component mounts
   useEffect(() => {
     fetchTools();
   }, []);
@@ -77,14 +76,13 @@ const MentalTools = () => {
       if (!session.session) {
         toast({
           title: "לא מחובר",
-          description: "יש להתחבר כדי לשמור כלים",
+          description: "יש להתחבר כדי לשמור הכלים",
           variant: "destructive"
         });
         return;
       }
 
       if (editingTool) {
-        // Update existing tool
         const { error } = await supabase
           .from('mental_tools')
           .update({
@@ -112,7 +110,6 @@ const MentalTools = () => {
           description: `הכלי ${editingTool.name} עודכן`
         });
       } else {
-        // Validate required fields
         if (!newTool.name || !newTool.description || !newTool.learned || !newTool.implementation) {
           toast({
             title: "שגיאה",
@@ -122,7 +119,6 @@ const MentalTools = () => {
           return;
         }
 
-        // Add new tool
         const { error } = await supabase
           .from('mental_tools')
           .insert({
@@ -151,10 +147,8 @@ const MentalTools = () => {
         });
       }
 
-      // Refresh tools list
       await fetchTools();
 
-      // Reset form and close dialog
       setIsDialogOpen(false);
       setEditingTool(null);
       setNewTool({

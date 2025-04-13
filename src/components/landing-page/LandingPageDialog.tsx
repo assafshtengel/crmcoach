@@ -1,853 +1,461 @@
-
-import { useState, useRef } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useToast } from "@/hooks/use-toast";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { uploadImage } from "@/lib/uploadImage";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabaseClient } from "@/lib/supabaseClient";
-import { Eye } from "lucide-react";
-import { useCreateBucket } from '@/hooks/useCreateBucket';
-
-const ADVANTAGE_OPTIONS = [
-  { id: "mental-resilience", label: "חוסן מנטלי" },
-  { id: "confidence", label: "שיפור ביטחון עצמי" },
-  { id: "goal-setting", label: "הצבת מטרות והשגתן" },
-  { id: "stress-management", label: "ניהול לחץ ומתח" },
-  { id: "focus-improvement", label: "שיפור ריכוז ומיקוד" },
-  { id: "teamwork", label: "עבודת צוות יעילה" },
-  { id: "performance-boost", label: "שיפור ביצועים" },
-  { id: "leadership", label: "פיתוח מנהיגות" },
-];
-
-const SUBTITLE_OPTIONS = [
-  { value: "personal-training", label: "אימון אישי שיביא אותך לתוצאות" },
-  { value: "professional-guidance", label: "ליווי מקצועי להצלחה ספורטיבית" },
-  { value: "mental-coaching", label: "אימון מנטלי לשיפור הביצועים" },
-  { value: "holistic-approach", label: "גישה הוליסטית לפיתוח ספורטאים" },
-  { value: "performance-enhancement", label: "העצמת היכולות המנטליות שלך" }
-];
-
-const CTA_OPTIONS = [
-  { value: "free-consultation", label: "שיחת ייעוץ חינם!" },
-  { value: "start-now", label: "התחל עכשיו!" },
-  { value: "join-program", label: "הצטרף לתוכנית האימון!" },
-  { value: "contact-me", label: "צור קשר עוד היום!" },
-  { value: "book-session", label: "קבע פגישה!" }
-];
-
-const formSchema = z.object({
-  title: z.string().min(2, {
-    message: "כותרת חייבת להכיל לפחות 2 תווים",
-  }),
-  subtitle: z.string({
-    required_error: "נא לבחור תת-כותרת",
-  }),
-  description: z.string().min(10, {
-    message: "תיאור חייב להכיל לפחות 10 תווים",
-  }),
-  contactEmail: z.string().email({
-    message: "נא להזין כתובת אימייל תקינה",
-  }),
-  contactPhone: z.string().min(9, {
-    message: "נא להזין מספר טלפון תקין",
-  }),
-  
-  mainReason: z.string().min(5, {
-    message: "נא להזין סיבה מרכזית לבחירה בך",
-  }),
-  advantages: z.array(z.string()).min(1, {
-    message: "נא לבחור לפחות יתרון אחד",
-  }).max(5, {
-    message: "ניתן לבחור עד 5 יתרונות",
-  }),
-  workStep1: z.string().min(5, {
-    message: "נא למלא את השלב הראשון בתהליך",
-  }),
-  workStep2: z.string().min(5, {
-    message: "נא למלא את השלב השני בתהליך",
-  }),
-  workStep3: z.string().min(5, {
-    message: "נא למלא את השלב השלישי בתהליך",
-  }),
-  ctaText: z.string({
-    required_error: "נא לבחור טקסט לכפתור",
-  }),
-  bgColor: z.number().array().length(1),
-  accentColor: z.number().array().length(1),
-  buttonColor: z.number().array().length(1),
-  isDarkText: z.boolean(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import React, { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { ColorPicker } from '@/components/ColorPicker';
+import { ChevronLeft, ChevronRight, Upload } from 'lucide-react';
+import { LandingPage, supabase } from '@/lib/supabase';
+import { uploadImage } from '@/lib/uploadImage';
+import { getImageUrl } from '@/lib/getImageUrl';
 
 interface LandingPageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPageCreated?: () => void;
+  landingPage?: LandingPage;
+  onSave?: (landingPage: LandingPage) => void;
 }
 
-export function LandingPageDialog({ open, onOpenChange, onPageCreated }: LandingPageDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("form");
-  const [landingPageId, setLandingPageId] = useState<string | null>(null);
-  const [publishUrl, setPublishUrl] = useState<string | null>(null);
+export const LandingPageDialog = ({
+  open,
+  onOpenChange,
+  landingPage,
+  onSave,
+}: LandingPageDialogProps) => {
   const { toast } = useToast();
-  
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      subtitle: "",
-      description: "",
-      contactEmail: "",
-      contactPhone: "",
-      mainReason: "",
-      advantages: [],
-      workStep1: "",
-      workStep2: "",
-      workStep3: "",
-      ctaText: "",
-      bgColor: [50],
-      accentColor: [50],
-      buttonColor: [50],
-      isDarkText: true,
-    },
-  });
+  const [step, setStep] = useState(1);
+  const [title, setTitle] = useState('');
+  const [subtitle, setSubtitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [mainReason, setMainReason] = useState('');
+  const [advantages, setAdvantages] = useState<string[]>(['', '', '']);
+  const [workSteps, setWorkSteps] = useState<string[]>(['', '', '']);
+  const [ctaText, setCtaText] = useState('');
+  const [bgColor, setBgColor] = useState('#ffffff');
+  const [accentColor, setAccentColor] = useState('#3b82f6');
+  const [buttonColor, setButtonColor] = useState('#2563eb');
+  const [isDarkText, setIsDarkText] = useState(true);
+  const [isPublished, setIsPublished] = useState(false);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { createBucket } = useCreateBucket();
-  
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (landingPage) {
+      setTitle(landingPage.title || '');
+      setSubtitle(landingPage.subtitle || '');
+      setDescription(landingPage.description || '');
+      setContactEmail(landingPage.contact_email || '');
+      setContactPhone(landingPage.contact_phone || '');
+      setMainReason(landingPage.main_reason || '');
+      setAdvantages(landingPage.advantages || ['', '', '']);
+      setWorkSteps(landingPage.work_steps || ['', '', '']);
+      setCtaText(landingPage.cta_text || '');
+      setBgColor(landingPage.bg_color || '#ffffff');
+      setAccentColor(landingPage.accent_color || '#3b82f6');
+      setButtonColor(landingPage.button_color || '#2563eb');
+      setIsDarkText(landingPage.is_dark_text !== false);
+      setIsPublished(landingPage.is_published || false);
+
+      // Load profile image if exists
+      if (landingPage.profile_image_path) {
+        loadProfileImage(landingPage.profile_image_path);
+      }
+    }
+  }, [landingPage]);
+
+  const loadProfileImage = async (imagePath: string) => {
+    try {
+      const imageUrl = await getImageUrl('landing-pages', imagePath);
+      setProfileImagePreview(imageUrl);
+    } catch (error) {
+      console.error('Error loading profile image:', error);
+    }
+  };
+
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setProfileImage(file);
-      
-      const previewUrl = URL.createObjectURL(file);
-      setImagePreview(previewUrl);
+      setProfileImagePreview(URL.createObjectURL(file));
     }
   };
 
-  const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true);
-    console.log("Form submission started");
-    
+  const handleAdvantageChange = (index: number, value: string) => {
+    const newAdvantages = [...advantages];
+    newAdvantages[index] = value;
+    setAdvantages(newAdvantages);
+  };
+
+  const handleWorkStepChange = (index: number, value: string) => {
+    const newWorkSteps = [...workSteps];
+    newWorkSteps[index] = value;
+    setWorkSteps(newWorkSteps);
+  };
+
+  const handleSave = async () => {
+    if (!title) {
+      toast({
+        title: 'שגיאה',
+        description: 'יש להזין כותרת לדף הנחיתה',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      console.log("Form values:", values);
-      
-      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
-      
-      if (sessionError) {
-        console.error("Error getting session:", sessionError);
-        throw new Error("שגיאה בקבלת נתוני המשתמש: " + sessionError.message);
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) {
+        throw new Error('לא מחובר');
       }
-      
-      if (!sessionData?.session) {
-        console.error("No session found");
-        toast({
-          title: "שגיאה",
-          description: "עליך להתחבר למערכת כדי ליצור עמוד נחיתה",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      console.log("User session confirmed:", sessionData.session.user.id);
-      
-      // Try to create the bucket if it doesn't exist
-      try {
-        await createBucket('landing-pages');
-        console.log("Bucket exists or was created successfully");
-      } catch (bucketError) {
-        // If the error is because the bucket already exists, that's fine
-        console.log("Bucket creation error (might already exist):", bucketError);
-      }
-      
-      let imageUrl = null;
+
+      let profileImagePath = landingPage?.profile_image_path || null;
+
       if (profileImage) {
-        try {
-          console.log("Starting image upload");
-          const timestamp = new Date().getTime();
-          const path = `${timestamp}_${profileImage.name}`;
-          await uploadImage(profileImage, 'landing-pages', path);
-          imageUrl = path;
-          console.log("Image uploaded successfully:", imageUrl);
-        } catch (uploadError) {
-          console.error("Error uploading image:", uploadError);
-          toast({
-            title: "שגיאה בהעלאת התמונה",
-            description: "לא הצלחנו להעלות את התמונה. אנא נסה שנית.",
-            variant: "destructive",
-          });
-          // Continue without image
-        }
+        const timestamp = new Date().getTime();
+        const path = `${userData.user.id}/${timestamp}-${profileImage.name}`;
+        await uploadImage(profileImage, 'landing-pages', path);
+        profileImagePath = path;
       }
-      
-      const advantageLabels = values.advantages.map(id => {
-        const advantage = ADVANTAGE_OPTIONS.find(a => a.id === id);
-        return advantage ? advantage.label : id;
-      });
-      
-      const ctaLabel = CTA_OPTIONS.find(option => option.value === values.ctaText)?.label || values.ctaText;
-      
-      const subtitleLabel = SUBTITLE_OPTIONS.find(option => option.value === values.subtitle)?.label || values.subtitle;
-      
+
       const landingPageData = {
-        coach_id: sessionData.session.user.id,
-        title: values.title,
-        subtitle: subtitleLabel,
-        subtitle_id: values.subtitle,
-        description: values.description,
-        contact_email: values.contactEmail,
-        contact_phone: values.contactPhone,
-        main_reason: values.mainReason,
-        advantages: advantageLabels,
-        advantages_ids: values.advantages,
-        work_steps: [values.workStep1, values.workStep2, values.workStep3],
-        cta_text: ctaLabel,
-        cta_id: values.ctaText,
-        profile_image_path: imageUrl,
-        bg_color: getColorFromValue(values.bgColor[0], 'bg'),
-        accent_color: getColorFromValue(values.accentColor[0], 'accent'),
-        button_color: getColorFromValue(values.buttonColor[0], 'button'),
-        is_dark_text: values.isDarkText,
-        is_published: false,
-        styles: {
-          bgColorValue: values.bgColor[0],
-          accentColorValue: values.accentColor[0],
-          buttonColorValue: values.buttonColor[0]
-        }
+        coach_id: userData.user.id,
+        title,
+        subtitle,
+        description,
+        contact_email: contactEmail,
+        contact_phone: contactPhone,
+        main_reason: mainReason,
+        advantages: advantages.filter(a => a.trim() !== ''),
+        work_steps: workSteps.filter(s => s.trim() !== ''),
+        cta_text: ctaText,
+        profile_image_path: profileImagePath,
+        bg_color: bgColor,
+        accent_color: accentColor,
+        button_color: buttonColor,
+        is_dark_text: isDarkText,
+        is_published: isPublished,
       };
-      
-      console.log("Creating landing page with data:", landingPageData);
-      
-      const { data, error } = await supabaseClient
-        .from('landing_pages')
-        .insert(landingPageData)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Error creating landing page:", error);
-        throw new Error("שגיאה ביצירת עמוד הנחיתה: " + error.message);
+
+      let result;
+
+      if (landingPage?.id) {
+        const { data, error } = await supabase
+          .from('landing_pages')
+          .update(landingPageData)
+          .eq('id', landingPage.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        result = data;
+      } else {
+        const { data, error } = await supabase
+          .from('landing_pages')
+          .insert(landingPageData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        result = data;
       }
-      
-      console.log("Landing page created successfully:", data);
-      setLandingPageId(data.id);
-      
+
       toast({
-        title: "עמוד הנחיתה נוצר בהצלחה!",
-        description: "עכשיו תוכל לבחון את העמוד לפני פרסום",
+        title: 'נשמר בהצלחה',
+        description: 'דף הנחיתה נשמר בהצלחה',
       });
-      
-      setActiveTab("preview");
-      
-      // Call onPageCreated callback if provided
-      if (onPageCreated) {
-        onPageCreated();
+
+      if (onSave) {
+        onSave(result as LandingPage);
       }
-      
+
+      onOpenChange(false);
     } catch (error: any) {
-      console.error("Error creating landing page:", error);
+      console.error('Error saving landing page:', error);
       toast({
-        title: "שגיאה ביצירת עמוד נחיתה",
-        description: error.message || "אירעה שגיאה בעת יצירת עמוד הנחיתה. נסה שוב מאוחר יותר.",
-        variant: "destructive",
+        title: 'שגיאה',
+        description: error.message || 'אירעה שגיאה בשמירת דף הנחיתה',
+        variant: 'destructive',
       });
     } finally {
-      setIsSubmitting(false);
-      console.log("Form submission completed");
+      setIsLoading(false);
     }
   };
-  
-  const handlePublish = async () => {
-    if (!landingPageId) return;
-    
-    setIsSubmitting(true);
-    console.log("Publishing landing page:", landingPageId);
-    
-    try {
-      const { data, error } = await supabaseClient
-        .from('landing_pages')
-        .update({ is_published: true })
-        .eq('id', landingPageId)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error("Error publishing landing page:", error);
-        throw new Error("שגיאה בפרסום עמוד הנחיתה: " + error.message);
-      }
-      
-      const publishedUrl = `/landing/${data.id}`;
-      setPublishUrl(publishedUrl);
-      console.log("Landing page published successfully:", publishedUrl);
-      
-      toast({
-        title: "עמוד הנחיתה פורסם בהצלחה!",
-        description: "כעת הוא זמין לצפייה באינטרנט",
-      });
-      
-      // Call onPageCreated callback if provided
-      if (onPageCreated) {
-        onPageCreated();
-      }
-      
-    } catch (error: any) {
-      console.error("Error publishing landing page:", error);
-      toast({
-        title: "שגיאה בפרסום עמוד הנחיתה",
-        description: error.message || "אירעה שגיאה בעת פרסום עמוד הנחיתה. נסה שוב מאוחר יותר.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-      console.log("Publishing process completed");
+
+  const nextStep = () => {
+    if (step < 3) {
+      setStep(step + 1);
     }
   };
-  
-  const getColorFromValue = (value: number, colorType: 'bg' | 'accent' | 'button') => {
-    const colorMap = {
-      bg: [
-        "#ffffff", // לבן
-        "#F1F0FB", // אפור בהיר
-        "#E5DEFF", // סגול רך
-        "#D3E4FD", // כחול רך
-        "#FEF7CD", // צהוב רך
-        "#F2FCE2", // ירוק רך
-        "#FFDEE2", // ורוד רך
-        "#FDE1D3"  // אפרסק
-      ],
-      accent: [
-        "#1A1F2C", // סגול כהה
-        "#8B5CF6", // סגול חי
-        "#0EA5E9", // כחול אוקיינוס
-        "#F97316", // כתום בהיר
-        "#D946EF", // ורוד מגנטה
-        "#403E43", // אפור פחם
-        "#1EAEDB", // כחול בהיר
-        "#EA384C"  // אדום
-      ],
-      button: [
-        "#9b87f5", // סגול ראשי
-        "#8B5CF6", // סגול חי
-        "#0EA5E9", // כחול אוקיינוס
-        "#F97316", // כתום בהיר
-        "#D946EF", // ורוד מגנטה
-        "#1EAEDB", // כחול בהיר
-        "#EA384C", // אדום
-        "#1A1F2C"  // שחור
-      ]
-    };
 
-    const index = Math.min(Math.floor(value / 12.5), 7);
-    return colorMap[colorType][index];
-  };
-
-  const handleCloseDialog = () => {
-    form.reset();
-    setActiveTab("form");
-    setLandingPageId(null);
-    setPublishUrl(null);
-    setProfileImage(null);
-    setImagePreview(null);
-    onOpenChange(false);
+  const prevStep = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleCloseDialog}>
-      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl">יצירת עמוד נחיתה אישי</DialogTitle>
+          <DialogTitle className="text-2xl">
+            {landingPage ? 'עריכת דף נחיתה' : 'יצירת דף נחיתה חדש'}
+          </DialogTitle>
           <DialogDescription>
-            מלא את הפרטים כדי ליצור עמוד נחיתה מותאם אישית
+            צור דף נחיתה מותאם אישית לשיווק השירותים שלך
           </DialogDescription>
         </DialogHeader>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="form">עריכת תוכן</TabsTrigger>
-            <TabsTrigger value="preview" disabled={!landingPageId}>תצוגה מקדימה</TabsTrigger>
+
+        <Tabs defaultValue="content" className="mt-6">
+          <TabsList className="grid grid-cols-3 mb-6">
+            <TabsTrigger value="content">תוכן</TabsTrigger>
+            <TabsTrigger value="design">עיצוב</TabsTrigger>
+            <TabsTrigger value="settings">הגדרות</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="form" className="space-y-4 pt-4">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                <div className="space-y-4">
-                  <h3 className="text-md font-semibold border-b pb-1">פרטים בסיסיים</h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>כותרת ראשית</FormLabel>
-                        <FormControl>
-                          <Input placeholder="הדרך שלך להצלחה מתחילה כאן..." {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          הכותרת הראשית שתופיע בעמוד הנחיתה שלך
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="subtitle"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>תת-כותרת</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="בחר תת-כותרת" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {SUBTITLE_OPTIONS.map(option => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          הסבר קצר שיופיע מתחת לכותרת הראשית
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="mainReason"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>סיבה מרכזית לבחור בך</FormLabel>
-                        <FormControl>
-                          <Input placeholder="7 שנות ניסיון בליווי להצלחה..." {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          הסבר קצר למה כדאי לבחור דווקא בך
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+
+          <TabsContent value="content" className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="title">כותרת ראשית</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="הכותרת הראשית של דף הנחיתה"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="subtitle">כותרת משנה</Label>
+                <Input
+                  id="subtitle"
+                  value={subtitle}
+                  onChange={(e) => setSubtitle(e.target.value)}
+                  placeholder="כותרת משנה (אופציונלי)"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description">תיאור</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="תיאור קצר של השירות שלך"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="mainReason">סיבה עיקרית לבחור בך</Label>
+                <Textarea
+                  id="mainReason"
+                  value={mainReason}
+                  onChange={(e) => setMainReason(e.target.value)}
+                  placeholder="למה לקוחות צריכים לבחור בך?"
+                  rows={2}
+                />
+              </div>
+
+              <div>
+                <Label>יתרונות (עד 3)</Label>
+                <div className="space-y-2">
+                  {advantages.slice(0, 3).map((advantage, index) => (
+                    <Input
+                      key={index}
+                      value={advantage}
+                      onChange={(e) => handleAdvantageChange(index, e.target.value)}
+                      placeholder={`יתרון ${index + 1}`}
+                    />
+                  ))}
                 </div>
-                
-                <div className="space-y-4">
-                  <h3 className="text-md font-semibold border-b pb-1">יתרונות ותהליך עבודה</h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="advantages"
-                    render={() => (
-                      <FormItem>
-                        <div className="mb-2">
-                          <FormLabel>בחר 3-5 יתרונות מרכזיים</FormLabel>
-                          <FormDescription>
-                            הגורמים שמבדלים אותך משאר המאמנים
-                          </FormDescription>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          {ADVANTAGE_OPTIONS.map((item) => (
-                            <FormField
-                              key={item.id}
-                              control={form.control}
-                              name="advantages"
-                              render={({ field }) => {
-                                return (
-                                  <FormItem
-                                    key={item.id}
-                                    className="flex flex-row items-start space-x-2 space-x-reverse"
-                                  >
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(item.id)}
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? field.onChange([...field.value, item.id])
-                                            : field.onChange(
-                                                field.value?.filter(
-                                                  (value) => value !== item.id
-                                                )
-                                              )
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="mr-2 font-normal cursor-pointer">
-                                      {item.label}
-                                    </FormLabel>
-                                  </FormItem>
-                                )
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-1 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="workStep1"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>שלב 1 בתהליך העבודה</FormLabel>
-                          <FormControl>
-                            <Input placeholder="פגישת היכרות ואבחון צרכים..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+              </div>
+
+              <div>
+                <Label>שלבי עבודה (עד 3)</Label>
+                <div className="space-y-2">
+                  {workSteps.slice(0, 3).map((step, index) => (
+                    <Input
+                      key={index}
+                      value={step}
+                      onChange={(e) => handleWorkStepChange(index, e.target.value)}
+                      placeholder={`שלב ${index + 1}`}
                     />
-                    
-                    <FormField
-                      control={form.control}
-                      name="workStep2"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>שלב 2 בתהליך העבודה</FormLabel>
-                          <FormControl>
-                            <Input placeholder="בניית תוכנית אימון אישית..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="workStep3"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>שלב 3 בתהליך העבודה</FormLabel>
-                          <FormControl>
-                            <Input placeholder="מפגשי אימון והתקדמות מתמדת..." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  ))}
                 </div>
-                
-                <div className="space-y-4">
-                  <h3 className="text-md font-semibold border-b pb-1">תיאור, פרטי קשר וקריאה לפעולה</h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>תיאור</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="תאר את השירות או המוצר שלך..." 
-                            {...field} 
-                            className="min-h-[100px]"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          תיאור מפורט שיופיע בעמוד הנחיתה
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="contactEmail"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>אימייל ליצירת קשר</FormLabel>
-                          <FormControl>
-                            <Input placeholder="your@email.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="contactPhone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>טלפון ליצירת קשר</FormLabel>
-                          <FormControl>
-                            <Input placeholder="050-1234567" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <FormField
-                    control={form.control}
-                    name="ctaText"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>טקסט לכפתור קריאה לפעולה</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="בחר טקסט לכפתור" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {CTA_OPTIONS.map(option => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          הטקסט שיופיע על הכפתור המרכזי בעמוד
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="space-y-4">
-                  <h3 className="text-md font-semibold border-b pb-1">עיצוב ותמונה</h3>
-                  
-                  <div className="space-y-4">
-                    <FormItem>
-                      <FormLabel>תמונה אישית</FormLabel>
-                      <div className="flex items-center gap-4">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="max-w-[220px]"
-                        />
-                        {imagePreview && (
-                          <div className="h-20 w-20 rounded-md overflow-hidden border">
-                            <img 
-                              src={imagePreview} 
-                              alt="תצוגה מקדימה" 
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <FormDescription>
-                        העלה תמונה אישית שתופיע בעמוד הנחיתה
-                      </FormDescription>
-                    </FormItem>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="bgColor"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>צבע רקע עיקרי</FormLabel>
-                          <div className="flex items-center gap-4">
-                            <FormControl>
-                              <Slider
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                max={100}
-                                step={1}
-                                className="flex-1"
-                              />
-                            </FormControl>
-                            <div 
-                              className="h-8 w-8 rounded-full border" 
-                              style={{ backgroundColor: getColorFromValue(field.value[0], 'bg') }}
-                            />
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="accentColor"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>צבע הדגשה משני</FormLabel>
-                          <div className="flex items-center gap-4">
-                            <FormControl>
-                              <Slider
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                max={100}
-                                step={1}
-                                className="flex-1"
-                              />
-                            </FormControl>
-                            <div 
-                              className="h-8 w-8 rounded-full border" 
-                              style={{ backgroundColor: getColorFromValue(field.value[0], 'accent') }}
-                            />
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="buttonColor"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>צבע כפתורים</FormLabel>
-                          <div className="flex items-center gap-4">
-                            <FormControl>
-                              <Slider
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                max={100}
-                                step={1}
-                                className="flex-1"
-                              />
-                            </FormControl>
-                            <div 
-                              className="h-8 w-8 rounded-full border" 
-                              style={{ backgroundColor: getColorFromValue(field.value[0], 'button') }}
-                            />
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="isDarkText"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between space-x-3 space-x-reverse">
-                          <div className="space-y-0.5">
-                            <FormLabel>צבע טקסט כהה</FormLabel>
-                            <FormDescription>
-                              השתמש בטקסט כהה (אחרת יהיה בצבע לבן)
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-                
-                <DialogFooter>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleCloseDialog}
-                    className="ml-2"
-                  >
-                    ביטול
-                  </Button>
-                  <Button 
-                    type="submit"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "יוצר עמוד..." : "צור עמוד נחיתה"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
+              </div>
+
+              <div>
+                <Label htmlFor="ctaText">טקסט כפתור קריאה לפעולה</Label>
+                <Input
+                  id="ctaText"
+                  value={ctaText}
+                  onChange={(e) => setCtaText(e.target.value)}
+                  placeholder="לדוגמה: צור קשר עכשיו"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="contactEmail">אימייל ליצירת קשר</Label>
+                <Input
+                  id="contactEmail"
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  placeholder="האימייל שלך"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="contactPhone">טלפון ליצירת קשר</Label>
+                <Input
+                  id="contactPhone"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  placeholder="מספר הטלפון שלך"
+                />
+              </div>
+            </div>
           </TabsContent>
-          
-          <TabsContent value="preview" className="space-y-4 pt-4">
-            <div className="rounded-lg border p-4 mb-4">
-              <div className="text-center mb-4">
-                <h2 className="text-xl font-bold">תצוגה מקדימה של עמוד הנחיתה</h2>
-                <p className="text-sm text-gray-500">
-                  כך ייראה עמוד הנחיתה שלך לאחר הפרסום
-                </p>
-              </div>
-              
-              {landingPageId && (
-                <div className="aspect-video w-full bg-gray-100 border rounded-md overflow-hidden">
-                  <iframe 
-                    src={`/landing/preview/${landingPageId}`} 
-                    className="w-full h-full" 
-                    title="תצוגה מקדימה"
-                  />
-                </div>
-              )}
-              
-              <div className="flex justify-between mt-6">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setActiveTab("form")}
-                >
-                  חזור לעריכה
-                </Button>
-                
-                <Button 
-                  type="button"
-                  onClick={handlePublish}
-                  disabled={isSubmitting || !landingPageId}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {isSubmitting ? "מפרסם..." : "פרסם עכשיו"}
-                </Button>
-              </div>
-              
-              {publishUrl && (
-                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
-                  <p className="font-medium text-green-800 mb-2">עמוד הנחיתה פורסם בהצלחה!</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">הקישור לעמוד שלך:</span>
-                    <a 
-                      href={publishUrl}
-                      target="_blank"
-                      rel="noopener noreferrer" 
-                      className="text-blue-600 hover:underline text-sm"
+
+          <TabsContent value="design" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="profileImage">תמונת פרופיל</Label>
+                  <div className="mt-2 flex items-center gap-4">
+                    <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                      {profileImagePreview ? (
+                        <img
+                          src={profileImagePreview}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Upload className="w-8 h-8 text-gray-400" />
+                      )}
+                    </div>
+                    <Label
+                      htmlFor="profile-upload"
+                      className="cursor-pointer bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90"
                     >
-                      {window.location.origin}{publishUrl}
-                    </a>
+                      העלה תמונה
+                      <Input
+                        id="profile-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleProfileImageChange}
+                      />
+                    </Label>
                   </div>
                 </div>
-              )}
+
+                <div>
+                  <Label>צבע רקע</Label>
+                  <ColorPicker color={bgColor} onChange={setBgColor} />
+                </div>
+
+                <div>
+                  <Label>צבע הדגשה</Label>
+                  <ColorPicker color={accentColor} onChange={setAccentColor} />
+                </div>
+
+                <div>
+                  <Label>צבע כפתור</Label>
+                  <ColorPicker color={buttonColor} onChange={setButtonColor} />
+                </div>
+
+                <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                  <Switch
+                    id="dark-text"
+                    checked={isDarkText}
+                    onCheckedChange={setIsDarkText}
+                  />
+                  <Label htmlFor="dark-text">טקסט כהה</Label>
+                </div>
+              </div>
+
+              <div className="bg-gray-100 rounded-lg p-4">
+                <div className="text-center">
+                  <h3 className="font-medium mb-2">תצוגה מקדימה של הצבעים</h3>
+                  <div
+                    className="w-full h-32 rounded-lg mb-4 flex flex-col items-center justify-center"
+                    style={{ backgroundColor: bgColor }}
+                  >
+                    <span
+                      className="font-bold text-lg mb-2"
+                      style={{ color: isDarkText ? '#000000' : '#ffffff' }}
+                    >
+                      כותרת לדוגמה
+                    </span>
+                    <span
+                      className="text-sm"
+                      style={{ color: isDarkText ? '#333333' : '#f0f0f0' }}
+                    >
+                      טקסט לדוגמה
+                    </span>
+                  </div>
+
+                  <div className="flex gap-4 justify-center">
+                    <div
+                      className="w-16 h-16 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: accentColor }}
+                    >
+                      <span className="text-white text-xs">הדגשה</span>
+                    </div>
+                    <div
+                      className="w-16 h-16 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: buttonColor }}
+                    >
+                      <span className="text-white text-xs">כפתור</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                <Switch
+                  id="is-published"
+                  checked={isPublished}
+                  onCheckedChange={setIsPublished}
+                />
+                <Label htmlFor="is-published">פרסם דף נחיתה</Label>
+              </div>
+              <p className="text-sm text-gray-500">
+                כאשר דף הנחיתה מפורסם, הוא יהיה נגיש לכל מי שיש לו את הקישור.
+              </p>
             </div>
           </TabsContent>
         </Tabs>
+
+        <div className="flex justify-between mt-6">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            ביטול
+          </Button>
+          <Button onClick={handleSave} disabled={isLoading}>
+            {isLoading ? 'שומר...' : 'שמור'}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
-}
+};
