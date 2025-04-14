@@ -18,7 +18,6 @@ interface Video {
   days_after_registration?: number;
   watched?: boolean;
   watched_at?: string;
-  player_video_id?: string;
 }
 
 interface VideosTabProps {
@@ -32,6 +31,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
   const [loading, setLoading] = useState(true);
   const [activeVideo, setActiveVideo] = useState<Video | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [watchStatus, setWatchStatus] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   const fetchVideos = async () => {
@@ -45,12 +45,42 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       }
       
       if (!playerId) {
+        // If no player ID, show coach videos
         await fetchCoachVideos();
         return;
       }
       
-      await fetchPlayerAssignedVideos(playerId);
+      // Direct query using assigned_player_ids array
+      const { data: assignedVideos, error: videosError } = await supabase
+        .from("videos")
+        .select("*")
+        .contains('assigned_player_ids', [playerId]);
       
+      if (videosError) {
+        console.error("[ERROR] Error fetching assigned videos:", videosError);
+        throw videosError;
+      }
+      
+      console.log("[DEBUG] Assigned videos found:", assignedVideos?.length || 0);
+      
+      if (!assignedVideos || assignedVideos.length === 0) {
+        console.log("[INFO] No assigned videos found for player, fetching coach videos instead");
+        await fetchCoachVideos();
+        return;
+      }
+      
+      // Get watch status for these videos
+      await fetchWatchStatus(assignedVideos, playerId);
+      
+      // Sort videos by creation date (newest first)
+      const sortedVideos = [...assignedVideos].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      setVideos(sortedVideos);
+      if (sortedVideos.length > 0) {
+        setActiveVideo(sortedVideos[0]);
+      }
     } catch (error) {
       console.error("[ERROR] Error fetching videos:", error);
       setError("לא ניתן לטעון את הסרטונים");
@@ -64,122 +94,37 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     }
   };
   
-  const fetchPlayerAssignedVideos = async (playerId: string) => {
+  const fetchWatchStatus = async (videosList: any[], playerId: string) => {
+    // We still need to get watch status from player_videos for now
+    // until we implement watch status in the new system
     try {
-      console.log("[DEBUG] Fetching assigned videos for player:", playerId);
-      
-      // Get player_videos to find which videos are assigned to the player
-      const { data: playerVideosData, error: playerVideosError } = await supabase
-        .from("player_videos")
-        .select("*")
-        .eq("player_id", playerId);
+      const { data, error } = await supabase
+        .from('player_videos')
+        .select('video_id, watched, watched_at')
+        .eq('player_id', playerId)
+        .in('video_id', videosList.map(v => v.id));
         
-      console.log("[DEBUG] Raw player_videos data:", playerVideosData);
-      
-      if (playerVideosError) {
-        console.error("[ERROR] Error fetching player_videos:", playerVideosError);
-        throw playerVideosError;
-      }
-      
-      if (!playerVideosData || playerVideosData.length === 0) {
-        console.log("[INFO] No player_videos found for this player, fetching coach videos instead");
-        
-        // If no videos specifically assigned to player, try to get coach videos
-        if (coachId) {
-          await fetchCoachVideos();
-          return;
-        }
-        
-        setVideos([]);
-        setActiveVideo(null);
-        setError("אין סרטונים זמינים כרגע");
+      if (error) {
+        console.error("[ERROR] Error fetching watch status:", error);
         return;
       }
       
-      // Extract video IDs from player_videos
-      const videoIds = playerVideosData.map(pv => pv.video_id);
-      console.log("[DEBUG] Extracted video IDs:", videoIds);
+      const statusMap: Record<string, boolean> = {};
+      data?.forEach(item => {
+        statusMap[item.video_id] = item.watched || false;
+      });
       
-      // Fetch the complete video information
-      if (videoIds.length > 0) {
-        const { data: videosData, error: videosError } = await supabase
-          .from("videos")
-          .select("*")
-          .in("id", videoIds);
-          
-        console.log("[DEBUG] Full videos data:", videosData);
-        
-        if (videosError) {
-          console.error("[ERROR] Error fetching videos data:", videosError);
-          throw videosError;
-        }
-        
-        if (!videosData || videosData.length === 0) {
-          console.log("[INFO] No videos found with the provided IDs");
-          setVideos([]);
-          setActiveVideo(null);
-          setError("לא נמצאו סרטונים תואמים");
-          return;
-        }
-        
-        // Combine information from player_videos and videos tables
-        const formattedVideos = videosData.map(video => {
-          // Find the corresponding player_video record
-          const playerVideo = playerVideosData.find(pv => pv.video_id === video.id);
-          
-          return {
-            id: video.id,
-            title: video.title,
-            url: video.url,
-            description: video.description || "",
-            category: video.category,
-            created_at: video.created_at,
-            is_auto_scheduled: video.is_auto_scheduled,
-            days_after_registration: video.days_after_registration,
-            // Information from player_videos
-            player_video_id: playerVideo?.id,
-            watched: playerVideo?.watched || false,
-            watched_at: playerVideo?.watched_at
-          } as Video;
-        });
-        
-        console.log("[DEBUG] Formatted combined videos:", formattedVideos);
-        
-        // Sort by creation date (newest first)
-        formattedVideos.sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        
-        setVideos(formattedVideos);
-        
-        if (formattedVideos.length > 0) {
-          setActiveVideo(formattedVideos[0]);
-          setError(null);
-        } else {
-          setActiveVideo(null);
-          setError("לא נמצאו סרטונים לשחקן זה");
-        }
-      } else {
-        setVideos([]);
-        setActiveVideo(null);
-        setError("לא נמצאו סרטונים לשחקן זה");
-      }
+      setWatchStatus(statusMap);
       
-    } catch (error) {
-      console.error("[ERROR] Error in fetchPlayerAssignedVideos:", error);
+      // Update the videos with watch status
+      const updatedVideos = videosList.map(video => ({
+        ...video,
+        watched: statusMap[video.id] || false
+      }));
       
-      // Fallback to coach videos if there's an error fetching player-specific videos
-      try {
-        if (coachId) {
-          console.log("[INFO] Trying to fetch coach videos instead");
-          await fetchCoachVideos();
-        }
-      } catch (coachError) {
-        console.error("[ERROR] Error fetching coach videos fallback:", coachError);
-        setVideos([]);
-        setActiveVideo(null);
-        setError("אין סרטונים זמינים כרגע");
-      }
+      setVideos(updatedVideos);
+    } catch (err) {
+      console.error("[ERROR] Error processing watch status:", err);
     }
   };
   
@@ -203,14 +148,7 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
       
       if (coachVideos && coachVideos.length > 0) {
         const formattedVideos = coachVideos.map(video => ({
-          id: video.id,
-          title: video.title,
-          url: video.url,
-          description: video.description || "",
-          category: video.category,
-          created_at: video.created_at,
-          is_auto_scheduled: video.is_auto_scheduled,
-          days_after_registration: video.days_after_registration,
+          ...video,
           watched: false
         }));
         
@@ -260,69 +198,70 @@ export const VideosTab = ({ coachId, playerId, onWatchVideo }: VideosTabProps) =
     }
     
     if (playerId && video.id && !video.watched) {
-      if (video.player_video_id) {
-        markVideoAsWatched(playerId, video.id, video.player_video_id);
-      } else {
-        markVideoAsWatched(playerId, video.id);
-      }
+      markVideoAsWatched(playerId, video.id);
     }
   };
   
-  const markVideoAsWatched = async (playerId: string, videoId: string, playerVideoId?: string) => {
+  const markVideoAsWatched = async (playerId: string, videoId: string) => {
     try {
-      console.log("[DEBUG] Marking video as watched:", { playerId, videoId, playerVideoId });
+      console.log("[DEBUG] Marking video as watched:", { playerId, videoId });
       
-      if (playerVideoId) {
-        const { error } = await supabase
+      // Check if record exists
+      const { data, error: checkError } = await supabase
+        .from('player_videos')
+        .select('id')
+        .eq('player_id', playerId)
+        .eq('video_id', videoId)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error("[ERROR] Error checking player_videos:", checkError);
+        return;
+      }
+      
+      const now = new Date().toISOString();
+      
+      if (data) {
+        // Update existing record
+        const { error: updateError } = await supabase
           .from('player_videos')
           .update({ 
             watched: true,
-            watched_at: new Date().toISOString()
+            watched_at: now
           })
-          .eq('id', playerVideoId);
+          .eq('id', data.id);
           
-        if (error) {
-          console.error("[ERROR] Error updating player_videos by ID:", error);
+        if (updateError) {
+          console.error("[ERROR] Error updating watch status:", updateError);
           return;
         }
       } else {
-        const { data, error } = await supabase
+        // Create new record
+        const { error: insertError } = await supabase
           .from('player_videos')
-          .select('id')
-          .eq('player_id', playerId)
-          .eq('video_id', videoId)
-          .maybeSingle();
-        
-        if (error) {
-          console.error("[ERROR] Error checking player_videos:", error);
+          .insert([{ 
+            player_id: playerId,
+            video_id: videoId,
+            watched: true,
+            watched_at: now,
+            assigned_by: coachId
+          }]);
+          
+        if (insertError) {
+          console.error("[ERROR] Error creating watch record:", insertError);
           return;
-        }
-        
-        if (data) {
-          await supabase
-            .from('player_videos')
-            .update({ 
-              watched: true,
-              watched_at: new Date().toISOString()
-            })
-            .eq('id', data.id);
-        } else {
-          await supabase
-            .from('player_videos')
-            .insert([{ 
-              player_id: playerId,
-              video_id: videoId,
-              watched: true,
-              watched_at: new Date().toISOString(),
-              assigned_by: coachId
-            }]);
         }
       }
       
       // Update local state to reflect the change
+      setWatchStatus(prev => ({
+        ...prev,
+        [videoId]: true
+      }));
+      
       setVideos(prevVideos => 
         prevVideos.map(v => 
-          v.id === videoId ? { ...v, watched: true, watched_at: new Date().toISOString() } : v
+          v.id === videoId ? { ...v, watched: true, watched_at: now } : v
         )
       );
       
