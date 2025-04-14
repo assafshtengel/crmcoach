@@ -2123,6 +2123,7 @@ export type Database = {
       }
       videos: {
         Row: {
+          assigned_player_ids: string[] | null
           auto_sequence_order: number | null
           category: string | null
           coach_id: string | null
@@ -2137,6 +2138,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          assigned_player_ids?: string[] | null
           auto_sequence_order?: number | null
           category?: string | null
           coach_id?: string | null
@@ -2151,6 +2153,7 @@ export type Database = {
           url: string
         }
         Update: {
+          assigned_player_ids?: string[] | null
           auto_sequence_order?: number | null
           category?: string | null
           coach_id?: string | null

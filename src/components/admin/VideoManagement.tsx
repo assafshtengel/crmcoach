@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -211,7 +210,8 @@ export default function VideoManagement() {
         description: formData.description || null,
         category: formData.category || null,
         is_admin_video: false,
-        coach_id: user.id
+        coach_id: user.id,
+        assigned_player_ids: [] // Initialize with empty array for new videos
       };
       console.log("Video data being inserted:", videoData);
       const {
@@ -352,21 +352,40 @@ export default function VideoManagement() {
     setSelectedPlayers([]);
     setOpenAssignDialog(true);
     try {
-      // Important fix: Get existing assignments for THIS SPECIFIC video
-      const {
-        data,
-        error
-      } = await supabase.from('player_videos').select('player_id').eq('video_id', video.id);
-      if (error) {
-        console.error('Error fetching video assignments:', error);
-        throw error;
+      // Fetch the current assigned_player_ids for this video
+      const { data: videoData, error: videoError } = await supabase
+        .from('videos')
+        .select('assigned_player_ids')
+        .eq('id', video.id)
+        .single();
+        
+      if (videoError) {
+        console.error('Error fetching video data:', videoError);
+        throw videoError;
       }
-
-      // Create a map of player IDs to assignment status
+      
+      // Create a map of player IDs that are already assigned
       const assignmentsMap: Record<string, boolean> = {};
-      (data || []).forEach(assignment => {
-        assignmentsMap[assignment.player_id] = true;
+      const assignedPlayerIds = videoData?.assigned_player_ids || [];
+      
+      assignedPlayerIds.forEach((playerId: string) => {
+        assignmentsMap[playerId] = true;
       });
+
+      // Also check player_videos for backward compatibility
+      const { data: legacyAssignments, error: legacyError } = await supabase
+        .from('player_videos')
+        .select('player_id')
+        .eq('video_id', video.id);
+        
+      if (legacyError) {
+        console.error('Error fetching legacy video assignments:', legacyError);
+      } else if (legacyAssignments) {
+        legacyAssignments.forEach(assignment => {
+          assignmentsMap[assignment.player_id] = true;
+        });
+      }
+      
       setPlayersWithAssignments(assignmentsMap);
       console.log("Existing assignments for video ID", video.id, ":", assignmentsMap);
     } catch (error) {
@@ -401,7 +420,36 @@ export default function VideoManagement() {
         return;
       }
 
-      // Insert new player-video assignments
+      // Get current assigned_player_ids for this video
+      const { data: videoData, error: videoError } = await supabase
+        .from('videos')
+        .select('assigned_player_ids')
+        .eq('id', selectedVideo.id)
+        .single();
+
+      if (videoError) {
+        console.error('Error fetching video data:', videoError);
+        throw videoError;
+      }
+
+      // Create new array with unique player IDs
+      const currentAssignedIds = videoData?.assigned_player_ids || [];
+      const updatedAssignedIds = Array.from(
+        new Set([...currentAssignedIds, ...newAssignments])
+      );
+
+      // Update the video record with new assigned_player_ids
+      const { error: updateError } = await supabase
+        .from('videos')
+        .update({ assigned_player_ids: updatedAssignedIds })
+        .eq('id', selectedVideo.id);
+
+      if (updateError) {
+        console.error('Error updating video assignments:', updateError);
+        throw updateError;
+      }
+
+      // Also create records in player_videos for backward compatibility
       const assignmentsToInsert = newAssignments.map(playerId => ({
         player_id: playerId,
         video_id: selectedVideo.id,
@@ -409,22 +457,15 @@ export default function VideoManagement() {
         watched: false
       }));
       
-      const {
-        data,
-        error
-      } = await supabase.from('player_videos').insert(assignmentsToInsert);
-      
-      if (error) {
-        console.error('Error assigning video:', error);
-        if (error.code === '23505') {
-          // Specific handling for duplicate key violation
-          toast({
-            title: "סרטון כבר הוקצה לשחקן",
-            description: "חלק מהשחקנים כבר קיבלו את הסרטון הזה",
-            variant: "destructive"
-          });
-        } else {
-          throw error;
+      if (assignmentsToInsert.length > 0) {
+        const { error: insertError } = await supabase
+          .from('player_videos')
+          .insert(assignmentsToInsert)
+          .on_conflict(['player_id', 'video_id'])
+          .do_nothing();
+        
+        if (insertError) {
+          console.error('Error inserting player_videos records:', insertError);
         }
       }
 
@@ -514,6 +555,80 @@ export default function VideoManagement() {
         description: "לא ניתן להקצות את הסרטון לשחקנים",
         variant: "destructive"
       });
+    }
+  };
+
+  // Add new function to handle unassigning videos
+  const handleUnassignPlayer = async (videoId: string, playerId: string) => {
+    try {
+      // Get current assigned_player_ids for this video
+      const { data: videoData, error: videoError } = await supabase
+        .from('videos')
+        .select('assigned_player_ids')
+        .eq('id', videoId)
+        .single();
+
+      if (videoError) {
+        console.error('Error fetching video data:', videoError);
+        throw videoError;
+      }
+
+      // Filter out the player ID to unassign
+      const currentAssignedIds = videoData?.assigned_player_ids || [];
+      const updatedAssignedIds = currentAssignedIds.filter(id => id !== playerId);
+
+      // Update the video record with new assigned_player_ids
+      const { error: updateError } = await supabase
+        .from('videos')
+        .update({ assigned_player_ids: updatedAssignedIds })
+        .eq('id', videoId);
+
+      if (updateError) {
+        console.error('Error updating video assignments:', updateError);
+        throw updateError;
+      }
+
+      // Also remove from player_videos for backward compatibility
+      const { error: deleteError } = await supabase
+        .from('player_videos')
+        .delete()
+        .eq('video_id', videoId)
+        .eq('player_id', playerId);
+
+      if (deleteError) {
+        console.error('Error deleting player_videos record:', deleteError);
+      }
+
+      // Decrement video count for the player
+      const { error: decrementError } = await supabase.rpc('decrement_player_video_count', {
+        player_id_param: playerId
+      });
+      
+      if (decrementError) {
+        console.error('Error decrementing video count:', decrementError);
+      }
+
+      toast({
+        title: "סרטון הוסר מהשחקן",
+        description: "ההקצאה הוסרה בהצלחה"
+      });
+
+      // Remove from local state
+      setPlayersWithAssignments(prev => {
+        const updated = { ...prev };
+        delete updated[playerId];
+        return updated;
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error unassigning video:', error);
+      toast({
+        title: "שגיאה בהסרת הקצאה",
+        description: "לא ניתן להסיר את הקצאת הסרטון מהשחקן",
+        variant: "destructive"
+      });
+      return false;
     }
   };
 
@@ -738,164 +853,4 @@ export default function VideoManagement() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-url">קישור לסרטון</Label>
-              <Input id="edit-url" name="url" value={formData.url} onChange={handleInputChange} placeholder="https://example.com/video" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">תיאור</Label>
-              <Textarea id="edit-description" name="description" value={formData.description} onChange={handleInputChange} placeholder="תיאור הסרטון" rows={3} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-category">קטגוריה</Label>
-              <Select value={formData.category} onValueChange={value => handleSelectChange("category", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="בחר קטגוריה" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mental">מנטאלי</SelectItem>
-                  <SelectItem value="technical">טכני</SelectItem>
-                  <SelectItem value="tactical">טקטי</SelectItem>
-                  <SelectItem value="physical">פיזי</SelectItem>
-                  <SelectItem value="other">אחר</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenEditDialog(false)}>ביטול</Button>
-            <Button type="submit" onClick={handleEditVideo}>
-              שמור שינויים
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>מחיקת סרטון</DialogTitle>
-            <DialogDescription>
-              האם אתה בטוח שברצונך למחוק את הסרטון "{selectedVideo?.title}"?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center gap-3 py-3">
-            <AlertTriangle className="h-6 w-6 text-amber-500" />
-            <div className="text-sm">
-              מחיקת הסרטון תסיר אותו לצמיתות ותבטל את כל ההקצאות לשחקנים
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>ביטול</Button>
-            <Button variant="destructive" onClick={handleDeleteVideo}>
-              מחק סרטון
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={openAssignDialog} onOpenChange={setOpenAssignDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>הקצה סרטון לשחקנים</DialogTitle>
-            <DialogDescription>
-              בחר את השחקנים שיקבלו את הסרטון "{selectedVideo?.title}"
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {players.length === 0 ? (
-              <div className="text-center py-8">
-                <User className="mx-auto h-10 w-10 text-gray-300" />
-                <p className="mt-2 text-gray-500">אין שחקנים זמינים</p>
-              </div>
-            ) : (
-              <ScrollArea className="h-[250px] pr-4 -mr-4">
-                <div className="space-y-4">
-                  {players.map(player => (
-                    <div key={player.id} className={`flex items-center justify-between p-2 rounded-md border ${selectedPlayers.includes(player.id) ? 'bg-blue-50 border-blue-200' : 'border-gray-200 hover:bg-gray-50'} ${playersWithAssignments[player.id] ? 'opacity-60' : ''}`}>
-                      <div className="flex items-center">
-                        <input 
-                          type="checkbox" 
-                          id={`player-${player.id}`} 
-                          checked={selectedPlayers.includes(player.id)} 
-                          onChange={() => togglePlayerSelection(player.id)} 
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 mr-2 rtl:ml-2 rtl:mr-0" 
-                        />
-                        <Label htmlFor={`player-${player.id}`} className="cursor-pointer">
-                          {player.full_name}
-                        </Label>
-                      </div>
-                      {playersWithAssignments[player.id] && (
-                        <Badge variant="outline" className="text-green-600 border-green-200 flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          <span>נשלח</span>
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול</Button>
-            <Button type="submit" onClick={handleAssignVideo} disabled={selectedPlayers.length === 0}>
-              הקצה סרטון
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>תזמון אוטומטי לסרטון</DialogTitle>
-            <DialogDescription>
-              הגדר את הסרטון לשליחה אוטומטית לשחקנים חדשים
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="auto-schedule">שליחה אוטומטית</Label>
-              <Switch 
-                id="auto-schedule" 
-                checked={autoScheduleData.is_auto_scheduled} 
-                onCheckedChange={(checked) => handleAutoScheduleChange("is_auto_scheduled", checked)} 
-              />
-            </div>
-            
-            {autoScheduleData.is_auto_scheduled && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="days-after">ימים לאחר ההרשמה</Label>
-                  <Input 
-                    id="days-after" 
-                    type="number" 
-                    min="1" 
-                    value={autoScheduleData.days_after_registration} 
-                    onChange={(e) => handleAutoScheduleChange("days_after_registration", parseInt(e.target.value) || 1)} 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sequence-order">סדר הופעה ברצף</Label>
-                  <Input 
-                    id="sequence-order" 
-                    type="number" 
-                    min="1" 
-                    value={autoScheduleData.auto_sequence_order} 
-                    onChange={(e) => handleAutoScheduleChange("auto_sequence_order", parseInt(e.target.value) || 1)} 
-                  />
-                  <p className="text-xs text-gray-500">קובע באיזה סדר יישלחו סרטונים אוטומטיים מרובים</p>
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
-            <Button type="submit" onClick={handleAutoScheduleSave}>
-              שמור הגדרות
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+              <Input id="edit-url" name="url
