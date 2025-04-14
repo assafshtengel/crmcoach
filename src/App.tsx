@@ -1,8 +1,7 @@
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import { useEffect, useRef } from 'react'; // Add useRef to the import
+import { useEffect, useRef } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Layout } from '@/components/layout/Layout';
@@ -59,13 +58,14 @@ import PlayerQuestionnaires from '@/pages/player/PlayerQuestionnaires';
 import PlayerQuestionnaireForm from '@/pages/player/PlayerQuestionnaireForm';
 import PlayerDashboard from '@/pages/player/PlayerDashboard';
 import PlayerNotifications from '@/pages/player/PlayerNotifications';
+import PlayerVideos from '@/pages/player/PlayerVideos';
 
 import "./App.css";
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 
 const AuthStateListener = () => {
   const navigate = useNavigate();
-  const redirectedRef = useRef(false); // Use useRef here
+  const redirectedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -102,14 +102,12 @@ function App() {
           <Toaster />
           <AuthStateListener />
           <Routes>
-            {/* Auth pages and registration pages that don't use the layout */}
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/player-auth" element={<PlayerAuth />} />
             <Route path="/signup-coach" element={<CoachSignUp />} />
             <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
             <Route path="/register/:linkId" element={<PublicRegistrationForm />} />
             
-            {/* All other routes use the Layout component */}
             <Route element={<Layout />}>
               <Route path="/" element={<AuthGuard coachOnly={true}><DashboardCoach /></AuthGuard>} />
               <Route path="/index" element={<AuthGuard coachOnly={true}><Index /></AuthGuard>} />
@@ -154,7 +152,6 @@ function App() {
               <Route path="/game-evaluation/:playerId" element={<AuthGuard coachOnly={true}><PlayerGameEvaluationForm /></AuthGuard>} />
               <Route path="/questionnaires" element={<AuthGuard coachOnly={true}><QuestionnairesPage /></AuthGuard>} />
 
-              {/* Player-specific routes */}
               <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
               <Route path="/player/profile-alt" element={<AuthGuard playerOnly={true}><PlayerProfileAlternative /></AuthGuard>} />
               <Route path="/player/dashboard" element={<AuthGuard playerOnly={true}><PlayerDashboard /></AuthGuard>} />
@@ -162,8 +159,8 @@ function App() {
               <Route path="/player/questionnaires" element={<AuthGuard playerOnly={true}><PlayerQuestionnaires /></AuthGuard>} />
               <Route path="/player/questionnaire/:id" element={<AuthGuard playerOnly={true}><PlayerQuestionnaireForm /></AuthGuard>} />
               <Route path="/player/notifications" element={<AuthGuard playerOnly={true}><PlayerNotifications /></AuthGuard>} />
+              <Route path="/player/videos" element={<AuthGuard playerOnly={true}><PlayerVideos /></AuthGuard>} />
               
-              {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

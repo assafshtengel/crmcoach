@@ -16,6 +16,7 @@ import PlayerGameEvaluation from "./pages/player/PlayerGameEvaluation";
 import PlayerProfileAlternative from "./pages/player/PlayerProfileAlternative";
 import PlayerNotifications from "./pages/player/PlayerNotifications";
 import PlayerDashboard from "./pages/player/PlayerDashboard";
+import PlayerVideos from "./pages/player/PlayerVideos";
 
 const routes = createBrowserRouter([
   {
@@ -75,6 +76,10 @@ const routes = createBrowserRouter([
   {
     path: "/player/notifications",
     element: <PlayerNotifications />,
+  },
+  {
+    path: "/player/videos",
+    element: <PlayerVideos />,
   },
 ]);
 
