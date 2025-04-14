@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -217,36 +218,80 @@ const AutoVideoManagement = () => {
 
       const coachId = player?.coach_id;
 
+      // Get current assigned_player_ids for this video
+      const { data: videoData, error: videoError } = await supabase
+        .from('videos')
+        .select('assigned_player_ids')
+        .eq('id', assignment.video_id)
+        .single();
+
+      if (videoError) {
+        console.error('Error fetching video data:', videoError);
+        toast.error('Failed to fetch video data.');
+        return;
+      }
+
+      // Create new array with unique player IDs
+      const currentAssignedIds = videoData?.assigned_player_ids || [];
+      
+      // Make sure player ID is in the assigned_player_ids array
+      if (!currentAssignedIds.includes(assignment.player_id)) {
+        const updatedAssignedIds = [...currentAssignedIds, assignment.player_id];
+        
+        // Update the video record with new assigned_player_ids
+        const { error: updateError } = await supabase
+          .from('videos')
+          .update({ assigned_player_ids: updatedAssignedIds })
+          .eq('id', assignment.video_id);
+
+        if (updateError) {
+          console.error('Error updating video assignments:', updateError);
+          toast.error('Failed to update video assignments.');
+          return;
+        }
+        
+        // Increment video count for the player
+        const { error: incrementError } = await supabase.rpc('increment_player_video_count', {
+          player_id_param: assignment.player_id
+        });
+        
+        if (incrementError) {
+          console.error('Error incrementing video count:', incrementError);
+        }
+      }
+
+      // Mark the assignment as sent
       const { error } = await supabase
         .from('auto_video_assignments')
-        .update({ sent: false })
+        .update({ sent: true })
         .eq('id', assignment.id);
 
       if (error) {
         console.error('Error resending auto video assignment:', error);
         toast.error('Failed to resend auto video assignment.');
       } else {
-        // Create player_videos entry
-        const { error: insertError } = await supabase
-          .from("player_videos")
-          .insert({
+        // Create notification for the player
+        try {
+          const notificationData = {
+            coach_id: coachId,
             player_id: assignment.player_id,
-            video_id: assignment.video_id,
-            watched: false,
-            assigned_by: coachId
-          });
-
-        if (insertError) {
-          if (insertError.code === "23505") { // Unique violation
-            console.log(`Player video already exists for assignment ${assignment.id}`);
-          } else {
-            console.error(`Error creating player_video for assignment ${assignment.id}:`, insertError);
-            toast.error('Failed to create player video.');
+            type: 'video_assigned',
+            message: "הוקצה לך סרטון חדש לצפייה",
+            is_read: false
+          };
+          
+          const { error: notificationError } = await supabase
+            .from('notifications')
+            .insert(notificationData);
+          
+          if (notificationError) {
+            console.error('Error creating notification:', notificationError);
           }
-        } else {
-          toast.success('Auto video assignment resent successfully!');
+        } catch (notifyError) {
+          console.error('Error creating notification:', notifyError);
         }
 
+        toast.success('Auto video assignment resent successfully!');
         fetchAutoAssignments();
       }
     } catch (error) {
