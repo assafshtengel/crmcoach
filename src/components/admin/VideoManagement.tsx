@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -834,3 +835,104 @@ export default function VideoManagement() {
               בחר שחקנים להקצאת הסרטון "{selectedVideo?.title}"
             </DialogDescription>
           </DialogHeader>
+          <div className="mt-4">
+            <ScrollArea className="h-72">
+              <div className="space-y-2">
+                {players.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">אין שחקנים זמינים</p>
+                  </div>
+                ) : (
+                  players.map((player) => (
+                    <div key={player.id} className="flex items-center space-x-2 rtl:space-x-reverse">
+                      <input
+                        type="checkbox"
+                        id={`player-${player.id}`}
+                        checked={selectedPlayers.includes(player.id)}
+                        onChange={() => togglePlayerSelection(player.id)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <label
+                        htmlFor={`player-${player.id}`}
+                        className="flex-1 cursor-pointer select-none text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        {player.full_name}
+                      </label>
+                      {playersWithAssignments[player.id] && (
+                        <span className="text-xs text-green-600 flex items-center">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          מוקצה
+                        </span>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול</Button>
+            <Button type="submit" onClick={handleAssignVideo} disabled={selectedPlayers.length === 0}>
+              הקצה לשחקנים ({selectedPlayers.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>תזמון אוטומטי</DialogTitle>
+            <DialogDescription>
+              הגדר שליחה אוטומטית של הסרטון לשחקנים חדשים
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>שליחה אוטומטית</Label>
+                <p className="text-sm text-gray-500">שלח את הסרטון באופן אוטומטי לשחקנים חדשים</p>
+              </div>
+              <Switch
+                checked={autoScheduleData.is_auto_scheduled}
+                onCheckedChange={(checked) => handleAutoScheduleChange("is_auto_scheduled", checked)}
+              />
+            </div>
+            {autoScheduleData.is_auto_scheduled && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="days">ימים לאחר הרשמה</Label>
+                  <Input
+                    id="days"
+                    type="number"
+                    min="1"
+                    max="90"
+                    value={autoScheduleData.days_after_registration}
+                    onChange={(e) => handleAutoScheduleChange("days_after_registration", parseInt(e.target.value, 10) || 1)}
+                  />
+                  <p className="text-xs text-gray-500">מספר הימים שיחלפו מהרשמת שחקן חדש ועד שליחת הסרטון</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="order">סדר שליחה</Label>
+                  <Input
+                    id="order"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={autoScheduleData.auto_sequence_order}
+                    onChange={(e) => handleAutoScheduleChange("auto_sequence_order", parseInt(e.target.value, 10) || 1)}
+                  />
+                  <p className="text-xs text-gray-500">סדר השליחה של הסרטון יחסית לסרטונים אחרים</p>
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
+            <Button type="submit" onClick={handleAutoScheduleSave}>שמור הגדרות</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
