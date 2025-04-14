@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -288,38 +287,24 @@ export default function VideoManagement() {
         console.log("Auto assignments deleted successfully");
       }
 
-      // Get player_videos assignments to decrement counts
-      const {
-        data: assignmentsData,
-        error: assignmentsError
-      } = await supabase.from('player_videos').select('id, player_id').eq('video_id', selectedVideo.id);
-      if (assignmentsError) {
-        console.error('Error fetching video assignments:', assignmentsError);
-      } else {
-        console.log("Found assignments to delete:", assignmentsData?.length || 0);
+      // Get assigned player IDs to update video counts
+      const { data: videoData, error: videoError } = await supabase
+        .from('videos')
+        .select('assigned_player_ids')
+        .eq('id', selectedVideo.id)
+        .single();
 
-        // Decrement video counts for each player
-        if (assignmentsData && assignmentsData.length > 0) {
-          for (const assignment of assignmentsData) {
-            const {
-              error: decrementError
-            } = await supabase.rpc('decrement_player_video_count', {
-              player_id_param: assignment.player_id
-            });
-            if (decrementError) {
-              console.error('Error decrementing video count:', decrementError);
-            }
+      const assignedPlayerIds = videoData?.assigned_player_ids || [];
+      
+      // Decrement video counts for each player
+      if (assignedPlayerIds.length > 0) {
+        for (const playerId of assignedPlayerIds) {
+          const { error: decrementError } = await supabase.rpc('decrement_player_video_count', {
+            player_id_param: playerId
+          });
+          if (decrementError) {
+            console.error('Error decrementing video count:', decrementError);
           }
-        }
-
-        // Delete player_videos assignments
-        const {
-          error: deleteAssignmentsError
-        } = await supabase.from('player_videos').delete().eq('video_id', selectedVideo.id);
-        if (deleteAssignmentsError) {
-          console.error('Error deleting video assignments:', deleteAssignmentsError);
-        } else {
-          console.log("All video assignments deleted successfully");
         }
       }
 
@@ -353,39 +338,13 @@ export default function VideoManagement() {
     setSelectedPlayers([]);
     setOpenAssignDialog(true);
     try {
-      // Fetch the current assigned_player_ids for this video
-      const { data: videoData, error: videoError } = await supabase
-        .from('videos')
-        .select('assigned_player_ids')
-        .eq('id', video.id)
-        .single();
-        
-      if (videoError) {
-        console.error('Error fetching video data:', videoError);
-        throw videoError;
-      }
-      
       // Create a map of player IDs that are already assigned
       const assignmentsMap: Record<string, boolean> = {};
-      const assignedPlayerIds = videoData?.assigned_player_ids || [];
+      const assignedPlayerIds = video.assigned_player_ids || [];
       
       assignedPlayerIds.forEach((playerId: string) => {
         assignmentsMap[playerId] = true;
       });
-
-      // Also check player_videos for backward compatibility
-      const { data: legacyAssignments, error: legacyError } = await supabase
-        .from('player_videos')
-        .select('player_id')
-        .eq('video_id', video.id);
-        
-      if (legacyError) {
-        console.error('Error fetching legacy video assignments:', legacyError);
-      } else if (legacyAssignments) {
-        legacyAssignments.forEach(assignment => {
-          assignmentsMap[assignment.player_id] = true;
-        });
-      }
       
       setPlayersWithAssignments(assignmentsMap);
       console.log("Existing assignments for video ID", video.id, ":", assignmentsMap);
@@ -448,26 +407,6 @@ export default function VideoManagement() {
       if (updateError) {
         console.error('Error updating video assignments:', updateError);
         throw updateError;
-      }
-
-      // Also create records in player_videos for backward compatibility
-      const assignmentsToInsert = newAssignments.map(playerId => ({
-        player_id: playerId,
-        video_id: selectedVideo.id,
-        assigned_by: user.id,
-        watched: false
-      }));
-      
-      if (assignmentsToInsert.length > 0) {
-        const { error: insertError } = await supabase
-          .from('player_videos')
-          .insert(assignmentsToInsert)
-          .on_conflict(['player_id', 'video_id'])
-          .do_nothing();
-        
-        if (insertError) {
-          console.error('Error inserting player_videos records:', insertError);
-        }
       }
 
       // Update video count for each player and send notifications
@@ -559,7 +498,7 @@ export default function VideoManagement() {
     }
   };
 
-  // Add new function to handle unassigning videos
+  // Updated function to handle unassigning videos
   const handleUnassignPlayer = async (videoId: string, playerId: string) => {
     try {
       // Get current assigned_player_ids for this video
@@ -587,17 +526,6 @@ export default function VideoManagement() {
       if (updateError) {
         console.error('Error updating video assignments:', updateError);
         throw updateError;
-      }
-
-      // Also remove from player_videos for backward compatibility
-      const { error: deleteError } = await supabase
-        .from('player_videos')
-        .delete()
-        .eq('video_id', videoId)
-        .eq('player_id', playerId);
-
-      if (deleteError) {
-        console.error('Error deleting player_videos record:', deleteError);
       }
 
       // Decrement video count for the player
@@ -906,96 +834,3 @@ export default function VideoManagement() {
               בחר שחקנים להקצאת הסרטון "{selectedVideo?.title}"
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label className="mb-2 block">שחקנים זמינים</Label>
-            <ScrollArea className="h-60 border rounded-md p-2">
-              <div className="space-y-2">
-                {players.map(player => (
-                  <div key={player.id} className="flex items-center justify-between p-2 border rounded bg-white hover:bg-gray-50">
-                    <div className="flex-1">
-                      <p className="font-medium">{player.full_name}</p>
-                    </div>
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      {playersWithAssignments[player.id] ? (
-                        <div className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
-                          <span className="text-sm text-green-600">מוקצה</span>
-                        </div>
-                      ) : (
-                        <Button 
-                          variant={selectedPlayers.includes(player.id) ? "default" : "outline"} 
-                          size="sm" 
-                          onClick={() => togglePlayerSelection(player.id)}
-                        >
-                          {selectedPlayers.includes(player.id) ? "נבחר" : "בחר"}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAssignDialog(false)}>ביטול</Button>
-            <Button 
-              onClick={handleAssignVideo} 
-              disabled={selectedPlayers.length === 0}
-            >
-              הקצה לשחקנים ({selectedPlayers.length})
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={openAutoScheduleDialog} onOpenChange={setOpenAutoScheduleDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>הגדר תזמון אוטומטי</DialogTitle>
-            <DialogDescription>
-              הגדר מתי סרטון זה יישלח אוטומטית לשחקנים חדשים
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="flex items-center space-x-2 rtl:space-x-reverse">
-              <Switch 
-                id="auto-schedule" 
-                checked={autoScheduleData.is_auto_scheduled}
-                onCheckedChange={value => handleAutoScheduleChange("is_auto_scheduled", value)}
-              />
-              <Label htmlFor="auto-schedule">שלח אוטומטית לשחקנים חדשים</Label>
-            </div>
-            {autoScheduleData.is_auto_scheduled && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="days-after">ימים לאחר הרשמה</Label>
-                  <Input 
-                    id="days-after" 
-                    type="number" 
-                    min={0} 
-                    value={autoScheduleData.days_after_registration} 
-                    onChange={e => handleAutoScheduleChange("days_after_registration", parseInt(e.target.value))} 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sequence-order">סדר רצף (לשחקנים עם מספר סרטונים)</Label>
-                  <Input 
-                    id="sequence-order" 
-                    type="number" 
-                    min={1} 
-                    value={autoScheduleData.auto_sequence_order} 
-                    onChange={e => handleAutoScheduleChange("auto_sequence_order", parseInt(e.target.value))} 
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAutoScheduleDialog(false)}>ביטול</Button>
-            <Button onClick={handleAutoScheduleSave}>שמור הגדרות</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
