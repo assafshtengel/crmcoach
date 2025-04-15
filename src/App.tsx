@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Layout } from '@/components/layout/Layout';
 import { supabase } from '@/lib/supabase';
+import { SessionExpirationCheck } from '@/components/auth/SessionExpirationCheck';
 
 import ToolManagement from '@/pages/ToolManagement';
 import AutoVideoManagement from '@/pages/AutoVideoManagement';
@@ -101,6 +102,7 @@ function App() {
         <ThemeProvider attribute="class">
           <Toaster />
           <AuthStateListener />
+          <SessionExpirationCheck />
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/player-auth" element={<PlayerAuth />} />
