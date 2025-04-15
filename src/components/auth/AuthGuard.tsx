@@ -2,7 +2,6 @@
 import { useState, useEffect, ReactNode, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import PlayerRegistration from "../player/PlayerRegistration";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthGuardProps {
@@ -13,7 +12,6 @@ interface AuthGuardProps {
 
 export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: AuthGuardProps) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [needsPlayerRegistration, setNeedsPlayerRegistration] = useState(false);
   const navigate = useNavigate();
   const { playerId } = useParams<{ playerId: string }>();
   const location = useLocation();
@@ -53,26 +51,49 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
             }
             
             if (!playerData) {
-              console.log("User authenticated but not found in players table - registration needed");
-              setNeedsPlayerRegistration(true);
-            } else {
-              console.log("Player record found:", playerData.id);
-            }
-            
-            // Modify redirect logic to use includes and check routes more flexibly
-            const currentPath = location.pathname;
-            const isProfileRoute = 
-              currentPath === "/player/profile" || 
-              currentPath === "/player/profile-alt";
-
-            if (isProfileRoute && !currentPath.endsWith("-alt")) {
-              navigate("/player/profile-alt");
+              console.log("User authenticated but not found in players table");
+              toast({
+                title: "אינך רשום כשחקן",
+                description: "יש להירשם תחילה כשחקן או להתחבר עם חשבון שחקן",
+                variant: "destructive"
+              });
+              navigate("/player-auth");
               return;
             }
-
-            // Players shouldn't access coach routes
+            
+            console.log("Player record found:", playerData.id);
+            
+            // Optionally check user_roles for role=player
+            const { data: roles, error: rolesError } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('id', user.id)
+              .maybeSingle();
+              
+            if (rolesError) {
+              console.error("Error checking user role:", rolesError);
+            }
+            
+            if (roles && roles.role !== 'player') {
+              console.log("User does not have player role:", roles);
+              toast({
+                title: "הרשאות חסרות",
+                description: "אין לך הרשאות גישה לאזור השחקנים",
+                variant: "destructive"
+              });
+              navigate("/player-auth");
+              return;
+            }
+            
+            // If access to the coach section is attempted by a player
             if (coachOnly) {
-              navigate("/player/questionnaires");
+              console.log("Player trying to access coach route");
+              toast({
+                title: "גישה מוגבלת",
+                description: "אזור זה מיועד למאמנים בלבד",
+                variant: "destructive"
+              });
+              navigate("/player/dashboard");
               return;
             }
             
@@ -100,11 +121,7 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
         
         // Check if coach-only route requires additional role verification
         if (coachOnly) {
-          // המתנה לפני הבדיקה - נותן זמן למידע לעדכן כראוי
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          // הורדנו את הבדיקה המוקדמת מטבלת user_roles ובמקום זה נבדוק ישירות בטבלת coaches
-          // זה עדיף כי הטבלה הזו יכולה להיות יותר מעודכנת ומדויקת
+          // Check coaches table first
           const { data: coachData, error: coachError } = await supabase
             .from('coaches')
             .select('id')
@@ -124,7 +141,7 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
           
           console.log("Coach record confirmed:", coachData.id);
           
-          // כעת נבדוק גם את הרשאות המשתמש בטבלת user_roles כגיבוי
+          // Also check user_roles as a backup
           const { data: roles, error: rolesError } = await supabase
             .from('user_roles')
             .select('role')
@@ -132,24 +149,17 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
             .maybeSingle();
           
           if (!roles || roles.role !== 'coach') {
+            // If no role record exists, create one since we already confirmed coach status
             console.log("Adding coach role for user:", user.id);
             
-            // אם אין רשומה בטבלת user_roles, ניצור אחת
             const { error: insertError } = await supabase
               .from('user_roles')
               .insert({ id: user.id, role: 'coach' });
               
             if (insertError) {
               console.error("Error adding coach role:", insertError);
-              // לא נחסום - כל עוד יש רשומת מאמן, נאפשר גישה
             }
           }
-        }
-
-        // When a coach logs in, direct to coach dashboard if trying to access the root path
-        if (location.pathname === '/') {
-          navigate('/dashboard-coach');
-          return;
         }
 
         // Mark auth as checked
@@ -162,8 +172,7 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
     };
 
     checkAuth();
-    // Include location.pathname in dependencies to re-run check when route changes
-  }, [navigate, playerId, playerOnly, coachOnly, location.pathname, location.search, toast]);
+  }, [navigate, playerId, playerOnly, coachOnly, location.pathname]);
 
   if (isLoading) {
     return (
@@ -173,10 +182,5 @@ export const AuthGuard = ({ children, playerOnly = false, coachOnly = false }: A
     );
   }
 
-  return (
-    <>
-      {needsPlayerRegistration && <PlayerRegistration />}
-      {children}
-    </>
-  );
+  return <>{children}</>;
 };
