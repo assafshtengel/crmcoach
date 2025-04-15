@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
@@ -23,18 +22,12 @@ import PlayerDashboardPage from '@/pages/player/PlayerDashboard';
 import PlayerProfileAlternativePage from '@/pages/player/PlayerProfileAlternative';
 import PlayerNotificationsPage from '@/pages/player/PlayerNotifications';
 import PlayerVideosPage from '@/pages/player/PlayerVideos';
-
-// Create a placeholder component for pages that are referenced but don't yet exist
-const PlaceholderPage = ({ pageName }: { pageName: string }) => {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-4">Page Under Construction</h1>
-        <p className="text-gray-500">The {pageName} page is still being developed.</p>
-      </div>
-    </div>
-  );
-};
+import PlayerEvaluationPage from '@/pages/PlayerEvaluation';
+import PlayerFormPage from '@/pages/PlayerForm';
+import PlayerStatisticsPage from '@/pages/PlayerStatistics';
+import NewPlayerFormPage from '@/pages/NewPlayerForm';
+import EditPlayerFormPage from '@/pages/EditPlayerForm';
+import NotificationsDashboardPage from '@/pages/NotificationsDashboard';
 
 // Define placeholder components for all referenced but not yet implemented pages
 const ResetPasswordPage = () => <PlaceholderPage pageName="Reset Password" />;
@@ -50,7 +43,6 @@ const Admin = () => <PlaceholderPage pageName="Admin" />;
 const MentalTools = () => <PlaceholderPage pageName="Mental Tools" />;
 const ShortTermGoals = () => <PlaceholderPage pageName="Short Term Goals" />;
 const DailyChallenge = () => <PlaceholderPage pageName="Daily Challenge" />;
-const PlayerForm = () => <PlaceholderPage pageName="Player Form" />;
 const SessionsList = () => <PlaceholderPage pageName="Sessions List" />;
 const PlayersList = () => <PlaceholderPage pageName="Players List" />;
 const NewSessionForm = () => <PlaceholderPage pageName="New Session Form" />;
@@ -60,15 +52,10 @@ const ProfileCoach = () => <PlaceholderPage pageName="Profile Coach" />;
 const Reports = () => <PlaceholderPage pageName="Reports" />;
 const Contact = () => <PlaceholderPage pageName="Contact" />;
 const Next = () => <PlaceholderPage pageName="Next" />;
-const PlayerEvaluation = () => <PlaceholderPage pageName="Player Evaluation" />;
 const AnalyticsDashboard = () => <PlaceholderPage pageName="Analytics Dashboard" />;
-const PlayerStatistics = () => <PlaceholderPage pageName="Player Statistics" />;
 const GamePreparation = () => <PlaceholderPage pageName="Game Preparation" />;
-const NotificationsDashboard = () => <PlaceholderPage pageName="Notifications Dashboard" />;
 const ActionPlan = () => <PlaceholderPage pageName="Action Plan" />;
 const SessionSummaries = () => <PlaceholderPage pageName="Session Summaries" />;
-const NewPlayerForm = () => <PlaceholderPage pageName="New Player Form" />;
-const EditPlayerForm = () => <PlaceholderPage pageName="Edit Player Form" />;
 const RegistrationLinks = () => <PlaceholderPage pageName="Registration Links" />;
 const AllMeetingSummaries = () => <PlaceholderPage pageName="All Meeting Summaries" />;
 const Goals = () => <PlaceholderPage pageName="Goals" />;
@@ -77,6 +64,18 @@ const PlayerGameEvaluationForm = () => <PlaceholderPage pageName="Player Game Ev
 const PlayerQuestionnaires = () => <PlaceholderPage pageName="Player Questionnaires" />;
 const PlayerQuestionnaireForm = () => <PlaceholderPage pageName="Player Questionnaire Form" />;
 const NotFound = () => <PlaceholderPage pageName="Not Found" />;
+
+// Create a placeholder component for pages that are referenced but don't yet exist
+const PlaceholderPage = ({ pageName }: { pageName: string }) => {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold mb-4">Page Under Construction</h1>
+        <p className="text-gray-500">The {pageName} page is still being developed.</p>
+      </div>
+    </div>
+  );
+};
 
 const AuthStateListener = () => {
   const navigate = useNavigate();
@@ -152,7 +151,7 @@ function App() {
               <Route path="/mental-tools" element={<AuthGuard coachOnly={true}><MentalTools /></AuthGuard>} />
               <Route path="/short-term-goals" element={<AuthGuard coachOnly={true}><ShortTermGoals /></AuthGuard>} />
               <Route path="/daily-challenge" element={<AuthGuard coachOnly={true}><DailyChallenge /></AuthGuard>} />
-              <Route path="/player-form" element={<AuthGuard coachOnly={true}><PlayerForm /></AuthGuard>} />
+              <Route path="/player-form" element={<AuthGuard coachOnly={true}><PlayerFormPage /></AuthGuard>} />
               <Route path="/sessions-list" element={<AuthGuard coachOnly={true}><SessionsList /></AuthGuard>} />
               <Route path="/players-list" element={<AuthGuard coachOnly={true}><PlayersList /></AuthGuard>} />
               <Route path="/new-session" element={<AuthGuard coachOnly={true}><NewSessionForm /></AuthGuard>} />
@@ -164,16 +163,16 @@ function App() {
               <Route path="/reports" element={<AuthGuard coachOnly={true}><Reports /></AuthGuard>} />
               <Route path="/contact" element={<AuthGuard coachOnly={true}><Contact /></AuthGuard>} />
               <Route path="/next" element={<AuthGuard coachOnly={true}><Next /></AuthGuard>} />
-              <Route path="/player-evaluation" element={<AuthGuard coachOnly={true}><PlayerEvaluation /></AuthGuard>} />
+              <Route path="/player-evaluation" element={<AuthGuard coachOnly={true}><PlayerEvaluationPage /></AuthGuard>} />
               <Route path="/analytics" element={<AuthGuard coachOnly={true}><AnalyticsDashboard /></AuthGuard>} />
-              <Route path="/player-statistics" element={<AuthGuard coachOnly={true}><PlayerStatistics /></AuthGuard>} />
+              <Route path="/player-statistics" element={<AuthGuard coachOnly={true}><PlayerStatisticsPage /></AuthGuard>} />
               <Route path="/game-prep" element={<AuthGuard coachOnly={true}><GamePreparation /></AuthGuard>} />
-              <Route path="/notifications" element={<AuthGuard coachOnly={true}><NotificationsDashboard /></AuthGuard>} />
+              <Route path="/notifications" element={<AuthGuard coachOnly={true}><NotificationsDashboardPage /></AuthGuard>} />
               <Route path="/action-plan" element={<AuthGuard coachOnly={true}><ActionPlan /></AuthGuard>} />
               <Route path="/session-summaries" element={<AuthGuard coachOnly={true}><SessionSummaries /></AuthGuard>} />
-              <Route path="/new-player" element={<AuthGuard coachOnly={true}><NewPlayerForm /></AuthGuard>} />
-              <Route path="/edit-player" element={<AuthGuard coachOnly={true}><EditPlayerForm /></AuthGuard>} />
-              <Route path="/edit-player/:playerId" element={<AuthGuard coachOnly={true}><EditPlayerForm /></AuthGuard>} />
+              <Route path="/new-player" element={<AuthGuard coachOnly={true}><NewPlayerFormPage /></AuthGuard>} />
+              <Route path="/edit-player" element={<AuthGuard coachOnly={true}><EditPlayerFormPage /></AuthGuard>} />
+              <Route path="/edit-player/:playerId" element={<AuthGuard coachOnly={true}><EditPlayerFormPage /></AuthGuard>} />
               <Route path="/registration-links" element={<AuthGuard coachOnly={true}><RegistrationLinks /></AuthGuard>} />
               <Route path="/tool-management" element={<AuthGuard coachOnly={true}><ToolManagement /></AuthGuard>} />
               <Route path="/auto-video-management" element={<AuthGuard coachOnly={true}><AutoVideoManagement /></AuthGuard>} />
