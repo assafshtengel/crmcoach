@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
@@ -9,9 +10,73 @@ import { supabase } from '@/lib/supabase';
 import { SessionExpirationCheck } from '@/components/auth/SessionExpirationCheck';
 import { useToast } from '@/hooks/use-toast';
 
+// Page imports
 import ToolManagement from '@/pages/ToolManagement';
 import AutoVideoManagement from '@/pages/AutoVideoManagement';
 import QuestionnairesPage from '@/pages/QuestionnairesPage';
+import AuthPage from '@/pages/auth/AuthPage';
+import PlayerAuth from '@/pages/PlayerAuth';
+import CoachSignUp from '@/pages/CoachSignUp';
+import DashboardCoach from '@/pages/DashboardCoach';
+
+// Create a placeholder component for pages that are referenced but don't yet exist
+const PlaceholderPage = ({ pageName }: { pageName: string }) => {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold mb-4">Page Under Construction</h1>
+        <p className="text-gray-500">The {pageName} page is still being developed.</p>
+      </div>
+    </div>
+  );
+};
+
+// Define placeholder components for all referenced but not yet implemented pages
+const ResetPasswordPage = () => <PlaceholderPage pageName="Reset Password" />;
+const PublicRegistrationForm = () => <PlaceholderPage pageName="Public Registration" />;
+const Index = () => <PlaceholderPage pageName="Index" />;
+const NewIndex = () => <PlaceholderPage pageName="New Index" />;
+const Dashboard = () => <PlaceholderPage pageName="Dashboard" />;
+const PlayerProfile = () => <PlaceholderPage pageName="Player Profile" />;
+const Huze = () => <PlaceholderPage pageName="Huze" />;
+const Contract = () => <PlaceholderPage pageName="Contract" />;
+const MentalCommitment = () => <PlaceholderPage pageName="Mental Commitment" />;
+const Admin = () => <PlaceholderPage pageName="Admin" />;
+const MentalTools = () => <PlaceholderPage pageName="Mental Tools" />;
+const ShortTermGoals = () => <PlaceholderPage pageName="Short Term Goals" />;
+const DailyChallenge = () => <PlaceholderPage pageName="Daily Challenge" />;
+const PlayerForm = () => <PlaceholderPage pageName="Player Form" />;
+const SessionsList = () => <PlaceholderPage pageName="Sessions List" />;
+const PlayersList = () => <PlaceholderPage pageName="Players List" />;
+const NewSessionForm = () => <PlaceholderPage pageName="New Session Form" />;
+const EditSessionForm = () => <PlaceholderPage pageName="Edit Session Form" />;
+const GoalDetailsQuestions = () => <PlaceholderPage pageName="Goal Details Questions" />;
+const ProfileCoach = () => <PlaceholderPage pageName="Profile Coach" />;
+const Reports = () => <PlaceholderPage pageName="Reports" />;
+const Contact = () => <PlaceholderPage pageName="Contact" />;
+const Next = () => <PlaceholderPage pageName="Next" />;
+const PlayerEvaluation = () => <PlaceholderPage pageName="Player Evaluation" />;
+const AnalyticsDashboard = () => <PlaceholderPage pageName="Analytics Dashboard" />;
+const PlayerStatistics = () => <PlaceholderPage pageName="Player Statistics" />;
+const GamePreparation = () => <PlaceholderPage pageName="Game Preparation" />;
+const NotificationsDashboard = () => <PlaceholderPage pageName="Notifications Dashboard" />;
+const ActionPlan = () => <PlaceholderPage pageName="Action Plan" />;
+const SessionSummaries = () => <PlaceholderPage pageName="Session Summaries" />;
+const NewPlayerForm = () => <PlaceholderPage pageName="New Player Form" />;
+const EditPlayerForm = () => <PlaceholderPage pageName="Edit Player Form" />;
+const RegistrationLinks = () => <PlaceholderPage pageName="Registration Links" />;
+const AllMeetingSummaries = () => <PlaceholderPage pageName="All Meeting Summaries" />;
+const Goals = () => <PlaceholderPage pageName="Goals" />;
+const MentalLibrary = () => <PlaceholderPage pageName="Mental Library" />;
+const PlayerGameEvaluationForm = () => <PlaceholderPage pageName="Player Game Evaluation Form" />;
+const PlayerProfileView = () => <PlaceholderPage pageName="Player Profile View" />;
+const PlayerProfileAlternative = () => <PlaceholderPage pageName="Player Profile Alternative" />;
+const PlayerDashboard = () => <PlaceholderPage pageName="Player Dashboard" />;
+const PlayerQuestionnaires = () => <PlaceholderPage pageName="Player Questionnaires" />;
+const PlayerQuestionnaireForm = () => <PlaceholderPage pageName="Player Questionnaire Form" />;
+const PlayerNotifications = () => <PlaceholderPage pageName="Player Notifications" />;
+const PlayerVideos = () => <PlaceholderPage pageName="Player Videos" />;
+const NotFound = () => <PlaceholderPage pageName="Not Found" />;
 
 const AuthStateListener = () => {
   const navigate = useNavigate();
