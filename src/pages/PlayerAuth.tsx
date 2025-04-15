@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -46,6 +45,22 @@ const PlayerAuth = () => {
       
       if (user) {
         console.log("User already logged in:", user.id);
+        
+        // First, validate if user has player role
+        const isPlayerRole = await validateUserRole(user.id);
+        
+        if (!isPlayerRole) {
+          console.log("User doesn't have player role");
+          await handleLogout();
+          toast({
+            variant: "destructive",
+            title: "הרשאה לא מתאימה",
+            description: "הגישה לאזור זה מותרת לשחקנים בלבד.",
+          });
+          return;
+        }
+        
+        // Then validate if they exist in the players table
         const isValidPlayer = await validatePlayer(user.id);
         
         if (isValidPlayer) {
@@ -59,6 +74,29 @@ const PlayerAuth = () => {
       console.error("Error checking auth state:", e);
     } finally {
       setInitialLoading(false);
+    }
+  };
+
+  /**
+   * Validate if a user has the player role
+   */
+  const validateUserRole = async (userId: string) => {
+    try {
+      const { data: userRole, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (roleError) {
+        console.error("Role validation error:", roleError);
+        return false;
+      }
+      
+      return userRole?.role === 'player';
+    } catch (error) {
+      console.error("Role validation error:", error);
+      return false;
     }
   };
 
@@ -146,6 +184,20 @@ const PlayerAuth = () => {
         return;
       }
 
+      // Validate if user has player role
+      const isPlayerRole = await validateUserRole(authData.user.id);
+      
+      if (!isPlayerRole) {
+        await handleLogout();
+        toast({
+          variant: "destructive",
+          title: "גישה לא מורשית",
+          description: "אזור זה מיועד לשחקנים בלבד.",
+        });
+        return;
+      }
+      
+      // Then check if they exist in the players table
       const isValid = await validatePlayer(authData.user.id);
       
       if (isValid) {
