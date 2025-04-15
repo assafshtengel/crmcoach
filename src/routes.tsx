@@ -52,7 +52,7 @@ const routes = createBrowserRouter([
     element: <PlayerEvaluation />,
   },
   
-  // Player routes - These should use the actual components now
+  // Player routes - using the actual component implementations
   {
     path: "/player/profile",
     element: <PlayerProfileView />,
