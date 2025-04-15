@@ -1,3 +1,4 @@
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
@@ -28,6 +29,7 @@ import PlayerStatisticsPage from '@/pages/PlayerStatistics';
 import NewPlayerFormPage from '@/pages/NewPlayerForm';
 import EditPlayerFormPage from '@/pages/EditPlayerForm';
 import NotificationsDashboardPage from '@/pages/NotificationsDashboard';
+import PlayersListPage from '@/pages/PlayersList';
 
 // Define placeholder components for all referenced but not yet implemented pages
 const ResetPasswordPage = () => <PlaceholderPage pageName="Reset Password" />;
@@ -44,7 +46,6 @@ const MentalTools = () => <PlaceholderPage pageName="Mental Tools" />;
 const ShortTermGoals = () => <PlaceholderPage pageName="Short Term Goals" />;
 const DailyChallenge = () => <PlaceholderPage pageName="Daily Challenge" />;
 const SessionsList = () => <PlaceholderPage pageName="Sessions List" />;
-const PlayersList = () => <PlaceholderPage pageName="Players List" />;
 const NewSessionForm = () => <PlaceholderPage pageName="New Session Form" />;
 const EditSessionForm = () => <PlaceholderPage pageName="Edit Session Form" />;
 const GoalDetailsQuestions = () => <PlaceholderPage pageName="Goal Details Questions" />;
@@ -153,7 +154,7 @@ function App() {
               <Route path="/daily-challenge" element={<AuthGuard coachOnly={true}><DailyChallenge /></AuthGuard>} />
               <Route path="/player-form" element={<AuthGuard coachOnly={true}><PlayerFormPage /></AuthGuard>} />
               <Route path="/sessions-list" element={<AuthGuard coachOnly={true}><SessionsList /></AuthGuard>} />
-              <Route path="/players-list" element={<AuthGuard coachOnly={true}><PlayersList /></AuthGuard>} />
+              <Route path="/players-list" element={<AuthGuard coachOnly={true}><PlayersListPage /></AuthGuard>} />
               <Route path="/new-session" element={<AuthGuard coachOnly={true}><NewSessionForm /></AuthGuard>} />
               <Route path="/edit-session" element={<AuthGuard coachOnly={true}><EditSessionForm /></AuthGuard>} />
               <Route path="/player-profile/:playerId" element={<AuthGuard coachOnly={true}><PlayerProfile /></AuthGuard>} />

@@ -17,6 +17,7 @@ import PlayerProfileAlternative from "./pages/player/PlayerProfileAlternative";
 import PlayerNotifications from "./pages/player/PlayerNotifications";
 import PlayerDashboard from "./pages/player/PlayerDashboard";
 import PlayerVideos from "./pages/player/PlayerVideos";
+import PlayersList from "./pages/PlayersList";
 
 const routes = createBrowserRouter([
   {
@@ -50,6 +51,10 @@ const routes = createBrowserRouter([
   {
     path: "/player-evaluation",
     element: <PlayerEvaluation />,
+  },
+  {
+    path: "/players-list",
+    element: <PlayersList />,
   },
   
   // Player routes - using the actual component implementations
