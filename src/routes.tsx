@@ -1,3 +1,4 @@
+
 import {
   createBrowserRouter,
 } from "react-router-dom";
@@ -51,7 +52,7 @@ const routes = createBrowserRouter([
     element: <PlayerEvaluation />,
   },
   
-  // Player routes
+  // Player routes - These should use the actual components now
   {
     path: "/player/profile",
     element: <PlayerProfileView />,

@@ -18,6 +18,11 @@ import AuthPage from '@/pages/auth/AuthPage';
 import PlayerAuth from '@/pages/PlayerAuth';
 import CoachSignUp from '@/pages/CoachSignUp';
 import DashboardCoach from '@/pages/DashboardCoach';
+import PlayerProfileViewPage from '@/pages/player/PlayerProfileView';
+import PlayerDashboardPage from '@/pages/player/PlayerDashboard';
+import PlayerProfileAlternativePage from '@/pages/player/PlayerProfileAlternative';
+import PlayerNotificationsPage from '@/pages/player/PlayerNotifications';
+import PlayerVideosPage from '@/pages/player/PlayerVideos';
 
 // Create a placeholder component for pages that are referenced but don't yet exist
 const PlaceholderPage = ({ pageName }: { pageName: string }) => {
@@ -69,13 +74,8 @@ const AllMeetingSummaries = () => <PlaceholderPage pageName="All Meeting Summari
 const Goals = () => <PlaceholderPage pageName="Goals" />;
 const MentalLibrary = () => <PlaceholderPage pageName="Mental Library" />;
 const PlayerGameEvaluationForm = () => <PlaceholderPage pageName="Player Game Evaluation Form" />;
-const PlayerProfileView = () => <PlaceholderPage pageName="Player Profile View" />;
-const PlayerProfileAlternative = () => <PlaceholderPage pageName="Player Profile Alternative" />;
-const PlayerDashboard = () => <PlaceholderPage pageName="Player Dashboard" />;
 const PlayerQuestionnaires = () => <PlaceholderPage pageName="Player Questionnaires" />;
 const PlayerQuestionnaireForm = () => <PlaceholderPage pageName="Player Questionnaire Form" />;
-const PlayerNotifications = () => <PlaceholderPage pageName="Player Notifications" />;
-const PlayerVideos = () => <PlaceholderPage pageName="Player Videos" />;
 const NotFound = () => <PlaceholderPage pageName="Not Found" />;
 
 const AuthStateListener = () => {
@@ -183,14 +183,15 @@ function App() {
               <Route path="/game-evaluation/:playerId" element={<AuthGuard coachOnly={true}><PlayerGameEvaluationForm /></AuthGuard>} />
               <Route path="/questionnaires" element={<AuthGuard coachOnly={true}><QuestionnairesPage /></AuthGuard>} />
 
-              <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileView /></AuthGuard>} />
-              <Route path="/player/profile-alt" element={<AuthGuard playerOnly={true}><PlayerProfileAlternative /></AuthGuard>} />
-              <Route path="/player/dashboard" element={<AuthGuard playerOnly={true}><PlayerDashboard /></AuthGuard>} />
+              {/* Updated routes to use the real components instead of placeholders */}
+              <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileViewPage /></AuthGuard>} />
+              <Route path="/player/profile-alt" element={<AuthGuard playerOnly={true}><PlayerProfileAlternativePage /></AuthGuard>} />
+              <Route path="/player/dashboard" element={<AuthGuard playerOnly={true}><PlayerDashboardPage /></AuthGuard>} />
               <Route path="/player/game-evaluation/:playerId" element={<AuthGuard playerOnly={true}><PlayerGameEvaluationForm /></AuthGuard>} />
               <Route path="/player/questionnaires" element={<AuthGuard playerOnly={true}><PlayerQuestionnaires /></AuthGuard>} />
               <Route path="/player/questionnaire/:id" element={<AuthGuard playerOnly={true}><PlayerQuestionnaireForm /></AuthGuard>} />
-              <Route path="/player/notifications" element={<AuthGuard playerOnly={true}><PlayerNotifications /></AuthGuard>} />
-              <Route path="/player/videos" element={<AuthGuard playerOnly={true}><PlayerVideos /></AuthGuard>} />
+              <Route path="/player/notifications" element={<AuthGuard playerOnly={true}><PlayerNotificationsPage /></AuthGuard>} />
+              <Route path="/player/videos" element={<AuthGuard playerOnly={true}><PlayerVideosPage /></AuthGuard>} />
               
               <Route path="*" element={<NotFound />} />
             </Route>
