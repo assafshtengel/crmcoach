@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
@@ -183,7 +182,6 @@ function App() {
               <Route path="/game-evaluation/:playerId" element={<AuthGuard coachOnly={true}><PlayerGameEvaluationForm /></AuthGuard>} />
               <Route path="/questionnaires" element={<AuthGuard coachOnly={true}><QuestionnairesPage /></AuthGuard>} />
 
-              {/* Updated routes to use the real components instead of placeholders */}
               <Route path="/player/profile" element={<AuthGuard playerOnly={true}><PlayerProfileViewPage /></AuthGuard>} />
               <Route path="/player/profile-alt" element={<AuthGuard playerOnly={true}><PlayerProfileAlternativePage /></AuthGuard>} />
               <Route path="/player/dashboard" element={<AuthGuard playerOnly={true}><PlayerDashboardPage /></AuthGuard>} />
