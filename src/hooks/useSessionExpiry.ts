@@ -8,30 +8,58 @@ import { useToast } from '@/hooks/use-toast';
  * Custom hook to check for session expiration
  * @param checkIntervalMs - How often to check for expiration (in milliseconds)
  * @param redirectPath - Where to redirect after logout (default: /player-auth)
+ * @param showExpiryToast - Whether to show a toast when session expires (default: true)
  */
 export const useSessionExpiry = (
   checkIntervalMs: number = 60000,
-  redirectPath: string = '/player-auth'
+  redirectPath: string = '/player-auth',
+  showExpiryToast: boolean = true
 ) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const intervalRef = useRef<number | null>(null);
 
-  const handleLogout = async () => {
+  /**
+   * Comprehensive logout function that:
+   * 1. Clears any local state
+   * 2. Signs out the user from Supabase
+   * 3. Navigates to the specified redirect path
+   * 4. Optionally shows a toast message
+   * @param message - Optional message to show in toast
+   * @param title - Optional title for the toast
+   * @param variant - Toast variant (default: default)
+   */
+  const handleLogout = async (
+    message?: string, 
+    title: string = "התנתקות מהמערכת", 
+    variant: "default" | "destructive" = "default"
+  ) => {
     try {
+      // Clear any app state stored in localStorage
+      // This is a general cleanup - specific apps may need to clear additional keys
+      localStorage.removeItem('supabase.auth.token');
+      
       // Sign out from Supabase
       await supabase.auth.signOut();
       
-      toast({
-        variant: "destructive",
-        title: "פג תוקף החיבור",
-        description: "פג תוקף החיבור שלך. אנא התחבר מחדש.",
-      });
+      // Show toast if a message is provided
+      if (message) {
+        toast({
+          variant,
+          title,
+          description: message,
+        });
+      }
       
       // Navigate to login page
       navigate(redirectPath);
     } catch (error) {
       console.error("Error signing out:", error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהתנתקות",
+        description: "אירעה שגיאה בתהליך ההתנתקות. אנא נסה שוב.",
+      });
     }
   };
 
@@ -56,7 +84,15 @@ export const useSessionExpiry = (
           console.log("Current time:", new Date(currentTimestamp));
           
           // Session has expired, log user out
-          await handleLogout();
+          if (showExpiryToast) {
+            await handleLogout(
+              "פג תוקף החיבור שלך. אנא התחבר מחדש.",
+              "פג תוקף החיבור",
+              "destructive"
+            );
+          } else {
+            await handleLogout();
+          }
         }
       }
     } catch (error) {

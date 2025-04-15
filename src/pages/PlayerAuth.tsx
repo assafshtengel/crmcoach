@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { useSessionExpiry } from "@/hooks/useSessionExpiry";
 import { 
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ const PlayerAuth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { handleLogout } = useSessionExpiry();
   const sessionCheckIntervalRef = useRef<number | null>(null);
   
   const params = new URLSearchParams(location.search);
@@ -36,8 +38,8 @@ const PlayerAuth = () => {
   useEffect(() => {
     checkAuthStatus();
     
-    // Setup session expiration check
-    startSessionExpirationChecker();
+    // Don't set up a second interval since we're using useSessionExpiry hook
+    // which already handles session checks
     
     // Cleanup on unmount
     return () => {
@@ -46,69 +48,6 @@ const PlayerAuth = () => {
       }
     };
   }, []);
-
-  /**
-   * Start the session expiration checker
-   * This runs every minute to check if the user's session is still valid
-   */
-  const startSessionExpirationChecker = () => {
-    // Clear any existing interval
-    if (sessionCheckIntervalRef.current !== null) {
-      clearInterval(sessionCheckIntervalRef.current);
-    }
-    
-    // Check session validity every minute (60000 ms)
-    const intervalId = window.setInterval(() => {
-      checkSessionValidity();
-    }, 60000);
-    
-    sessionCheckIntervalRef.current = intervalId;
-    
-    // Run an initial check
-    checkSessionValidity();
-  };
-  
-  /**
-   * Check if the current user session is still valid
-   * Log user out if session has expired
-   */
-  const checkSessionValidity = async () => {
-    try {
-      const { data } = await supabase.auth.getSession();
-      const session = data?.session;
-      
-      if (!session) {
-        // No active session found
-        return;
-      }
-      
-      // Check if session has expired
-      const expiresAt = session.expires_at;
-      if (expiresAt) {
-        const expiryTimestamp = expiresAt * 1000; // Convert to milliseconds
-        const currentTimestamp = Date.now();
-        
-        if (currentTimestamp >= expiryTimestamp) {
-          console.log("Session expired at:", new Date(expiryTimestamp));
-          console.log("Current time:", new Date(currentTimestamp));
-          
-          // Session has expired, log user out
-          await handleLogout();
-          
-          toast({
-            variant: "destructive",
-            title: "פג תוקף החיבור",
-            description: "פג תוקף החיבור שלך. אנא התחבר מחדש.",
-          });
-          
-          // Navigate to login page
-          navigate("/player-auth");
-        }
-      }
-    } catch (error) {
-      console.error("Error checking session validity:", error);
-    }
-  };
 
   /**
    * Check if user is already authenticated and is a registered player
@@ -126,12 +65,11 @@ const PlayerAuth = () => {
         
         if (!isPlayerRole) {
           console.log("User doesn't have player role");
-          await handleLogout();
-          toast({
-            variant: "destructive",
-            title: "הרשאה לא מתאימה",
-            description: "הגישה לאזור זה מותרת לשחקנים בלבד.",
-          });
+          await handleLogout(
+            "הגישה לאזור זה מותרת לשחקנים בלבד.",
+            "הרשאה לא מתאימה", 
+            "destructive"
+          );
           return;
         }
         
@@ -188,12 +126,11 @@ const PlayerAuth = () => {
 
       if (playerError || !playerData) {
         console.error("Player validation error:", playerError);
-        await handleLogout();
-        toast({
-          variant: "destructive",
-          title: "שגיאת הרשאה",
-          description: "המשתמש אינו רשום כשחקן במערכת.",
-        });
+        await handleLogout(
+          "המשתמש אינו רשום כשחקן במערכת.",
+          "שגיאת הרשאה", 
+          "destructive"
+        );
         return false;
       }
       
@@ -201,27 +138,6 @@ const PlayerAuth = () => {
     } catch (error) {
       console.error("Player validation error:", error);
       return false;
-    }
-  };
-
-  /**
-   * Handle user logout
-   * Clears local state and signs user out from Supabase
-   */
-  const handleLogout = async () => {
-    try {
-      // Clear any local app state if needed
-      
-      // Sign out from Supabase
-      await supabase.auth.signOut();
-      
-      // Important: Stop the session checker after logout
-      if (sessionCheckIntervalRef.current !== null) {
-        clearInterval(sessionCheckIntervalRef.current);
-        sessionCheckIntervalRef.current = null;
-      }
-    } catch (error) {
-      console.error("Error signing out:", error);
     }
   };
 
@@ -273,12 +189,11 @@ const PlayerAuth = () => {
       const isPlayerRole = await validateUserRole(authData.user.id);
       
       if (!isPlayerRole) {
-        await handleLogout();
-        toast({
-          variant: "destructive",
-          title: "גישה לא מורשית",
-          description: "אזור זה מיועד לשחקנים בלבד.",
-        });
+        await handleLogout(
+          "אזור זה מיועד לשחקנים בלבד.",
+          "גישה לא מורשית", 
+          "destructive"
+        );
         return;
       }
       
@@ -331,9 +246,6 @@ const PlayerAuth = () => {
       title: "התחברות הצליחה",
       description: "ברוך הבא! מיד תועבר לפרופיל השחקן",
     });
-
-    // Start session validity checker after successful login
-    startSessionExpirationChecker();
 
     const targetPath = redirectPath || '/player/profile-alt';
     if (location.pathname !== targetPath) {

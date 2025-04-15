@@ -7,6 +7,7 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Layout } from '@/components/layout/Layout';
 import { supabase } from '@/lib/supabase';
 import { SessionExpirationCheck } from '@/components/auth/SessionExpirationCheck';
+import { useToast } from '@/hooks/use-toast';
 
 import ToolManagement from '@/pages/ToolManagement';
 import AutoVideoManagement from '@/pages/AutoVideoManagement';
@@ -66,16 +67,31 @@ import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
 
 const AuthStateListener = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const redirectedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    let handleLogout: ((msg?: string) => Promise<void>) | null = null;
+
+    if (typeof window !== 'undefined' && (window as any).playerLogout) {
+      handleLogout = (window as any).playerLogout;
+    }
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event);
       
       if (event === "SIGNED_OUT") {
         console.log("משתמש התנתק");
+        
+        if (!redirectedRef.current) {
+          toast({
+            title: "התנתקות מהמערכת",
+            description: "התנתקת בהצלחה מהמערכת",
+          });
+        }
+        
         navigate("/player-auth");
       }
 
