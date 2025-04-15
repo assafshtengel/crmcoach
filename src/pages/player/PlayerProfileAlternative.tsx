@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,8 @@ import { User, Calendar, FileText, Video, ArrowRight, LogOut, ExternalLink, Clip
 import { PlayerData, PlayerSession, SessionSummary } from "@/types/player";
 import QuestionnairesSectionAlt from "@/components/player/QuestionnairesSectionAlt";
 import CompletedQuestionnairesSection from "@/components/player/CompletedQuestionnaireSection";
+import { useSessionExpiry } from "@/hooks/useSessionExpiry";
+import { useToast as useShadcnToast } from "@/hooks/use-toast";
 
 const PlayerProfileAlternative = () => {
   const navigate = useNavigate();
@@ -24,6 +27,8 @@ const PlayerProfileAlternative = () => {
   const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>([]);
   const [videos, setVideos] = useState<any[]>([]);
   const dataLoadedRef = useRef(false);
+  const { handleLogout } = useSessionExpiry();
+  const { toast: shadcnToast } = useShadcnToast();
 
   useEffect(() => {
     const loadPlayerData = async () => {
@@ -175,11 +180,18 @@ const PlayerProfileAlternative = () => {
       loadPlayerData();
     }
   }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("playerSession");
-    toast.success("התנתקת בהצלחה");
-    navigate("/player-auth");
+  
+  const handleLogoutClick = async () => {
+    try {
+      await handleLogout("התנתקת בהצלחה");
+    } catch (error) {
+      console.error("Error during logout:", error);
+      shadcnToast({
+        title: "שגיאה בהתנתקות",
+        description: "אירעה שגיאה בתהליך ההתנתקות. אנא נסה שוב.",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -244,7 +256,12 @@ const PlayerProfileAlternative = () => {
             <Button variant="outline" size="sm" onClick={() => navigate('/player/profile')} className="text-white border-white hover:bg-white/20">
               לתצוגה הרגילה
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:bg-white/10 transition-colors">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLogoutClick} 
+              className="text-white hover:bg-white/10 transition-colors"
+            >
               <LogOut className="h-4 w-4 mr-2" />
               {!isMobile && "התנתק"}
             </Button>

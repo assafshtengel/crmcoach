@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -8,13 +7,17 @@ import { VideosTab } from '@/components/player/VideosTab';
 import AssignedQuestionnairesSection from '@/components/player/AssignedQuestionnairesSection';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Mail, Phone, Bell } from 'lucide-react';
+import { Mail, Phone, Bell, LogOut } from 'lucide-react';
+import { useSessionExpiry } from '@/hooks/useSessionExpiry';
+import { useToast } from '@/hooks/use-toast';
 
 const PlayerProfileView = () => {
   const [player, setPlayer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
+  const { handleLogout } = useSessionExpiry();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchPlayerProfile = async () => {
@@ -142,6 +145,19 @@ const PlayerProfileView = () => {
     }
   };
 
+  const onLogout = async () => {
+    try {
+      await handleLogout("התנתקת מהמערכת בהצלחה");
+    } catch (error) {
+      console.error("Error during logout:", error);
+      toast({
+        title: "שגיאה בהתנתקות",
+        description: "אירעה שגיאה בתהליך ההתנתקות. אנא נסה שוב.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-page">
@@ -184,17 +200,28 @@ const PlayerProfileView = () => {
       <header className="w-full bg-primary text-white py-6 mb-8 shadow-md">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <h1 className="text-3xl font-bold">פרופיל שחקן</h1>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => navigate('/player/notifications')} 
-            className="relative text-white hover:bg-primary-light"
-          >
-            <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{unreadCount}</span>
-            )}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate('/player/notifications')} 
+              className="relative text-white hover:bg-primary-light"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{unreadCount}</span>
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onLogout} 
+              className="text-white border-white hover:bg-primary-light flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              התנתק
+            </Button>
+          </div>
         </div>
       </header>
       

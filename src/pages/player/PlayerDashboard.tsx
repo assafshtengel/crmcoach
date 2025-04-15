@@ -5,13 +5,16 @@ import PlayerRegistration from '@/components/player/PlayerRegistration';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useSessionExpiry } from '@/hooks/useSessionExpiry';
 
 const PlayerDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { handleLogout } = useSessionExpiry();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -29,7 +32,7 @@ const PlayerDashboard = () => {
           
           // Redirect to login page after showing toast
           setTimeout(() => {
-            navigate('/auth');
+            navigate('/player-auth');
           }, 1500);
           
           return;
@@ -53,6 +56,19 @@ const PlayerDashboard = () => {
     checkAuth();
   }, [navigate, toast]);
 
+  const onLogout = async () => {
+    try {
+      await handleLogout("התנתקת מהמערכת בהצלחה");
+    } catch (error) {
+      console.error("Error during logout:", error);
+      toast({
+        title: "שגיאה בהתנתקות",
+        description: "אירעה שגיאה בתהליך ההתנתקות. אנא נסה שוב.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -70,7 +86,17 @@ const PlayerDashboard = () => {
       {/* This component runs in the background, ensuring a player record exists */}
       <PlayerRegistration />
       
-      <h1 className="text-3xl font-bold mb-6">דשבורד שחקן</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">דשבורד שחקן</h1>
+        <Button 
+          onClick={onLogout} 
+          variant="outline" 
+          className="flex gap-2 items-center"
+        >
+          <LogOut className="h-4 w-4" />
+          התנתק
+        </Button>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
