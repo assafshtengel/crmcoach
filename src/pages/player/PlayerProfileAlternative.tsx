@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -531,7 +530,7 @@ const PlayerProfileAlternative = () => {
                   ) : (
                     <div className="bg-gray-50 rounded-lg p-6 text-center">
                       <Calendar className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500">אין היסט��ריית מפגשים</p>
+                      <p className="text-gray-500">אין היסטוריית מפגשים</p>
                     </div>
                   )}
                 </div>
@@ -652,7 +651,7 @@ const PlayerProfileAlternative = () => {
               ) : (
                 <div className="bg-gray-50 rounded-lg p-8 text-center">
                   <FileText className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                  <p className="text-gray-500">אין סיכומי מפ��שים זמינים כרגע</p>
+                  <p className="text-gray-500">אין סיכומי מפגשים זמינים כרגע</p>
                 </div>
               )}
             </CardContent>

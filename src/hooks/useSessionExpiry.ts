@@ -36,7 +36,6 @@ export const useSessionExpiry = (
   ) => {
     try {
       // Clear any app state stored in localStorage
-      // This is a general cleanup - specific apps may need to clear additional keys
       localStorage.removeItem('supabase.auth.token');
       
       // Sign out from Supabase

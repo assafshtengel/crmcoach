@@ -58,6 +58,7 @@ const PlayerDashboard = () => {
 
   const onLogout = async () => {
     try {
+      // Using the handleLogout function from the useSessionExpiry hook
       await handleLogout("התנתקת מהמערכת בהצלחה");
     } catch (error) {
       console.error("Error during logout:", error);
