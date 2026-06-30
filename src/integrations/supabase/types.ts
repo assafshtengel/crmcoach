@@ -2307,12 +2307,6 @@ export type Database = {
         Args: { player_id_param: string }
         Returns: undefined
       }
-      exec_sql: {
-        Args: { sql: string }
-        Returns: {
-          result: Json
-        }[]
-      }
       get_coach_statistics: {
         Args: { coach_id: string }
         Returns: {
