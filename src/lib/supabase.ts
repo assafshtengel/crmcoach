@@ -25,6 +25,6 @@ export const getSupabase = () => {
 export const supabase = getSupabase();
 
 // Expose Supabase client globally during development for debugging
-if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).supabase = supabase;
 }
