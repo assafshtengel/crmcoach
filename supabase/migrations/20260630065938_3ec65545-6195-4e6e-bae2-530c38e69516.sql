@@ -1,0 +1,35 @@
+
+-- Fix search_path on all functions to prevent search_path hijacking attacks
+ALTER FUNCTION public.set_updated_at() SET search_path = public;
+ALTER FUNCTION public.increment_player_video_count(uuid) SET search_path = public;
+ALTER FUNCTION public.decrement_player_video_count(uuid) SET search_path = public;
+ALTER FUNCTION public.update_message_recipients_timestamp() SET search_path = public;
+ALTER FUNCTION public.get_user_family(uuid) SET search_path = public;
+ALTER FUNCTION public.handle_new_user_signup() SET search_path = public;
+ALTER FUNCTION public.set_challenge_dates() SET search_path = public;
+ALTER FUNCTION public.check_and_transition_sessions() SET search_path = public;
+ALTER FUNCTION public.schedule_session_transition_checks() SET search_path = public;
+ALTER FUNCTION public.cron_job_exists(text) SET search_path = public;
+ALTER FUNCTION public.sync_next_week_credits() SET search_path = public;
+ALTER FUNCTION public.set_initial_current_credits() SET search_path = public;
+ALTER FUNCTION public.get_or_create_user_family(text) SET search_path = public;
+ALTER FUNCTION public.process_auto_video_assignments() SET search_path = public;
+ALTER FUNCTION public.schedule_auto_videos_for_new_player() SET search_path = public;
+ALTER FUNCTION public.insert_user_if_not_exists() SET search_path = public;
+ALTER FUNCTION public.get_coach_statistics(uuid) SET search_path = public;
+ALTER FUNCTION public.get_monthly_sessions_count(uuid) SET search_path = public;
+ALTER FUNCTION public.get_player_session_distribution(uuid) SET search_path = public;
+ALTER FUNCTION public.get_monthly_reminders_count(uuid) SET search_path = public;
+ALTER FUNCTION public.get_user_role(uuid) SET search_path = public;
+ALTER FUNCTION public.handle_new_user_role() SET search_path = public;
+ALTER FUNCTION public.add_user_role_for_player() SET search_path = public;
+ALTER FUNCTION public.update_training_count() SET search_path = public;
+ALTER FUNCTION public.set_session_at() SET search_path = public;
+ALTER FUNCTION public.exec_sql(text) SET search_path = public;
+ALTER FUNCTION public.handle_new_player() SET search_path = public;
+ALTER FUNCTION public.handle_new_coach() SET search_path = public;
+ALTER FUNCTION public.update_updated_at_column() SET search_path = public;
+ALTER FUNCTION public.handle_new_user_setup() SET search_path = public;
+ALTER FUNCTION public.get_user_family_id(uuid) SET search_path = public;
+ALTER FUNCTION public.handle_new_user_coach() SET search_path = public;
+ALTER FUNCTION public.handle_new_user() SET search_path = public;
