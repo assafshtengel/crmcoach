@@ -7,29 +7,13 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
+  }
   public: {
     Tables: {
-      admin_messages: {
-        Row: {
-          id: string
-          message: string
-          sent_at: string
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          message: string
-          sent_at?: string
-          user_id: string
-        }
-        Update: {
-          id?: string
-          message?: string
-          sent_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       assigned_questionnaires: {
         Row: {
           assigned_at: string
@@ -75,69 +59,39 @@ export type Database = {
           },
         ]
       }
-      auto_video_assignments: {
+      bookings: {
         Row: {
-          assigned_at: string
-          created_at: string
+          booking_date: string
+          booking_time: string
+          branch: string | null
+          created_at: string | null
           id: string
-          player_id: string
-          scheduled_for: string
-          sent: boolean | null
-          video_id: string
+          phone_number: string
+          sent_reminder: boolean
+          session_at: string | null
+          user_name: string
         }
         Insert: {
-          assigned_at?: string
-          created_at?: string
+          booking_date: string
+          booking_time: string
+          branch?: string | null
+          created_at?: string | null
           id?: string
-          player_id: string
-          scheduled_for: string
-          sent?: boolean | null
-          video_id: string
+          phone_number: string
+          sent_reminder?: boolean
+          session_at?: string | null
+          user_name: string
         }
         Update: {
-          assigned_at?: string
-          created_at?: string
+          booking_date?: string
+          booking_time?: string
+          branch?: string | null
+          created_at?: string | null
           id?: string
-          player_id?: string
-          scheduled_for?: string
-          sent?: boolean | null
-          video_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "auto_video_assignments_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "auto_video_assignments_video_id_fkey"
-            columns: ["video_id"]
-            isOneToOne: false
-            referencedRelation: "videos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      coach_profiles: {
-        Row: {
-          created_at: string
-          default_zoom_link: string | null
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          default_zoom_link?: string | null
-          id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          default_zoom_link?: string | null
-          id?: string
-          updated_at?: string
+          phone_number?: string
+          sent_reminder?: boolean
+          session_at?: string | null
+          user_name?: string
         }
         Relationships: []
       }
@@ -249,48 +203,6 @@ export type Database = {
           signature_date?: string | null
           team?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      daily_challenges: {
-        Row: {
-          created_at: string
-          current_day: number | null
-          custom_goal: string | null
-          daily_tasks: Json
-          goal_category: string
-          id: string
-          notes: string | null
-          streak_count: number | null
-          updated_at: string
-          user_id: string
-          weekly_tasks: Json
-        }
-        Insert: {
-          created_at?: string
-          current_day?: number | null
-          custom_goal?: string | null
-          daily_tasks?: Json
-          goal_category: string
-          id?: string
-          notes?: string | null
-          streak_count?: number | null
-          updated_at?: string
-          user_id: string
-          weekly_tasks?: Json
-        }
-        Update: {
-          created_at?: string
-          current_day?: number | null
-          custom_goal?: string | null
-          daily_tasks?: Json
-          goal_category?: string
-          id?: string
-          notes?: string | null
-          streak_count?: number | null
-          updated_at?: string
-          user_id?: string
-          weekly_tasks?: Json
         }
         Relationships: []
       }
@@ -428,100 +340,94 @@ export type Database = {
         }
         Relationships: []
       }
-      game_summaries: {
+      exercises: {
         Row: {
-          coach_id: string | null
-          concentration_level: number | null
-          created_at: string | null
-          fatigue_level: number | null
-          game_date: string | null
-          goals_met: boolean | null
+          age_range: string | null
+          difficulty: string | null
+          exercise_name: string | null
           id: string
-          improvement_notes: string | null
-          opponent_team: string | null
-          performance_rating: number | null
-          player_id: string
-          strongest_point: string | null
+          instructions: string | null
+          mental_focus: string | null
+          technical_notes: string | null
         }
         Insert: {
-          coach_id?: string | null
-          concentration_level?: number | null
-          created_at?: string | null
-          fatigue_level?: number | null
-          game_date?: string | null
-          goals_met?: boolean | null
+          age_range?: string | null
+          difficulty?: string | null
+          exercise_name?: string | null
           id?: string
-          improvement_notes?: string | null
-          opponent_team?: string | null
-          performance_rating?: number | null
-          player_id: string
-          strongest_point?: string | null
+          instructions?: string | null
+          mental_focus?: string | null
+          technical_notes?: string | null
         }
         Update: {
-          coach_id?: string | null
-          concentration_level?: number | null
-          created_at?: string | null
-          fatigue_level?: number | null
-          game_date?: string | null
-          goals_met?: boolean | null
+          age_range?: string | null
+          difficulty?: string | null
+          exercise_name?: string | null
           id?: string
-          improvement_notes?: string | null
-          opponent_team?: string | null
-          performance_rating?: number | null
-          player_id?: string
-          strongest_point?: string | null
+          instructions?: string | null
+          mental_focus?: string | null
+          technical_notes?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "game_summaries_coach_id_fkey"
-            columns: ["coach_id"]
-            isOneToOne: false
-            referencedRelation: "coaches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "game_summaries_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      goal_messages: {
+      families: {
         Row: {
-          created_at: string | null
-          goal_id: string | null
+          created_at: string
+          creator_email: string | null
+          family_email: string
+          family_name: string
+          family_password: string
           id: string
-          message: string
-          read_at: string | null
-          recipient_id: string | null
-          sender_id: string | null
+          invite_token: string | null
+          updated_at: string
         }
         Insert: {
-          created_at?: string | null
-          goal_id?: string | null
+          created_at?: string
+          creator_email?: string | null
+          family_email: string
+          family_name: string
+          family_password: string
           id?: string
-          message: string
-          read_at?: string | null
-          recipient_id?: string | null
-          sender_id?: string | null
+          invite_token?: string | null
+          updated_at?: string
         }
         Update: {
-          created_at?: string | null
-          goal_id?: string | null
+          created_at?: string
+          creator_email?: string | null
+          family_email?: string
+          family_name?: string
+          family_password?: string
           id?: string
-          message?: string
-          read_at?: string | null
-          recipient_id?: string | null
-          sender_id?: string | null
+          invite_token?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      family_members: {
+        Row: {
+          family_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          family_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          family_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "goal_messages_goal_id_fkey"
-            columns: ["goal_id"]
+            foreignKeyName: "family_members_family_id_fkey"
+            columns: ["family_id"]
             isOneToOne: false
-            referencedRelation: "goals"
+            referencedRelation: "families"
             referencedColumns: ["id"]
           },
         ]
@@ -555,85 +461,6 @@ export type Database = {
           title?: string
         }
         Relationships: []
-      }
-      goal_progress: {
-        Row: {
-          goal_id: string | null
-          id: string
-          progress_percentage: number | null
-          recorded_at: string | null
-          tasks_completed: number | null
-          total_tasks: number | null
-        }
-        Insert: {
-          goal_id?: string | null
-          id?: string
-          progress_percentage?: number | null
-          recorded_at?: string | null
-          tasks_completed?: number | null
-          total_tasks?: number | null
-        }
-        Update: {
-          goal_id?: string | null
-          id?: string
-          progress_percentage?: number | null
-          recorded_at?: string | null
-          tasks_completed?: number | null
-          total_tasks?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "goal_progress_goal_id_fkey"
-            columns: ["goal_id"]
-            isOneToOne: false
-            referencedRelation: "goals"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      goal_tasks: {
-        Row: {
-          completed: boolean | null
-          created_at: string | null
-          description: string | null
-          difficulty_level: number | null
-          due_date: string | null
-          goal_id: string | null
-          id: string
-          is_ai_generated: boolean | null
-          title: string
-        }
-        Insert: {
-          completed?: boolean | null
-          created_at?: string | null
-          description?: string | null
-          difficulty_level?: number | null
-          due_date?: string | null
-          goal_id?: string | null
-          id?: string
-          is_ai_generated?: boolean | null
-          title: string
-        }
-        Update: {
-          completed?: boolean | null
-          created_at?: string | null
-          description?: string | null
-          difficulty_level?: number | null
-          due_date?: string | null
-          goal_id?: string | null
-          id?: string
-          is_ai_generated?: boolean | null
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "goal_tasks_goal_id_fkey"
-            columns: ["goal_id"]
-            isOneToOne: false
-            referencedRelation: "goals"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       goals: {
         Row: {
@@ -695,78 +522,99 @@ export type Database = {
         }
         Relationships: []
       }
-      landing_pages: {
+      imbody: {
         Row: {
-          accent_color: string | null
-          advantages: string[] | null
-          advantages_ids: string[] | null
-          bg_color: string | null
-          button_color: string | null
-          coach_id: string
-          contact_email: string | null
-          contact_phone: string | null
+          bonus_given: boolean | null
+          check_end_date: string | null
+          check_start_date: string | null
           created_at: string | null
-          cta_id: string | null
-          cta_text: string | null
-          description: string | null
+          current_credits: number
+          current_credits_next_week: number
+          default_credits: number
           id: string
-          is_dark_text: boolean | null
-          is_published: boolean | null
-          main_reason: string | null
-          profile_image_path: string | null
-          styles: Json | null
-          subtitle: string | null
-          subtitle_id: string | null
-          title: string
-          work_steps: string[] | null
+          next_week_credits: number
+          training_count: number | null
+          updated_at: string | null
+          username: string
         }
         Insert: {
-          accent_color?: string | null
-          advantages?: string[] | null
-          advantages_ids?: string[] | null
-          bg_color?: string | null
-          button_color?: string | null
-          coach_id: string
-          contact_email?: string | null
-          contact_phone?: string | null
+          bonus_given?: boolean | null
+          check_end_date?: string | null
+          check_start_date?: string | null
           created_at?: string | null
-          cta_id?: string | null
-          cta_text?: string | null
-          description?: string | null
+          current_credits?: number
+          current_credits_next_week?: number
+          default_credits?: number
           id?: string
-          is_dark_text?: boolean | null
-          is_published?: boolean | null
-          main_reason?: string | null
-          profile_image_path?: string | null
-          styles?: Json | null
-          subtitle?: string | null
-          subtitle_id?: string | null
-          title: string
-          work_steps?: string[] | null
+          next_week_credits?: number
+          training_count?: number | null
+          updated_at?: string | null
+          username: string
         }
         Update: {
-          accent_color?: string | null
-          advantages?: string[] | null
-          advantages_ids?: string[] | null
-          bg_color?: string | null
-          button_color?: string | null
-          coach_id?: string
-          contact_email?: string | null
-          contact_phone?: string | null
+          bonus_given?: boolean | null
+          check_end_date?: string | null
+          check_start_date?: string | null
           created_at?: string | null
-          cta_id?: string | null
-          cta_text?: string | null
-          description?: string | null
+          current_credits?: number
+          current_credits_next_week?: number
+          default_credits?: number
           id?: string
-          is_dark_text?: boolean | null
-          is_published?: boolean | null
-          main_reason?: string | null
-          profile_image_path?: string | null
-          styles?: Json | null
-          subtitle?: string | null
-          subtitle_id?: string | null
-          title?: string
-          work_steps?: string[] | null
+          next_week_credits?: number
+          training_count?: number | null
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      imbody_telaviv: {
+        Row: {
+          bonus_given: boolean | null
+          check_end_date: string | null
+          check_start_date: string | null
+          created_at: string
+          current_credits: number
+          current_credits_next_week: number
+          default_credits: number
+          id: string
+          next_week_credits: number
+          phone_number: string
+          training_count: number | null
+          updated_at: string
+          username: string
+          weekly_credits: number
+        }
+        Insert: {
+          bonus_given?: boolean | null
+          check_end_date?: string | null
+          check_start_date?: string | null
+          created_at?: string
+          current_credits?: number
+          current_credits_next_week?: number
+          default_credits?: number
+          id?: string
+          next_week_credits?: number
+          phone_number: string
+          training_count?: number | null
+          updated_at?: string
+          username: string
+          weekly_credits?: number
+        }
+        Update: {
+          bonus_given?: boolean | null
+          check_end_date?: string | null
+          check_start_date?: string | null
+          created_at?: string
+          current_credits?: number
+          current_credits_next_week?: number
+          default_credits?: number
+          id?: string
+          next_week_credits?: number
+          phone_number?: string
+          training_count?: number | null
+          updated_at?: string
+          username?: string
+          weekly_credits?: number
         }
         Relationships: []
       }
@@ -793,91 +641,6 @@ export type Database = {
           meeting_date?: string
           meeting_text?: string
           updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      meeting_logs: {
-        Row: {
-          achievements: string | null
-          coach_id: string | null
-          created_at: string
-          id: string
-          meeting_id: string | null
-          next_steps: string | null
-          player_id: string
-          summary: string
-          updated_at: string
-        }
-        Insert: {
-          achievements?: string | null
-          coach_id?: string | null
-          created_at?: string
-          id?: string
-          meeting_id?: string | null
-          next_steps?: string | null
-          player_id: string
-          summary: string
-          updated_at?: string
-        }
-        Update: {
-          achievements?: string | null
-          coach_id?: string | null
-          created_at?: string
-          id?: string
-          meeting_id?: string | null
-          next_steps?: string | null
-          player_id?: string
-          summary?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "meeting_logs_coach_id_fkey"
-            columns: ["coach_id"]
-            isOneToOne: false
-            referencedRelation: "coaches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "meeting_logs_meeting_id_fkey"
-            columns: ["meeting_id"]
-            isOneToOne: false
-            referencedRelation: "player_meetings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "meeting_logs_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mental_commitments: {
-        Row: {
-          created_at: string
-          id: string
-          improvement_area: string
-          motivational_quote: string
-          unique_trait: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          improvement_area: string
-          motivational_quote: string
-          unique_trait: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          improvement_area?: string
-          motivational_quote?: string
-          unique_trait?: string
           user_id?: string
         }
         Relationships: []
@@ -1168,6 +931,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plan_feedback: {
+        Row: {
+          created_at: string
+          feedback: string
+          id: string
+          plan_data: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feedback: string
+          id?: string
+          plan_data?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feedback?: string
+          id?: string
+          plan_data?: Json | null
+          user_id?: string
+        }
+        Relationships: []
       }
       player_access_tokens: {
         Row: {
@@ -1548,6 +1335,30 @@ export type Database = {
           },
         ]
       }
+      player_profiles: {
+        Row: {
+          age: number
+          commitment_level: string
+          created_at: string
+          id: string
+          username: string
+        }
+        Insert: {
+          age: number
+          commitment_level: string
+          created_at?: string
+          id: string
+          username: string
+        }
+        Update: {
+          age?: number
+          commitment_level?: string
+          created_at?: string
+          id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       player_videos: {
         Row: {
           assigned_by: string | null
@@ -1682,6 +1493,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pre_lecture_surveys: {
+        Row: {
+          additional_comments: string | null
+          ai_subscription: string
+          ai_tools_usage: string
+          comfort_with_ai: string
+          created_at: string
+          email: string | null
+          id: string
+          llm_understanding: string
+          name: string | null
+          submitted_at: string | null
+          which_ai_tool: string | null
+        }
+        Insert: {
+          additional_comments?: string | null
+          ai_subscription: string
+          ai_tools_usage: string
+          comfort_with_ai: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          llm_understanding: string
+          name?: string | null
+          submitted_at?: string | null
+          which_ai_tool?: string | null
+        }
+        Update: {
+          additional_comments?: string | null
+          ai_subscription?: string
+          ai_tools_usage?: string
+          comfort_with_ai?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          llm_understanding?: string
+          name?: string | null
+          submitted_at?: string | null
+          which_ai_tool?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -1995,6 +1848,125 @@ export type Database = {
           },
         ]
       }
+      shopping_history: {
+        Row: {
+          completed_at: string
+          id: string
+          installments_count: number | null
+          list_data: Json
+          purchase_amount: number | null
+          purchased_items: number
+          store_name: string | null
+          total_items: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          installments_count?: number | null
+          list_data: Json
+          purchase_amount?: number | null
+          purchased_items?: number
+          store_name?: string | null
+          total_items?: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          installments_count?: number | null
+          list_data?: Json
+          purchase_amount?: number | null
+          purchased_items?: number
+          store_name?: string | null
+          total_items?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shopping_items: {
+        Row: {
+          added_at: string
+          category: string
+          company: string | null
+          id: string
+          image_url: string | null
+          name: string
+          not_found: boolean
+          notes: string | null
+          purchased: boolean
+          purchased_at: string | null
+          quantity: number
+          shopping_list_id: string
+        }
+        Insert: {
+          added_at?: string
+          category: string
+          company?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          not_found?: boolean
+          notes?: string | null
+          purchased?: boolean
+          purchased_at?: string | null
+          quantity?: number
+          shopping_list_id: string
+        }
+        Update: {
+          added_at?: string
+          category?: string
+          company?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          not_found?: boolean
+          notes?: string | null
+          purchased?: boolean
+          purchased_at?: string | null
+          quantity?: number
+          shopping_list_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_items_shopping_list_id_fkey"
+            columns: ["shopping_list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_lists: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       short_term_goals: {
         Row: {
           created_at: string
@@ -2088,6 +2060,121 @@ export type Database = {
         }
         Relationships: []
       }
+      user_families: {
+        Row: {
+          family_id: string
+          id: string
+          joined_at: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          family_id: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          family_id?: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_families_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_family_links: {
+        Row: {
+          created_at: string | null
+          family_id: string
+          id: string
+          user_email: string
+        }
+        Insert: {
+          created_at?: string | null
+          family_id: string
+          id?: string
+          user_email: string
+        }
+        Update: {
+          created_at?: string | null
+          family_id?: string
+          id?: string
+          user_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_family_links_family_id_fkey"
+            columns: ["family_id"]
+            isOneToOne: false
+            referencedRelation: "families"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_journal_entries: {
+        Row: {
+          action: string
+          created_at: string
+          date: string
+          id: string
+          thoughts: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          date: string
+          id?: string
+          thoughts: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          date?: string
+          id?: string
+          thoughts?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_plans: {
+        Row: {
+          analysis_data: Json | null
+          created_at: string
+          plan_data: Json | null
+          updated_at: string
+          user_id: string
+          user_input: string | null
+        }
+        Insert: {
+          analysis_data?: Json | null
+          created_at?: string
+          plan_data?: Json | null
+          updated_at?: string
+          user_id: string
+          user_input?: string | null
+        }
+        Update: {
+          analysis_data?: Json | null
+          created_at?: string
+          plan_data?: Json | null
+          updated_at?: string
+          user_id?: string
+          user_input?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2106,6 +2193,39 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_stats: {
+        Row: {
+          completed_actions: number
+          created_at: string
+          current_streak: number
+          last_completed_date: string | null
+          longest_streak: number
+          success_points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_actions?: number
+          created_at?: string
+          current_streak?: number
+          last_completed_date?: string | null
+          longest_streak?: number
+          success_points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_actions?: number
+          created_at?: string
+          current_streak?: number
+          last_completed_date?: string | null
+          longest_streak?: number
+          success_points?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2174,28 +2294,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_and_transition_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      check_and_transition_sessions: { Args: never; Returns: undefined }
       cron_job_exists: {
         Args: { job_name: string }
         Returns: {
+          command: string
           jobid: number
           schedule: string
-          command: string
         }[]
       }
       decrement_player_video_count: {
         Args: { player_id_param: string }
         Returns: undefined
       }
+      exec_sql: {
+        Args: { sql: string }
+        Returns: {
+          result: Json
+        }[]
+      }
       get_coach_statistics: {
         Args: { coach_id: string }
         Returns: {
-          totalsessions: number
-          successfulreminders: number
           activeplayerscount: number
+          successfulreminders: number
+          totalsessions: number
         }[]
       }
       get_monthly_reminders_count: {
@@ -2212,6 +2335,10 @@ export type Database = {
           sessions: number
         }[]
       }
+      get_or_create_user_family: {
+        Args: { user_email: string }
+        Returns: string
+      }
       get_player_session_distribution: {
         Args: { coach_id: string }
         Returns: {
@@ -2219,6 +2346,16 @@ export type Database = {
           value: number
         }[]
       }
+      get_user_family: {
+        Args: { user_id_param: string }
+        Returns: {
+          family_id: string
+          family_name: string
+          invite_token: string
+          role: string
+        }[]
+      }
+      get_user_family_id: { Args: { user_id_param: string }; Returns: string }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -2227,14 +2364,9 @@ export type Database = {
         Args: { player_id_param: string }
         Returns: undefined
       }
-      process_auto_video_assignments: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      schedule_session_transition_checks: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      process_auto_video_assignments: { Args: never; Returns: undefined }
+      reset_all_credits: { Args: never; Returns: number }
+      schedule_session_transition_checks: { Args: never; Returns: string }
     }
     Enums: {
       notification_type:
@@ -2249,21 +2381,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -2281,14 +2417,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -2304,14 +2442,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -2327,14 +2467,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -2342,14 +2484,16 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
